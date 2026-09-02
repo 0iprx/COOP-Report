@@ -92,8 +92,8 @@ export async function buildFinalReportData(userId: number): Promise<FinalReportD
   const sortedWeekStarts = Array.from(weekMap.keys()).sort();
   const weeks: WeekGroup[] = sortedWeekStarts.map((ws, index) => {
     const weekEntries = weekMap.get(ws) || [];
-    const totalHours = weekEntries.reduce((sum, e) => sum + calculateHoursBetween(e.timeFrom, e.timeTo), 0);
-    const uniqueDays = new Set(weekEntries.map(e => e.entryDate)).size;
+    const totalHours = weekEntries.reduce((sum: number, e: EntryDTO) => sum + calculateHoursBetween(e.timeFrom, e.timeTo), 0);
+    const uniqueDays = new Set(weekEntries.map((e: EntryDTO) => e.entryDate)).size;
 
     return {
       weekIndex: index + 1,
@@ -105,8 +105,8 @@ export async function buildFinalReportData(userId: number): Promise<FinalReportD
     };
   });
 
-  const totalHours = Number(weeks.reduce((sum, w) => sum + w.totalHours, 0).toFixed(1));
-  const uniqueAllDays = new Set(entries.map(e => e.entryDate)).size;
+  const totalHours = Number(weeks.reduce((sum: number, w: WeekGroup) => sum + w.totalHours, 0).toFixed(1));
+  const uniqueAllDays = new Set(entries.map((e: EntryDTO) => e.entryDate)).size;
 
   // Calculate full textual word count for report estimation
   const fullText = [
@@ -114,7 +114,7 @@ export async function buildFinalReportData(userId: number): Promise<FinalReportD
     profile.entityIntroText,
     profile.skillsText,
     profile.conclusionText,
-    ...entries.map(e => `${e.title} ${e.description}`)
+    ...entries.map((e: EntryDTO) => `${e.title} ${e.description}`)
   ].join(' ');
 
   const wordCount = countWords(fullText);

@@ -38,7 +38,7 @@ router.get('/weekly', async (req: AuthenticatedRequest, res: Response): Promise<
       orderBy: { entryDate: 'asc' }
     });
 
-    const totalHours = entries.reduce((sum, e: { timeFrom: string; timeTo: string }) => sum + calculateHoursBetween(e.timeFrom, e.timeTo), 0);
+    const totalHours = entries.reduce((sum: number, e: { timeFrom: string; timeTo: string }) => sum + calculateHoursBetween(e.timeFrom, e.timeTo), 0);
     const totalDays = new Set(entries.map((e: { entryDate: string }) => e.entryDate)).size;
 
     res.json({

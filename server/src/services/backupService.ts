@@ -86,7 +86,7 @@ export async function exportUserArchive(userId: number): Promise<{ backup: Backu
       createdAt: e.createdAt.toISOString()
     })),
     revisions: user.entries.flatMap((e: PrismaEntry) =>
-      e.revisions.map((r) => ({
+      e.revisions.map((r: { entryId: number; title: string; description: string; createdAt: Date }) => ({
         entryId: r.entryId,
         title: r.title,
         description: r.description,
