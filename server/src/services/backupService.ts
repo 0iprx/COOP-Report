@@ -8,6 +8,27 @@ import { logger } from '../logger.js';
 // Prisma interactive transaction client type
 type PrismaTxClient = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>;
 
+// Inline Prisma entry shape (mirrors generated model)
+type PrismaEntry = {
+  id: number;
+  userId: number;
+  entryDate: string;
+  timeFrom: string;
+  timeTo: string;
+  title: string;
+  category: string;
+  description: string;
+  deletedAt: Date | null;
+  createdAt: Date;
+  revisions: {
+    id: number;
+    entryId: number;
+    title: string;
+    description: string;
+    createdAt: Date;
+  }[];
+};
+
 export interface ExportPayload {
   version: string;
   exportedAt: string;
@@ -53,7 +74,7 @@ export async function exportUserArchive(userId: number): Promise<{ backup: Backu
     userId: user.id,
     username: user.username,
     profile: user.profile || {},
-    entries: user.entries.map((e) => ({
+    entries: user.entries.map((e: PrismaEntry) => ({
       id: e.id,
       entryDate: e.entryDate,
       timeFrom: e.timeFrom,
@@ -64,22 +85,11 @@ export async function exportUserArchive(userId: number): Promise<{ backup: Backu
       deletedAt: e.deletedAt ? e.deletedAt.toISOString() : null,
       createdAt: e.createdAt.toISOString()
     })),
-    revisions: user.entries.flatMap((e) =>
-      e.revisions.map((r: {
-        entryId: number;
-        title: string;
-        category?: string | null;
-        description: string;
-        timeFrom?: string | null;
-        timeTo?: string | null;
-        createdAt: Date;
-      }) => ({
+    revisions: user.entries.flatMap((e: PrismaEntry) =>
+      e.revisions.map((r) => ({
         entryId: r.entryId,
         title: r.title,
-        category: r.category ?? null,
         description: r.description,
-        timeFrom: r.timeFrom ?? null,
-        timeTo: r.timeTo ?? null,
         createdAt: r.createdAt.toISOString()
       }))
     )
