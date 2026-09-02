@@ -38,7 +38,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
     trainingUnit: '',
     supervisorName: '',
     responsibleName: '',
-    entityAddress: 'هواوي السعودية (Huawei Tech Saudi)',
+    entityAddress: '',
     employeesCount: '',
     introText: '',
     entityIntroText: '',
@@ -76,7 +76,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
         trainingUnit: reportData.profile.trainingUnit || '',
         supervisorName: reportData.profile.supervisorName || '',
         responsibleName: reportData.profile.responsibleName || '',
-        entityAddress: reportData.profile.entityAddress || 'هواوي السعودية (Huawei Tech Saudi)',
+        entityAddress: reportData.profile.entityAddress || '',
         employeesCount: reportData.profile.employeesCount || '',
         introText: reportData.profile.introText || '',
         entityIntroText: reportData.profile.entityIntroText || '',
@@ -433,7 +433,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                 type="text"
                 value={profileData.responsibleName}
                 onChange={(e) => handleProfileChange('responsibleName', e.target.value)}
-                placeholder="مشرفك في شركة هواوي"
+                placeholder="اسم المشرف أو المسؤول في جهة التدريب"
                 className="w-full px-3 py-2 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent"
               />
             </div>
@@ -444,7 +444,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                 type="text"
                 value={profileData.entityAddress}
                 onChange={(e) => handleProfileChange('entityAddress', e.target.value)}
-                placeholder="هواوي السعودية"
+                placeholder="مثال: أرامكو السعودية، STC، stc pay، KACST..."
                 className="w-full px-3 py-2 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent"
               />
             </div>
@@ -498,7 +498,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
           {/* Section 2: Entity */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="block text-xs font-bold text-sub">التعريف بجهة التدريب (شركة هواوي وطبيعة العمل)</label>
+              <label className="block text-xs font-bold text-sub">التعريف بجهة التدريب وطبيعة العمل فيها</label>
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
@@ -673,7 +673,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             <span className="text-sub">•</span> 1. المقدمة وأهمية التدريب
           </a>
           <a href="#sec-entity" className="text-ink hover:text-accent transition-colors flex items-center gap-1.5">
-            <span className="text-sub">•</span> 2. التعريف بجهة التدريب (هواوي)
+            <span className="text-sub">•</span> 2. التعريف بجهة التدريب {profileData.entityAddress ? `(${profileData.entityAddress})` : ''}
           </a>
           <a href="#sec-timeline" className="text-ink hover:text-accent transition-colors flex items-center gap-1.5">
             <span className="text-sub">•</span> 3. الجدول الزمني الأسبوعي ({reportData?.weeks?.length || 0} أسبوع)
@@ -718,7 +718,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             التقرير النهائي للتدريب التعاوني (Co-op Report)
           </h1>
           <div className="text-base font-bold text-ink">
-            جهة التدريب: {profileData.entityAddress || 'هواوي السعودية (Huawei Tech Saudi)'}
+            جهة التدريب: {profileData.entityAddress || '—'}
           </div>
 
           <div className="mt-8 max-w-xl mx-auto bg-bg border border-line rounded-xl p-5 text-right grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
@@ -762,7 +762,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             {profileData.entityIntroText || 'لم يُحدد التعريف بجهة التدريب بعد.'}
           </p>
           <div className="bg-bg border border-line rounded-lg p-3 text-xs text-sub flex flex-wrap gap-4 font-semibold">
-            <span>العنوان: {profileData.entityAddress}</span>
+            <span>جهة التدريب: {profileData.entityAddress || '—'}</span>
             <span>عدد الموظفين تقريباً: {profileData.employeesCount || '—'}</span>
             <span>المسؤول: {profileData.responsibleName || '—'}</span>
           </div>
