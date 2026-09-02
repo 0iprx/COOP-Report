@@ -88,8 +88,24 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 });
 
 // Bind to 0.0.0.0 so containerized environments (Cranl/Docker) can route external traffic
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   logger.info(`COOP Report Server running on http://0.0.0.0:${PORT}`);
+});
+
+process.on('SIGTERM', () => {
+  logger.info('Received SIGTERM. Closing server gracefully...');
+  server.close(() => {
+    logger.info('Server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  logger.info('Received SIGINT. Closing server gracefully...');
+  server.close(() => {
+    logger.info('Server closed');
+    process.exit(0);
+  });
 });
 
 export default app;
