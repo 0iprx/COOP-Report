@@ -1,0 +1,58 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id             Int            @id @default(autoincrement())
+  username       String         @unique @db.VarChar(50)
+  passwordHash   String         @map("password_hash") @db.VarChar(255)
+  role           String         @default("trainee")
+  supervisorId   Int?           @map("supervisor_id")
+  supervisor     User?          @relation("SupervisorTrainees", fields: [supervisorId], references: [id])
+  trainees       User[]         @relation("SupervisorTrainees")
+  entries        Entry[]
+  profile        ReportProfile?
+  createdAt      DateTime       @default(now()) @map("created_at")
+
+  @@map("users")
+}
+
+model Entry {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entryDate   String   @map("entry_date") @db.VarChar(20)
+  timeFrom    String   @map("time_from") @db.VarChar(10)
+  timeTo      String   @map("time_to") @db.VarChar(10)
+  title       String   @db.VarChar(150)
+  category    String   @default("أخرى") @db.VarChar(50)
+  description String   @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("entries")
+}
+
+model ReportProfile {
+  userId          Int      @id @map("user_id")
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studentName     String   @default("") @map("student_name") @db.VarChar(100)
+  trainingNumber  String   @default("") @map("training_number") @db.VarChar(50)
+  department      String   @default("") @db.VarChar(100)
+  trainingUnit    String   @default("") @map("training_unit") @db.VarChar(150)
+  supervisorName  String   @default("") @map("supervisor_name") @db.VarChar(100)
+  responsibleName String   @default("") @map("responsible_name") @db.VarChar(100)
+  entityAddress   String   @default("هواوي السعودية (Huawei Tech Saudi)") @map("entity_address") @db.VarChar(200)
+  employeesCount  String   @default("") @map("employees_count") @db.VarChar(50)
+  introText       String   @default("") @map("intro_text") @db.Text
+  entityIntroText String   @default("") @map("entity_intro_text") @db.Text
+  skillsText      String   @default("") @map("skills_text") @db.Text
+  conclusionText  String   @default("") @map("conclusion_text") @db.Text
+  supervisorNotes String   @default("") @map("supervisor_notes") @db.Text
+
+  @@map("report_profile")
+}
