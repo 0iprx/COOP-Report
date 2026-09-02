@@ -11,7 +11,11 @@ export interface AuthenticatedRequest extends Request {
   user?: AuthenticatedUser;
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || 'coop-report-super-secure-jwt-key-8374928374';
+const _JWT_SECRET = process.env.JWT_SECRET;
+if (!_JWT_SECRET && process.env.NODE_ENV === 'production') {
+  throw new Error('FATAL: JWT_SECRET is not set in production environment.');
+}
+const JWT_KEY = _JWT_SECRET || 'dev-only-insecure-key-do-not-deploy';
 
 export function authenticate(req: AuthenticatedRequest, res: Response, next: NextFunction): void {
   const authHeader = req.headers.authorization;
@@ -29,7 +33,7 @@ export function authenticate(req: AuthenticatedRequest, res: Response, next: Nex
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as AuthenticatedUser;
+    const decoded = jwt.verify(token, JWT_KEY) as AuthenticatedUser;
     req.user = decoded;
     next();
   } catch (err) {

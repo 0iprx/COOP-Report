@@ -8,7 +8,14 @@ import { authenticate, AuthenticatedRequest } from '../middleware/auth.js';
 import { logger } from '../logger.js';
 
 const router = Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'coop-report-super-secure-jwt-key-8374928374';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('FATAL: JWT_SECRET environment variable is not set. Refusing to start in production without a secure secret.');
+  }
+  console.warn('[SECURITY WARNING] JWT_SECRET not set — using insecure dev fallback. Set JWT_SECRET before deploying.');
+}
+const JWT_KEY = JWT_SECRET || 'dev-only-insecure-key-do-not-deploy';
 
 // Register
 router.post('/register', async (req: Request, res: Response): Promise<void> => {
@@ -60,7 +67,7 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
 
     const token = jwt.sign(
       { userId: user.id, username: user.username, role: user.role },
-      JWT_SECRET,
+      JWT_KEY,
       { expiresIn: '7d' }
     );
 
@@ -116,7 +123,7 @@ router.post('/login', authLimiter, async (req: Request, res: Response): Promise<
 
     const token = jwt.sign(
       { userId: user.id, username: user.username, role: user.role },
-      JWT_SECRET,
+      JWT_KEY,
       { expiresIn: '7d' }
     );
 
