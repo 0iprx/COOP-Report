@@ -1,58 +1,319 @@
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+   COOP Report — Global Design System
+   Soft professional palette | RTL-first | Tajawal typeface
+   ============================================================ */
+
 :root {
-  --bg: #F7F5F0;
-  --card: #FFFFFF;
-  --ink: #1B1B18;
-  --sub: #6E6B62;
-  --line: #E4E0D5;
-  --accent: #C8102E;
-  --accent-dim: #F4DDDF;
-  --ok: #2F6B4F;
-  --ok-bg: #E5F1EA;
+  --bg:           #F3F1EC;
+  --surface:      #FAFAF8;
+  --card:         #FFFFFF;
+  --ink:          #18181A;
+  --sub:          #686560;
+  --muted:        #9E9A93;
+  --line:         #E6E2D8;
+  --accent:       #C0102A;
+  --accent-dim:   #F6DDE1;
+  --accent-mid:   #E8354D;
+  --ok:           #2A6348;
+  --ok-bg:        #E3F0EA;
+  --warn:         #B45309;
+  --warn-bg:      #FEF3C7;
+
+  /* Subtle grain texture via SVG data URI */
+  --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+}
+
+/* ── Base ────────────────────────────────────────────────── */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  text-size-adjust: 100%;
 }
 
 body {
   margin: 0;
   background-color: var(--bg);
+  background-image: var(--noise);
+  background-repeat: repeat;
   color: var(--ink);
-  font-family: 'Tajawal', sans-serif;
+  font-family: 'Tajawal', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.65;
+  font-size: 15px;
 }
 
-/* Custom scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* ── Typography ──────────────────────────────────────────── */
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
 }
-::-webkit-scrollbar-track {
-  background: var(--bg);
+
+/* ── Scrollbar ───────────────────────────────────────────── */
+
+::-webkit-scrollbar        { width: 5px; height: 5px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: var(--line); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* ── Selection ───────────────────────────────────────────── */
+
+::selection {
+  background: var(--accent-dim);
+  color: var(--accent);
 }
-::-webkit-scrollbar-thumb {
-  background: var(--line);
-  border-radius: 3px;
+
+/* ── Focus Ring ──────────────────────────────────────────── */
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: var(--sub);
+
+/* ── Inputs (global override) ────────────────────────────── */
+
+input, textarea, select {
+  font-family: inherit;
+  color: var(--ink);
 }
+
+input::placeholder, textarea::placeholder {
+  color: var(--muted);
+}
+
+/* ── Utility Classes ─────────────────────────────────────── */
+
+@layer utilities {
+  .glass {
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(230,226,216,0.7);
+  }
+
+  .glass-dark {
+    background: rgba(24,24,26,0.88);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+  }
+
+  .card-surface {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 1rem;
+    box-shadow: 0 1px 3px rgba(24,24,26,0.06), 0 1px 2px -1px rgba(24,24,26,0.04);
+  }
+
+  .card-lifted {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 1rem;
+    box-shadow: 0 4px 12px -2px rgba(24,24,26,0.08), 0 2px 6px -2px rgba(24,24,26,0.05);
+  }
+
+  .input-field {
+    width: 100%;
+    padding: 0.6rem 0.875rem;
+    font-size: 0.875rem;
+    background: var(--bg);
+    border: 1.5px solid var(--line);
+    border-radius: 0.75rem;
+    color: var(--ink);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .input-field:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(192,16,42,0.1);
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #fff;
+    background: var(--accent);
+    border: none;
+    border-radius: 0.75rem;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+    box-shadow: 0 1px 4px rgba(192,16,42,0.25), inset 0 1px 0 rgba(255,255,255,0.12);
+  }
+  .btn-primary:hover  { background: var(--accent-mid); transform: translateY(-1px); box-shadow: 0 3px 10px rgba(192,16,42,0.3); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { opacity: 0.5; transform: none; cursor: not-allowed; }
+
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--ink);
+    background: transparent;
+    border: 1.5px solid var(--line);
+    border-radius: 0.75rem;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .btn-ghost:hover { background: var(--bg); border-color: var(--muted); }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1.4;
+  }
+  .badge-accent { background: var(--accent-dim); color: var(--accent); }
+  .badge-ok     { background: var(--ok-bg);     color: var(--ok);     }
+  .badge-warn   { background: var(--warn-bg);   color: var(--warn);   }
+
+  .divider {
+    border: none;
+    border-top: 1px solid var(--line);
+    margin: 0;
+  }
+
+  /* Subtle grid dot background for hero sections */
+  .dot-grid {
+    background-image: radial-gradient(circle, var(--line) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+
+  /* Animated shimmer skeleton */
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--line) 25%,
+      var(--surface) 50%,
+      var(--line) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.6s infinite;
+  }
+  @keyframes shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* Animate fade-in */
+  .animate-fade-in { animation: fadeIn 0.22s ease-out both; }
+  @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
+
+  .animate-slide-up { animation: slideUp 0.26s cubic-bezier(0.16,1,0.3,1) both; }
+  @keyframes slideUp {
+    from { opacity:0; transform: translateY(14px); }
+    to   { opacity:1; transform: translateY(0); }
+  }
+
+  .animate-scale-in { animation: scaleIn 0.22s cubic-bezier(0.16,1,0.3,1) both; }
+  @keyframes scaleIn {
+    from { opacity:0; transform: scale(0.95); }
+    to   { opacity:1; transform: scale(1); }
+  }
+
+  /* Soft glow pulse for active indicators */
+  .pulse-accent {
+    animation: pulseAccent 2s ease-in-out infinite;
+  }
+  @keyframes pulseAccent {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(192,16,42,0.3); }
+    50%       { box-shadow: 0 0 0 6px rgba(192,16,42,0); }
+  }
+}
+
+/* ── Section Title Style ─────────────────────────────────── */
+
+.section-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 0.875rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+/* ── Tab Bar ─────────────────────────────────────────────── */
+
+.tab-item {
+  padding: 0.75rem 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-bottom: 2px solid transparent;
+  color: var(--sub);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  user-select: none;
+}
+.tab-item:hover   { color: var(--ink); }
+.tab-item.active  { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ── Stat Card Accent Line ───────────────────────────────── */
+
+.stat-card-border {
+  border-top: 3px solid var(--accent);
+}
+.stat-card-border-ok {
+  border-top: 3px solid var(--ok);
+}
+
+/* ── Print Styles ────────────────────────────────────────── */
 
 @media print {
-  /* Hide all UI elements except the report body */
   .no-print,
   nav,
   header,
   .tabs-container,
   button,
   .toast,
-  .modal-overlay {
+  .modal-overlay,
+  aside {
     display: none !important;
   }
 
   body {
-    background: #FFFFFF !important;
-    color: #000000 !important;
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 11pt;
+    line-height: 1.7;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 2.5cm;
   }
 
   .print-only-container {
@@ -67,5 +328,9 @@ body {
   .page-break {
     page-break-before: always !important;
     break-before: page !important;
+  }
+
+  a[href]::after {
+    content: '';
   }
 }

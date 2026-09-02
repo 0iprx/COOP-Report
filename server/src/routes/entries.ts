@@ -7,12 +7,11 @@ import { logger } from '../logger.js';
 const router = Router();
 router.use(authenticate);
 
-// GET /api/entries
+// GET /api/entries (only active non-deleted entries)
 router.get('/', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     let targetUserId = req.user!.userId;
 
-    // If supervisor requests entries for a linked trainee
     if (req.query.traineeId && req.user!.role === 'supervisor') {
       const traineeId = Number(req.query.traineeId);
       const isLinked = await prisma.user.findFirst({
@@ -26,7 +25,15 @@ router.get('/', async (req: AuthenticatedRequest, res: Response): Promise<void> 
     }
 
     const entries = await prisma.entry.findMany({
-      where: { userId: targetUserId },
+      where: {
+        userId: targetUserId,
+        deletedAt: null
+      },
+      include: {
+        _count: {
+          select: { revisions: true }
+        }
+      },
       orderBy: { entryDate: 'desc' }
     });
 
@@ -67,7 +74,7 @@ router.post('/', async (req: AuthenticatedRequest, res: Response): Promise<void>
   }
 });
 
-// PUT /api/entries/:id
+// PUT /api/entries/:id (records revision history for zero data loss)
 router.put('/:id', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const id = Number(req.params.id);
@@ -77,25 +84,36 @@ router.put('/:id', async (req: AuthenticatedRequest, res: Response): Promise<voi
       return;
     }
 
-    // Verify ownership
     const existing = await prisma.entry.findUnique({ where: { id } });
     if (!existing || existing.userId !== req.user!.userId) {
       res.status(404).json({ error: 'الإدخال غير موجود أو لا تملك صلاحية تعديله' });
       return;
     }
 
+    // Save previous state to revisions table before modifying
+    await prisma.entryRevision.create({
+      data: {
+        entryId: existing.id,
+        title: existing.title,
+        category: existing.category,
+        description: existing.description,
+        timeFrom: existing.timeFrom,
+        timeTo: existing.timeTo
+      }
+    });
+
     const updated = await prisma.entry.update({
       where: { id },
       data: parseResult.data
     });
 
-    res.json({ message: 'تم تحديث الإدخال بنجاح', entry: updated });
+    res.json({ message: 'تم تحديث الإدخال وحفظ نسخة تاريخية في الأرشيف', entry: updated });
   } catch (err) {
     res.status(500).json({ error: 'تعذر تحديث الإدخال' });
   }
 });
 
-// DELETE /api/entries/:id
+// DELETE /api/entries/:id (Soft delete: marked with deletedAt so it's safely restorable)
 router.delete('/:id', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const id = Number(req.params.id);
@@ -106,8 +124,13 @@ router.delete('/:id', async (req: AuthenticatedRequest, res: Response): Promise<
       return;
     }
 
-    await prisma.entry.delete({ where: { id } });
-    res.json({ message: 'تم حذف الإدخال بنجاح' });
+    // Soft delete
+    await prisma.entry.update({
+      where: { id },
+      data: { deletedAt: new Date() }
+    });
+
+    res.json({ message: 'تم نقل الإدخال إلى سلة المحذوفات بأمان ويمكنك استعادته في أي وقت' });
   } catch (err) {
     res.status(500).json({ error: 'تعذر حذف الإدخال' });
   }

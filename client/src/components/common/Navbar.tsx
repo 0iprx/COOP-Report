@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { LogOut, Shield, User, Languages, BookOpen } from 'lucide-react';
+import { LogOut, Shield, User, Languages, BookOpen, ChevronDown } from 'lucide-react';
 
 interface NavbarProps {
   currentLang: 'ar' | 'en';
@@ -11,47 +11,59 @@ export const Navbar: React.FC<NavbarProps> = ({ currentLang, onToggleLang }) => 
   const { user, logout } = useAuth();
 
   return (
-    <nav className="border-b border-line bg-card/80 backdrop-blur-sm sticky top-0 z-40">
-      <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-        {/* Brand */}
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-accent text-white flex items-center justify-center font-black text-base shadow-sm">
-            <BookOpen className="w-5 h-5" />
+    <nav className="sticky top-0 z-40 border-b border-line glass">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 h-[3.75rem] flex items-center justify-between gap-4">
+
+        {/* ── Brand ────────────────────────────────────────── */}
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-accent text-white flex items-center justify-center shadow-sm shrink-0">
+            <BookOpen className="w-4.5 h-4.5 w-[18px] h-[18px]" />
           </div>
           <div>
-            <div className="font-extrabold text-lg tracking-tight text-ink flex items-center gap-2">
+            <div className="font-black text-[1.05rem] tracking-tight text-ink leading-none flex items-baseline gap-2">
               <span>COOP Report</span>
-              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-accent-dim text-accent">
+              <span className="badge badge-accent hidden sm:inline-flex text-[10px] tracking-wide uppercase">
                 Huawei Co-op
               </span>
             </div>
-            <p className="text-xs text-sub hidden sm:block">
-              {currentLang === 'ar' ? 'سجل التدريب التعاوني الأكاديمي والتوثيق اليومي' : 'Academic Cooperative Training & Daily Log System'}
+            <p className="text-[11px] text-muted hidden sm:block mt-0.5 leading-none">
+              {currentLang === 'ar'
+                ? 'سجل التدريب التعاوني الأكاديمي الذكي'
+                : 'Smart Academic Cooperative Training Log'}
             </p>
           </div>
         </div>
 
-        {/* User & Actions */}
-        <div className="flex items-center gap-3">
-          {/* Language Toggle */}
+        {/* ── Actions ──────────────────────────────────────── */}
+        <div className="flex items-center gap-2">
+
+          {/* Language */}
           <button
             onClick={onToggleLang}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-line text-xs font-bold text-ink hover:bg-bg transition-colors"
-            title="تبديل لغة العرض والتقارير"
+            className="btn-ghost text-xs gap-1.5 hidden sm:inline-flex py-1.5"
+            title="تبديل لغة العرض"
           >
             <Languages className="w-3.5 h-3.5 text-accent" />
             <span>{currentLang === 'ar' ? 'English' : 'عربي'}</span>
           </button>
 
+          {/* User Menu */}
           {user && (
-            <div className="flex items-center gap-3 pl-2 border-l border-line">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-ok-bg text-ok flex items-center justify-center">
-                  {user.role === 'supervisor' ? <Shield className="w-4 h-4" /> : <User className="w-4 h-4" />}
+            <div className="flex items-center gap-2 ps-2 border-s border-line">
+              <div className="flex items-center gap-2 cursor-default select-none">
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${
+                    user.role === 'supervisor'
+                      ? 'bg-accent-dim text-accent'
+                      : 'bg-ok-bg text-ok'
+                  }`}
+                >
+                  {user.role === 'supervisor' ? <Shield className="w-3.5 h-3.5" /> : <User className="w-3.5 h-3.5" />}
                 </div>
-                <div className="hidden md:block text-right">
+
+                <div className="hidden md:block text-start leading-tight">
                   <div className="text-xs font-bold text-ink">{user.username}</div>
-                  <div className="text-[11px] text-sub">
+                  <div className="text-[10px] text-muted">
                     {user.role === 'supervisor' ? 'مشرف ميداني' : 'متدرب تعاوني'}
                   </div>
                 </div>
@@ -59,7 +71,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentLang, onToggleLang }) => 
 
               <button
                 onClick={logout}
-                className="p-2 text-sub hover:text-accent rounded-lg hover:bg-bg transition-colors"
+                className="p-1.5 text-muted hover:text-accent rounded-lg hover:bg-accent-dim/40 transition-colors"
                 title="تسجيل الخروج"
               >
                 <LogOut className="w-4 h-4" />

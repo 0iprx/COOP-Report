@@ -23,18 +23,34 @@ model User {
 }
 
 model Entry {
-  id          Int      @id @default(autoincrement())
-  userId      Int      @map("user_id")
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  entryDate   String   @map("entry_date") @db.VarChar(20)
-  timeFrom    String   @map("time_from") @db.VarChar(10)
-  timeTo      String   @map("time_to") @db.VarChar(10)
-  title       String   @db.VarChar(150)
-  category    String   @default("أخرى") @db.VarChar(50)
-  description String   @db.Text
-  createdAt   DateTime @default(now()) @map("created_at")
+  id          Int             @id @default(autoincrement())
+  userId      Int             @map("user_id")
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entryDate   String          @map("entry_date") @db.VarChar(20)
+  timeFrom    String          @map("time_from") @db.VarChar(10)
+  timeTo      String          @map("time_to") @db.VarChar(10)
+  title       String          @db.VarChar(150)
+  category    String          @default("أخرى") @db.VarChar(50)
+  description String          @db.Text
+  deletedAt   DateTime?       @map("deleted_at")
+  revisions   EntryRevision[]
+  createdAt   DateTime        @default(now()) @map("created_at")
 
   @@map("entries")
+}
+
+model EntryRevision {
+  id          Int      @id @default(autoincrement())
+  entryId     Int      @map("entry_id")
+  entry       Entry    @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  title       String   @db.VarChar(150)
+  category    String   @db.VarChar(50)
+  description String   @db.Text
+  timeFrom    String   @map("time_from") @db.VarChar(10)
+  timeTo      String   @map("time_to") @db.VarChar(10)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("entry_revisions")
 }
 
 model ReportProfile {

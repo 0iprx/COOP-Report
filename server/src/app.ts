@@ -11,6 +11,7 @@ import profileRoutes from './routes/profile.js';
 import reportsRoutes from './routes/reports.js';
 import aiRoutes from './routes/ai.js';
 import supervisorRoutes from './routes/supervisor.js';
+import backupRoutes from './routes/backup.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -48,6 +49,7 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/supervisor', supervisorRoutes);
+app.use('/api/backup', backupRoutes);
 
 // Global Error Handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

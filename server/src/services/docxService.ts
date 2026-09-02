@@ -9,11 +9,11 @@ import {
   TableRow,
   TableCell,
   WidthType,
-  BorderStyle,
   Header,
   Footer,
   PageNumber,
-  NumberFormat
+  Bookmark,
+  InternalHyperlink
 } from 'docx';
 import { FinalReportData, formatDateArabic } from '@coop/shared';
 
@@ -27,7 +27,7 @@ export async function generateAcademicDocx(reportData: FinalReportData, lang: 'a
         document: {
           run: {
             font: isAr ? 'Traditional Arabic' : 'Times New Roman',
-            size: 28, // 14pt
+            size: 28, // 14pt standard academic
             color: '1B1B18'
           },
           paragraph: {
@@ -45,7 +45,7 @@ export async function generateAcademicDocx(reportData: FinalReportData, lang: 'a
         properties: {
           page: {
             margin: {
-              top: 1417, // ~2.5 cm
+              top: 1417, // 2.5 cm standard margins
               bottom: 1417,
               left: 1417,
               right: 1417
@@ -61,7 +61,7 @@ export async function generateAcademicDocx(reportData: FinalReportData, lang: 'a
                 children: [
                   new TextRun({
                     text: isAr
-                      ? 'سجل التدريب التعاوني — شركة هواوي السعودية'
+                      ? 'سجل التدريب التعاوني — شركة هواوي السعودية (Huawei Tech Saudi)'
                       : 'Co-op Training Report — Huawei Tech Saudi',
                     size: 20,
                     color: '6E6B62'
@@ -93,17 +93,24 @@ export async function generateAcademicDocx(reportData: FinalReportData, lang: 'a
           })
         },
         children: [
-          // 1. Cover Title
+          // ==========================================
+          // COVER PAGE
+          // ==========================================
           new Paragraph({
             alignment: AlignmentType.CENTER,
-            spacing: { before: 800, after: 300 },
+            spacing: { before: 800, after: 200 },
             bidirectional: isAr,
             children: [
-              new TextRun({
-                text: isAr ? 'المملكة العربية السعودية' : 'Kingdom of Saudi Arabia',
-                bold: true,
-                size: 32,
-                color: '1B1B18'
+              new Bookmark({
+                id: 'sec_cover',
+                children: [
+                  new TextRun({
+                    text: isAr ? 'المملكة العربية السعودية' : 'Kingdom of Saudi Arabia',
+                    bold: true,
+                    size: 32,
+                    color: '1B1B18'
+                  })
+                ]
               })
             ]
           }),
@@ -113,7 +120,7 @@ export async function generateAcademicDocx(reportData: FinalReportData, lang: 'a
             bidirectional: isAr,
             children: [
               new TextRun({
-                text: isAr ? (profile.trainingUnit || 'الوحدة التدريبية / الكلية') : (profile.trainingUnit || 'Training Institution'),
+                text: profile.trainingUnit || (isAr ? 'الوحدة التدريبية / الكلية' : 'Academic Training Institution'),
                 bold: true,
                 size: 28,
                 color: '6E6B62'
@@ -127,8 +134,8 @@ export async function generateAcademicDocx(reportData: FinalReportData, lang: 'a
             children: [
               new TextRun({
                 text: isAr
-                  ? 'التقرير النهائي للتدريب التعاوني (Co-op Report)'
-                  : 'Cooperative Training Final Report (Co-op)',
+                  ? 'التقرير النهائي للتدريب التعاوني (Co-op Final Report)'
+                  : 'Cooperative Training Final Academic Report',
                 bold: true,
                 size: 40,
                 color: 'C8102E' // Huawei Red
@@ -137,7 +144,7 @@ export async function generateAcademicDocx(reportData: FinalReportData, lang: 'a
           }),
           new Paragraph({
             alignment: AlignmentType.CENTER,
-            spacing: { after: 1200 },
+            spacing: { after: 1000 },
             bidirectional: isAr,
             children: [
               new TextRun({
@@ -151,78 +158,84 @@ export async function generateAcademicDocx(reportData: FinalReportData, lang: 'a
             ]
           }),
 
-          // Cover Meta Table
+          // Cover Metadata Table
           createMetaTable(profile, totalHours, totalDays, totalEntries, isAr),
 
-          // Page Break to Table of Contents
+          // ==========================================
+          // TABLE OF CONTENTS (INTERACTIVE HYPERLINKS)
+          // ==========================================
           new Paragraph({
             pageBreakBefore: true,
             heading: HeadingLevel.HEADING_1,
             bidirectional: isAr,
+            spacing: { before: 400, after: 300 },
             children: [
-              new TextRun({
-                text: isAr ? 'فهرس المحتويات (Table of Contents)' : 'Table of Contents',
-                bold: true,
-                size: 34,
-                color: 'C8102E'
-              })
-            ]
-          }),
-          new Paragraph({
-            bidirectional: isAr,
-            spacing: { after: 100 },
-            children: [new TextRun({ text: isAr ? '1. المقدمة وأهمية التدريب التعاوني' : '1. Introduction', bold: true })]
-          }),
-          new Paragraph({
-            bidirectional: isAr,
-            spacing: { after: 100 },
-            children: [new TextRun({ text: isAr ? '2. التعريف بجهة التدريب وطبيعة العمل (هواوي)' : '2. Organization Overview (Huawei)', bold: true })]
-          }),
-          new Paragraph({
-            bidirectional: isAr,
-            spacing: { after: 100 },
-            children: [new TextRun({ text: isAr ? '3. الخطة والجدول الزمني للتدريب الأسبوعي' : '3. Training Timeline & Weekly Breakdown', bold: true })]
-          }),
-          ...weeks.map(
-            w =>
-              new Paragraph({
-                bidirectional: isAr,
-                spacing: { after: 60 },
-                indent: { left: 720 },
+              new Bookmark({
+                id: 'sec_toc',
                 children: [
                   new TextRun({
-                    text: isAr
-                      ? `— الأسبوع ${w.weekIndex}: ${w.weekStart} إلى ${w.weekEnd} (${w.totalHours} ساعة)`
-                      : `— Week ${w.weekIndex}: ${w.weekStart} to ${w.weekEnd} (${w.totalHours} hrs)`,
-                    size: 24,
-                    color: '6E6B62'
+                    text: isAr ? 'فهرس المحتويات (انقر للانتقال المباشر للقسم)' : 'Table of Contents (Click to Navigate)',
+                    bold: true,
+                    size: 34,
+                    color: 'C8102E'
                   })
                 ]
               })
-          ),
-          new Paragraph({
-            bidirectional: isAr,
-            spacing: { after: 100 },
-            children: [new TextRun({ text: isAr ? '4. المعارف والمهارات والتجارب المكتسبة' : '4. Acquired Skills & Technical Competencies', bold: true })]
-          }),
-          new Paragraph({
-            bidirectional: isAr,
-            spacing: { after: 400 },
-            children: [new TextRun({ text: isAr ? '5. الخ خاتمة والتوصيات' : '5. Conclusion & Recommendations', bold: true })]
+            ]
           }),
 
-          // Section 1: Introduction
+          // TOC Links to Major Sections
+          createTOCLink('sec_cover', isAr ? '• صفحة الغلاف والبيانات الرسمية' : '• Cover Page & Official Metadata', isAr),
+          createTOCLink('sec_intro', isAr ? '• 1. المقدمة وأهمية التدريب التعاوني' : '• 1. Introduction & Objectives', isAr),
+          createTOCLink('sec_entity', isAr ? '• 2. التعريف بجهة التدريب وطبيعة العمل (هواوي)' : '• 2. Organization Overview (Huawei)', isAr),
+          createTOCLink('sec_timeline', isAr ? '• 3. الخطة والجدول الزمني للتدريب الأسبوعي' : '• 3. Training Timeline & Weekly Breakdown', isAr),
+
+          // Dynamic TOC Links for Each Week
+          ...weeks.map((w) =>
+            new Paragraph({
+              bidirectional: isAr,
+              spacing: { before: 60, after: 60 },
+              indent: { left: 720 },
+              children: [
+                new InternalHyperlink({
+                  anchor: `week_${w.weekIndex}`,
+                  children: [
+                    new TextRun({
+                      text: isAr
+                        ? `— الأسبوع ${w.weekIndex} (${w.weekStart} إلى ${w.weekEnd}) — [${w.totalHours} ساعة]`
+                        : `— Week ${w.weekIndex} (${w.weekStart} to ${w.weekEnd}) — [${w.totalHours} hrs]`,
+                      size: 24,
+                      color: '2F6B4F',
+                      underline: {}
+                    })
+                  ]
+                })
+              ]
+            })
+          ),
+
+          createTOCLink('sec_skills', isAr ? '• 4. المعارف والمهارات والتجارب المكتسبة' : '• 4. Acquired Knowledge & Technical Skills', isAr),
+          createTOCLink('sec_conclusion', isAr ? '• 5. الخاتمة والتوصيات العامة' : '• 5. Conclusion & Recommendations', isAr),
+
+          // ==========================================
+          // SECTION 1: INTRODUCTION
+          // ==========================================
           new Paragraph({
             pageBreakBefore: true,
             heading: HeadingLevel.HEADING_1,
             bidirectional: isAr,
-            spacing: { before: 300, after: 200 },
+            spacing: { before: 400, after: 200 },
             children: [
-              new TextRun({
-                text: isAr ? '1. المقدمة وأهداف التدريب' : '1. Introduction & Training Objectives',
-                bold: true,
-                size: 32,
-                color: 'C8102E'
+              new Bookmark({
+                id: 'sec_intro',
+                children: [
+                  new TextRun({
+                    text: isAr ? '1. المقدمة وأهداف التدريب التعاوني' : '1. Introduction & Training Objectives',
+                    bold: true,
+                    size: 32,
+                    color: 'C8102E'
+                  })
+                ]
               })
             ]
           }),
@@ -232,23 +245,30 @@ export async function generateAcademicDocx(reportData: FinalReportData, lang: 'a
             children: [
               new TextRun({
                 text: profile.introText || (isAr
-                  ? 'يمثل التدريب التعاوني ركيزة أساسية لربط المناهج والعلوم الأكاديمية بالتطبيقات العملية في سوق العمل...'
-                  : 'Cooperative training represents an essential pillar bridging academic curriculum with industry standards...')
+                  ? 'يمثل التدريب التعاوني ركيزة جوهرية لربط المناهج والعلوم الأكاديمية بالتطبيقات العملية في سوق العمل...'
+                  : 'Cooperative training represents an essential pillar bridging academic curriculum with industry applications...')
               })
             ]
           }),
 
-          // Section 2: Organization Overview
+          // ==========================================
+          // SECTION 2: ORGANIZATION OVERVIEW
+          // ==========================================
           new Paragraph({
             heading: HeadingLevel.HEADING_1,
             bidirectional: isAr,
-            spacing: { before: 400, after: 200 },
+            spacing: { before: 500, after: 200 },
             children: [
-              new TextRun({
-                text: isAr ? '2. التعريف بجهة التدريب وطبيعة العمل' : '2. Organization Overview',
-                bold: true,
-                size: 32,
-                color: 'C8102E'
+              new Bookmark({
+                id: 'sec_entity',
+                children: [
+                  new TextRun({
+                    text: isAr ? '2. التعريف بجهة التدريب وطبيعة العمل' : '2. Organization Overview',
+                    bold: true,
+                    size: 32,
+                    color: 'C8102E'
+                  })
+                ]
               })
             ]
           }),
@@ -258,59 +278,80 @@ export async function generateAcademicDocx(reportData: FinalReportData, lang: 'a
             children: [
               new TextRun({
                 text: profile.entityIntroText || (isAr
-                  ? 'تعد شركة هواوي من الشركات العالمية الرائدة في توفير البنية التحتية لتقنية المعلومات والاتصالات...'
-                  : 'Huawei is a leading global provider of information and communications technology (ICT) infrastructure...')
+                  ? 'تعد شركة هواوي السعودية من الشركات العالمية الرائدة في توفير البنية التحتية لتقنية المعلومات والاتصالات...'
+                  : 'Huawei Tech Saudi is a leading global provider of ICT infrastructure and smart devices...')
               })
             ]
           }),
 
-          // Section 3: Timeline & Weeks
+          // ==========================================
+          // SECTION 3: DETAILED TIMELINE (WEEKS)
+          // ==========================================
           new Paragraph({
             pageBreakBefore: true,
             heading: HeadingLevel.HEADING_1,
             bidirectional: isAr,
             spacing: { before: 400, after: 200 },
             children: [
-              new TextRun({
-                text: isAr ? '3. السجل الزمني والتفصيلي للتدريب' : '3. Detailed Training Timeline',
-                bold: true,
-                size: 32,
-                color: 'C8102E'
+              new Bookmark({
+                id: 'sec_timeline',
+                children: [
+                  new TextRun({
+                    text: isAr ? '3. السجل الزمني والتفصيلي للتدريب الأسبوعي' : '3. Detailed Training Timeline & Weekly Logs',
+                    bold: true,
+                    size: 32,
+                    color: 'C8102E'
+                  })
+                ]
               })
             ]
           }),
 
-          ...weeks.flatMap(w => [
+          // Each week on its own distinct page with individual bookmarks!
+          ...weeks.flatMap((w) => [
             new Paragraph({
+              pageBreakBefore: true, // Guarantees distinct page for each week!
               heading: HeadingLevel.HEADING_2,
               bidirectional: isAr,
-              spacing: { before: 300, after: 150 },
+              spacing: { before: 300, after: 200 },
               children: [
-                new TextRun({
-                  text: isAr
-                    ? `الأسبوع ${w.weekIndex} (${w.weekStart} — ${w.weekEnd}) | إجمالي: ${w.totalHours} ساعة`
-                    : `Week ${w.weekIndex} (${w.weekStart} — ${w.weekEnd}) | Total: ${w.totalHours} hrs`,
-                  bold: true,
-                  size: 28,
-                  color: '2F6B4F'
+                new Bookmark({
+                  id: `week_${w.weekIndex}`,
+                  children: [
+                    new TextRun({
+                      text: isAr
+                        ? `الأسبوع ${w.weekIndex}: الفترة من ${w.weekStart} إلى ${w.weekEnd} [إجمالي: ${w.totalHours} ساعة]`
+                        : `Week ${w.weekIndex}: From ${w.weekStart} to ${w.weekEnd} [Total: ${w.totalHours} hrs]`,
+                      bold: true,
+                      size: 28,
+                      color: '2F6B4F'
+                    })
+                  ]
                 })
               ]
             }),
             createWeekEntriesTable(w.entries, isAr)
           ]),
 
-          // Section 4: Skills
+          // ==========================================
+          // SECTION 4: SKILLS ACQUIRED
+          // ==========================================
           new Paragraph({
             pageBreakBefore: true,
             heading: HeadingLevel.HEADING_1,
             bidirectional: isAr,
             spacing: { before: 400, after: 200 },
             children: [
-              new TextRun({
-                text: isAr ? '4. المعارف والمهارات والتجارب المكتسبة' : '4. Acquired Knowledge & Competencies',
-                bold: true,
-                size: 32,
-                color: 'C8102E'
+              new Bookmark({
+                id: 'sec_skills',
+                children: [
+                  new TextRun({
+                    text: isAr ? '4. المعارف والمهارات والتجارب المكتسبة' : '4. Acquired Competencies & Technical Skills',
+                    bold: true,
+                    size: 32,
+                    color: 'C8102E'
+                  })
+                ]
               })
             ]
           }),
@@ -320,23 +361,30 @@ export async function generateAcademicDocx(reportData: FinalReportData, lang: 'a
             children: [
               new TextRun({
                 text: profile.skillsText || (isAr
-                  ? 'من خلال فترة التدريب في بيئة عمل هواوي، تم اكتساب مهارات تقنية متقدمة...'
-                  : 'Through the training period at Huawei, advanced technical and professional skills were developed...')
+                  ? 'خلال فترة التدريب التعاوني في بيئة عمل هواوي، تم اكتساب مهارات تقنية متقدمة...'
+                  : 'Throughout the cooperative training at Huawei, advanced technical competencies were attained...')
               })
             ]
           }),
 
-          // Section 5: Conclusion
+          // ==========================================
+          // SECTION 5: CONCLUSION
+          // ==========================================
           new Paragraph({
             heading: HeadingLevel.HEADING_1,
             bidirectional: isAr,
-            spacing: { before: 400, after: 200 },
+            spacing: { before: 500, after: 200 },
             children: [
-              new TextRun({
-                text: isAr ? '5. الخاتمة والتوصيات' : '5. Conclusion & Recommendations',
-                bold: true,
-                size: 32,
-                color: 'C8102E'
+              new Bookmark({
+                id: 'sec_conclusion',
+                children: [
+                  new TextRun({
+                    text: isAr ? '5. الخاتمة والتوصيات' : '5. Conclusion & Recommendations',
+                    bold: true,
+                    size: 32,
+                    color: 'C8102E'
+                  })
+                ]
               })
             ]
           }),
@@ -346,8 +394,8 @@ export async function generateAcademicDocx(reportData: FinalReportData, lang: 'a
             children: [
               new TextRun({
                 text: profile.conclusionText || (isAr
-                  ? 'في ختام هذا التقرير، أتقدم بجزيل الشكر لشركة هواوي والكلية على إتاحة هذه الفرصة المثمرة...'
-                  : 'In conclusion, I would like to express my sincere appreciation to Huawei and the academic institution...')
+                  ? 'في ختام هذا التقرير، نرفع أسمى آيات الشكر والتقدير لشركة هواوي السعودية...'
+                  : 'In conclusion, I would like to express my highest gratitude to Huawei Tech Saudi...')
               })
             ]
           })
@@ -357,6 +405,27 @@ export async function generateAcademicDocx(reportData: FinalReportData, lang: 'a
   });
 
   return await Packer.toBuffer(doc);
+}
+
+function createTOCLink(anchorId: string, title: string, isAr: boolean): Paragraph {
+  return new Paragraph({
+    bidirectional: isAr,
+    spacing: { before: 80, after: 80 },
+    children: [
+      new InternalHyperlink({
+        anchor: anchorId,
+        children: [
+          new TextRun({
+            text: title,
+            bold: true,
+            size: 26,
+            color: '1B1B18',
+            underline: {}
+          })
+        ]
+      })
+    ]
+  });
 }
 
 function createMetaTable(
@@ -374,8 +443,8 @@ function createMetaTable(
     [isAr ? 'المشرف الأكاديمي بالكلية' : 'Academic Supervisor', p.supervisorName || '—'],
     [isAr ? 'المسؤول عن التدريب بالجهة' : 'Field Supervisor (Huawei)', p.responsibleName || '—'],
     [isAr ? 'جهة التدريب' : 'Host Organization', p.entityAddress || 'هواوي السعودية (Huawei Tech Saudi)'],
-    [isAr ? 'إجمالي الساعات المسجلة' : 'Total Certified Hours', `${totalHours} ${isAr ? 'ساعة' : 'hours'}`],
-    [isAr ? 'إجمالي أيام العمل' : 'Total Work Days', `${totalDays} ${isAr ? 'يوم' : 'days'}`],
+    [isAr ? 'إجمالي الساعات المعتمدة' : 'Total Certified Hours', `${totalHours} ${isAr ? 'ساعة' : 'hours'}`],
+    [isAr ? 'إجمالي أيام العمل الفعلي' : 'Total Work Days', `${totalDays} ${isAr ? 'يوم' : 'days'}`],
     [isAr ? 'إجمالي المهام المنجزة' : 'Total Completed Tasks', `${totalEntries}`]
   ];
 
@@ -433,7 +502,7 @@ function createWeekEntriesTable(entries: FinalReportData['weeks'][0]['entries'],
   });
 
   const rows = entries.map(
-    e =>
+    (e) =>
       new TableRow({
         children: [
           new TableCell({

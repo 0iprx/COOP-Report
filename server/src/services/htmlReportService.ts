@@ -25,6 +25,9 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
       --ok: #2F6B4F;
       --ok-bg: #E5F1EA;
     }
+    html {
+      scroll-behavior: smooth;
+    }
     * { box-sizing: border-box; }
     body {
       margin: 0;
@@ -44,8 +47,8 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
       background: var(--card);
       border: 1px solid var(--line);
       border-radius: 12px;
-      padding: 48px;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.04);
+      padding: 56px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
     }
     .cover {
       text-align: center;
@@ -55,9 +58,9 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
     }
     .cover h1 {
       color: var(--accent);
-      font-size: 28px;
+      font-size: 30px;
       font-weight: 800;
-      margin: 12px 0;
+      margin: 14px 0;
     }
     .cover .subtitle {
       font-size: 18px;
@@ -71,11 +74,11 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
       gap: 12px;
       text-align: ${isAr ? 'right' : 'left'};
       background: #FAFAFA;
-      padding: 20px;
+      padding: 22px;
       border-radius: 8px;
       border: 1px solid var(--line);
       margin-top: 24px;
-      font-size: 14px;
+      font-size: 13.5px;
     }
     .meta-item b {
       color: var(--sub);
@@ -86,29 +89,39 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
       background: #FCFBF9;
       border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 20px 24px;
+      padding: 24px;
       margin-bottom: 36px;
     }
     .toc h3 {
       margin-top: 0;
       color: var(--accent);
       font-size: 18px;
-      border-bottom: 1px solid var(--line);
+      font-weight: 800;
+      border-bottom: 2px solid var(--accent);
       padding-bottom: 8px;
     }
     .toc a {
       color: var(--ink);
       text-decoration: none;
       display: block;
-      padding: 4px 0;
-      font-size: 14.5px;
-      font-weight: 500;
+      padding: 6px 0;
+      font-size: 14px;
+      font-weight: 600;
+      border-bottom: 1px dashed #EAE8E0;
+      transition: color 0.15s;
     }
     .toc a:hover {
       color: var(--accent);
     }
     .toc-sub {
-      padding-${isAr ? 'right' : 'left'}: 20px;
+      padding-${isAr ? 'right' : 'left'}: 24px;
+    }
+    .toc-sub a {
+      font-size: 13px;
+      color: var(--sub);
+    }
+    .toc-sub a:hover {
+      color: var(--accent);
     }
     h2.section-title {
       font-size: 20px;
@@ -119,10 +132,11 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
       margin-top: 40px;
     }
     .week-block {
-      margin-bottom: 28px;
+      margin-bottom: 32px;
       border: 1px solid var(--line);
       border-radius: 8px;
       overflow: hidden;
+      page-break-inside: avoid;
     }
     .week-header {
       background: #F8F9FA;
@@ -132,6 +146,7 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
       display: flex;
       justify-content: space-between;
       color: var(--ok);
+      font-size: 14px;
     }
     table.entries-table {
       width: 100%;
@@ -171,19 +186,27 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
       background: var(--accent);
       color: white;
       border: none;
-      padding: 8px 16px;
-      border-radius: 6px;
+      padding: 9px 18px;
+      border-radius: 7px;
       font-family: inherit;
-      font-size: 13px;
+      font-size: 13.5px;
       font-weight: 700;
       cursor: pointer;
     }
+    .page-break {
+      page-break-before: always;
+      break-before: page;
+    }
     @media print {
+      @page {
+        margin: 2.5cm;
+        size: A4 portrait;
+      }
       body { background: white; }
       .container { max-width: 100%; margin: 0; padding: 0; }
       .report-paper { border: none; box-shadow: none; padding: 0; }
       .print-bar { display: none; }
-      .page-break { page-break-before: always; }
+      .week-block { break-inside: avoid; }
     }
   </style>
 </head>
@@ -194,14 +217,14 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
     </div>
     <div class="report-paper">
       <!-- Cover -->
-      <div class="cover" id="cover">
+      <div class="cover" id="sec-cover">
         <div style="font-size: 13px; color: var(--sub); font-weight: 700; margin-bottom: 4px;">
           ${isAr ? 'المملكة العربية السعودية' : 'Kingdom of Saudi Arabia'}
         </div>
         <div style="font-size: 15px; color: var(--ink); font-weight: 700;">
           ${profile.trainingUnit || (isAr ? 'الوحدة التدريبية / الكلية' : 'Academic Institution')}
         </div>
-        <h1>${isAr ? 'التقرير النهائي للتدريب التعاوني (Co-op)' : 'Cooperative Training Final Report'}</h1>
+        <h1>${isAr ? 'التقرير النهائي للتدريب التعاوني (Co-op Report)' : 'Cooperative Training Final Report'}</h1>
         <div class="subtitle">${profile.entityAddress || (isAr ? 'هواوي السعودية (Huawei Tech Saudi)' : 'Huawei Tech Saudi')}</div>
         
         <div class="meta-grid">
@@ -209,23 +232,23 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
           <div class="meta-item"><b>${isAr ? 'الرقم التدريبي:' : 'Training ID:'}</b> ${escapeHtml(profile.trainingNumber) || '—'}</div>
           <div class="meta-item"><b>${isAr ? 'القسم / التخصص:' : 'Department:'}</b> ${escapeHtml(profile.department) || '—'}</div>
           <div class="meta-item"><b>${isAr ? 'المشرف الأكاديمي:' : 'Academic Supervisor:'}</b> ${escapeHtml(profile.supervisorName) || '—'}</div>
-          <div class="meta-item"><b>${isAr ? 'المسؤول بالجهة:' : 'Field Supervisor:'}</b> ${escapeHtml(profile.responsibleName) || '—'}</div>
-          <div class="meta-item"><b>${isAr ? 'إجمالي الساعات المنجزة:' : 'Total Hours:'}</b> ${totalHours} ${isAr ? 'ساعة' : 'hrs'}</div>
+          <div class="meta-item"><b>${isAr ? 'المشرف الميداني:' : 'Field Supervisor:'}</b> ${escapeHtml(profile.responsibleName) || '—'}</div>
+          <div class="meta-item"><b>${isAr ? 'إجمالي الساعات المعتمدة:' : 'Total Hours:'}</b> ${totalHours} ${isAr ? 'ساعة' : 'hrs'}</div>
         </div>
       </div>
 
-      <!-- TOC -->
-      <div class="toc">
-        <h3>${isAr ? 'فهرس التقرير' : 'Table of Contents'}</h3>
-        <a href="#cover">${isAr ? 'صفحة الغلاف والبيانات الأساسية' : 'Cover & Basic Metadata'}</a>
-        <a href="#sec-intro">${isAr ? '1. المقدمة وأهداف التدريب' : '1. Introduction'}</a>
-        <a href="#sec-entity">${isAr ? '2. التعريف بجهة التدريب وطبيعة العمل' : '2. Organization Overview'}</a>
-        <a href="#sec-timeline">${isAr ? '3. الخطة والجدول الزمني للتدريب الأسبوعي' : '3. Training Timeline'}</a>
+      <!-- TOC (Clickable for Instant Seamless Navigation) -->
+      <div class="toc" id="sec-toc">
+        <h3>${isAr ? 'فهرس المحتويات (انقر للانتقال المباشر للقسم)' : 'Table of Contents (Click to Navigate)'}</h3>
+        <a href="#sec-cover">${isAr ? '• صفحة الغلاف والبيانات الأساسية' : '• Cover & Basic Metadata'}</a>
+        <a href="#sec-intro">${isAr ? '• 1. المقدمة وأهداف التدريب التعاوني' : '• 1. Introduction & Objectives'}</a>
+        <a href="#sec-entity">${isAr ? '• 2. التعريف بجهة التدريب وطبيعة العمل' : '• 2. Organization Overview'}</a>
+        <a href="#sec-timeline">${isAr ? '• 3. الخطة والجدول الزمني للتدريب الأسبوعي' : '• 3. Training Timeline & Weekly Breakdown'}</a>
         <div class="toc-sub">
-          ${weeks.map(w => `<a href="#week-${w.weekIndex}">${isAr ? 'الأسبوع' : 'Week'} ${w.weekIndex} (${w.weekStart} - ${w.weekEnd})</a>`).join('')}
+          ${weeks.map((w) => `<a href="#week-${w.weekIndex}">— ${isAr ? 'الأسبوع' : 'Week'} ${w.weekIndex} (${w.weekStart} إلى ${w.weekEnd}) [${w.totalHours} ${isAr ? 'ساعة' : 'hrs'}]</a>`).join('')}
         </div>
-        <a href="#sec-skills">${isAr ? '4. المعارف والمهارات والتجارب المكتسبة' : '4. Acquired Skills & Knowledge'}</a>
-        <a href="#sec-conclusion">${isAr ? '5. الخاتمة والتوصيات' : '5. Conclusion'}</a>
+        <a href="#sec-skills">${isAr ? '• 4. المعارف والمهارات والتجارب المكتسبة' : '• 4. Acquired Knowledge & Skills'}</a>
+        <a href="#sec-conclusion">${isAr ? '• 5. الخاتمة والتوصيات العامة' : '• 5. Conclusion & Recommendations'}</a>
       </div>
 
       <!-- Section 1 -->
@@ -235,7 +258,7 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
       <!-- Section 2 -->
       <h2 class="section-title" id="sec-entity">${isAr ? '2. التعريف بجهة التدريب وطبيعة العمل' : '2. Organization Overview'}</h2>
       <p>${escapeHtml(profile.entityIntroText)}</p>
-      <div style="background: #FAFAFA; padding: 12px 16px; border-radius: 6px; font-size: 13.5px; border: 1px solid var(--line); margin: 14px 0;">
+      <div style="background: #FAFAFA; padding: 14px 18px; border-radius: 6px; font-size: 13.5px; border: 1px solid var(--line); margin: 16px 0;">
         <b>${isAr ? 'المقر:' : 'Address:'}</b> ${escapeHtml(profile.entityAddress)} | 
         <b>${isAr ? 'عدد الموظفين:' : 'Employees:'}</b> ${escapeHtml(profile.employeesCount) || '—'} |
         <b>${isAr ? 'المشرف الميداني:' : 'Supervisor:'}</b> ${escapeHtml(profile.responsibleName) || '—'}
@@ -243,23 +266,23 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
 
       <!-- Section 3 -->
       <h2 class="section-title page-break" id="sec-timeline">${isAr ? '3. الخطة والجدول الزمني للتدريب الأسبوعي' : '3. Training Timeline'}</h2>
-      ${weeks.map(w => `
-        <div class="week-block" id="week-${w.weekIndex}">
+      ${weeks.map((w) => `
+        <div class="week-block page-break" id="week-${w.weekIndex}">
           <div class="week-header">
             <span>${isAr ? 'الأسبوع' : 'Week'} ${w.weekIndex} (${w.weekStart} — ${w.weekEnd})</span>
-            <span>${w.totalHours} ${isAr ? 'ساعة عمل' : 'hours'} | ${w.entries.length} ${isAr ? 'مهام' : 'tasks'}</span>
+            <span>${w.totalHours} ${isAr ? 'ساعة عمل معتمدة' : 'hours'} | ${w.entries.length} ${isAr ? 'مهام' : 'tasks'}</span>
           </div>
           <table class="entries-table">
             <thead>
               <tr>
                 <th style="width: 15%;">${isAr ? 'التاريخ' : 'Date'}</th>
-                <th style="width: 25%;">${isAr ? 'العنوان' : 'Title'}</th>
+                <th style="width: 25%;">${isAr ? 'العنوان / التصنيف' : 'Title / Category'}</th>
                 <th style="width: 15%;">${isAr ? 'الوقت' : 'Time'}</th>
                 <th style="width: 45%;">${isAr ? 'تفاصيل الإنجاز' : 'Details'}</th>
               </tr>
             </thead>
             <tbody>
-              ${w.entries.map(e => `
+              ${w.entries.map((e) => `
                 <tr>
                   <td>${formatDateArabic(e.entryDate)}</td>
                   <td><b>${escapeHtml(e.title)}</b><br><span class="badge">${escapeHtml(e.category)}</span></td>
@@ -277,7 +300,7 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
       <p>${escapeHtml(profile.skillsText)}</p>
 
       <!-- Section 5 -->
-      <h2 class="section-title" id="sec-conclusion">${isAr ? '5. الخاتمة والتوصيات' : '5. Conclusion & Recommendations'}</h2>
+      <h2 class="section-title page-break" id="sec-conclusion">${isAr ? '5. الخاتمة والتوصيات' : '5. Conclusion & Recommendations'}</h2>
       <p>${escapeHtml(profile.conclusionText)}</p>
 
       <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 13px; color: var(--sub); text-align: center;">

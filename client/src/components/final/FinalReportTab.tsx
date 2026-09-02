@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { FinalReportData, ProfileInput, DiffChunk, formatDateArabic } from '@coop/shared';
@@ -13,9 +13,14 @@ import {
   CheckCircle2,
   AlertTriangle,
   Languages,
-  Check
+  Check,
+  ShieldCheck,
+  UploadCloud,
+  FileCheck
 } from 'lucide-react';
 import { DiffModal } from '../common/DiffModal';
+
+const PROFILE_DRAFT_KEY = 'coop_profile_draft_v2';
 
 interface FinalReportTabProps {
   currentLang: 'ar' | 'en';
@@ -23,6 +28,7 @@ interface FinalReportTabProps {
 
 export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) => {
   const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Profile Form State
   const [profileData, setProfileData] = useState<ProfileInput>({
@@ -41,6 +47,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
   });
 
   const [saveToast, setSaveToast] = useState<string>('');
+  const [backupNotice, setBackupNotice] = useState<string>('');
 
   // AI Diff Modal State
   const [diffModalOpen, setDiffModalOpen] = useState<boolean>(false);
@@ -51,7 +58,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
   const [currentTargetField, setCurrentTargetField] = useState<keyof ProfileInput | null>(null);
   const [aiLoading, setAiLoading] = useState<boolean>(false);
 
-  // Fetch Report Profile
+  // Fetch Report Profile & Data
   const { data: reportData, isLoading } = useQuery<FinalReportData>({
     queryKey: ['finalReport'],
     queryFn: async () => {
@@ -79,6 +86,17 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
     }
   }, [reportData]);
 
+  // Auto-save draft for profile
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (profileData.introText || profileData.studentName) {
+        localStorage.setItem(PROFILE_DRAFT_KEY, JSON.stringify(profileData));
+      }
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [profileData]);
+
   // Save Profile Mutation
   const saveProfileMutation = useMutation({
     mutationFn: async (data: ProfileInput) => {
@@ -87,7 +105,8 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['finalReport'] });
-      setSaveToast('تم حفظ بيانات التقرير بنجاح');
+      setSaveToast('تم حفظ بيانات التقرير بنجاح وتحديث السجلات');
+      localStorage.removeItem(PROFILE_DRAFT_KEY);
       setTimeout(() => setSaveToast(''), 3000);
     }
   });
@@ -99,6 +118,34 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
     saveProfileMutation.mutate(profileData);
+  };
+
+  // Export Complete Backup Archive (SHA-256 Verified)
+  const handleExportBackup = () => {
+    window.open('/api/backup/export', '_blank');
+    setBackupNotice('تم تصدير وحفظ نسخة احتياطية مشفرة بـ SHA-256 محلياً على جهازك.');
+    setTimeout(() => setBackupNotice(''), 4500);
+  };
+
+  // Import Backup Archive
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const backupJson = JSON.parse(text);
+
+      const res = await api.post('/backup/import', backupJson);
+      queryClient.invalidateQueries({ queryKey: ['finalReport'] });
+      queryClient.invalidateQueries({ queryKey: ['entries'] });
+      setSaveToast(res.data.message || 'تم استرجاع النسخة الاحتياطية بنجاح!');
+      setTimeout(() => setSaveToast(''), 4000);
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'فشل استيراد النسخة الاحتياطية (تأكد من سلامة الملف)');
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   // AI Field Polish / Action
@@ -229,6 +276,60 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
           <span>{saveToast}</span>
         </div>
       )}
+
+      {/* Backup Notification */}
+      {backupNotice && (
+        <div className="p-3.5 rounded-xl bg-ok-bg border border-ok/30 text-ok text-xs font-bold flex items-center gap-2 animate-fade-in shadow-sm">
+          <ShieldCheck className="w-4 h-4 shrink-0" />
+          <span>{backupNotice}</span>
+        </div>
+      )}
+
+      {/* Hidden file input for backup restore */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleImportFile}
+        accept=".json"
+        className="hidden"
+      />
+
+      {/* Data Protection & Backup Toolbar Card */}
+      <div className="bg-card border border-line rounded-2xl p-5 shadow-sm no-print flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-ok-bg text-ok flex items-center justify-center font-bold">
+            <ShieldCheck className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-xs font-extrabold text-ink">نظام حماية البيانات ومنع التلف نهائياً</h3>
+            <p className="text-[11px] text-sub">
+              نسخ احتياطي فوري ومحمي برمز تحقق رقمي SHA-256 لضمان سلامة كافة مدخلاتك الأكاديمية
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleExportBackup}
+            className="px-3 py-1.5 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-colors flex items-center gap-1.5"
+            title="تصدير أرشيف كامل لبياناتك بملف JSON مع رمز تحقق رقمي"
+          >
+            <Download className="w-3.5 h-3.5 text-ok" />
+            <span>تصدير نسخة احتياطية آمنة</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="px-3 py-1.5 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-colors flex items-center gap-1.5"
+            title="استرجاع وتدقيق نسخة احتياطية سابقة"
+          >
+            <UploadCloud className="w-3.5 h-3.5 text-accent" />
+            <span>استيراد نسخة احتياطية</span>
+          </button>
+        </div>
+      </div>
 
       {/* Profile Form Card */}
       <div className="bg-card border border-line rounded-2xl p-6 shadow-sm no-print">
@@ -532,16 +633,16 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
           <button
             onClick={handleExportDocx}
             className="px-3.5 py-2 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-all flex items-center gap-1.5 shadow-sm"
-            title="تنزيل ملف Word (.docx) حقيقي منسق بالكامل"
+            title="تنزيل ملف Word (.docx) حقيقي مع فهرسة وإشارات مرجعية وروابط تنقل مباشرة بين الصفحات"
           >
             <Download className="w-4 h-4 text-accent" />
-            <span>تنزيل Word (.docx)</span>
+            <span>تنزيل Word مع الفهرسة الفعلية (.docx)</span>
           </button>
 
           <button
             onClick={handleExportHTML}
             className="px-3.5 py-2 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-all flex items-center gap-1.5 shadow-sm"
-            title="تنزيل تقرير HTML مستقل أوفلاين"
+            title="تنزيل تقرير HTML مستقل أوفلاين مع روابط تنقل سلسة"
           >
             <FileCode className="w-4 h-4 text-ok" />
             <span>تنزيل HTML مستقل</span>
@@ -550,7 +651,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
           <button
             onClick={handlePrintPDF}
             className="px-3.5 py-2 text-xs font-bold text-white bg-accent hover:bg-accent/90 rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
-            title="طباعة التقرير مباشرة أو حفظ كـ PDF"
+            title="طباعة التقرير مباشرة أو حفظ كـ PDF بفواصل صفحات قياسية"
           >
             <Printer className="w-4 h-4" />
             <span>طباعة / حفظ PDF</span>
@@ -558,18 +659,15 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
         </div>
       </div>
 
-      {/* Interactive Table of Contents (الفهرس التفاعلي) */}
+      {/* Interactive Table of Contents (الفهرس التفاعلي للانتقال الفعلي) */}
       <div className="bg-card border border-line rounded-2xl p-6 shadow-sm no-print">
         <h3 className="text-sm font-extrabold text-accent flex items-center gap-2 pb-3 mb-3 border-b border-line">
           <Bookmark className="w-4 h-4" />
-          <span>فهرس التقرير التفاعلي (Table of Contents)</span>
+          <span>فهرس التقرير التفاعلي (انقر للانتقال المباشر للقسم أو الأسبوع)</span>
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-6 text-xs font-bold">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2.5 gap-x-6 text-xs font-bold">
           <a href="#sec-cover" className="text-ink hover:text-accent transition-colors flex items-center gap-1.5">
             <span className="text-sub">•</span> صفحة الغلاف والبيانات الأساسية
-          </a>
-          <a href="#sec-toc" className="text-ink hover:text-accent transition-colors flex items-center gap-1.5">
-            <span className="text-sub">•</span> فهرس المحتويات
           </a>
           <a href="#sec-intro" className="text-ink hover:text-accent transition-colors flex items-center gap-1.5">
             <span className="text-sub">•</span> 1. المقدمة وأهمية التدريب
@@ -587,6 +685,24 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             <span className="text-sub">•</span> 5. الخاتمة والتوصيات
           </a>
         </div>
+
+        {/* Sub-links to individual weeks */}
+        {reportData?.weeks && reportData.weeks.length > 0 && (
+          <div className="mt-4 pt-3 border-t border-line">
+            <div className="text-[11px] font-bold text-sub mb-2">الانتقال المباشر لأسابيع التدريب:</div>
+            <div className="flex flex-wrap gap-2">
+              {reportData.weeks.map((w) => (
+                <a
+                  key={w.weekIndex}
+                  href={`#week-${w.weekIndex}`}
+                  className="px-2.5 py-1 bg-bg hover:bg-accent-dim hover:text-accent rounded-lg text-[11px] font-bold text-ink border border-line transition-colors"
+                >
+                  الأسبوع {w.weekIndex} ({w.totalHours} س)
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Report Paper Preview Container (Printable Document) */}
@@ -662,7 +778,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             <p className="text-sm text-sub">لا توجد إدخالات أسبوعية مسجلة بعد.</p>
           ) : (
             reportData.weeks.map((w) => (
-              <div key={w.weekIndex} className="border border-line rounded-xl overflow-hidden mb-6">
+              <div key={w.weekIndex} id={`week-${w.weekIndex}`} className="border border-line rounded-xl overflow-hidden mb-6 page-break">
                 <div className="bg-bg px-4 py-2.5 border-b border-line flex items-center justify-between text-xs font-bold text-ok">
                   <span>
                     الأسبوع {w.weekIndex} ({w.weekStart} — {w.weekEnd})
@@ -703,7 +819,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
         </div>
 
         {/* Section 5: Conclusion */}
-        <div id="sec-conclusion" className="space-y-3 pt-4">
+        <div id="sec-conclusion" className="space-y-3 pt-4 page-break">
           <h2 className="text-lg font-extrabold text-ink border-b-2 border-accent pb-1.5 inline-block">
             5. الخاتمة والتوصيات
           </h2>
