@@ -55,7 +55,18 @@ export async function buildFinalReportData(userId: number): Promise<FinalReportD
     orderBy: { entryDate: 'asc' }
   });
 
-  const entries: EntryDTO[] = entriesRaw.map(e => ({
+  const entries: EntryDTO[] = entriesRaw.map((e: {
+    id: number;
+    userId: number;
+    entryDate: string;
+    timeFrom: string;
+    timeTo: string;
+    title: string;
+    category: string;
+    description: string;
+    deletedAt: Date | null;
+    createdAt: Date;
+  }) => ({
     id: e.id,
     userId: e.userId,
     entryDate: e.entryDate,

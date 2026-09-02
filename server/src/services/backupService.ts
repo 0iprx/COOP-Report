@@ -1,8 +1,12 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { PrismaClient } from '@prisma/client';
 import { prisma } from '../db.js';
 import { logger } from '../logger.js';
+
+// Prisma interactive transaction client type
+type PrismaTxClient = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>;
 
 export interface ExportPayload {
   version: string;
@@ -61,13 +65,21 @@ export async function exportUserArchive(userId: number): Promise<{ backup: Backu
       createdAt: e.createdAt.toISOString()
     })),
     revisions: user.entries.flatMap((e) =>
-      e.revisions.map((r) => ({
+      e.revisions.map((r: {
+        entryId: number;
+        title: string;
+        category?: string | null;
+        description: string;
+        timeFrom?: string | null;
+        timeTo?: string | null;
+        createdAt: Date;
+      }) => ({
         entryId: r.entryId,
         title: r.title,
-        category: r.category,
+        category: r.category ?? null,
         description: r.description,
-        timeFrom: r.timeFrom,
-        timeTo: r.timeTo,
+        timeFrom: r.timeFrom ?? null,
+        timeTo: r.timeTo ?? null,
         createdAt: r.createdAt.toISOString()
       }))
     )
@@ -115,7 +127,7 @@ export async function importUserArchive(
   // Restore within an ACID database transaction
   let restoredCount = 0;
 
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx: PrismaTxClient) => {
     // 1. Restore/Update Profile
     if (payload.profile) {
       const { userId: _unused, id: _uid, ...profileData } = payload.profile;
