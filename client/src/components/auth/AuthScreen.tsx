@@ -4,12 +4,17 @@ import {
   ShieldCheck, UserCheck, AlertCircle,
   Lock, User, BookOpen, Sparkles,
   Eye, EyeOff, CheckCircle2, KeyRound,
-  Copy, Check
+  Copy, Check, X
 } from 'lucide-react';
 
-export const AuthScreen: React.FC = () => {
+export interface AuthScreenProps {
+  initialMode?: 'login' | 'register';
+  onClose?: () => void;
+}
+
+export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login', onClose }) => {
   const { login, register, demoLogin } = useAuth();
-  const [isLogin, setIsLogin]             = useState<boolean>(true);
+  const [isLogin, setIsLogin]             = useState<boolean>(initialMode === 'login');
   const [username, setUsername]           = useState<string>('');
   const [password, setPassword]           = useState<string>('');
   const [confirmPassword, setConfirmPass] = useState<string>('');
@@ -129,8 +134,18 @@ export const AuthScreen: React.FC = () => {
   const pwStrength = getPasswordStrength();
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-bg">
-      <div className="w-full max-w-md animate-slide-up">
+    <div className={`flex items-center justify-center p-4 sm:p-6 lg:p-8 ${onClose ? 'fixed inset-0 z-50 bg-black/60 backdrop-blur-xs overflow-y-auto' : 'min-h-screen bg-bg'}`}>
+      <div className="w-full max-w-md animate-slide-up relative">
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute top-2 left-2 p-2 rounded-xl bg-bg hover:bg-line text-sub hover:text-ink border border-line transition-all z-20"
+            title="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
 
         {/* ── Brand Header ─────────────────────────────────── */}
         <div className="text-center mb-6">
