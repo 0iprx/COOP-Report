@@ -281,8 +281,9 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
 <body>
   <div class="container">
     <div class="print-bar">
-      <span style="font-size: 13px; color: var(--sub);">
-        💡 ${isAr ? 'لطباعة نقية كـ PDF: ألغِ خيار (الرؤوس والتذييلات / Headers & Footers) في نافذة الطباعة لإخفاء الرابط والتاريخ.' : 'Tip: Uncheck "Headers and Footers" in print options to hide page URLs and dates.'}
+      <span style="font-size: 13px; color: var(--sub); display: inline-flex; align-items: center; gap: 6px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+        <span>${isAr ? 'لطباعة نقية كـ PDF: ألغِ خيار (الرؤوس والتذييلات / Headers & Footers) في نافذة الطباعة لإخفاء الرابط والتاريخ.' : 'Tip: Uncheck "Headers and Footers" in print options to hide page URLs and dates.'}</span>
       </span>
       <button class="btn" onclick="window.print()">${isAr ? 'طباعة التقرير / حفظ PDF' : 'Print / Save as PDF'}</button>
     </div>

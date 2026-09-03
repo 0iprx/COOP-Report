@@ -219,7 +219,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
       queryClient.invalidateQueries({ queryKey: ['finalReport'] });
       setSaveToast('تم حفظ بيانات التقرير بنجاح وتحديث السجلات');
       localStorage.removeItem(PROFILE_DRAFT_KEY);
-      recordVersion('تم الحفظ في قاعدة البيانات 💾', profileData);
+      recordVersion('تم الحفظ في قاعدة البيانات', profileData);
       setTimeout(() => setSaveToast(''), 3000);
     }
   });
@@ -268,7 +268,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
 
   // Manual Snapshot button
   const handleManualSnapshot = () => {
-    recordVersion('نسخة مثبتة يدوياً 📌', profileData);
+    recordVersion('نسخة مثبتة يدوياً', profileData);
     setSaveToast('تم حفظ لقطة جديدة في سجل الإصدارات');
     setTimeout(() => setSaveToast(''), 3000);
   };
@@ -386,7 +386,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
         }
       }
       setProfileData(updated);
-      recordVersion('بعد التدقيق الإملائي الشامل ✨', updated);
+      recordVersion('بعد التدقيق الإملائي الشامل', updated);
       saveProfileMutation.mutate(updated);
       setSaveToast('تم التدقيق الإملائي الشامل وحفظ النتائج بنجاح');
       setTimeout(() => setSaveToast(''), 3500);
@@ -419,7 +419,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
         }
       }
       setProfileData(updated);
-      recordVersion(`بعد الترجمة إلى (${targetLang}) 🌐`, updated);
+      recordVersion(`بعد الترجمة إلى (${targetLang})`, updated);
       saveProfileMutation.mutate(updated);
       setSaveToast(
         targetLang === 'en'
@@ -583,7 +583,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             type="button"
             onClick={handleManualSnapshot}
             className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-sub hover:text-ink bg-bg hover:bg-line border border-line transition-all"
-            title="حفظ لقطة إصدار حالية 📌"
+            title="حفظ لقطة إصدار حالية"
           >
             <Pin className="w-3.5 h-3.5" />
           </button>
@@ -1042,20 +1042,22 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             <button
               type="button"
               onClick={() => setPreviewLang('ar')}
-              className={`px-2.5 py-1 rounded-lg transition-all ${
+              className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1.5 ${
                 previewLang === 'ar' ? 'bg-accent text-white shadow-sm' : 'text-sub hover:text-ink'
               }`}
             >
-              العربية 🇸🇦
+              <Languages className="w-3.5 h-3.5" />
+              <span>العربية</span>
             </button>
             <button
               type="button"
               onClick={() => setPreviewLang('en')}
-              className={`px-2.5 py-1 rounded-lg transition-all ${
+              className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1.5 ${
                 previewLang === 'en' ? 'bg-accent text-white shadow-sm' : 'text-sub hover:text-ink'
               }`}
             >
-              English 🇬🇧
+              <Languages className="w-3.5 h-3.5" />
+              <span>English</span>
             </button>
           </div>
 
@@ -1351,8 +1353,9 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                           </span>
                         )}
                       </div>
-                      <div className="text-[11px] text-sub flex items-center gap-3">
-                        <span>🕒 {ver.timeFormatted}</span>
+                      <div className="text-[11px] text-sub flex items-center gap-2">
+                        <Clock className="w-3 h-3 text-sub shrink-0" />
+                        <span>{ver.timeFormatted}</span>
                         <span>•</span>
                         <span>{ver.wordCount} كلمة</span>
                       </div>

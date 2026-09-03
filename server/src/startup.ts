@@ -8,17 +8,17 @@ export async function syncDatabaseSchema(): Promise<void> {
   const dbUrl = resolveDatabaseUrl();
 
   if (!dbUrl) {
-    logger.warn('⚠️ No database connection information found (DB_HOST/DB_USER/DB_PASSWORD or DATABASE_URL).');
+    logger.warn('No database connection information found (DB_HOST/DB_USER/DB_PASSWORD or DATABASE_URL).');
     return;
   }
 
   process.env.DATABASE_URL = dbUrl;
-  logger.info('🔄 Checking database connection and schema synchronization...');
+  logger.info('Checking database connection and schema synchronization...');
 
   try {
     // 1. Test database connection
     await prisma.$queryRaw`SELECT 1`;
-    logger.info('✅ Database server is reachable.');
+    logger.info('Database server is reachable.');
 
     // 2. Automatically sync schema
     const schemaPath = path.resolve(process.cwd(), 'server/prisma/schema.prisma');
@@ -35,9 +35,9 @@ export async function syncDatabaseSchema(): Promise<void> {
           DATABASE_URL: dbUrl
         }
       });
-      logger.info('✅ Database schema synchronized successfully (all tables are ready).');
+      logger.info('Database schema synchronized successfully (all tables are ready).');
     }
   } catch (err: any) {
-    logger.warn({ err: err?.message }, '⚠️ Database connection test or schema sync skipped. The server will continue running.');
+    logger.warn({ err: err?.message }, 'Database connection test or schema sync skipped. The server will continue running.');
   }
 }
