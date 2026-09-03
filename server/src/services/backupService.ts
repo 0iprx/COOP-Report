@@ -37,6 +37,7 @@ export interface ExportPayload {
   profile: any;
   entries: any[];
   revisions: any[];
+  evidence?: any[];
 }
 
 export interface BackupPackage {
@@ -60,6 +61,9 @@ export async function exportUserArchive(userId: number): Promise<{ backup: Backu
         include: {
           revisions: true
         }
+      },
+      evidence: {
+        where: { deletedAt: null }
       }
     }
   });
@@ -92,7 +96,13 @@ export async function exportUserArchive(userId: number): Promise<{ backup: Backu
         description: r.description,
         createdAt: r.createdAt.toISOString()
       }))
-    )
+    ),
+    evidence: (user.evidence || []).map((ev) => ({
+      id: ev.id,
+      weekIndex: ev.weekIndex,
+      caption: ev.caption,
+      imageData: ev.imageData
+    }))
   };
 
   // Compute SHA-256 Checksum for zero corruption guarantee
@@ -177,6 +187,26 @@ export async function importUserArchive(
             }
           });
           restoredCount++;
+        }
+      }
+    }
+
+    // 3. Restore Weekly Evidence Photos
+    if (Array.isArray(payload.evidence)) {
+      for (const ev of payload.evidence) {
+        if (!ev.imageData) continue;
+        const existingEv = await tx.weeklyEvidence.findFirst({
+          where: { userId, weekIndex: ev.weekIndex, caption: ev.caption, deletedAt: null }
+        });
+        if (!existingEv) {
+          await tx.weeklyEvidence.create({
+            data: {
+              userId,
+              weekIndex: ev.weekIndex,
+              caption: ev.caption,
+              imageData: ev.imageData
+            }
+          });
         }
       }
     }

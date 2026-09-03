@@ -67,14 +67,14 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
     const token = jwt.sign(
       { userId: user.id, username: user.username, role: user.role },
       JWT_KEY,
-      { expiresIn: '7d' }
+      { expiresIn: '180d' }
     );
 
     res.cookie('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000
+      maxAge: 180 * 24 * 60 * 60 * 1000
     });
 
     logger.info({ userId: user.id, username: user.username, role: user.role }, 'User registered successfully');
@@ -123,14 +123,14 @@ router.post('/login', authLimiter, async (req: Request, res: Response): Promise<
     const token = jwt.sign(
       { userId: user.id, username: user.username, role: user.role },
       JWT_KEY,
-      { expiresIn: '7d' }
+      { expiresIn: '180d' }
     );
 
     res.cookie('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000
+      maxAge: 180 * 24 * 60 * 60 * 1000
     });
 
     logger.info({ userId: user.id, username: user.username }, 'User logged in successfully');
