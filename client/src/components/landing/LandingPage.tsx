@@ -114,51 +114,46 @@ export const LandingPage: React.FC<{ onOpenTestDev?: () => void }> = ({ onOpenTe
       
       {/* ── 1. Floating Top Navigation Bar ──────────────────────────────────── */}
       <header className="sticky top-3 z-50 px-3 sm:px-6">
-        <div className="max-w-7xl mx-auto backdrop-blur-xl bg-card/90 border border-line shadow-sm rounded-2xl px-4 sm:px-6 h-16 flex items-center justify-between transition-all">
+        <div className="max-w-7xl mx-auto backdrop-blur-xl bg-card/95 border border-line shadow-sm rounded-2xl px-4 sm:px-6 h-16 flex items-center justify-between gap-4 transition-all">
           
           {/* Brand Identity */}
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-accent text-white flex items-center justify-center font-black shadow-sm text-xs tracking-tighter">
+          <div className="flex items-center gap-2.5 shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-accent text-white flex items-center justify-center font-black shadow-sm text-xs tracking-tighter">
               COOP
             </div>
-            <div>
-              <div className="font-extrabold text-sm tracking-tight text-ink flex items-center gap-2">
-                <span>COOP.Report</span>
-                <span className="hidden sm:inline-block text-[10px] px-2 py-0.5 rounded-md bg-surface text-sub font-bold border border-line">
-                  {t('مساعد التدريب التعاوني', 'Co-op Assistant')}
-                </span>
-              </div>
-            </div>
+            <span className="font-extrabold text-sm tracking-tight text-ink">
+              COOP.Report
+            </span>
           </div>
 
-          {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-sub">
-            <a href="#how-it-helps" className="hover:text-ink transition-colors">{t('كيف يساعدك؟', 'How It Helps')}</a>
-            <a href="#story" className="hover:text-ink transition-colors font-bold text-accent">{t('قصة المشروع والحل', 'Project Story & Solution')}</a>
-            <a href="#timeline" className="hover:text-ink transition-colors">{t('متابعة الأسابيع الـ 14', '14 Weeks Tracking')}</a>
-            <a href="#preview" className="hover:text-ink transition-colors">{t('معاينة التقارير والشرائح', 'Report & Slides')}</a>
-            <a href="#faq" className="hover:text-ink transition-colors">{t('الأسئلة الشائعة', 'FAQ')}</a>
+          {/* Desktop Navigation Links - Spacious, concise, zero line-wrapping */}
+          <nav className="hidden lg:flex items-center gap-6 xl:gap-8 text-xs font-semibold text-sub shrink-0">
+            <a href="#how-it-helps" className="hover:text-ink transition-colors whitespace-nowrap">{t('المميزات', 'Features')}</a>
+            <a href="#story" className="hover:text-accent transition-colors font-bold text-accent whitespace-nowrap">{t('قصة المشروع', 'Project Story')}</a>
+            <a href="#timeline" className="hover:text-ink transition-colors whitespace-nowrap">{t('الأسابيع الـ 14', '14 Weeks')}</a>
+            <a href="#preview" className="hover:text-ink transition-colors whitespace-nowrap">{t('التقارير والشرائح', 'Reports & Slides')}</a>
+            <a href="#faq" className="hover:text-ink transition-colors whitespace-nowrap">{t('الأسئلة الشائعة', 'FAQ')}</a>
             {onOpenTestDev && (
               <button
                 onClick={handleOpenSandbox}
-                className="text-xs font-bold text-accent hover:underline flex items-center gap-1"
+                className="text-xs font-bold text-accent hover:underline flex items-center gap-1 whitespace-nowrap"
               >
-                <span>{t('مختبر الفحص (/testdev)', 'Sandbox (/testdev)')}</span>
-                <ArrowUpRight className="w-3.5 h-3.5" />
+                <span>{t('المختبر (/testdev)', 'Sandbox (/testdev)')}</span>
+                <ArrowUpRight className="w-3 h-3" />
               </button>
             )}
           </nav>
 
           {/* Explicit Language Switcher & Action Buttons */}
-          <div className="hidden sm:flex items-center gap-2.5">
+          <div className="hidden lg:flex items-center gap-3 shrink-0">
             {/* Explicit Arabic / English Buttons */}
-            <div className="inline-flex p-0.5 bg-surface border border-line rounded-xl text-xs font-bold shadow-2xs">
+            <div className="inline-flex p-0.5 bg-surface border border-line rounded-xl text-xs font-bold shadow-2xs shrink-0">
               <button
                 type="button"
                 onClick={() => setLang('ar')}
-                className={`px-3 py-1 rounded-lg transition-all ${
+                className={`px-2.5 py-1 rounded-lg transition-all text-[11px] ${
                   lang === 'ar'
-                    ? 'bg-accent text-white shadow-xs font-extrabold'
+                    ? 'bg-accent text-white shadow-2xs font-extrabold'
                     : 'text-sub hover:text-ink'
                 }`}
                 title="تحويل الموقع بالكامل إلى العربية"
@@ -168,9 +163,9 @@ export const LandingPage: React.FC<{ onOpenTestDev?: () => void }> = ({ onOpenTe
               <button
                 type="button"
                 onClick={() => setLang('en')}
-                className={`px-3 py-1 rounded-lg transition-all ${
+                className={`px-2.5 py-1 rounded-lg transition-all text-[11px] ${
                   lang === 'en'
-                    ? 'bg-accent text-white shadow-xs font-extrabold'
+                    ? 'bg-accent text-white shadow-2xs font-extrabold'
                     : 'text-sub hover:text-ink'
                 }`}
                 title="Switch entire website to English"
@@ -181,37 +176,45 @@ export const LandingPage: React.FC<{ onOpenTestDev?: () => void }> = ({ onOpenTe
 
             <button
               onClick={() => handleOpenAuth('login')}
-              className="px-3.5 py-2 text-xs font-bold text-ink hover:text-accent transition-colors"
+              className="px-3 py-1.5 text-xs font-bold text-ink hover:text-accent transition-colors whitespace-nowrap"
             >
               {t('تسجيل الدخول', 'Sign In')}
             </button>
             <button
               onClick={handleFastDemoLogin}
               disabled={demoLoading}
-              className="px-4 py-2 text-xs font-bold bg-accent text-white hover:bg-accent/90 rounded-xl transition-all shadow-sm flex items-center gap-1.5"
+              className="px-3.5 py-1.5 text-xs font-bold bg-accent text-white hover:bg-accent/90 rounded-xl transition-all shadow-xs flex items-center gap-1.5 shrink-0 whitespace-nowrap"
             >
-              <span>{demoLoading ? t('جارٍ التحميل...', 'Launching...') : t('تجربة فورية', 'Explore Demo')}</span>
+              <span>{demoLoading ? t('...', '...') : t('تجربة فورية', 'Demo')}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
 
-          {/* Mobile Menu & Language Toggle */}
-          <div className="sm:hidden flex items-center gap-2">
-            <button
-              onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
-              className="px-2.5 py-1 text-xs font-bold rounded-lg border border-line bg-surface text-ink"
-            >
-              {lang === 'ar' ? 'English' : 'عربي'}
-            </button>
+          {/* Mobile & Tablet Toggle Controls */}
+          <div className="lg:hidden flex items-center gap-2">
+            <div className="inline-flex p-0.5 bg-surface border border-line rounded-lg text-[11px] font-bold">
+              <button
+                onClick={() => setLang('ar')}
+                className={`px-2 py-0.5 rounded ${lang === 'ar' ? 'bg-accent text-white' : 'text-sub'}`}
+              >
+                عربي
+              </button>
+              <button
+                onClick={() => setLang('en')}
+                className={`px-2 py-0.5 rounded ${lang === 'en' ? 'bg-accent text-white' : 'text-sub'}`}
+              >
+                EN
+              </button>
+            </div>
             <button
               onClick={handleFastDemoLogin}
-              className="px-3 py-1 text-xs font-bold bg-accent text-white rounded-lg"
+              className="px-3 py-1.5 text-xs font-bold bg-accent text-white rounded-xl whitespace-nowrap"
             >
               {t('تجربة', 'Demo')}
             </button>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 text-ink hover:bg-line rounded-lg transition-colors"
+              className="p-2 text-ink hover:bg-line rounded-xl transition-colors"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -220,11 +223,11 @@ export const LandingPage: React.FC<{ onOpenTestDev?: () => void }> = ({ onOpenTe
 
         {/* Mobile Dropdown Menu */}
         {mobileMenuOpen && (
-          <div className="sm:hidden max-w-7xl mx-auto mt-2 bg-card border border-line rounded-2xl p-4 shadow-xl space-y-3 text-xs font-bold">
-            <a href="#how-it-helps" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sub hover:text-ink">{t('كيف يساعدك؟', 'How It Helps')}</a>
+          <div className="lg:hidden max-w-7xl mx-auto mt-2 bg-card border border-line rounded-2xl p-4 shadow-xl space-y-3 text-xs font-bold">
+            <a href="#how-it-helps" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sub hover:text-ink">{t('المميزات', 'Features')}</a>
             <a href="#story" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-accent font-bold">{t('قصة المشروع والحل', 'Project Story & Solution')}</a>
             <a href="#timeline" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sub hover:text-ink">{t('الأسابيع الـ 14', '14 Weeks Tracking')}</a>
-            <a href="#preview" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sub hover:text-ink">{t('معاينة التقارير', 'Report Preview')}</a>
+            <a href="#preview" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sub hover:text-ink">{t('معاينة التقارير والشرائح', 'Report & Slides')}</a>
             <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sub hover:text-ink">{t('الأسئلة الشائعة', 'FAQ')}</a>
             {onOpenTestDev && (
               <button
@@ -729,8 +732,9 @@ export const LandingPage: React.FC<{ onOpenTestDev?: () => void }> = ({ onOpenTe
                   )}
                 </p>
               </div>
-              <div className="p-3 bg-card rounded-xl border border-line/60 text-[11px] text-sub font-semibold">
-                {t('⚠️ النتيجة السابقة: ضغط نفسي وتخمين عشوائي بنهاية الفصل', '⚠️ The Old Reality: Extreme deadline panic & vague guessing')}
+              <div className="p-3 bg-card rounded-xl border border-line/60 text-[11px] text-sub font-semibold flex items-center gap-1.5">
+                <AlertCircle className="w-3.5 h-3.5 text-warn shrink-0" />
+                <span>{t('النتيجة السابقة: ضغط نفسي وتخمين عشوائي بنهاية الفصل', 'The Old Reality: Extreme deadline panic & vague guessing')}</span>
               </div>
             </div>
 
@@ -753,8 +757,9 @@ export const LandingPage: React.FC<{ onOpenTestDev?: () => void }> = ({ onOpenTe
                   )}
                 </p>
               </div>
-              <div className="p-3 bg-accent-dim/40 rounded-xl border border-accent/20 text-[11px] text-accent font-bold">
-                {t('⚡ تم البناء عبر: Data Agent + Office Agent + Academic Agent', '⚡ Engineered by: Data Agent + Office Agent + Academic Agent')}
+              <div className="p-3 bg-accent-dim/40 rounded-xl border border-accent/20 text-[11px] text-accent font-bold flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-accent shrink-0" />
+                <span>{t('تم البناء عبر: Data Agent + Office Agent + Academic Agent', 'Engineered by: Data Agent + Office Agent + Academic Agent')}</span>
               </div>
             </div>
 
@@ -785,8 +790,9 @@ export const LandingPage: React.FC<{ onOpenTestDev?: () => void }> = ({ onOpenTe
                   </li>
                 </ul>
               </div>
-              <div className="p-3 bg-ok-bg/50 rounded-xl border border-ok/30 text-[11px] text-ok font-bold">
-                {t('🎯 النتيجة: تقرير هندسي متكامل وعرض مناقشة جاهز دون ضغط', '🎯 Result: Flawless technical report & slides ready without stress')}
+              <div className="p-3 bg-ok-bg/50 rounded-xl border border-ok/30 text-[11px] text-ok font-bold flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-ok shrink-0" />
+                <span>{t('النتيجة: تقرير هندسي متكامل وعرض مناقشة جاهز دون ضغط', 'Result: Flawless technical report & slides ready without stress')}</span>
               </div>
             </div>
           </div>
