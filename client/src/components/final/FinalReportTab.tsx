@@ -59,6 +59,33 @@ function translateCategory(cat: string, isAr: boolean): string {
   return map[cat] || cat;
 }
 
+const toArabicIndic = (num: number | string): string => {
+  const arabicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+  return String(num).replace(/[0-9]/g, (w) => arabicDigits[+w]);
+};
+
+const getArabicWeekName = (index: number): string => {
+  const names = [
+    'الأسبوع الأول',
+    'الأسبوع الثاني',
+    'الأسبوع الثالث',
+    'الأسبوع الرابع',
+    'الأسبوع الخامس',
+    'الأسبوع السادس',
+    'الأسبوع السابع',
+    'الأسبوع الثامن',
+    'الأسبوع التاسع',
+    'الأسبوع العاشر',
+    'الأسبوع الحادي عشر',
+    'الأسبوع الثاني عشر',
+    'الأسبوع الثالث عشر',
+    'الأسبوع الرابع عشر',
+    'الأسبوع الخامس عشر',
+    'الأسبوع السادس عشر'
+  ];
+  return names[index - 1] || `الأسبوع ${index}`;
+};
+
 export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) => {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -122,6 +149,26 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
       const res = await api.get('/reports/final');
       return res.data;
     }
+  });
+
+  // Always guaranteed 14 weeks for the Table of Contents & Timeline
+  const weeksCount = profileData.trainingWeeks || 14;
+  const rawWeeks = reportData?.weeks || [];
+  const displayWeeks = rawWeeks.length > 0 ? rawWeeks : Array.from({ length: weeksCount }, (_, i) => {
+    const wIndex = i + 1;
+    const base = profileData.startDate ? new Date(profileData.startDate) : new Date();
+    const dStart = new Date(base.getTime() + i * 7 * 24 * 60 * 60 * 1000);
+    const dEnd = new Date(dStart.getTime() + 4 * 24 * 60 * 60 * 1000);
+    return {
+      weekIndex: wIndex,
+      weekStart: dStart.toISOString().split('T')[0],
+      weekEnd: dEnd.toISOString().split('T')[0],
+      totalHours: 0,
+      totalDays: 0,
+      status: 'pending' as const,
+      entries: [],
+      evidence: []
+    };
   });
 
   // Record a version snapshot
@@ -1167,31 +1214,65 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
           <a href="#sec-timeline" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
             <span className="group-hover:translate-x-[-2px] transition-transform">
               {isAr
-                ? `٣. الباب التدريبي: الخطة وسجل الأسابيع الـ (${profileData.trainingWeeks || 14} أسبوعاً)`
-                : `3. Training Timeline & Weekly Breakdown (${profileData.trainingWeeks || 14} Weeks)`}
+                ? `٣. الباب التدريبي: الخطة وسجل الأسابيع الـ (${displayWeeks.length} أسبوعاً)`
+                : `3. Training Timeline & Weekly Breakdown (${displayWeeks.length} Weeks)`}
             </span>
             <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
-            <span className="text-[#8B0000] font-black">{isAr ? '٤' : '4'}</span>
+            <span className="text-[#8B0000] font-black">{isAr ? toArabicIndic(4) : '4'}</span>
           </a>
 
-          {reportData?.weeks?.map((w, idx) => (
-            <a key={w.weekIndex} href={`#week-${w.weekIndex}`} className="flex items-baseline justify-between text-sub hover:text-accent pr-6 transition-colors group text-[11.5px]">
-              <span className="group-hover:translate-x-[-2px] transition-transform font-medium">
-                {isAr
-                  ? `• الأسبوع ${w.weekIndex} (${w.weekStart} إلى ${w.weekEnd}) — [إجمالي: ${w.totalHours} ساعة]`
-                  : `• Week ${w.weekIndex} (${w.weekStart} to ${w.weekEnd}) — [Total: ${w.totalHours} hrs]`}
-              </span>
-              <span className="flex-grow mx-3 border-b border-dotted border-line relative top-[-4px]"></span>
-              <span className="text-ok font-bold">{5 + idx * 2}</span>
-            </a>
-          ))}
+          {/* Child Weeks Tree Structure - Guaranteed for all 14 Weeks */}
+          <div className="space-y-1.5 pr-2 sm:pr-4 py-1">
+            {displayWeeks.map((w, idx) => {
+              const isLast = idx === displayWeeks.length - 1;
+              const treeSymbol = isLast ? '└──' : '├──';
+              const pageNum = 5 + idx * 2;
+              const hasEvidence = w.evidence && w.evidence.length > 0;
+
+              return (
+                <a
+                  key={w.weekIndex}
+                  href={`#week-${w.weekIndex}`}
+                  className="flex items-baseline justify-between text-sub hover:text-accent pr-3 pl-2 py-1 rounded-lg hover:bg-bg/60 transition-colors group text-[11.5px]"
+                >
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                    <span className="text-muted/60 font-mono text-[11px] select-none">{treeSymbol}</span>
+                    <span className="font-bold text-ink group-hover:text-accent transition-colors">
+                      {isAr ? getArabicWeekName(w.weekIndex) : `Week ${w.weekIndex}`}
+                    </span>
+                    <span className="text-muted text-[11px]">
+                      ({w.weekStart} {isAr ? 'إلى' : 'to'} {w.weekEnd})
+                    </span>
+                    {w.totalHours > 0 ? (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-ok-bg text-ok font-bold">
+                        {w.totalHours} {isAr ? 'ساعة' : 'hrs'}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-bg text-muted font-bold border border-line">
+                        {isAr ? 'متاح للتوثيق' : 'Pending'}
+                      </span>
+                    )}
+                    {w.evidence && w.evidence.length > 0 && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent-dim text-accent font-bold">
+                        {isAr ? `${w.evidence.length} صور توثيقية` : `${w.evidence.length} Photos`}
+                      </span>
+                    )}
+                  </div>
+                  <span className="flex-grow mx-3 border-b border-dotted border-line relative top-[-4px]"></span>
+                  <span className="text-ok font-bold shrink-0">
+                    {isAr ? toArabicIndic(pageNum) : pageNum}
+                  </span>
+                </a>
+              );
+            })}
+          </div>
 
           <a href="#sec-skills" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
             <span className="group-hover:translate-x-[-2px] transition-transform">
               {isAr ? '٤. المعارف والمهارات والتجارب المكتسبة' : '4. Acquired Competencies & Technical Skills'}
             </span>
             <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
-            <span className="text-[#8B0000] font-black">{5 + (reportData?.weeks?.length || 14) * 2}</span>
+            <span className="text-[#8B0000] font-black">{isAr ? toArabicIndic(5 + displayWeeks.length * 2) : 5 + displayWeeks.length * 2}</span>
           </a>
 
           <a href="#sec-conclusion" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
@@ -1199,7 +1280,15 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
               {isAr ? '٥. الخاتمة والتوصيات العامة' : '5. Conclusion & Recommendations'}
             </span>
             <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
-            <span className="text-[#8B0000] font-black">{6 + (reportData?.weeks?.length || 14) * 2}</span>
+            <span className="text-[#8B0000] font-black">{isAr ? toArabicIndic(6 + displayWeeks.length * 2) : 6 + displayWeeks.length * 2}</span>
+          </a>
+
+          <a href="#sec-approval" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
+            <span className="group-hover:translate-x-[-2px] transition-transform">
+              {isAr ? '٦. استمارة تقييم واعتماد المشرفين والملاحق' : '6. Supervisory Approval Form & Appendices'}
+            </span>
+            <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
+            <span className="text-[#8B0000] font-black">{isAr ? toArabicIndic(7 + displayWeeks.length * 2) : 7 + displayWeeks.length * 2}</span>
           </a>
         </div>
       </div>
@@ -1284,49 +1373,77 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             {isAr ? '3. الخطة والجدول الزمني للتدريب الأسبوعي' : '3. Weekly Training Timeline & Logs'}
           </h2>
 
-          {!reportData?.weeks?.length ? (
-            <p className="text-sm text-sub">{isAr ? 'لا توجد إدخالات أسبوعية مسجلة بعد.' : 'No weekly entries logged yet.'}</p>
-          ) : (
-            reportData.weeks.map((w) => (
-              <div key={w.weekIndex} id={`week-${w.weekIndex}`} className="scroll-mt-24 border border-line rounded-xl overflow-hidden mb-6 page-break">
-                <div className="bg-bg px-4 py-2.5 border-b border-line flex items-center justify-between text-xs font-bold text-ok">
+          {displayWeeks.map((w) => (
+            <div key={w.weekIndex} id={`week-${w.weekIndex}`} className="scroll-mt-24 border border-line rounded-xl overflow-hidden mb-6 page-break">
+              <div className="bg-bg px-4 py-2.5 border-b border-line flex items-center justify-between text-xs font-bold text-ok">
+                <span>
+                  {isAr ? getArabicWeekName(w.weekIndex) : `Week ${w.weekIndex}`} ({w.weekStart} — {w.weekEnd})
+                </span>
+                <span>
+                  {w.totalHours} {isAr ? 'ساعة عمل معتمدة' : 'hrs'} | {w.entries.length} {isAr ? 'مهام موثقة' : 'tasks'}
+                </span>
+              </div>
+              {w.entries.length === 0 ? (
+                <div className="p-4 text-center text-xs text-sub bg-card/50 flex items-center justify-center gap-2 font-medium">
+                  <Clock className="w-3.5 h-3.5 text-warn" />
                   <span>
-                    {isAr ? 'الأسبوع' : 'Week'} {w.weekIndex} ({w.weekStart} — {w.weekEnd})
-                  </span>
-                  <span>
-                    {w.totalHours} {isAr ? 'ساعة عمل' : 'hrs'} | {w.entries.length} {isAr ? 'مهام منجزة' : 'tasks'}
+                    {isAr
+                      ? 'أسبوع تدريبي مؤجل أو متاح للتوثيق والاستكمال لاحقاً'
+                      : 'Postponed or pending training week — available for updates anytime'}
                   </span>
                 </div>
-                {w.entries.length === 0 ? (
-                  <div className="p-4 text-center text-xs text-sub bg-card/50 flex items-center justify-center gap-2 font-medium">
-                    <Clock className="w-3.5 h-3.5 text-warn" />
-                    <span>
-                      {isAr
-                        ? 'أسبوع تدريبي مؤجل أو لم تُسجل مهام به بعد — متاح للتوثيق والاستكمال في أي وقت'
-                        : 'Postponed or pending training week — available for documentation anytime'}
-                    </span>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-line">
-                    {w.entries.map((entry) => (
-                      <div key={entry.id} className="p-4 text-xs space-y-1">
-                        <div className="flex items-center justify-between font-bold text-ink">
-                          <span>{entry.title}</span>
-                          <span className="text-sub font-normal">
-                            {isAr ? formatDateArabic(entry.entryDate) : formatDateEnglish(entry.entryDate)} ({entry.timeFrom} - {entry.timeTo})
-                          </span>
-                        </div>
-                        <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-accent-dim text-accent">
-                          {translateCategory(entry.category, isAr)}
+              ) : (
+                <div className="divide-y divide-line">
+                  {w.entries.map((entry) => (
+                    <div key={entry.id} className="p-4 text-xs space-y-1">
+                      <div className="flex items-center justify-between font-bold text-ink">
+                        <span>{entry.title}</span>
+                        <span className="text-sub font-normal">
+                          {isAr ? formatDateArabic(entry.entryDate) : formatDateEnglish(entry.entryDate)} ({entry.timeFrom} - {entry.timeTo})
                         </span>
-                        <p className="text-sub leading-relaxed whitespace-pre-wrap pt-1">{entry.description}</p>
+                      </div>
+                      <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-accent-dim text-accent">
+                        {translateCategory(entry.category, isAr)}
+                      </span>
+                      <p className="text-sub leading-relaxed whitespace-pre-wrap pt-1">{entry.description}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Weekly Field Evidence Photos */}
+              {w.evidence && w.evidence.length > 0 && (
+                <div className="p-4 bg-bg/40 border-t border-line space-y-2">
+                  <div className="text-[11px] font-bold text-accent">
+                    {isAr ? 'الصور التوثيقية والأدلة الميدانية للأسبوع:' : 'Weekly Evidence Photos:'}
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {w.evidence.map((ev) => (
+                      <div key={ev.id} className="border border-line rounded-lg overflow-hidden bg-card">
+                        <img src={ev.imageData} alt={ev.caption} className="w-full h-36 object-cover" />
+                        <div className="p-2 text-[11px] font-bold text-ink leading-snug">{ev.caption}</div>
                       </div>
                     ))}
                   </div>
-                )}
+                </div>
+              )}
+
+              {/* Weekly Supervisor Sign-off Box */}
+              <div className="p-3 bg-card border-t border-dashed border-line text-[11px] text-sub flex flex-wrap items-center justify-between gap-2">
+                <span>
+                  {isAr
+                    ? `اعتماد المشرف الميداني (${profileData.responsibleName || '....................'})`
+                    : `Field Supervisor Sign-off (${profileData.responsibleName || '....................'})`}
+                </span>
+                <span>
+                  {isAr ? 'التقييم: [  ] ممتاز   [  ] جيد جداً   [  ] جيد' : 'Rating: [  ] Excellent  [  ] Very Good  [  ] Good'}
+                </span>
+                <span>
+                  {isAr ? 'التوقيع: ....................' : 'Signature: ....................'}
+                </span>
               </div>
-            ))
-          )}
+            </div>
+          ))}
         </div>
 
         {/* Section 4: Skills */}
@@ -1347,6 +1464,37 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
           <p className="text-sm text-ink leading-loose whitespace-pre-wrap">
             {profileData.conclusionText || (isAr ? 'لم تُحدد الخاتمة بعد.' : 'No conclusion provided yet.')}
           </p>
+        </div>
+
+        {/* Section 6: Official Approval & Appendices */}
+        <div id="sec-approval" className="scroll-mt-24 space-y-4 pt-4 page-break">
+          <h2 className="text-lg font-extrabold text-ink border-b-2 border-accent pb-1.5 inline-block">
+            {isAr ? '6. استمارة تقييم واعتماد المشرفين والملاحق الأكاديمية' : '6. Supervisory Approval Form & Appendices'}
+          </h2>
+
+          <div className="border border-line rounded-xl overflow-hidden text-xs">
+            <div className="bg-bg p-3 font-bold text-ink border-b border-line flex justify-between">
+              <span>{isAr ? 'بيانات الاعتماد والتقييم النهائي الشامل' : 'Final Evaluation & Endorsement'}</span>
+              <span className="text-accent">{profileData.responsibleName || (isAr ? 'المشرف الميداني' : 'Field Supervisor')}</span>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sub">
+                <div><b>{isAr ? 'اسم المتدرب:' : 'Student Name:'}</b> {profileData.studentName || '—'}</div>
+                <div><b>{isAr ? 'الرقم التدريبي / الجامعي:' : 'ID / Trainee Number:'}</b> {profileData.trainingNumber || '—'}</div>
+                <div><b>{isAr ? 'جهة التدريب:' : 'Host Organization:'}</b> {profileData.entityAddress || '—'}</div>
+                <div><b>{isAr ? 'إجمالي الساعات المعتمدة:' : 'Total Approved Hours:'}</b> {reportData?.totalHours || 0} / {profileData.courseHours || 280} {isAr ? 'ساعة' : 'hrs'}</div>
+              </div>
+              <div className="border-t border-line pt-3 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <span className="font-bold text-ink">{isAr ? 'التقييم العام للمتدرب: ' : 'Overall Rating: '}</span>
+                  <span className="text-ok font-bold">{reportData?.profile?.supervisorRating || (isAr ? 'ممتاز (معتمد)' : 'Excellent')}</span>
+                </div>
+                <div className="text-muted">
+                  {isAr ? 'التوقيع والختم الرسمي: .......................................' : 'Official Signature & Stamp: .......................................'}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
