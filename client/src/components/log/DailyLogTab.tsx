@@ -50,6 +50,13 @@ export const DailyLogTab: React.FC = () => {
   const [activeEntryForRevisions, setActiveEntryForRevisions] = useState<EntryDTO | null>(null);
   const [entryRevisionsList, setEntryRevisionsList] = useState<any[]>([]);
 
+  // In-app non-blocking toast state
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
+
   // 1. Auto-save & Restore Draft (Zero Data Loss on typing)
   useEffect(() => {
     try {
@@ -153,7 +160,7 @@ export const DailyLogTab: React.FC = () => {
       setEntryRevisionsList(res.data.revisions || []);
       setRevisionsModalOpen(true);
     } catch {
-      alert('تعذر جلب سجل التعديلات');
+      showToast('تعذر جلب سجل التعديلات', 'error');
     }
   };
 
@@ -166,9 +173,9 @@ export const DailyLogTab: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['weekly'] });
       queryClient.invalidateQueries({ queryKey: ['finalReport'] });
       setRevisionsModalOpen(false);
-      alert('تم استرجاع النسخة السابقة بنجاح');
+      showToast('تم استرجاع النسخة السابقة بنجاح', 'success');
     } catch {
-      alert('تعذر استرجاع النسخة');
+      showToast('تعذر استرجاع النسخة', 'error');
     }
   };
 
@@ -486,9 +493,11 @@ export const DailyLogTab: React.FC = () => {
                   {/* Soft Delete */}
                   <button
                     onClick={() => {
-                      if (window.confirm('هل أنت متأكد من نقل هذا الإدخال إلى سلة المحذوفات؟ يمكنك استعادته في أي وقت.')) {
-                        deleteMutation.mutate(entry.id);
-                      }
+                      deleteMutation.mutate(entry.id, {
+                        onSuccess: () => {
+                          showToast('تم نقل الإدخال إلى سلة المحذوفات بنجاح (يمكن استعادته بأي وقت)', 'success');
+                        }
+                      });
                     }}
                     disabled={deleteMutation.isPending}
                     className="p-2 text-sub hover:text-accent rounded-lg hover:bg-bg transition-colors"
@@ -598,6 +607,26 @@ export const DailyLogTab: React.FC = () => {
         }}
         onClose={() => setDiffModalOpen(false)}
       />
+
+      {/* Floating In-App Toast */}
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 max-w-[90%] text-center animate-slide-up">
+          <div
+            className={`px-5 py-2.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-2 ${
+              toast.type === 'success'
+                ? 'bg-ink text-white'
+                : 'bg-accent text-white'
+            }`}
+          >
+            {toast.type === 'success' ? (
+              <Check className="w-4 h-4 text-ok shrink-0" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-white shrink-0" />
+            )}
+            <span>{toast.message}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

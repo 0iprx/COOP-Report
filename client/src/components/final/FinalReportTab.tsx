@@ -16,7 +16,8 @@ import {
   Check,
   ShieldCheck,
   UploadCloud,
-  FileCheck
+  FileCheck,
+  AlertCircle
 } from 'lucide-react';
 import { DiffModal } from '../common/DiffModal';
 
@@ -47,7 +48,13 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
   });
 
   const [saveToast, setSaveToast] = useState<string>('');
+  const [errorToast, setErrorToast] = useState<string>('');
   const [backupNotice, setBackupNotice] = useState<string>('');
+
+  const triggerError = (msg: string) => {
+    setErrorToast(msg);
+    setTimeout(() => setErrorToast(''), 4000);
+  };
 
   // AI Diff Modal State
   const [diffModalOpen, setDiffModalOpen] = useState<boolean>(false);
@@ -142,7 +149,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
       setSaveToast(res.data.message || 'تم استرجاع النسخة الاحتياطية بنجاح!');
       setTimeout(() => setSaveToast(''), 4000);
     } catch (err: any) {
-      alert(err.response?.data?.error || 'فشل استيراد النسخة الاحتياطية (تأكد من سلامة الملف)');
+      triggerError(err.response?.data?.error || 'فشل استيراد النسخة الاحتياطية (تأكد من سلامة الملف)');
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
@@ -155,7 +162,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
   ) => {
     const text = profileData[field];
     if (!text || !text.trim()) {
-      alert('الحقل لا يحتوي على نص كافٍ للمعالجة');
+      triggerError('الحقل لا يحتوي على نص كافٍ للمعالجة');
       return;
     }
 
@@ -183,7 +190,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
       setDiffChunks(res.data.diff || []);
       setDiffModalOpen(true);
     } catch {
-      alert('تعذر استدعاء المعالجة الذكية، يرجى المحاولة لاحقاً');
+      triggerError('تعذر استدعاء المعالجة الذكية، يرجى المحاولة لاحقاً');
     } finally {
       setAiLoading(false);
     }
@@ -211,7 +218,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
       setSaveToast('تم التدقيق الإملائي الشامل وحفظ النتائج بنجاح');
       setTimeout(() => setSaveToast(''), 3500);
     } catch {
-      alert('تعذر إكمال التدقيق الشامل');
+      triggerError('تعذر إكمال التدقيق الشامل');
     } finally {
       setAiLoading(false);
     }
@@ -245,7 +252,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
       );
       setTimeout(() => setSaveToast(''), 3500);
     } catch {
-      alert('تعذر إكمال الترجمة الذاتية للتقرير');
+      triggerError('تعذر إكمال الترجمة الذاتية للتقرير');
     } finally {
       setAiLoading(false);
     }
@@ -271,9 +278,16 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
     <div className="space-y-6">
       {/* Toast Notification */}
       {saveToast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-ink text-white px-5 py-2.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-2 z-50 animate-fade-in">
-          <Check className="w-4 h-4 text-ok" />
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-ink text-white px-5 py-2.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-2 z-50 animate-fade-in max-w-[90%] text-center">
+          <Check className="w-4 h-4 text-ok shrink-0" />
           <span>{saveToast}</span>
+        </div>
+      )}
+
+      {errorToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-accent text-white px-5 py-2.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-2 z-50 animate-fade-in max-w-[90%] text-center">
+          <AlertCircle className="w-4 h-4 text-white shrink-0" />
+          <span>{errorToast}</span>
         </div>
       )}
 

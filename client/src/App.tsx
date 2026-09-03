@@ -66,7 +66,7 @@ const MainDashboard: React.FC = () => {
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6">
 
         {/* ── Tab Navigation ──────────────────────────────── */}
-        <div className="tabs-container no-print flex items-center overflow-x-auto border-b border-line mb-6 gap-1">
+        <div className="tabs-container no-scrollbar no-print flex items-center overflow-x-auto border-b border-line mb-6 gap-1 px-1 sm:px-0">
           {tabs.map((tab) => (
             <button
               key={tab.id}

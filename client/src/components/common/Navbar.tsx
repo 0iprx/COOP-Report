@@ -23,7 +23,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentLang, onToggleLang }) => 
             <div className="font-black text-[1.05rem] tracking-tight text-ink leading-none flex items-baseline gap-2">
               <span>COOP Report</span>
               <span className="badge badge-accent hidden sm:inline-flex text-[10px] tracking-wide uppercase">
-                Huawei Co-op
+                Co-op Training
               </span>
             </div>
             <p className="text-[11px] text-muted hidden sm:block mt-0.5 leading-none">
@@ -40,11 +40,11 @@ export const Navbar: React.FC<NavbarProps> = ({ currentLang, onToggleLang }) => 
           {/* Language */}
           <button
             onClick={onToggleLang}
-            className="btn-ghost text-xs gap-1.5 hidden sm:inline-flex py-1.5"
+            className="btn-ghost text-xs gap-1.5 py-1.5 px-2.5"
             title="تبديل لغة العرض"
           >
             <Languages className="w-3.5 h-3.5 text-accent" />
-            <span>{currentLang === 'ar' ? 'English' : 'عربي'}</span>
+            <span className="text-[11px]">{currentLang === 'ar' ? 'English' : 'عربي'}</span>
           </button>
 
           {/* User Menu */}
