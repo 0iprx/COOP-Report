@@ -1,11 +1,42 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
-import { LogOut, Shield, User, BookOpen } from 'lucide-react';
+import { LogOut, Shield, User, BookOpen, ShieldCheck, Loader2 } from 'lucide-react';
+import { api } from '../../services/api';
 
 export const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
   const { lang, setLang, t } = useLanguage();
+  const [isDownloadingBackup, setIsDownloadingBackup] = useState(false);
+  const [backupToast, setBackupToast] = useState('');
+
+  // Emergency safety backup — a human-readable copy of every entry, downloadable
+  // anytime from day one, so the trainee always has everything on their own device
+  // even if the platform is unreachable.
+  const handleSafetyBackup = async () => {
+    if (isDownloadingBackup) return;
+    setIsDownloadingBackup(true);
+    try {
+      const res = await api.get('/backup/export-readable', { responseType: 'blob' });
+      const blob = new Blob([res.data], { type: 'text/html;charset=utf-8' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `COOP_Safety_Backup_${new Date().toISOString().slice(0, 10)}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      setBackupToast(
+        t('تم تنزيل نسختك الاحتياطية — احتفظ بها على جهازك.', 'Your safety backup was downloaded — keep it on your device.')
+      );
+    } catch {
+      setBackupToast(t('تعذر تنزيل النسخة الاحتياطية، حاول مجدداً.', 'Could not download the backup, please try again.'));
+    } finally {
+      setIsDownloadingBackup(false);
+      setTimeout(() => setBackupToast(''), 4000);
+    }
+  };
 
   return (
     <nav className="sticky top-0 z-40 border-b border-line glass">
@@ -31,6 +62,27 @@ export const Navbar: React.FC = () => {
 
         {/* ── Actions ──────────────────────────────────────── */}
         <div className="flex items-center gap-3">
+
+          {/* Emergency Safety Backup — always available, from day one */}
+          {user && user.role === 'trainee' && (
+            <button
+              type="button"
+              onClick={handleSafetyBackup}
+              disabled={isDownloadingBackup}
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-line bg-bg text-xs font-bold text-sub hover:text-accent hover:border-accent/40 transition-colors disabled:opacity-60"
+              title={t(
+                'تنزيل نسخة احتياطية قابلة للقراءة من كل ما سجّلته حتى الآن، احتياطاً لأي مشكلة في الموقع.',
+                'Download a readable safety copy of everything you have logged so far, in case the site ever has an issue.'
+              )}
+            >
+              {isDownloadingBackup ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <ShieldCheck className="w-3.5 h-3.5" />
+              )}
+              <span>{t('نسخة احتياطية', 'Safety Backup')}</span>
+            </button>
+          )}
 
           {/* Explicit Language Switcher: Arabic & English Buttons */}
           <div className="inline-flex p-0.5 bg-bg border border-line rounded-xl text-xs font-bold shadow-2xs">
@@ -93,6 +145,15 @@ export const Navbar: React.FC = () => {
           )}
         </div>
       </div>
+
+      {backupToast && (
+        <div className="fixed bottom-4 inset-x-0 z-50 flex justify-center px-4 pointer-events-none">
+          <div className="bg-ink text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2 animate-fade-in">
+            <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+            <span>{backupToast}</span>
+          </div>
+        </div>
+      )}
     </nav>
   );
 };

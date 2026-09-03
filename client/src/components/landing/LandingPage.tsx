@@ -23,8 +23,107 @@ import {
   Layers,
   Sparkles,
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
+  NotebookPen,
+  ImagePlus,
+  FileDown
 } from 'lucide-react';
+
+// ─── 3D Tilt Step Card ──────────────────────────────────────────────────────
+// A pointer-reactive card: tilts toward the cursor with a moving glare/shine
+// sweep and a floating depth layer for the step number, giving the "3 Steps"
+// section a tactile, physical feel instead of flat boxes.
+const TiltStepCard: React.FC<{
+  index: string;
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  isAr: boolean;
+}> = ({ index, icon, title, description, isAr }) => {
+  const cardRef = React.useRef<HTMLDivElement>(null);
+  const [tilt, setTilt] = useState<{ rx: number; ry: number; px: number; py: number }>({
+    rx: 0,
+    ry: 0,
+    px: 50,
+    py: 50
+  });
+  const [isHovering, setIsHovering] = useState(false);
+
+  const handleMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = cardRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const px = ((e.clientX - rect.left) / rect.width) * 100;
+    const py = ((e.clientY - rect.top) / rect.height) * 100;
+    const rx = (0.5 - py / 100) * 16; // rotateX: up/down tilt
+    const ry = (px / 100 - 0.5) * 18; // rotateY: left/right tilt
+    setTilt({ rx, ry, px, py });
+  };
+
+  const handleLeave = () => {
+    setIsHovering(false);
+    setTilt({ rx: 0, ry: 0, px: 50, py: 50 });
+  };
+
+  return (
+    <div style={{ perspective: '1000px' }}>
+      <div
+        ref={cardRef}
+        onMouseMove={handleMove}
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={handleLeave}
+        className="group relative p-6 bg-card border border-line rounded-2xl space-y-3 overflow-hidden cursor-default"
+        style={{
+          transform: `rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg) scale(${isHovering ? 1.035 : 1}) translateZ(0)`,
+          transformStyle: 'preserve-3d',
+          transition: isHovering ? 'transform 80ms ease-out' : 'transform 450ms cubic-bezier(0.22, 1, 0.36, 1)',
+          boxShadow: isHovering
+            ? '0 24px 40px -12px rgba(139, 0, 0, 0.28), 0 4px 10px rgba(0,0,0,0.06)'
+            : '0 1px 2px rgba(0,0,0,0.04)'
+        }}
+      >
+        {/* Moving glare sweep */}
+        <div
+          className="pointer-events-none absolute inset-0 rounded-2xl transition-opacity duration-300"
+          style={{
+            opacity: isHovering ? 1 : 0,
+            background: `radial-gradient(280px circle at ${tilt.px}% ${tilt.py}%, rgba(255,255,255,0.35), transparent 60%)`
+          }}
+        />
+        {/* Accent glow corner */}
+        <div
+          className="pointer-events-none absolute -top-10 -end-10 w-28 h-28 rounded-full bg-accent/10 blur-2xl transition-transform duration-500"
+          style={{ transform: isHovering ? 'scale(1.4)' : 'scale(1)' }}
+        />
+
+        <div
+          className="w-11 h-11 rounded-xl bg-accent text-white flex items-center justify-center font-black text-sm shadow-md relative"
+          style={{
+            transform: isHovering ? 'translateZ(40px) scale(1.08)' : 'translateZ(20px)',
+            transition: 'transform 300ms ease-out'
+          }}
+        >
+          {icon}
+          <span className="absolute -top-2 -end-2 w-5 h-5 rounded-full bg-ink text-white text-[10px] font-black flex items-center justify-center border-2 border-card">
+            {index}
+          </span>
+        </div>
+
+        <div style={{ transform: isHovering ? 'translateZ(24px)' : 'translateZ(0)', transition: 'transform 300ms ease-out' }}>
+          <h3 className="text-sm font-extrabold text-ink">{title}</h3>
+          <p className="text-xs text-sub leading-relaxed mt-1.5">{description}</p>
+        </div>
+
+        <div
+          className="absolute bottom-4 end-5 text-6xl font-black text-ink/[0.04] select-none pointer-events-none"
+          style={{ transform: isHovering ? 'translateZ(8px) scale(1.1)' : 'translateZ(0)', transition: 'transform 300ms ease-out' }}
+        >
+          {index}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const LandingPage: React.FC<{ onOpenTestDev?: () => void }> = ({ onOpenTestDev }) => {
   const { demoLogin } = useAuth();
@@ -661,45 +760,37 @@ export const LandingPage: React.FC<{ onOpenTestDev?: () => void }> = ({ onOpenTe
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-start">
-            <div className="p-6 bg-card border border-line rounded-2xl space-y-3">
-              <div className="w-8 h-8 rounded-lg bg-accent text-white flex items-center justify-center font-black text-xs">
-                01
-              </div>
-              <h3 className="text-sm font-extrabold text-ink">{t('سجّل مهام يومك', 'Log Your Tasks')}</h3>
-              <p className="text-xs text-sub leading-relaxed">
-                {t(
-                  'في نهاية كل يوم تدريبي، خصص دقيقتين لكتابة ما قمت به واختيار تصنيفه الفني.',
-                  'Take two minutes at the end of each training day to write down what you accomplished and pick a category.'
-                )}
-              </p>
-            </div>
-
-            <div className="p-6 bg-card border border-line rounded-2xl space-y-3">
-              <div className="w-8 h-8 rounded-lg bg-accent text-white flex items-center justify-center font-black text-xs">
-                02
-              </div>
-              <h3 className="text-sm font-extrabold text-ink">{t('أرفق صور الأدلة', 'Attach Photos')}</h3>
-              <p className="text-xs text-sub leading-relaxed">
-                {t(
-                  'التقط صوراً لبيئة عملك وخوادمك وإعداداتك واربطها بالأسبوع المناسب مع كتابة شرح مختصر.',
-                  'Add workspace setups, system photos, and diagram captures to keep visual evidence organized by week.'
-                )}
-              </p>
-            </div>
-
-            <div className="p-6 bg-card border border-line rounded-2xl space-y-3">
-              <div className="w-8 h-8 rounded-lg bg-accent text-white flex items-center justify-center font-black text-xs">
-                03
-              </div>
-              <h3 className="text-sm font-extrabold text-ink">{t('نزّل التقرير والشرائح', 'Download & Review')}</h3>
-              <p className="text-xs text-sub leading-relaxed">
-                {t(
-                  'صدّر مستند الوورد وشرائح العرض فوراً متى ما حان وقت التسليم أو المناقشة.',
-                  'Export your structured Word document and presentation slides whenever you need to submit or present.'
-                )}
-              </p>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-start" style={{ perspective: '1400px' }}>
+            <TiltStepCard
+              index="01"
+              icon={<NotebookPen className="w-[18px] h-[18px]" />}
+              isAr={isAr}
+              title={t('سجّل مهام يومك', 'Log Your Tasks')}
+              description={t(
+                'في نهاية كل يوم تدريبي، خصص دقيقتين لكتابة ما قمت به واختيار تصنيفه الفني.',
+                'Take two minutes at the end of each training day to write down what you accomplished and pick a category.'
+              )}
+            />
+            <TiltStepCard
+              index="02"
+              icon={<ImagePlus className="w-[18px] h-[18px]" />}
+              isAr={isAr}
+              title={t('أرفق صور الأدلة', 'Attach Photos')}
+              description={t(
+                'التقط صوراً لبيئة عملك وخوادمك وإعداداتك واربطها بالأسبوع المناسب مع كتابة شرح مختصر.',
+                'Add workspace setups, system photos, and diagram captures to keep visual evidence organized by week.'
+              )}
+            />
+            <TiltStepCard
+              index="03"
+              icon={<FileDown className="w-[18px] h-[18px]" />}
+              isAr={isAr}
+              title={t('نزّل التقرير والشرائح', 'Download & Review')}
+              description={t(
+                'صدّر مستند الوورد وشرائح العرض فوراً متى ما حان وقت التسليم أو المناقشة.',
+                'Export your structured Word document and presentation slides whenever you need to submit or present.'
+              )}
+            />
           </div>
         </div>
       </section>

@@ -1,0 +1,549 @@
+diff --git a/client/src/components/common/Navbar.tsx b/client/src/components/common/Navbar.tsx
+index 3ca672d..e8818a7 100644
+--- a/client/src/components/common/Navbar.tsx
++++ b/client/src/components/common/Navbar.tsx
+@@ -1,11 +1,42 @@
+-import React from 'react';
++import React, { useState } from 'react';
+ import { useAuth } from '../../context/AuthContext';
+ import { useLanguage } from '../../context/LanguageContext';
+-import { LogOut, Shield, User, BookOpen } from 'lucide-react';
++import { LogOut, Shield, User, BookOpen, ShieldCheck, Loader2 } from 'lucide-react';
++import { api } from '../../services/api';
+ 
+ export const Navbar: React.FC = () => {
+   const { user, logout } = useAuth();
+   const { lang, setLang, t } = useLanguage();
++  const [isDownloadingBackup, setIsDownloadingBackup] = useState(false);
++  const [backupToast, setBackupToast] = useState('');
++
++  // Emergency safety backup — a human-readable copy of every entry, downloadable
++  // anytime from day one, so the trainee always has everything on their own device
++  // even if the platform is unreachable.
++  const handleSafetyBackup = async () => {
++    if (isDownloadingBackup) return;
++    setIsDownloadingBackup(true);
++    try {
++      const res = await api.get('/backup/export-readable', { responseType: 'blob' });
++      const blob = new Blob([res.data], { type: 'text/html;charset=utf-8' });
++      const url = window.URL.createObjectURL(blob);
++      const a = document.createElement('a');
++      a.href = url;
++      a.download = `COOP_Safety_Backup_${new Date().toISOString().slice(0, 10)}.html`;
++      document.body.appendChild(a);
++      a.click();
++      document.body.removeChild(a);
++      window.URL.revokeObjectURL(url);
++      setBackupToast(
++        t('تم تنزيل نسختك الاحتياطية — احتفظ بها على جهازك.', 'Your safety backup was downloaded — keep it on your device.')
++      );
++    } catch {
++      setBackupToast(t('تعذر تنزيل النسخة الاحتياطية، حاول مجدداً.', 'Could not download the backup, please try again.'));
++    } finally {
++      setIsDownloadingBackup(false);
++      setTimeout(() => setBackupToast(''), 4000);
++    }
++  };
+ 
+   return (
+     <nav className="sticky top-0 z-40 border-b border-line glass">
+@@ -32,6 +63,27 @@ export const Navbar: React.FC = () => {
+         {/* ── Actions ──────────────────────────────────────── */}
+         <div className="flex items-center gap-3">
+ 
++          {/* Emergency Safety Backup — always available, from day one */}
++          {user && user.role === 'trainee' && (
++            <button
++              type="button"
++              onClick={handleSafetyBackup}
++              disabled={isDownloadingBackup}
++              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-line bg-bg text-xs font-bold text-sub hover:text-accent hover:border-accent/40 transition-colors disabled:opacity-60"
++              title={t(
++                'تنزيل نسخة احتياطية قابلة للقراءة من كل ما سجّلته حتى الآن، احتياطاً لأي مشكلة في الموقع.',
++                'Download a readable safety copy of everything you have logged so far, in case the site ever has an issue.'
++              )}
++            >
++              {isDownloadingBackup ? (
++                <Loader2 className="w-3.5 h-3.5 animate-spin" />
++              ) : (
++                <ShieldCheck className="w-3.5 h-3.5" />
++              )}
++              <span>{t('نسخة احتياطية', 'Safety Backup')}</span>
++            </button>
++          )}
++
+           {/* Explicit Language Switcher: Arabic & English Buttons */}
+           <div className="inline-flex p-0.5 bg-bg border border-line rounded-xl text-xs font-bold shadow-2xs">
+             <button
+@@ -93,6 +145,15 @@ export const Navbar: React.FC = () => {
+           )}
+         </div>
+       </div>
++
++      {backupToast && (
++        <div className="fixed bottom-4 inset-x-0 z-50 flex justify-center px-4 pointer-events-none">
++          <div className="bg-ink text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2 animate-fade-in">
++            <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
++            <span>{backupToast}</span>
++          </div>
++        </div>
++      )}
+     </nav>
+   );
+ };
+diff --git a/client/src/components/landing/LandingPage.tsx b/client/src/components/landing/LandingPage.tsx
+index e024ebb..7ec7119 100644
+--- a/client/src/components/landing/LandingPage.tsx
++++ b/client/src/components/landing/LandingPage.tsx
+@@ -23,9 +23,108 @@ import {
+   Layers,
+   Sparkles,
+   AlertCircle,
+-  CheckCircle2
++  CheckCircle2,
++  NotebookPen,
++  ImagePlus,
++  FileDown
+ } from 'lucide-react';
+ 
++// ─── 3D Tilt Step Card ──────────────────────────────────────────────────────
++// A pointer-reactive card: tilts toward the cursor with a moving glare/shine
++// sweep and a floating depth layer for the step number, giving the "3 Steps"
++// section a tactile, physical feel instead of flat boxes.
++const TiltStepCard: React.FC<{
++  index: string;
++  icon: React.ReactNode;
++  title: string;
++  description: string;
++  isAr: boolean;
++}> = ({ index, icon, title, description, isAr }) => {
++  const cardRef = React.useRef<HTMLDivElement>(null);
++  const [tilt, setTilt] = useState<{ rx: number; ry: number; px: number; py: number }>({
++    rx: 0,
++    ry: 0,
++    px: 50,
++    py: 50
++  });
++  const [isHovering, setIsHovering] = useState(false);
++
++  const handleMove = (e: React.MouseEvent<HTMLDivElement>) => {
++    const el = cardRef.current;
++    if (!el) return;
++    const rect = el.getBoundingClientRect();
++    const px = ((e.clientX - rect.left) / rect.width) * 100;
++    const py = ((e.clientY - rect.top) / rect.height) * 100;
++    const rx = (0.5 - py / 100) * 16; // rotateX: up/down tilt
++    const ry = (px / 100 - 0.5) * 18; // rotateY: left/right tilt
++    setTilt({ rx, ry, px, py });
++  };
++
++  const handleLeave = () => {
++    setIsHovering(false);
++    setTilt({ rx: 0, ry: 0, px: 50, py: 50 });
++  };
++
++  return (
++    <div style={{ perspective: '1000px' }}>
++      <div
++        ref={cardRef}
++        onMouseMove={handleMove}
++        onMouseEnter={() => setIsHovering(true)}
++        onMouseLeave={handleLeave}
++        className="group relative p-6 bg-card border border-line rounded-2xl space-y-3 overflow-hidden cursor-default"
++        style={{
++          transform: `rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg) scale(${isHovering ? 1.035 : 1}) translateZ(0)`,
++          transformStyle: 'preserve-3d',
++          transition: isHovering ? 'transform 80ms ease-out' : 'transform 450ms cubic-bezier(0.22, 1, 0.36, 1)',
++          boxShadow: isHovering
++            ? '0 24px 40px -12px rgba(139, 0, 0, 0.28), 0 4px 10px rgba(0,0,0,0.06)'
++            : '0 1px 2px rgba(0,0,0,0.04)'
++        }}
++      >
++        {/* Moving glare sweep */}
++        <div
++          className="pointer-events-none absolute inset-0 rounded-2xl transition-opacity duration-300"
++          style={{
++            opacity: isHovering ? 1 : 0,
++            background: `radial-gradient(280px circle at ${tilt.px}% ${tilt.py}%, rgba(255,255,255,0.35), transparent 60%)`
++          }}
++        />
++        {/* Accent glow corner */}
++        <div
++          className="pointer-events-none absolute -top-10 -end-10 w-28 h-28 rounded-full bg-accent/10 blur-2xl transition-transform duration-500"
++          style={{ transform: isHovering ? 'scale(1.4)' : 'scale(1)' }}
++        />
++
++        <div
++          className="w-11 h-11 rounded-xl bg-accent text-white flex items-center justify-center font-black text-sm shadow-md relative"
++          style={{
++            transform: isHovering ? 'translateZ(40px) scale(1.08)' : 'translateZ(20px)',
++            transition: 'transform 300ms ease-out'
++          }}
++        >
++          {icon}
++          <span className="absolute -top-2 -end-2 w-5 h-5 rounded-full bg-ink text-white text-[10px] font-black flex items-center justify-center border-2 border-card">
++            {index}
++          </span>
++        </div>
++
++        <div style={{ transform: isHovering ? 'translateZ(24px)' : 'translateZ(0)', transition: 'transform 300ms ease-out' }}>
++          <h3 className="text-sm font-extrabold text-ink">{title}</h3>
++          <p className="text-xs text-sub leading-relaxed mt-1.5">{description}</p>
++        </div>
++
++        <div
++          className="absolute bottom-4 end-5 text-6xl font-black text-ink/[0.04] select-none pointer-events-none"
++          style={{ transform: isHovering ? 'translateZ(8px) scale(1.1)' : 'translateZ(0)', transition: 'transform 300ms ease-out' }}
++        >
++          {index}
++        </div>
++      </div>
++    </div>
++  );
++};
++
+ export const LandingPage: React.FC<{ onOpenTestDev?: () => void }> = ({ onOpenTestDev }) => {
+   const { demoLogin } = useAuth();
+   const { lang, setLang, isAr, t } = useLanguage();
+@@ -661,45 +760,37 @@ export const LandingPage: React.FC<{ onOpenTestDev?: () => void }> = ({ onOpenTe
+             </p>
+           </div>
+ 
+-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-start">
+-            <div className="p-6 bg-card border border-line rounded-2xl space-y-3">
+-              <div className="w-8 h-8 rounded-lg bg-accent text-white flex items-center justify-center font-black text-xs">
+-                01
+-              </div>
+-              <h3 className="text-sm font-extrabold text-ink">{t('سجّل مهام يومك', 'Log Your Tasks')}</h3>
+-              <p className="text-xs text-sub leading-relaxed">
+-                {t(
+-                  'في نهاية كل يوم تدريبي، خصص دقيقتين لكتابة ما قمت به واختيار تصنيفه الفني.',
+-                  'Take two minutes at the end of each training day to write down what you accomplished and pick a category.'
+-                )}
+-              </p>
+-            </div>
+-
+-            <div className="p-6 bg-card border border-line rounded-2xl space-y-3">
+-              <div className="w-8 h-8 rounded-lg bg-accent text-white flex items-center justify-center font-black text-xs">
+-                02
+-              </div>
+-              <h3 className="text-sm font-extrabold text-ink">{t('أرفق صور الأدلة', 'Attach Photos')}</h3>
+-              <p className="text-xs text-sub leading-relaxed">
+-                {t(
+-                  'التقط صوراً لبيئة عملك وخوادمك وإعداداتك واربطها بالأسبوع المناسب مع كتابة شرح مختصر.',
+-                  'Add workspace setups, system photos, and diagram captures to keep visual evidence organized by week.'
+-                )}
+-              </p>
+-            </div>
+-
+-            <div className="p-6 bg-card border border-line rounded-2xl space-y-3">
+-              <div className="w-8 h-8 rounded-lg bg-accent text-white flex items-center justify-center font-black text-xs">
+-                03
+-              </div>
+-              <h3 className="text-sm font-extrabold text-ink">{t('نزّل التقرير والشرائح', 'Download & Review')}</h3>
+-              <p className="text-xs text-sub leading-relaxed">
+-                {t(
+-                  'صدّر مستند الوورد وشرائح العرض فوراً متى ما حان وقت التسليم أو المناقشة.',
+-                  'Export your structured Word document and presentation slides whenever you need to submit or present.'
+-                )}
+-              </p>
+-            </div>
++          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-start" style={{ perspective: '1400px' }}>
++            <TiltStepCard
++              index="01"
++              icon={<NotebookPen className="w-[18px] h-[18px]" />}
++              isAr={isAr}
++              title={t('سجّل مهام يومك', 'Log Your Tasks')}
++              description={t(
++                'في نهاية كل يوم تدريبي، خصص دقيقتين لكتابة ما قمت به واختيار تصنيفه الفني.',
++                'Take two minutes at the end of each training day to write down what you accomplished and pick a category.'
++              )}
++            />
++            <TiltStepCard
++              index="02"
++              icon={<ImagePlus className="w-[18px] h-[18px]" />}
++              isAr={isAr}
++              title={t('أرفق صور الأدلة', 'Attach Photos')}
++              description={t(
++                'التقط صوراً لبيئة عملك وخوادمك وإعداداتك واربطها بالأسبوع المناسب مع كتابة شرح مختصر.',
++                'Add workspace setups, system photos, and diagram captures to keep visual evidence organized by week.'
++              )}
++            />
++            <TiltStepCard
++              index="03"
++              icon={<FileDown className="w-[18px] h-[18px]" />}
++              isAr={isAr}
++              title={t('نزّل التقرير والشرائح', 'Download & Review')}
++              description={t(
++                'صدّر مستند الوورد وشرائح العرض فوراً متى ما حان وقت التسليم أو المناقشة.',
++                'Export your structured Word document and presentation slides whenever you need to submit or present.'
++              )}
++            />
+           </div>
+         </div>
+       </section>
+diff --git a/server/src/routes/backup.ts b/server/src/routes/backup.ts
+index dc7d1d3..80d9a20 100644
+--- a/server/src/routes/backup.ts
++++ b/server/src/routes/backup.ts
+@@ -1,6 +1,6 @@
+ import { Router, Response } from 'express';
+ import { authenticate, AuthenticatedRequest } from '../middleware/auth.js';
+-import { exportUserArchive, importUserArchive } from '../services/backupService.js';
++import { exportUserArchive, exportUserReadableArchive, importUserArchive } from '../services/backupService.js';
+ import { prisma } from '../db.js';
+ import { logger } from '../logger.js';
+ 
+@@ -21,6 +21,23 @@ router.get('/export', async (req: AuthenticatedRequest, res: Response): Promise<
+   }
+ });
+ 
++// GET /api/backup/export-readable
++// Human-readable, self-contained HTML "safety copy" of every entry, the trainee's
++// profile, and evidence photos — usable even if the site itself is down. Meant to be
++// downloaded regularly from day one, not just when the final report is being built.
++router.get('/export-readable', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
++  try {
++    const { html, filename } = await exportUserReadableArchive(req.user!.userId);
++
++    res.setHeader('Content-Type', 'text/html; charset=utf-8');
++    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`);
++    res.send(html);
++  } catch (err: any) {
++    logger.error({ err }, 'Error exporting readable safety backup');
++    res.status(500).json({ error: err.message || 'تعذر تصدير النسخة الاحتياطية القابلة للقراءة' });
++  }
++});
++
+ // POST /api/backup/import
+ router.post('/import', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+   try {
+diff --git a/server/src/services/backupService.ts b/server/src/services/backupService.ts
+index 63f6a89..80ef276 100644
+--- a/server/src/services/backupService.ts
++++ b/server/src/services/backupService.ts
+@@ -4,6 +4,7 @@ import path from 'node:path';
+ import { PrismaClient } from '@prisma/client';
+ import { prisma } from '../db.js';
+ import { logger } from '../logger.js';
++import { getWeekStart, getWeekEnd, formatDateArabic, calculateHoursBetween } from '@coop/shared';
+ 
+ // Prisma interactive transaction client type
+ type PrismaTxClient = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>;
+@@ -128,6 +129,216 @@ export async function exportUserArchive(userId: number): Promise<{ backup: Backu
+   return { backup, filename };
+ }
+ 
++/**
++ * Generates a self-contained, human-readable HTML "safety copy" of everything the
++ * trainee has entered so far — raw entries (unpolished), profile info, and evidence
++ * photos — bundled into a single printable file with no dependency on the website
++ * or the database. If the platform ever goes down, the trainee can open this file in
++ * any browser (or print it to PDF) and manually reconstruct the report from it.
++ *
++ * This is intentionally available from day one (not just at the "final report" stage)
++ * and is distinct from the JSON /export archive, which is machine-readable and meant
++ * for re-importing back into this same system.
++ */
++export async function exportUserReadableArchive(
++  userId: number
++): Promise<{ html: string; filename: string }> {
++  const user = await prisma.user.findUnique({
++    where: { id: userId },
++    include: {
++      profile: true,
++      entries: {
++        where: { deletedAt: null },
++        orderBy: [{ entryDate: 'asc' }, { timeFrom: 'asc' }]
++      },
++      evidence: {
++        where: { deletedAt: null },
++        orderBy: { weekIndex: 'asc' }
++      }
++    }
++  });
++
++  if (!user) {
++    throw new Error('المستخدم غير موجود');
++  }
++
++  const entries = user.entries as PrismaEntry[];
++  const profile: any = user.profile || {};
++
++  // Group entries by Sunday-based week using the same logic as the rest of the app
++  const weekMap = new Map<string, PrismaEntry[]>();
++  for (const entry of entries) {
++    const weekStart = getWeekStart(entry.entryDate);
++    if (!weekMap.has(weekStart)) weekMap.set(weekStart, []);
++    weekMap.get(weekStart)!.push(entry);
++  }
++  const sortedWeekStarts = Array.from(weekMap.keys()).sort();
++
++  const totalHours = entries.reduce(
++    (sum: number, e: PrismaEntry) => sum + calculateHoursBetween(e.timeFrom, e.timeTo),
++    0
++  );
++
++  const evidenceByWeek = new Map<number, typeof user.evidence>();
++  for (const ev of user.evidence || []) {
++    if (!evidenceByWeek.has(ev.weekIndex)) evidenceByWeek.set(ev.weekIndex, []);
++    evidenceByWeek.get(ev.weekIndex)!.push(ev);
++  }
++
++  const escapeHtml = (str: string): string =>
++    (str || '')
++      .replace(/&/g, '&amp;')
++      .replace(/</g, '&lt;')
++      .replace(/>/g, '&gt;')
++      .replace(/"/g, '&quot;');
++
++  const profileRows: [string, string][] = (
++    [
++      ['اسم المتدرب', profile.studentName],
++      ['الرقم التدريبي', profile.trainingNumber],
++      ['القسم / التخصص', profile.department],
++      ['جهة التدريب', profile.entityAddress],
++      ['المشرف الأكاديمي', profile.supervisorName],
++      ['المسؤول بالمنشأة', profile.responsibleName]
++    ] as [string, string][]
++  ).filter(([, v]) => !!v);
++
++  const weeksHtml = sortedWeekStarts
++    .map((weekStart, idx) => {
++      const weekEntries = weekMap.get(weekStart)!;
++      const weekEnd = getWeekEnd(weekStart);
++      const weekEvidence = evidenceByWeek.get(idx + 1) || [];
++
++      const entriesHtml = weekEntries
++        .map(
++          (e) => `
++        <div class="entry">
++          <div class="entry-head">
++            <span class="entry-date">${escapeHtml(formatDateArabic(e.entryDate))}</span>
++            <span class="entry-time">${escapeHtml(e.timeFrom)} — ${escapeHtml(e.timeTo)}</span>
++            <span class="entry-cat">${escapeHtml(e.category)}</span>
++          </div>
++          <div class="entry-title">${escapeHtml(e.title)}</div>
++          <div class="entry-desc">${escapeHtml(e.description).replace(/\n/g, '<br/>')}</div>
++        </div>`
++        )
++        .join('');
++
++      const evidenceHtml = weekEvidence.length
++        ? `<div class="evidence-grid">${weekEvidence
++            .map(
++              (ev: { imageData: string; caption: string }) => `
++          <figure class="evidence-item">
++            <img src="${ev.imageData}" alt="${escapeHtml(ev.caption || '')}" />
++            <figcaption>${escapeHtml(ev.caption || '')}</figcaption>
++          </figure>`
++            )
++            .join('')}</div>`
++        : '';
++
++      return `
++      <section class="week-block">
++        <h2>الأسبوع ${idx + 1} <span class="week-range">(${escapeHtml(
++        formatDateArabic(weekStart)
++      )} — ${escapeHtml(formatDateArabic(weekEnd))})</span></h2>
++        ${entriesHtml || '<p class="empty">لا توجد إدخالات لهذا الأسبوع.</p>'}
++        ${evidenceHtml}
++      </section>`;
++    })
++    .join('');
++
++  const generatedAt = new Intl.DateTimeFormat('ar-SA-u-nu-latn', {
++    dateStyle: 'full',
++    timeStyle: 'short',
++    timeZone: 'Asia/Riyadh'
++  }).format(new Date());
++
++  const html = `<!DOCTYPE html>
++<html lang="ar" dir="rtl">
++<head>
++<meta charset="UTF-8">
++<meta name="viewport" content="width=device-width, initial-scale=1.0">
++<title>نسخة احتياطية للطوارئ — ${escapeHtml(user.username)}</title>
++<link rel="preconnect" href="https://fonts.googleapis.com">
++<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
++<style>
++  :root { --accent:#8B0000; --accent-dim:#F4DDDF; --ink:#1c1917; --sub:#57534e; --line:#e7e5e4; --bg:#F7F5F0; }
++  * { box-sizing: border-box; }
++  body { font-family:'Tajawal',sans-serif; background:var(--bg); color:var(--ink); margin:0; padding:0 16px 60px; }
++  .wrap { max-width: 820px; margin: 0 auto; }
++  .notice { background:var(--accent-dim); border:1px solid var(--accent); color:var(--accent); border-radius:12px; padding:16px 20px; margin:24px 0; font-size:13px; line-height:1.9; font-weight:700; }
++  header.doc-head { text-align:center; padding:36px 0 20px; border-bottom:3px solid var(--accent); }
++  header.doc-head h1 { font-size:22px; margin:0 0 6px; }
++  header.doc-head p { color:var(--sub); font-size:12.5px; margin:2px 0; }
++  .profile-table { width:100%; border-collapse:collapse; margin:20px 0; font-size:12.5px; }
++  .profile-table td { border:1px solid var(--line); padding:8px 12px; }
++  .profile-table td:first-child { font-weight:800; background:#fafaf9; width:35%; }
++  .week-block { margin:34px 0; page-break-inside: avoid; }
++  .week-block h2 { font-size:16px; color:var(--accent); border-bottom:2px solid var(--accent); padding-bottom:6px; }
++  .week-range { color:var(--sub); font-weight:500; font-size:12px; }
++  .entry { border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin:10px 0; background:#fff; }
++  .entry-head { display:flex; flex-wrap:wrap; gap:10px; font-size:11px; color:var(--sub); font-weight:700; margin-bottom:6px; }
++  .entry-cat { background:var(--accent-dim); color:var(--accent); border-radius:6px; padding:1px 8px; }
++  .entry-title { font-weight:800; font-size:13.5px; margin-bottom:4px; }
++  .entry-desc { font-size:12.5px; line-height:1.8; color:#292524; white-space:pre-wrap; }
++  .empty { font-size:12px; color:var(--sub); }
++  .evidence-grid { display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; }
++  .evidence-item { width:150px; margin:0; text-align:center; }
++  .evidence-item img { width:100%; height:110px; object-fit:cover; border-radius:8px; border:1px solid var(--line); }
++  .evidence-item figcaption { font-size:10.5px; color:var(--sub); margin-top:4px; }
++  .summary { display:flex; gap:14px; flex-wrap:wrap; margin:18px 0; }
++  .summary .stat { flex:1; min-width:120px; border:1px solid var(--line); border-radius:10px; padding:12px; text-align:center; background:#fff; }
++  .summary .stat b { display:block; font-size:20px; color:var(--accent); }
++  .summary .stat span { font-size:11px; color:var(--sub); }
++  footer { text-align:center; font-size:11px; color:var(--sub); margin-top:40px; }
++  @media print {
++    .notice { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
++    @page { size: A4; margin: 2cm; }
++  }
++</style>
++</head>
++<body>
++  <div class="wrap">
++    <header class="doc-head">
++      <h1>نسخة احتياطية للطوارئ — سجل التدريب التعاوني</h1>
++      <p>المستخدم: ${escapeHtml(user.username)}</p>
++      <p>تاريخ الإنشاء: ${escapeHtml(generatedAt)}</p>
++    </header>
++
++    <div class="notice">
++      ⚠️ هذا الملف نسخة احتياطية كاملة وقابلة للقراءة من كل ما قمت بتسجيله في المنصة، بصيغته
++      الأصلية دون أي تنقيح بالذكاء الاصطناعي. احتفظ به على جهازك؛ فإذا تعطّل الموقع أو فُقدت
++      البيانات لأي سبب، يمكنك فتح هذا الملف من أي متصفح (أو طباعته PDF) واستخدامه لكتابة تقريرك
++      النهائي يدوياً، لأنه يحتوي على جميع مهامك وصورك وبياناتك الأساسية بالكامل.
++    </div>
++
++    ${
++      profileRows.length
++        ? `<table class="profile-table">${profileRows
++            .map(([k, v]) => `<tr><td>${escapeHtml(k)}</td><td>${escapeHtml(v)}</td></tr>`)
++            .join('')}</table>`
++        : ''
++    }
++
++    <div class="summary">
++      <div class="stat"><b>${entries.length}</b><span>إجمالي الإدخالات</span></div>
++      <div class="stat"><b>${sortedWeekStarts.length}</b><span>عدد الأسابيع المسجّلة</span></div>
++      <div class="stat"><b>${totalHours.toFixed(1)}</b><span>إجمالي الساعات</span></div>
++      <div class="stat"><b>${(user.evidence || []).length}</b><span>صور الأدلة المرفقة</span></div>
++    </div>
++
++    ${weeksHtml || '<p class="empty">لا توجد أي إدخالات مسجّلة بعد.</p>'}
++
++    <footer>تم إنشاء هذه النسخة تلقائياً بواسطة COOP Report — احتفظ بنسخة منها بشكل دوري.</footer>
++  </div>
++</body>
++</html>`;
++
++  const filename = `COOP_Safety_Backup_${user.username}_${new Date().toISOString().slice(0, 10)}.html`;
++
++  return { html, filename };
++}
++
+ export async function importUserArchive(
+   userId: number,
+   rawBackup: any

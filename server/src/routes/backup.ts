@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { authenticate, AuthenticatedRequest } from '../middleware/auth.js';
-import { exportUserArchive, importUserArchive } from '../services/backupService.js';
+import { exportUserArchive, exportUserReadableArchive, importUserArchive } from '../services/backupService.js';
 import { prisma } from '../db.js';
 import { logger } from '../logger.js';
 
@@ -18,6 +18,23 @@ router.get('/export', async (req: AuthenticatedRequest, res: Response): Promise<
   } catch (err: any) {
     logger.error({ err }, 'Error exporting backup');
     res.status(500).json({ error: err.message || 'تعذر تصدير النسخة الاحتياطية' });
+  }
+});
+
+// GET /api/backup/export-readable
+// Human-readable, self-contained HTML "safety copy" of every entry, the trainee's
+// profile, and evidence photos — usable even if the site itself is down. Meant to be
+// downloaded regularly from day one, not just when the final report is being built.
+router.get('/export-readable', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { html, filename } = await exportUserReadableArchive(req.user!.userId);
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`);
+    res.send(html);
+  } catch (err: any) {
+    logger.error({ err }, 'Error exporting readable safety backup');
+    res.status(500).json({ error: err.message || 'تعذر تصدير النسخة الاحتياطية القابلة للقراءة' });
   }
 });
 
