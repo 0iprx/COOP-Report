@@ -1,29 +1,26 @@
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { prisma } from './db.js';
+import { prisma, resolveDatabaseUrl } from './db.js';
 import { logger } from './logger.js';
 
 export async function syncDatabaseSchema(): Promise<void> {
-  let dbUrl = process.env.DATABASE_URL?.trim();
-  if (dbUrl) {
-    dbUrl = dbUrl.replace(/^["']|["']$/g, '').trim();
-    process.env.DATABASE_URL = dbUrl;
-  }
+  const dbUrl = resolveDatabaseUrl();
 
   if (!dbUrl) {
-    logger.warn('⚠️ DATABASE_URL is not set in environment variables! Database operations will fail.');
+    logger.warn('⚠️ No database connection information found (DB_HOST/DB_USER/DB_PASSWORD or DATABASE_URL).');
     return;
   }
 
+  process.env.DATABASE_URL = dbUrl;
   logger.info('🔄 Checking database connection and schema synchronization...');
 
   try {
-    // 1. Try a lightweight test query
+    // 1. Test database connection
     await prisma.$queryRaw`SELECT 1`;
     logger.info('✅ Database server is reachable.');
 
-    // 2. Automatically sync schema (create tables if they don't exist)
+    // 2. Automatically sync schema
     const schemaPath = path.resolve(process.cwd(), 'server/prisma/schema.prisma');
     const altSchemaPath = path.resolve(process.cwd(), 'prisma/schema.prisma');
     const targetSchema = fs.existsSync(schemaPath) ? schemaPath : altSchemaPath;

@@ -90,18 +90,7 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
     });
   } catch (err: any) {
     logger.error({ err }, 'Registration error');
-
-    const isDbError =
-      err?.code === 'P1001' || // Can't reach database server
-      err?.code === 'P1000' || // Authentication failed
-      err?.code === 'P1017' || // Server closed the connection
-      err?.code === 'P2021';   // Table does not exist
-
-    const message = isDbError
-      ? 'تعذر الاتصال بقاعدة البيانات. يرجى التأكد من إضافة رابط DATABASE_URL في لوحة تحكم Cranl.'
-      : (err?.message?.includes('database') ? 'خطأ في الاتصال بقاعدة البيانات. تحقق من DATABASE_URL.' : 'حدث خطأ في الخادم أثناء إنشاء الحساب');
-
-    res.status(500).json({ error: message });
+    res.status(500).json({ error: 'تعذر إتمام التسجيل حالياً، يرجى المحاولة مرة أخرى بعد لحظات' });
   }
 });
 
