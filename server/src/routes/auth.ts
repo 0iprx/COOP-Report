@@ -151,6 +151,59 @@ router.post('/login', authLimiter, async (req: Request, res: Response): Promise<
   }
 });
 
+// 1-Click Sandbox Demo Login (for /testdev and preview without manual registration)
+router.post('/demo', async (req: Request, res: Response): Promise<void> => {
+  try {
+    let demoUser = await prisma.user.findUnique({ where: { username: 'testdev_demo' } });
+    if (!demoUser) {
+      const passwordHash = await bcrypt.hash('DemoPass123!@#', 12);
+      demoUser = await prisma.user.create({
+        data: {
+          username: 'testdev_demo',
+          passwordHash,
+          role: 'trainee'
+        }
+      });
+      await prisma.reportProfile.create({
+        data: {
+          userId: demoUser.id,
+          entityAddress: 'شركة تقنية الحوسبة المتقدمة والحلول السحابية',
+          introText: 'يمثّل التدريب التعاوني ركيزة أساسية في الخطة الأكاديمية.',
+          entityIntroText: '',
+          skillsText: '',
+          conclusionText: ''
+        }
+      });
+    }
+
+    const token = jwt.sign(
+      { userId: demoUser.id, username: demoUser.username, role: demoUser.role },
+      JWT_KEY,
+      { expiresIn: '180d' }
+    );
+
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 180 * 24 * 60 * 60 * 1000
+    });
+
+    res.json({
+      message: 'تم تسجيل الدخول بحساب المعاينة والمختبر بنجاح',
+      token,
+      user: {
+        id: demoUser.id,
+        username: demoUser.username,
+        role: demoUser.role
+      }
+    });
+  } catch (err) {
+    logger.error({ err }, 'Demo login error');
+    res.status(500).json({ error: 'تعذر إتمام الدخول التجريبي حالياً' });
+  }
+});
+
 // Logout
 router.post('/logout', (req: Request, res: Response) => {
   res.clearCookie('token');

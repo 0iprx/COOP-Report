@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 
 export const AuthScreen: React.FC = () => {
-  const { login, register } = useAuth();
+  const { login, register, demoLogin } = useAuth();
   const [isLogin, setIsLogin]             = useState<boolean>(true);
   const [username, setUsername]           = useState<string>('');
   const [password, setPassword]           = useState<string>('');
@@ -408,6 +408,29 @@ export const AuthScreen: React.FC = () => {
                 </>
               )}
             </button>
+
+            {/* Quick 1-Click Demo Sandbox Button */}
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={async () => {
+                  setLoading(true);
+                  try {
+                    await demoLogin();
+                  } catch {
+                    setError('تعذر الدخول بحساب المعاينة التجريبي');
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                disabled={loading}
+                className="w-full py-2.5 px-4 bg-bg hover:bg-line border border-line text-sub hover:text-ink font-bold rounded-xl transition-all text-xs flex items-center justify-center gap-2"
+                title="دخول فوري بحساب تجريبي لفحص التقارير والمختبر دون تسجيل"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-accent" />
+                <span>دخول تجريبي فوري للمعاينة والمختبر (1-Click Sandbox)</span>
+              </button>
+            </div>
           </form>
 
           {/* Security & Privacy Footer */}

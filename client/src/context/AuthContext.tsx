@@ -14,6 +14,7 @@ interface AuthContextType {
   loading: boolean;
   login: (data: any) => Promise<void>;
   register: (data: any) => Promise<void>;
+  demoLogin: () => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -62,6 +63,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(res.data.user);
   };
 
+  const demoLogin = async () => {
+    const res = await api.post('/auth/demo');
+    if (res.data.token) {
+      localStorage.setItem('coop_auth_token', res.data.token);
+    }
+    setUser(res.data.user);
+  };
+
   const logout = async () => {
     try {
       await api.post('/auth/logout');
@@ -73,7 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, login, register, demoLogin, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
