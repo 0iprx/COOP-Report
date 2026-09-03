@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { AuthScreen } from '../auth/AuthScreen';
@@ -6,6 +6,8 @@ import {
   FileText,
   Presentation,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   X,
   Menu,
   Camera,
@@ -33,6 +35,16 @@ export const LandingPage: React.FC<{ onOpenTestDev?: () => void }> = ({ onOpenTe
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [activePreviewTab, setActivePreviewTab] = useState<'report' | 'slides' | 'curriculum'>('report');
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+  const [activeStoryIndex, setActiveStoryIndex] = useState<number>(0);
+  const [isStoryHovered, setIsStoryHovered] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (isStoryHovered) return;
+    const interval = setInterval(() => {
+      setActiveStoryIndex((prev) => (prev + 1) % 3);
+    }, 5500);
+    return () => clearInterval(interval);
+  }, [isStoryHovered]);
 
   const handleOpenAuth = (mode: 'login' | 'register') => {
     setAuthInitialMode(mode);
@@ -692,9 +704,9 @@ export const LandingPage: React.FC<{ onOpenTestDev?: () => void }> = ({ onOpenTe
         </div>
       </section>
 
-      {/* ── 6. Developer Story: The Problem, The Solution & Why Optimal ───── */}
-      <section id="story" className="py-16 px-4 sm:px-6 bg-card border-y border-line">
-        <div className="max-w-5xl mx-auto space-y-12">
+      {/* ── 6. Developer Story: The Problem, The Solution & Why Optimal (3D Orbit / Rotating Stack) ───── */}
+      <section id="story" className="py-20 px-4 sm:px-6 bg-card border-y border-line overflow-hidden">
+        <div className="max-w-5xl mx-auto space-y-10">
           
           <div className="text-center space-y-3 max-w-2xl mx-auto">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-accent-dim text-accent border border-accent/20 text-xs font-bold shadow-2xs">
@@ -712,89 +724,305 @@ export const LandingPage: React.FC<{ onOpenTestDev?: () => void }> = ({ onOpenTe
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-start">
-            {/* 1. The Problem */}
-            <div className="p-6 bg-bg border border-line rounded-2xl space-y-4 shadow-xs hover:border-warn/50 transition-all flex flex-col justify-between">
-              <div className="space-y-3">
-                <div className="w-10 h-10 rounded-xl bg-warn-bg text-warn flex items-center justify-center font-black">
-                  <AlertCircle className="w-5 h-5" />
-                </div>
-                <div className="text-xs font-extrabold text-warn uppercase tracking-wider">
-                  {t('المشكلة الواقعية', 'The Real Problem')}
-                </div>
-                <h3 className="text-base font-black text-ink">
-                  {t('تراكم 14 أسبوعاً وضياع تفاصيل الإنجازات', '14 Weeks of Tasks Forgotten at the Deadline')}
-                </h3>
-                <p className="text-xs text-sub leading-relaxed">
-                  {t(
-                    'يمتد التدريب التعاوني إلى 70 يوماً من العمل والمهام التقنية المتلاحقة. ومع الانشغال اليومي، تتلاشى التفاصيل وتُنسى أسماء الأنظمة والأجهزة والحلول المطبقة، ليجد المتدرب نفسه في نهاية الفصل مجبراً على كتابة تقرير من الذاكرة، مما ينتج تقارير ركيكة ومكررة لا تعكس جهده الفعلي.',
-                    'Co-op training spans 70 full working days of continuous technical tasks. In the daily rush, system names, terminal commands, and specific solutions are easily forgotten. Trainees end up having to reconstruct 14 weeks from memory, resulting in generic, rushed reports that fail to showcase their true efforts.'
-                  )}
-                </p>
-              </div>
-              <div className="p-3 bg-card rounded-xl border border-line/60 text-[11px] text-sub font-semibold flex items-center gap-1.5">
-                <AlertCircle className="w-3.5 h-3.5 text-warn shrink-0" />
-                <span>{t('النتيجة السابقة: ضغط نفسي وتخمين عشوائي بنهاية الفصل', 'The Old Reality: Extreme deadline panic & vague guessing')}</span>
-              </div>
-            </div>
+          {/* 3D Rotating Stage */}
+          <div
+            className="relative w-full max-w-4xl mx-auto h-[530px] sm:h-[480px] flex items-center justify-center select-none"
+            style={{ perspective: '1200px' }}
+            onMouseEnter={() => setIsStoryHovered(true)}
+            onMouseLeave={() => setIsStoryHovered(false)}
+          >
+            {/* Card 0: The Problem */}
+            {(() => {
+              const offset = (0 - activeStoryIndex + 3) % 3;
+              const isFront = offset === 0;
+              const isNext = offset === 1;
+              let transformStyle = '';
+              let zIndex = 10;
+              let opacity = 0.5;
+              let filter = 'blur(0.5px)';
 
-            {/* 2. The Solution & Multi-Agent Build */}
-            <div className="p-6 bg-bg border border-line rounded-2xl space-y-4 shadow-xs hover:border-accent/50 transition-all flex flex-col justify-between">
-              <div className="space-y-3">
-                <div className="w-10 h-10 rounded-xl bg-accent-dim text-accent flex items-center justify-center font-black">
-                  <Layers className="w-5 h-5" />
-                </div>
-                <div className="text-xs font-extrabold text-accent uppercase tracking-wider">
-                  {t('الحل وهندسة الـ Multi-Agent', 'The Solution & Multi-Agent Build')}
-                </div>
-                <h3 className="text-base font-black text-ink">
-                  {t('مساعد تدوين فوري شُيّد بعدة وكلاء AI', 'Instant Logging Assistant Built with Multi-Agent AI')}
-                </h3>
-                <p className="text-xs text-sub leading-relaxed">
-                  {t(
-                    'قام المطور بهندسة وبناء المنصة بالكامل بالتعاون مع وكلاء ذكاء اصطناعي متخصصين (Multi-Agent Architecture): وكيل لنمذجة البيانات وحفظ المسودات فورياً، وكيل لتوليد مستندات Word وشرائح PowerPoint الرسمية، ووكيل لغوي لضمان الصياغة الهندسية الأكاديمية الصارمة.',
-                    'The developer engineered the platform using a collaborative Multi-Agent AI architecture: a Data Resilience Agent for instant auto-saving, an Office Generation Agent for compiling native Word and PowerPoint decks, and an Academic Language Agent enforcing rigorous engineering phrasing without fluff.'
-                  )}
-                </p>
-              </div>
-              <div className="p-3 bg-accent-dim/40 rounded-xl border border-accent/20 text-[11px] text-accent font-bold flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-accent shrink-0" />
-                <span>{t('تم البناء عبر: Data Agent + Office Agent + Academic Agent', 'Engineered by: Data Agent + Office Agent + Academic Agent')}</span>
-              </div>
-            </div>
+              if (isFront) {
+                transformStyle = 'translate3d(0, 0, 0) scale(1) rotateY(0deg)';
+                zIndex = 30;
+                opacity = 1;
+                filter = 'none';
+              } else if (isNext) {
+                const x = isAr ? '-54%' : '54%';
+                const rot = isAr ? '-16deg' : '16deg';
+                transformStyle = `translate3d(${x}, 0, -140px) scale(0.88) rotateY(${rot})`;
+                zIndex = 15;
+              } else {
+                const x = isAr ? '54%' : '-54%';
+                const rot = isAr ? '16deg' : '-16deg';
+                transformStyle = `translate3d(${x}, 0, -140px) scale(0.88) rotateY(${rot})`;
+                zIndex = 15;
+              }
 
-            {/* 3. Why This Solution is Optimal */}
-            <div className="p-6 bg-bg border border-line rounded-2xl space-y-4 shadow-xs hover:border-ok/50 transition-all flex flex-col justify-between">
-              <div className="space-y-3">
-                <div className="w-10 h-10 rounded-xl bg-ok-bg text-ok flex items-center justify-center font-black">
-                  <CheckCircle2 className="w-5 h-5" />
+              return (
+                <div
+                  onClick={() => setActiveStoryIndex(0)}
+                  className={`absolute top-0 w-[310px] sm:w-[390px] md:w-[420px] h-[480px] sm:h-[450px] rounded-3xl p-6 md:p-7 transition-all duration-700 ease-out cursor-pointer flex flex-col justify-between border ${
+                    isFront
+                      ? 'bg-card border-warn shadow-2xl ring-1 ring-warn/30'
+                      : 'bg-surface/90 border-line shadow-lg hover:border-warn/40'
+                  }`}
+                  style={{
+                    transform: transformStyle,
+                    zIndex,
+                    opacity,
+                    filter,
+                    transformStyle: 'preserve-3d'
+                  }}
+                >
+                  <div className="space-y-3.5">
+                    <div className="flex items-center justify-between">
+                      <div className="w-11 h-11 rounded-2xl bg-warn-bg text-warn flex items-center justify-center font-black shadow-xs">
+                        <AlertCircle className="w-5 h-5" />
+                      </div>
+                      <span className="text-[11px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-warn-bg text-warn border border-warn/20">
+                        {t('المرحلة 01 • المشكلة', 'Phase 01 • Problem')}
+                      </span>
+                    </div>
+                    <div className="text-xs font-black text-warn uppercase tracking-wider">
+                      {t('المشكلة الواقعية الميدانية', 'The Real Field Dilemma')}
+                    </div>
+                    <h3 className="text-base sm:text-lg font-black text-ink leading-snug">
+                      {t('تراكم 14 أسبوعاً وضياع تفاصيل الإنجازات', '14 Weeks of Tasks Forgotten at the Deadline')}
+                    </h3>
+                    <p className="text-xs sm:text-[13px] text-sub leading-relaxed">
+                      {t(
+                        'يمتد التدريب التعاوني إلى 70 يوماً من العمل والمهام التقنية المتلاحقة. ومع الانشغال اليومي، تتلاشى التفاصيل وتُنسى أسماء الأنظمة والأجهزة والحلول المطبقة، ليجد المتدرب نفسه في نهاية الفصل مجبراً على كتابة تقرير من الذاكرة، مما ينتج تقارير ركيكة ومكررة لا تعكس جهده الفعلي.',
+                        'Co-op training spans 70 full working days of continuous technical tasks. In the daily rush, system names, terminal commands, and specific solutions are easily forgotten. Trainees end up having to reconstruct 14 weeks from memory, resulting in generic, rushed reports that fail to showcase their true efforts.'
+                      )}
+                    </p>
+                  </div>
+                  <div className="p-3.5 bg-bg/80 rounded-2xl border border-line/70 text-xs text-sub font-semibold flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-warn shrink-0" />
+                    <span>{t('النتيجة السابقة: ضغط نفسي وتخمين عشوائي بنهاية الفصل', 'The Old Reality: Extreme deadline panic & vague guessing')}</span>
+                  </div>
                 </div>
-                <div className="text-xs font-extrabold text-ok uppercase tracking-wider">
-                  {t('لماذا هذا الحل هو الأمثل؟', 'Why This Solution is Optimal')}
+              );
+            })()}
+
+            {/* Card 1: The Solution & Multi-Agent Build */}
+            {(() => {
+              const offset = (1 - activeStoryIndex + 3) % 3;
+              const isFront = offset === 0;
+              const isNext = offset === 1;
+              let transformStyle = '';
+              let zIndex = 10;
+              let opacity = 0.5;
+              let filter = 'blur(0.5px)';
+
+              if (isFront) {
+                transformStyle = 'translate3d(0, 0, 0) scale(1) rotateY(0deg)';
+                zIndex = 30;
+                opacity = 1;
+                filter = 'none';
+              } else if (isNext) {
+                const x = isAr ? '-54%' : '54%';
+                const rot = isAr ? '-16deg' : '16deg';
+                transformStyle = `translate3d(${x}, 0, -140px) scale(0.88) rotateY(${rot})`;
+                zIndex = 15;
+              } else {
+                const x = isAr ? '54%' : '-54%';
+                const rot = isAr ? '16deg' : '-16deg';
+                transformStyle = `translate3d(${x}, 0, -140px) scale(0.88) rotateY(${rot})`;
+                zIndex = 15;
+              }
+
+              return (
+                <div
+                  onClick={() => setActiveStoryIndex(1)}
+                  className={`absolute top-0 w-[310px] sm:w-[390px] md:w-[420px] h-[480px] sm:h-[450px] rounded-3xl p-6 md:p-7 transition-all duration-700 ease-out cursor-pointer flex flex-col justify-between border ${
+                    isFront
+                      ? 'bg-card border-accent shadow-2xl ring-1 ring-accent/30'
+                      : 'bg-surface/90 border-line shadow-lg hover:border-accent/40'
+                  }`}
+                  style={{
+                    transform: transformStyle,
+                    zIndex,
+                    opacity,
+                    filter,
+                    transformStyle: 'preserve-3d'
+                  }}
+                >
+                  <div className="space-y-3.5">
+                    <div className="flex items-center justify-between">
+                      <div className="w-11 h-11 rounded-2xl bg-accent-dim text-accent flex items-center justify-center font-black shadow-xs">
+                        <Layers className="w-5 h-5" />
+                      </div>
+                      <span className="text-[11px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-accent-dim text-accent border border-accent/20">
+                        {t('المرحلة 02 • الابتكار', 'Phase 02 • Innovation')}
+                      </span>
+                    </div>
+                    <div className="text-xs font-extrabold text-accent uppercase tracking-wider">
+                      {t('الحل وهندسة الـ Multi-Agent', 'The Solution & Multi-Agent Build')}
+                    </div>
+                    <h3 className="text-base sm:text-lg font-black text-ink leading-snug">
+                      {t('مساعد تدوين فوري شُيّد بعدة وكلاء AI', 'Instant Logging Assistant Built with Multi-Agent AI')}
+                    </h3>
+                    <p className="text-xs sm:text-[13px] text-sub leading-relaxed">
+                      {t(
+                        'قام المطور بهندسة وبناء المنصة بالكامل بالتعاون مع وكلاء ذكاء اصطناعي متخصصين (Multi-Agent Architecture): وكيل لنمذجة البيانات وحفظ المسودات فورياً، وكيل لتوليد مستندات Word وشرائح PowerPoint الرسمية، ووكيل لغوي لضمان الصياغة الهندسية الأكاديمية الصارمة.',
+                        'The developer engineered the platform using a collaborative Multi-Agent AI architecture: a Data Resilience Agent for instant auto-saving, an Office Generation Agent for compiling native Word and PowerPoint decks, and an Academic Language Agent enforcing rigorous engineering phrasing without fluff.'
+                      )}
+                    </p>
+                  </div>
+                  <div className="p-3.5 bg-accent-dim/40 rounded-2xl border border-accent/30 text-xs text-accent font-bold flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-accent shrink-0" />
+                    <span>{t('تم البناء عبر: Data Agent + Office Agent + Academic Agent', 'Engineered by: Data Agent + Office Agent + Academic Agent')}</span>
+                  </div>
                 </div>
-                <h3 className="text-base font-black text-ink">
-                  {t('3 ركائز تجعله البديل الأذكى عالمياً', '3 Pillars That Make It the Ideal Choice')}
-                </h3>
-                <ul className="text-xs text-sub space-y-2 leading-relaxed list-disc list-inside">
-                  <li>
-                    <strong className="text-ink">{t('التدوين اللحظي (Micro-Logging):', 'Micro-Logging:')}</strong>{' '}
-                    {t('دقيقتان يومياً تقضيان تماماً على نسيان 14 أسبوعاً.', '2 minutes a day eliminates 14 weeks of memory loss.')}
-                  </li>
-                  <li>
-                    <strong className="text-ink">{t('فصل التدوين عن التنسيق:', 'Separation of Concerns:')}</strong>{' '}
-                    {t('المتدرب يركز على إنجازه فقط، والنظام يبني الفهارس وملفات Word و PPTX.', 'You focus solely on your work; the system structures files & slides.')}
-                  </li>
-                  <li>
-                    <strong className="text-ink">{t('أمان وموثوقية محلية:', 'Local Resilience:')}</strong>{' '}
-                    {t('حفظ فوري للمسودات، استرجاع التعديلات السابقة، ودعم كامل للغتين.', 'Instant draft caching, full revision rollback, and bilingual support.')}
-                  </li>
-                </ul>
+              );
+            })()}
+
+            {/* Card 2: Why Optimal */}
+            {(() => {
+              const offset = (2 - activeStoryIndex + 3) % 3;
+              const isFront = offset === 0;
+              const isNext = offset === 1;
+              let transformStyle = '';
+              let zIndex = 10;
+              let opacity = 0.5;
+              let filter = 'blur(0.5px)';
+
+              if (isFront) {
+                transformStyle = 'translate3d(0, 0, 0) scale(1) rotateY(0deg)';
+                zIndex = 30;
+                opacity = 1;
+                filter = 'none';
+              } else if (isNext) {
+                const x = isAr ? '-54%' : '54%';
+                const rot = isAr ? '-16deg' : '16deg';
+                transformStyle = `translate3d(${x}, 0, -140px) scale(0.88) rotateY(${rot})`;
+                zIndex = 15;
+              } else {
+                const x = isAr ? '54%' : '-54%';
+                const rot = isAr ? '16deg' : '-16deg';
+                transformStyle = `translate3d(${x}, 0, -140px) scale(0.88) rotateY(${rot})`;
+                zIndex = 15;
+              }
+
+              return (
+                <div
+                  onClick={() => setActiveStoryIndex(2)}
+                  className={`absolute top-0 w-[310px] sm:w-[390px] md:w-[420px] h-[480px] sm:h-[450px] rounded-3xl p-6 md:p-7 transition-all duration-700 ease-out cursor-pointer flex flex-col justify-between border ${
+                    isFront
+                      ? 'bg-card border-ok shadow-2xl ring-1 ring-ok/30'
+                      : 'bg-surface/90 border-line shadow-lg hover:border-ok/40'
+                  }`}
+                  style={{
+                    transform: transformStyle,
+                    zIndex,
+                    opacity,
+                    filter,
+                    transformStyle: 'preserve-3d'
+                  }}
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="w-11 h-11 rounded-2xl bg-ok-bg text-ok flex items-center justify-center font-black shadow-xs">
+                        <CheckCircle2 className="w-5 h-5" />
+                      </div>
+                      <span className="text-[11px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-ok-bg text-ok border border-ok/20">
+                        {t('المرحلة 03 • الأثر', 'Phase 03 • Impact')}
+                      </span>
+                    </div>
+                    <div className="text-xs font-extrabold text-ok uppercase tracking-wider">
+                      {t('لماذا هذا الحل هو الأمثل؟', 'Why This Solution is Optimal')}
+                    </div>
+                    <h3 className="text-base sm:text-lg font-black text-ink leading-snug">
+                      {t('3 ركائز تجعله البديل الأذكى عالمياً', '3 Pillars That Make It the Ideal Choice')}
+                    </h3>
+                    <ul className="text-xs sm:text-[13px] text-sub space-y-2 leading-relaxed list-disc list-inside">
+                      <li>
+                        <strong className="text-ink">{t('التدوين اللحظي (Micro-Logging):', 'Micro-Logging:')}</strong>{' '}
+                        {t('دقيقتان يومياً تقضيان تماماً على نسيان 14 أسبوعاً.', '2 minutes a day eliminates 14 weeks of memory loss.')}
+                      </li>
+                      <li>
+                        <strong className="text-ink">{t('فصل التدوين عن التنسيق:', 'Separation of Concerns:')}</strong>{' '}
+                        {t('المتدرب يركز على إنجازه فقط، والنظام يبني الفهارس وملفات Word و PPTX.', 'You focus solely on your work; the system structures files & slides.')}
+                      </li>
+                      <li>
+                        <strong className="text-ink">{t('أمان وموثوقية محلية:', 'Local Resilience:')}</strong>{' '}
+                        {t('حفظ فوري للمسودات، استرجاع التعديلات السابقة، ودعم كامل للغتين.', 'Instant draft caching, full revision rollback, and bilingual support.')}
+                      </li>
+                    </ul>
+                  </div>
+                  <div className="p-3.5 bg-ok-bg/50 rounded-2xl border border-ok/30 text-xs text-ok font-bold flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-ok shrink-0" />
+                    <span>{t('النتيجة: تقرير هندسي متكامل وعرض مناقشة جاهز دون ضغط', 'Result: Flawless technical report & slides ready without stress')}</span>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* Interactive Navigation Controls */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setActiveStoryIndex((prev) => (prev - 1 + 3) % 3)}
+                className="p-2.5 rounded-xl border border-line bg-surface hover:bg-card text-ink hover:text-accent transition-all shadow-xs"
+                title={t('السابق', 'Previous')}
+              >
+                {isAr ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+              </button>
+
+              {/* 3 Interactive Tab Buttons */}
+              <div className="inline-flex p-1 bg-surface border border-line rounded-2xl text-xs font-bold shadow-xs">
+                <button
+                  type="button"
+                  onClick={() => setActiveStoryIndex(0)}
+                  className={`px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
+                    activeStoryIndex === 0
+                      ? 'bg-warn text-white shadow-xs font-black'
+                      : 'text-sub hover:text-ink'
+                  }`}
+                >
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{t('1. المشكلة', '1. Problem')}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveStoryIndex(1)}
+                  className={`px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
+                    activeStoryIndex === 1
+                      ? 'bg-accent text-white shadow-xs font-black'
+                      : 'text-sub hover:text-ink'
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5 shrink-0" />
+                  <span>{t('2. الحل و AI', '2. Solution')}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveStoryIndex(2)}
+                  className={`px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
+                    activeStoryIndex === 2
+                      ? 'bg-ok text-white shadow-xs font-black'
+                      : 'text-sub hover:text-ink'
+                  }`}
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                  <span>{t('3. لماذا هو الأمثل؟', '3. Why Optimal?')}</span>
+                </button>
               </div>
-              <div className="p-3 bg-ok-bg/50 rounded-xl border border-ok/30 text-[11px] text-ok font-bold flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-ok shrink-0" />
-                <span>{t('النتيجة: تقرير هندسي متكامل وعرض مناقشة جاهز دون ضغط', 'Result: Flawless technical report & slides ready without stress')}</span>
-              </div>
+
+              <button
+                type="button"
+                onClick={() => setActiveStoryIndex((prev) => (prev + 1) % 3)}
+                className="p-2.5 rounded-xl border border-line bg-surface hover:bg-card text-ink hover:text-accent transition-all shadow-xs"
+                title={t('التالي', 'Next')}
+              >
+                {isAr ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+              </button>
             </div>
+            <span className="text-[11px] text-sub font-medium">
+              {t('حرك بالأسهم أو انقر على أي بطاقة لعرضها في المقدمة', 'Rotate via arrows, tabs, or click any card directly')}
+            </span>
           </div>
 
         </div>
