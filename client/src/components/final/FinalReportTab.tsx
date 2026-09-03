@@ -1206,7 +1206,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
       <div className="bg-card border border-line rounded-2xl p-6 shadow-sm no-print" dir={isAr ? 'rtl' : 'ltr'}>
         <h3 className="text-base font-black text-[#8B0000] text-center pb-3 mb-5 border-b-2 border-[#8B0000] flex items-center justify-center gap-2">
           <Bookmark className="w-5 h-5" />
-          <span>{isAr ? 'فهرس المحتويات الأكاديمي المعتمد' : 'Academic Table of Contents'}</span>
+          <span>{isAr ? 'فهرس المحتويات وموضوعات الأسابيع' : 'Table of Contents & Weekly Topics'}</span>
         </h3>
 
         <div className="space-y-2.5 max-w-2xl mx-auto text-xs font-bold">

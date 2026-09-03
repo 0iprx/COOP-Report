@@ -332,14 +332,14 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
           <div class="meta-item"><b>${isAr ? 'المشرف الأكاديمي:' : 'Academic Supervisor:'}</b> ${escapeHtml(profile.supervisorName) || '—'}</div>
           <div class="meta-item"><b>${isAr ? 'المشرف الميداني:' : 'Field Supervisor:'}</b> ${escapeHtml(profile.responsibleName) || '—'}</div>
           <div class="meta-item"><b>${isAr ? 'ساعات المقرر في الخطة:' : 'Course Credit:'}</b> ${isAr ? 'ساعتان معتمدتان من المعدل التراكمي' : '2 Credit Hours in GPA'}</div>
-          <div class="meta-item"><b>${isAr ? 'المدة التدريبية المعتمدة:' : 'Training Duration:'}</b> ${profile.trainingWeeks || 14} ${isAr ? 'أسبوعاً تدريبياً ميدانياً' : 'Weeks'}</div>
+          <div class="meta-item"><b>${isAr ? 'المدة التدريبية:' : 'Training Duration:'}</b> ${profile.trainingWeeks || 14} ${isAr ? 'أسبوعاً تدريبياً ميدانياً' : 'Weeks'}</div>
           <div class="meta-item"><b>${isAr ? 'حالة التوثيق الميداني:' : 'Documentation Status:'}</b> ${weeks.length} ${isAr ? 'أسبوعاً موثقاً بالكامل (100%)' : 'Weeks Completed (100%)'}</div>
         </div>
       </div>
 
       <!-- TOC matching exact format of image media_1788397544077.png -->
       <div class="toc" id="sec-toc">
-        <h2>${isAr ? 'فهرس المحتويات الأكاديمي المعتمد' : 'Academic Table of Contents'}</h2>
+        <h2>${isAr ? 'فهرس المحتويات وموضوعات الأسابيع' : 'Table of Contents & Weekly Topics'}</h2>
         
         <a class="toc-row" href="#sec-cover">
           <span>${isAr ? '• صفحة الغلاف والبيانات الأساسية' : '• Cover & Student Credentials'}</span>

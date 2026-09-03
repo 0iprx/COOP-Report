@@ -272,10 +272,10 @@ export const WeeklyTab: React.FC = () => {
           <div>
             <h2 className="text-base font-extrabold text-ink flex items-center gap-2">
               <Calendar className="w-5 h-5 text-accent" />
-              <span>التقرير الأسبوعي المعتمد</span>
+              <span>سجل ومتابعة الأسبوع التدريبي</span>
             </h2>
             <p className="text-xs text-sub mt-0.5">
-              خطة التدريب موزعة على {finalReportData?.profile?.trainingWeeks || 14} أسبوعاً تدريبياً مع إمكانية التعديل الشامل والسرد الكتابي
+              مساعدك في تدوين وتصنيف مهام الأسبوع وحفظ كافة التفاصيل لعدم نسيانها عند إعداد التقرير
             </p>
           </div>
 
@@ -436,7 +436,7 @@ export const WeeklyTab: React.FC = () => {
                           : 'bg-warn-bg text-warn'
                     }`}
                   >
-                    {currentWeekObj.status === 'completed' ? 'منجز ومعتمد' : currentWeekObj.status === 'in_progress' ? 'قيد التنفيذ' : 'مؤجل'}
+                    {currentWeekObj.status === 'completed' ? 'مكتمل وموثّق' : currentWeekObj.status === 'in_progress' ? 'قيد التنفيذ' : 'مؤجل'}
                   </span>
                 )}
               </div>
