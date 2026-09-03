@@ -60,29 +60,34 @@ async function callAvailableLLM(
   targetLang: 'ar' | 'en',
   context: string
 ): Promise<string | null> {
-  const systemPrompt =
-    'أنت مساعد لغوي وأكاديمي خبير ومتخصص في توثيق تقارير التدريب التعاوني (Co-op Training). مهمتك تقديم نصوص رفيعة المستوى بأسلوب علمي رصين ودقيق.';
+  const systemPrompt = `أنت مهندس ومستشار أكاديمي خبير في توثيق ومراجعة تقارير التدريب التعاوني الميداني لطلاب الجامعات والكليات التقنية.
+قواعد لغوية وفنية حاسمة يجب الالتزام بها دون استثناء:
+1. ممنوع منعاً باتاً استخدام العبارات الإنشائية المستهلكة أو المبتذلة أو مقدمات الذكاء الاصطناعي النمطية (مثل: "مما لا شك فيه"، "في إطار السعي الدؤوب"، "انطلاقاً من حرصنا"، "بأبهى حلة"، "يسرني ويشرفني"، "يشكل جسراً حيوياً").
+2. استخدم لغة هندسية وتقنية رصينة ومباشرة تعتمد على الأفعال الإجرائية الملموسة (تهيئة، فحص، تكوين، اختبار، تحليل، توثيق، استكشاف الأعطال وإصلاحها).
+3. حافظ على المصطلحات التقنية العالمية الشائعة بالإنجليزية بين قوسين (مثل Active Directory, Docker, VLAN, Firewall, Switch, Patch Panel) بدقة دون تعريب ركيك.
+4. اذكر الحقائق والخطوات التنفيذية والنتائج بأسلوب علمي موضوعي بعيد تماماً عن التضخيم أو الحشو البلاغي.
+5. أعد فقط النص المعالج المطلوب دون أي تحيات أو اعتذارات أو تعليقات خارجية.`;
 
   let userPrompt = '';
   switch (action) {
     case 'polish':
-      userPrompt = `حسّن صياغة النص العربي التالي ليكون بأسلوب أكاديمي تقني رصين واحترافي لتقرير تدريب تعاوني رسمي، مع تصحيح كافة الأخطاء والارتقاء بالمفردات، والحفاظ على الوقائع والمعاني. أعد النص المحسّن فقط:\n\n${text}`;
+      userPrompt = `أعد صياغة وتدقيق النص التالي بأسلوب مهني وهندسي رفيع يناسب تقرير تدريب تعاوني جامعي رسمي، مع التخلص التام من أي حشو أو ركاكة، والتركيز على الخطوات الإجرائية والأدوات المستخدمة والنتائج المتحققة. أعد النص المصاغ فقط:\n\n${text}`;
       break;
     case 'spellcheck':
-      userPrompt = `صحّح كافة الأخطاء الإملائية والنحوية وعلامات الترقيم والهمزات في النص التالي بدقة لغوية تامة. أعد النص المصحح فقط:\n\n${text}`;
+      userPrompt = `صحّح كافة الأخطاء الإملائية والنحوية وعلامات الترقيم والهمزات وضبط المصطلحات الفنية في النص التالي بدقة لغوية فائقة. أعد النص المصحح فقط:\n\n${text}`;
       break;
     case 'summarize':
-      userPrompt = `قم بإيجاز واختصار النص التالي بشكل علمي مكثف وموجز (Executive Summary) مع إبراز أهم الإنجازات والمهام المكتملة. أعد الملخص فقط:\n\n${text}`;
+      userPrompt = `لخّص النص التالي في نقاط فنية مركزة وموجزة (Executive Summary) تبرز الأنشطة الميدانية والمهام التقنية المنفذة بوضوح. أعد الملخص فقط:\n\n${text}`;
       break;
     case 'translate':
       if (targetLang === 'en') {
-        userPrompt = `Translate the following Arabic training report text into formal, professional academic English suitable for a formal Co-op training report. Preserve all technical terms and quantitative achievements. Output ONLY the English translated text without quotes or explanations:\n\n${text}`;
+        userPrompt = `Translate the following Arabic field training record into precise, professional, technical academic English suitable for an engineering co-op report. Preserve technical acronyms and factual metrics. Output ONLY the translated text:\n\n${text}`;
       } else {
-        userPrompt = `ترجم النص الإنجليزي التالي إلى لغة عربية فصحى أكاديمية رصينة تناسب تقرير تدريب تعاوني رسمي. أعد النص المترجم فقط:\n\n${text}`;
+        userPrompt = `ترجم النص التالي إلى لغة عربية فنية وتقنية رصينة ومباشرة تناسب تقريراً هندسياً رسمياً، مع إبقاء المصطلحات التقنية الشائعة بين قوسين. أعد النص المترجم فقط:\n\n${text}`;
       }
       break;
     case 'audit_all':
-      userPrompt = `قم بمراجعة وتدقيق شامل للنص التالي (إملاء، نحو، صياغة أكاديمية، ترقيم). أعد النص المدقق فقط:\n\n${text}`;
+      userPrompt = `قم بمراجعة وتدقيق شامل للنص التالي (لغوياً، نحوياً، وهندسياً) للتأكد من خلوه من أي ركاكة أو أسلوب آلي نمطي. أعد النص بعد المراجعة فقط:\n\n${text}`;
       break;
   }
 
