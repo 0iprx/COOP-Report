@@ -9,6 +9,7 @@ import { WeeklyTab } from './components/weekly/WeeklyTab';
 import { FinalReportTab } from './components/final/FinalReportTab';
 import { SupervisorTab } from './components/supervisor/SupervisorTab';
 import { TestDevLab } from './components/testdev/TestDevLab';
+import { LandingPage } from './components/landing/LandingPage';
 import { OnboardingModal } from './components/common/OnboardingModal';
 import { Calendar, Clock, FileText, ShieldCheck, Layers } from 'lucide-react';
 
@@ -89,7 +90,9 @@ const MainDashboard: React.FC = () => {
     );
   }
 
-  if (!user) return <AuthScreen />;
+  if (!user) {
+    return <LandingPage onOpenTestDev={() => setActiveTab('testdev')} />;
+  }
 
   const visibleTabs = tabs.filter((t) => t.id !== 'supervisor' || user.role === 'supervisor');
 
