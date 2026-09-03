@@ -1041,9 +1041,9 @@ function createWeekEvidenceBlocks(evidence: any[] | undefined, isAr: boolean): P
 
   for (const ev of evidence) {
     try {
-      const match = ev.imageData.match(/^data:image\/(jpeg|jpg|png|webp);base64,(.+)$/);
+      const match = ev.imageData.match(/^data:image\/(jpeg|jpg|png|webp);base64,(.+)$/s);
       if (match) {
-        const imgBuffer = Buffer.from(match[2], 'base64');
+        const imgBuffer = Buffer.from(match[2].trim(), 'base64');
         paragraphs.push(
           new Paragraph({
             alignment: AlignmentType.CENTER,
