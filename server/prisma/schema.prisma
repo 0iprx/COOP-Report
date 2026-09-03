@@ -62,7 +62,7 @@ model ReportProfile {
   trainingUnit    String   @default("") @map("training_unit") @db.VarChar(150)
   supervisorName  String   @default("") @map("supervisor_name") @db.VarChar(100)
   responsibleName String   @default("") @map("responsible_name") @db.VarChar(100)
-  entityAddress   String   @default("هواوي السعودية (Huawei Tech Saudi)") @map("entity_address") @db.VarChar(200)
+  entityAddress   String   @default("") @map("entity_address") @db.VarChar(200)
   employeesCount  String   @default("") @map("employees_count") @db.VarChar(50)
   introText       String   @default("") @map("intro_text") @db.Text
   entityIntroText String   @default("") @map("entity_intro_text") @db.Text

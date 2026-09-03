@@ -15,6 +15,7 @@ import reportsRoutes from './routes/reports.js';
 import aiRoutes from './routes/ai.js';
 import supervisorRoutes from './routes/supervisor.js';
 import backupRoutes from './routes/backup.js';
+import { syncDatabaseSchema } from './startup.js';
 
 // Process Crash Shields (prevents container crashes from unexpected async rejections)
 process.setMaxListeners(0);
@@ -117,6 +118,10 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 // Bind to 0.0.0.0 so containerized environments (Cranl/Docker) can route external traffic
 const server = app.listen(PORT, '0.0.0.0', () => {
   logger.info(`COOP Report Server running on http://0.0.0.0:${PORT}`);
+  // Automatically sync database tables on container startup
+  syncDatabaseSchema().catch((err) => {
+    logger.warn({ err }, 'Schema sync error on startup');
+  });
 });
 
 process.on('SIGTERM', () => {

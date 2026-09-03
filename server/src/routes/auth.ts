@@ -52,15 +52,14 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
       await prisma.reportProfile.create({
         data: {
           userId: user.id,
-          entityAddress: 'هواوي السعودية (Huawei Tech Saudi)',
+          entityAddress: '',
           introText:
             'يمثّل التدريب التعاوني حلقة الوصل بين ما يتلقاه الطالب من معارف أكاديمية وبين واقع سوق العمل التقني، إذ يتيح تطبيق المفاهيم النظرية عملياً في بيئة احترافية.',
-          entityIntroText:
-            'تعد شركة هواوي السعودية من الشركات الرائدة عالمياً في تقديم حلول شبكات الاتصالات والبنية التحتية لتقنية المعلومات والاتصالات والأجهزة الذكية.',
+          entityIntroText: '',
           skillsText:
-            'اكتساب مهارات تقنية متقدمة في إدارة وتكوين الشبكات، تحليل النظم البرمجية، التوثيق الفني، والعمل الجماعي المؤسسي وفق أفضل الممارسات.',
+            'اكتساب مهارات تقنية متقدمة في إدارة وتكوين النظم، تحليل المتطلبات، التوثيق الفني، والعمل الجماعي المؤسسي وفق أفضل الممارسات.',
           conclusionText:
-            'في ختام فترة التدريب التعاوني، نتقدم بالشكر والتقدير لشركة هواوي والكلية على توفير بيئة تعليمية وعملية متميزة أثرت مسيرتنا المهنية.'
+            'في ختام فترة التدريب التعاوني، نتقدم بالشكر والتقدير لجهة التدريب والمشرفين على توفير بيئة تعليمية وعملية متميزة أثرت مسيرتنا المهنية.'
         }
       });
     }
@@ -89,9 +88,20 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
         role: user.role
       }
     });
-  } catch (err) {
+  } catch (err: any) {
     logger.error({ err }, 'Registration error');
-    res.status(500).json({ error: 'حدث خطأ في الخادم أثناء إنشاء الحساب' });
+
+    const isDbError =
+      err?.code === 'P1001' || // Can't reach database server
+      err?.code === 'P1000' || // Authentication failed
+      err?.code === 'P1017' || // Server closed the connection
+      err?.code === 'P2021';   // Table does not exist
+
+    const message = isDbError
+      ? 'تعذر الاتصال بقاعدة البيانات. يرجى التأكد من إضافة رابط DATABASE_URL في لوحة تحكم Cranl.'
+      : (err?.message?.includes('database') ? 'خطأ في الاتصال بقاعدة البيانات. تحقق من DATABASE_URL.' : 'حدث خطأ في الخادم أثناء إنشاء الحساب');
+
+    res.status(500).json({ error: message });
   }
 });
 
