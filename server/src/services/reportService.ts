@@ -21,12 +21,16 @@ export async function buildFinalReportData(userId: number): Promise<FinalReportD
     profileRecord = await prisma.reportProfile.create({
       data: {
         userId,
+        entityAddress: '',
+        employeesCount: '',
+        trainingWeeks: 14,
+        courseHours: 280,
+        startDate: '',
         introText:
           'يمثّل التدريب التعاوني ركيزة جوهرية في تأهيل الكوادر الوطنية الشابة، حيث يسهم في سد الفجوة بين المعارف النظرية الأكاديمية والممارسات المهنية الواقعية في سوق العمل التقني.',
-        entityIntroText:
-          'تعد شركة هواوي السعودية (Huawei Tech Saudi) من أبرز رواد التكنولوجيا العالميين في قطاع الاتصالات والحلول السحابية وتقنيات الجيل الخامس، وتهدف إلى بناء عالم ذكي متصل بالكامل.',
+        entityIntroText: '',
         skillsText:
-          'اكتساب مهارات متقدمة في إدارة وتكوين الشبكات المتقدمة، تحليل المتطلبات البرمجية، العمل ضمن فرق تقنية احترافية، والتواصل المؤسسي الفعال.',
+          'اكتساب مهارات متقدمة في إدارة وتكوين النظم والشبكات، تحليل المتطلبات البرمجية، العمل ضمن فرق تقنية احترافية، والتواصل المؤسسي الفعال.',
         conclusionText:
           'في ختام فترة التدريب التعاوني، نؤكد على الأثر البالغ لهذه التجربة العملية في تطوير المهارات والجاهزية لسوق العمل، مع خالص الامتنان لإدارة التدريب والمشرفين.'
       }
@@ -43,6 +47,9 @@ export async function buildFinalReportData(userId: number): Promise<FinalReportD
     responsibleName: profileRecord.responsibleName,
     entityAddress: profileRecord.entityAddress,
     employeesCount: profileRecord.employeesCount,
+    trainingWeeks: profileRecord.trainingWeeks || 14,
+    courseHours: (profileRecord as any).courseHours || 280,
+    startDate: profileRecord.startDate || '',
     introText: profileRecord.introText,
     entityIntroText: profileRecord.entityIntroText,
     skillsText: profileRecord.skillsText,
@@ -88,22 +95,41 @@ export async function buildFinalReportData(userId: number): Promise<FinalReportD
     weekMap.get(ws)!.push(e);
   }
 
-  // Sort weeks chronologically
-  const sortedWeekStarts = Array.from(weekMap.keys()).sort();
-  const weeks: WeekGroup[] = sortedWeekStarts.map((ws, index) => {
+  const totalConfiguredWeeks = profile.trainingWeeks || 14;
+
+  // Determine starting point
+  let baseWeekStart = profile.startDate
+    ? getWeekStart(profile.startDate)
+    : entries.length > 0
+      ? getWeekStart(entries[0].entryDate)
+      : getWeekStart(new Date().toISOString().split('T')[0]);
+
+  // Construct all training weeks (e.g. 1 to 14)
+  const weeks: WeekGroup[] = [];
+  const baseDate = new Date(`${baseWeekStart}T00:00:00Z`);
+
+  for (let i = 0; i < totalConfiguredWeeks; i++) {
+    const wDate = new Date(baseDate.getTime() + i * 7 * 24 * 60 * 60 * 1000);
+    const ws = wDate.toISOString().split('T')[0];
     const weekEntries = weekMap.get(ws) || [];
     const totalHours = weekEntries.reduce((sum: number, e: EntryDTO) => sum + calculateHoursBetween(e.timeFrom, e.timeTo), 0);
     const uniqueDays = new Set(weekEntries.map((e: EntryDTO) => e.entryDate)).size;
 
-    return {
-      weekIndex: index + 1,
+    let status: 'completed' | 'in_progress' | 'pending' | 'postponed' = 'pending';
+    if (weekEntries.length > 0) {
+      status = totalHours >= 25 ? 'completed' : 'in_progress';
+    }
+
+    weeks.push({
+      weekIndex: i + 1,
       weekStart: ws,
       weekEnd: getWeekEnd(ws),
       totalHours: Number(totalHours.toFixed(1)),
       totalDays: uniqueDays,
-      entries: weekEntries
-    };
-  });
+      entries: weekEntries,
+      status
+    });
+  }
 
   const totalHours = Number(weeks.reduce((sum: number, w: WeekGroup) => sum + w.totalHours, 0).toFixed(1));
   const uniqueAllDays = new Set(entries.map((e: EntryDTO) => e.entryDate)).size;

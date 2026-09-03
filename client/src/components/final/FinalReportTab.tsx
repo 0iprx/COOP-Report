@@ -17,7 +17,8 @@ import {
   ShieldCheck,
   UploadCloud,
   FileCheck,
-  AlertCircle
+  AlertCircle,
+  Clock
 } from 'lucide-react';
 import { DiffModal } from '../common/DiffModal';
 
@@ -41,6 +42,9 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
     responsibleName: '',
     entityAddress: '',
     employeesCount: '',
+    trainingWeeks: 14,
+    courseHours: 280,
+    startDate: '',
     introText: '',
     entityIntroText: '',
     skillsText: '',
@@ -50,6 +54,8 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
   const [saveToast, setSaveToast] = useState<string>('');
   const [errorToast, setErrorToast] = useState<string>('');
   const [backupNotice, setBackupNotice] = useState<string>('');
+  const [downloadingDocx, setDownloadingDocx] = useState<boolean>(false);
+  const [downloadingHtml, setDownloadingHtml] = useState<boolean>(false);
 
   const triggerError = (msg: string) => {
     setErrorToast(msg);
@@ -85,6 +91,9 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
         responsibleName: reportData.profile.responsibleName || '',
         entityAddress: reportData.profile.entityAddress || '',
         employeesCount: reportData.profile.employeesCount || '',
+        trainingWeeks: reportData.profile.trainingWeeks || 14,
+        courseHours: reportData.profile.courseHours || 280,
+        startDate: reportData.profile.startDate || '',
         introText: reportData.profile.introText || '',
         entityIntroText: reportData.profile.entityIntroText || '',
         skillsText: reportData.profile.skillsText || '',
@@ -118,7 +127,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
     }
   });
 
-  const handleProfileChange = (field: keyof ProfileInput, value: string) => {
+  const handleProfileChange = <K extends keyof ProfileInput>(field: K, value: ProfileInput[K]) => {
     setProfileData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -131,7 +140,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
   const handleExportBackup = () => {
     window.open('/api/backup/export', '_blank');
     setBackupNotice('تم تصدير وحفظ نسخة احتياطية مشفرة بـ SHA-256 محلياً على جهازك.');
-    setTimeout(() => setBackupNotice(''), 4500);
+    setTimeout(() => setBackupNotice(''), 4000);
   };
 
   // Import Backup Archive
@@ -139,11 +148,13 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
     const file = e.target.files?.[0];
     if (!file) return;
 
-    try {
-      const text = await file.text();
-      const backupJson = JSON.parse(text);
+    const formData = new FormData();
+    formData.append('backup', file);
 
-      const res = await api.post('/backup/import', backupJson);
+    try {
+      const res = await api.post('/backup/import', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       queryClient.invalidateQueries({ queryKey: ['finalReport'] });
       queryClient.invalidateQueries({ queryKey: ['entries'] });
       setSaveToast(res.data.message || 'تم استرجاع النسخة الاحتياطية بنجاح!');
@@ -155,12 +166,14 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
     }
   };
 
+  type TextProfileField = 'introText' | 'entityIntroText' | 'skillsText' | 'conclusionText';
+
   // AI Field Polish / Action
   const handleAIField = async (
-    field: keyof ProfileInput,
+    field: TextProfileField,
     action: 'polish' | 'spellcheck' | 'summarize' | 'translate'
   ) => {
-    const text = profileData[field];
+    const text = String(profileData[field] || '');
     if (!text || !text.trim()) {
       triggerError('الحقل لا يحتوي على نص كافٍ للمعالجة');
       return;
@@ -198,13 +211,13 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
 
   // Comprehensive AI Audit for All Sections
   const handleAuditAllSections = async () => {
-    const fields: Array<keyof ProfileInput> = ['introText', 'entityIntroText', 'skillsText', 'conclusionText'];
+    const fields: TextProfileField[] = ['introText', 'entityIntroText', 'skillsText', 'conclusionText'];
     setAiLoading(true);
 
     try {
       const updated = { ...profileData };
       for (const f of fields) {
-        const val = updated[f];
+        const val = String(updated[f] || '');
         if (val && val.trim()) {
           const res = await api.post('/ai/process', {
             text: val,
@@ -226,14 +239,14 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
 
   // Auto-Translate Entire Report
   const handleAutoTranslateReport = async () => {
-    const fields: Array<keyof ProfileInput> = ['introText', 'entityIntroText', 'skillsText', 'conclusionText'];
+    const fields: TextProfileField[] = ['introText', 'entityIntroText', 'skillsText', 'conclusionText'];
     const targetLang = currentLang === 'ar' ? 'en' : 'ar';
     setAiLoading(true);
 
     try {
       const updated = { ...profileData };
       for (const f of fields) {
-        const val = updated[f];
+        const val = String(updated[f] || '');
         if (val && val.trim()) {
           const res = await api.post('/ai/process', {
             text: val,
@@ -258,13 +271,55 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
     }
   };
 
-  // Export handlers
-  const handleExportDocx = () => {
-    window.open(`/api/reports/export/docx?lang=${currentLang}`, '_blank');
+  // Export handlers with authenticated Blob downloads
+  const handleExportDocx = async () => {
+    try {
+      setDownloadingDocx(true);
+      const res = await api.get(`/reports/export/docx?lang=${currentLang}`, {
+        responseType: 'blob'
+      });
+      const blob = new Blob([res.data], {
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = currentLang === 'en' ? 'Coop_Final_Report.docx' : 'تقرير_التدريب_التعاوني.docx';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      setSaveToast('تم تحميل مستند Word بنجاح');
+      setTimeout(() => setSaveToast(''), 3500);
+    } catch (err: any) {
+      triggerError('تعذر تصدير مستند Word، يرجى المحاولة مرة أخرى');
+    } finally {
+      setDownloadingDocx(false);
+    }
   };
 
-  const handleExportHTML = () => {
-    window.open(`/api/reports/export/html?lang=${currentLang}`, '_blank');
+  const handleExportHTML = async () => {
+    try {
+      setDownloadingHtml(true);
+      const res = await api.get(`/reports/export/html?lang=${currentLang}`, {
+        responseType: 'blob'
+      });
+      const blob = new Blob([res.data], { type: 'text/html;charset=utf-8' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = currentLang === 'en' ? 'Coop_Final_Report.html' : 'تقرير_التدريب_التعاوني.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      setSaveToast('تم تحميل ملف HTML بنجاح');
+      setTimeout(() => setSaveToast(''), 3500);
+    } catch (err: any) {
+      triggerError('تعذر تصدير ملف HTML، يرجى المحاولة مرة أخرى');
+    } finally {
+      setDownloadingHtml(false);
+    }
   };
 
   const handlePrintPDF = () => {
@@ -473,6 +528,41 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                 className="w-full px-3 py-2 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent"
               />
             </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-bold text-accent">مدة التدريب (عدد الأسابيع)</label>
+              <input
+                type="number"
+                min="1"
+                max="30"
+                value={profileData.trainingWeeks || 14}
+                onChange={(e) => handleProfileChange('trainingWeeks', parseInt(e.target.value) || 14)}
+                className="w-full px-3 py-2 text-sm bg-bg border border-accent/40 rounded-xl focus:outline-none focus:border-accent font-black text-accent"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-bold text-sub">تاريخ بدء التدريب (الأسبوع 1)</label>
+              <input
+                type="date"
+                value={profileData.startDate || ''}
+                onChange={(e) => handleProfileChange('startDate', e.target.value)}
+                className="w-full px-3 py-2 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-bold text-ok">ساعات المقرر المطلوبة (ساعة)</label>
+              <input
+                type="number"
+                min="10"
+                max="2000"
+                value={profileData.courseHours || 280}
+                onChange={(e) => handleProfileChange('courseHours', parseInt(e.target.value) || 280)}
+                placeholder="280"
+                className="w-full px-3 py-2 text-sm bg-bg border border-ok/40 rounded-xl focus:outline-none focus:border-ok font-black text-ok"
+              />
+            </div>
           </div>
 
           {/* Section 1: Intro */}
@@ -646,20 +736,22 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={handleExportDocx}
-            className="px-3.5 py-2 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-all flex items-center gap-1.5 shadow-sm"
+            disabled={downloadingDocx}
+            className="px-3.5 py-2 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
             title="تنزيل ملف Word (.docx) حقيقي مع فهرسة وإشارات مرجعية وروابط تنقل مباشرة بين الصفحات"
           >
-            <Download className="w-4 h-4 text-accent" />
-            <span>تنزيل Word مع الفهرسة الفعلية (.docx)</span>
+            <Download className={`w-4 h-4 text-accent ${downloadingDocx ? 'animate-bounce' : ''}`} />
+            <span>{downloadingDocx ? 'جارٍ تصدير Word...' : 'تنزيل Word مع الفهرسة (.docx)'}</span>
           </button>
 
           <button
             onClick={handleExportHTML}
-            className="px-3.5 py-2 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-all flex items-center gap-1.5 shadow-sm"
+            disabled={downloadingHtml}
+            className="px-3.5 py-2 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
             title="تنزيل تقرير HTML مستقل أوفلاين مع روابط تنقل سلسة"
           >
-            <FileCode className="w-4 h-4 text-ok" />
-            <span>تنزيل HTML مستقل</span>
+            <FileCode className={`w-4 h-4 text-ok ${downloadingHtml ? 'animate-bounce' : ''}`} />
+            <span>{downloadingHtml ? 'جارٍ تصدير HTML...' : 'تنزيل HTML مستقل'}</span>
           </button>
 
           <button
@@ -673,56 +765,66 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
         </div>
       </div>
 
-      {/* Interactive Table of Contents (الفهرس التفاعلي للانتقال الفعلي) */}
+      {/* Interactive Table of Contents (نفس تنسيق الصورة بدقة أسطر التنقيط والأرقام) */}
       <div className="bg-card border border-line rounded-2xl p-6 shadow-sm no-print">
-        <h3 className="text-sm font-extrabold text-accent flex items-center gap-2 pb-3 mb-3 border-b border-line">
-          <Bookmark className="w-4 h-4" />
-          <span>فهرس التقرير التفاعلي (انقر للانتقال المباشر للقسم أو الأسبوع)</span>
+        <h3 className="text-base font-black text-[#8B0000] text-center pb-3 mb-5 border-b-2 border-[#8B0000] flex items-center justify-center gap-2">
+          <Bookmark className="w-5 h-5" />
+          <span>فهرس المحتويات الأكاديمي المعتمد</span>
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2.5 gap-x-6 text-xs font-bold">
-          <a href="#sec-cover" className="text-ink hover:text-accent transition-colors flex items-center gap-1.5">
-            <span className="text-sub">•</span> صفحة الغلاف والبيانات الأساسية
+        
+        <div className="space-y-2.5 max-w-2xl mx-auto text-xs font-bold">
+          <a href="#sec-cover" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
+            <span className="group-hover:translate-x-[-2px] transition-transform">فهرس المحتويات وصفحة الغلاف</span>
+            <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
+            <span className="text-[#8B0000] font-black">١</span>
           </a>
-          <a href="#sec-intro" className="text-ink hover:text-accent transition-colors flex items-center gap-1.5">
-            <span className="text-sub">•</span> 1. المقدمة وأهمية التدريب
+
+          <a href="#sec-intro" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
+            <span className="group-hover:translate-x-[-2px] transition-transform">١. المقدمة وأهداف التدريب وبيانات المقرر ({profileData.courseHours || 280} ساعة)</span>
+            <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
+            <span className="text-[#8B0000] font-black">٢</span>
           </a>
-          <a href="#sec-entity" className="text-ink hover:text-accent transition-colors flex items-center gap-1.5">
-            <span className="text-sub">•</span> 2. التعريف بجهة التدريب {profileData.entityAddress ? `(${profileData.entityAddress})` : ''}
+
+          <a href="#sec-entity" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
+            <span className="group-hover:translate-x-[-2px] transition-transform">٢. التعريف بجهة التدريب وطبيعة العمل {profileData.entityAddress ? `(${profileData.entityAddress})` : ''}</span>
+            <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
+            <span className="text-[#8B0000] font-black">٣</span>
           </a>
-          <a href="#sec-timeline" className="text-ink hover:text-accent transition-colors flex items-center gap-1.5">
-            <span className="text-sub">•</span> 3. الجدول الزمني الأسبوعي ({reportData?.weeks?.length || 0} أسبوع)
+
+          <a href="#sec-timeline" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
+            <span className="group-hover:translate-x-[-2px] transition-transform">٣. الباب التدريبي: الخطة وسجل الأسابيع الـ ({profileData.trainingWeeks || 14} أسبوعاً)</span>
+            <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
+            <span className="text-[#8B0000] font-black">٤</span>
           </a>
-          <a href="#sec-skills" className="text-ink hover:text-accent transition-colors flex items-center gap-1.5">
-            <span className="text-sub">•</span> 4. المعارف والمهارات المكتسبة
+
+          {reportData?.weeks?.map((w, idx) => (
+            <a key={w.weekIndex} href={`#week-${w.weekIndex}`} className="flex items-baseline justify-between text-sub hover:text-accent pr-6 transition-colors group text-[11.5px]">
+              <span className="group-hover:translate-x-[-2px] transition-transform font-medium">
+                • الأسبوع {w.weekIndex} ({w.weekStart} إلى {w.weekEnd}) — [إجمالي: {w.totalHours} ساعة]
+              </span>
+              <span className="flex-grow mx-3 border-b border-dotted border-line relative top-[-4px]"></span>
+              <span className="text-ok font-bold">{5 + idx * 2}</span>
+            </a>
+          ))}
+
+          <a href="#sec-skills" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
+            <span className="group-hover:translate-x-[-2px] transition-transform">٤. المعارف والمهارات والتجارب المكتسبة</span>
+            <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
+            <span className="text-[#8B0000] font-black">{5 + (reportData?.weeks?.length || 14) * 2}</span>
           </a>
-          <a href="#sec-conclusion" className="text-ink hover:text-accent transition-colors flex items-center gap-1.5">
-            <span className="text-sub">•</span> 5. الخاتمة والتوصيات
+
+          <a href="#sec-conclusion" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
+            <span className="group-hover:translate-x-[-2px] transition-transform">٥. الخاتمة والتوصيات العامة</span>
+            <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
+            <span className="text-[#8B0000] font-black">{6 + (reportData?.weeks?.length || 14) * 2}</span>
           </a>
         </div>
-
-        {/* Sub-links to individual weeks */}
-        {reportData?.weeks && reportData.weeks.length > 0 && (
-          <div className="mt-4 pt-3 border-t border-line">
-            <div className="text-[11px] font-bold text-sub mb-2">الانتقال المباشر لأسابيع التدريب:</div>
-            <div className="flex flex-wrap gap-2">
-              {reportData.weeks.map((w) => (
-                <a
-                  key={w.weekIndex}
-                  href={`#week-${w.weekIndex}`}
-                  className="px-2.5 py-1 bg-bg hover:bg-accent-dim hover:text-accent rounded-lg text-[11px] font-bold text-ink border border-line transition-colors"
-                >
-                  الأسبوع {w.weekIndex} ({w.totalHours} س)
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Report Paper Preview Container (Printable Document) */}
       <div
         id="report-paper-view"
-        className="bg-card border border-line rounded-2xl p-8 sm:p-12 shadow-sm leading-relaxed text-ink space-y-8 print-only-container"
+        className="bg-card border border-line rounded-2xl p-8 sm:p-12 shadow-sm leading-relaxed text-ink space-y-8 print-only-container print-page-wrapper"
       >
         {/* Cover Page */}
         <div id="sec-cover" className="text-center pb-10 border-b-2 border-line space-y-4">
@@ -752,7 +854,13 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
               <span className="font-bold text-sub">المشرف الميداني:</span> {profileData.responsibleName || '—'}
             </div>
             <div>
-              <span className="font-bold text-sub">إجمالي الساعات المعتمدة:</span> {reportData?.totalHours || 0} ساعة
+              <span className="font-bold text-sub">ساعات المقرر المطلوبة:</span> {profileData.courseHours || 280} ساعة
+            </div>
+            <div>
+              <span className="font-bold text-sub">إجمالي الساعات المنجزة:</span> {reportData?.totalHours || 0} ساعة ({Math.min(100, Math.round(((reportData?.totalHours || 0) / (profileData.courseHours || 280)) * 100))}%)
+            </div>
+            <div>
+              <span className="font-bold text-sub">مدة التدريب المعتمدة:</span> {profileData.trainingWeeks || 14} أسبوعاً
             </div>
           </div>
         </div>
@@ -801,22 +909,29 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                     {w.totalHours} ساعة عمل | {w.entries.length} مهام منجزة
                   </span>
                 </div>
-                <div className="divide-y divide-line">
-                  {w.entries.map((entry) => (
-                    <div key={entry.id} className="p-4 text-xs space-y-1">
-                      <div className="flex items-center justify-between font-bold text-ink">
-                        <span>{entry.title}</span>
-                        <span className="text-sub font-normal">
-                          {formatDateArabic(entry.entryDate)} ({entry.timeFrom} - {entry.timeTo})
+                {w.entries.length === 0 ? (
+                  <div className="p-4 text-center text-xs text-sub bg-card/50 flex items-center justify-center gap-2 font-medium">
+                    <Clock className="w-3.5 h-3.5 text-warn" />
+                    <span>أسبوع تدريبي مؤجل أو لم تُسجل مهام به بعد — متاح للتوثيق والاستكمال في أي وقت</span>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-line">
+                    {w.entries.map((entry) => (
+                      <div key={entry.id} className="p-4 text-xs space-y-1">
+                        <div className="flex items-center justify-between font-bold text-ink">
+                          <span>{entry.title}</span>
+                          <span className="text-sub font-normal">
+                            {formatDateArabic(entry.entryDate)} ({entry.timeFrom} - {entry.timeTo})
+                          </span>
+                        </div>
+                        <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-accent-dim text-accent">
+                          {entry.category}
                         </span>
+                        <p className="text-sub leading-relaxed whitespace-pre-wrap pt-1">{entry.description}</p>
                       </div>
-                      <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-accent-dim text-accent">
-                        {entry.category}
-                      </span>
-                      <p className="text-sub leading-relaxed whitespace-pre-wrap pt-1">{entry.description}</p>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))
           )}

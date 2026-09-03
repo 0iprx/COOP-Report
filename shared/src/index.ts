@@ -36,7 +36,7 @@ export const entrySchema = z.object({
   timeFrom: z.string().regex(/^\d{2}:\d{2}$/, 'صيغة الوقت غير صحيحة (HH:MM)'),
   timeTo: z.string().regex(/^\d{2}:\d{2}$/, 'صيغة الوقت غير صحيحة (HH:MM)'),
   title: z.string().min(2, 'العنوان مطلوب').max(150, 'العنوان طويل جداً'),
-  category: z.enum(ENTRY_CATEGORIES).default('أخرى'),
+  category: z.string().min(1, 'التصنيف مطلوب').max(50).default('أخرى'),
   description: z.string().min(5, 'تفاصيل الإنجاز يجب ألا تقل عن 5 أحرف')
 });
 
@@ -47,8 +47,11 @@ export const profileSchema = z.object({
   trainingUnit: z.string().max(150).default(''),
   supervisorName: z.string().max(100).default(''),
   responsibleName: z.string().max(100).default(''),
-  entityAddress: z.string().max(200).default('هواوي السعودية (Huawei Tech Saudi)'),
+  entityAddress: z.string().max(200).default(''),
   employeesCount: z.string().max(50).default(''),
+  trainingWeeks: z.number().int().min(1).max(30).default(14),
+  courseHours: z.number().int().min(1).max(2000).default(280),
+  startDate: z.string().max(20).default(''),
   introText: z.string().default(''),
   entityIntroText: z.string().default(''),
   skillsText: z.string().default(''),
@@ -97,6 +100,9 @@ export interface ReportProfileDTO {
   responsibleName: string;
   entityAddress: string;
   employeesCount: string;
+  trainingWeeks: number;
+  courseHours: number;
+  startDate: string;
   introText: string;
   entityIntroText: string;
   skillsText: string;
@@ -110,6 +116,7 @@ export interface WeekGroup {
   totalHours: number;
   totalDays: number;
   entries: EntryDTO[];
+  status?: 'completed' | 'in_progress' | 'pending' | 'postponed';
 }
 
 export interface FinalReportData {

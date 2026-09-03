@@ -340,21 +340,45 @@ export const DailyLogTab: React.FC = () => {
               />
             </div>
 
-            <div className="space-y-1">
-              <label className="block text-xs font-bold text-sub">التصنيف</label>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-sub">التصنيف</label>
+                <span className="text-[10px] text-muted">اختر أو اكتب تصنيفاً مخصصاً</span>
+              </div>
               <div className="relative">
-                <Tag className="w-4 h-4 text-sub absolute right-3 top-3" />
-                <select
+                <Tag className="w-4 h-4 text-sub absolute right-3 top-3 pointer-events-none" />
+                <input
+                  type="text"
+                  list="category-suggestions"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full pr-9 pl-3 py-2 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent appearance-none"
-                >
+                  placeholder="اختر أو اكتب تصنيفاً مخصصاً..."
+                  className="w-full pr-9 pl-3 py-2 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent"
+                  required
+                />
+                <datalist id="category-suggestions">
                   {ENTRY_CATEGORIES.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
+                    <option key={cat} value={cat} />
                   ))}
-                </select>
+                </datalist>
+              </div>
+
+              {/* Quick Preset Tags */}
+              <div className="flex flex-wrap gap-1.5 pt-0.5">
+                {ENTRY_CATEGORIES.map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setCategory(cat)}
+                    className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all ${
+                      category === cat
+                        ? 'bg-accent text-white shadow-sm'
+                        : 'bg-bg hover:bg-line text-sub border border-line'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
               </div>
             </div>
           </div>

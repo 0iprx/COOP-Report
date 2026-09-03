@@ -4,13 +4,16 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
   const { profile, weeks, totalHours, totalDays, totalEntries, estimatedPages, wordCount } = reportData;
   const isAr = lang === 'ar';
   const dir = isAr ? 'rtl' : 'ltr';
+  const entityName = profile.entityAddress || (isAr ? 'جهة التدريب التعاوني' : 'Host Organization');
+  const courseHours = profile.courseHours || 280;
+  const progressPercent = Math.min(100, Math.round((totalHours / courseHours) * 100));
 
   return `<!DOCTYPE html>
 <html lang="${lang}" dir="${dir}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${isAr ? 'تقرير التدريب التعاوني — شركة هواوي السعودية' : 'Co-op Training Report — Huawei Tech Saudi'}</title>
+  <title>${isAr ? `تقرير التدريب التعاوني — ${entityName}` : `Co-op Training Report — ${entityName}`}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
   <style>
@@ -20,7 +23,7 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
       --ink: #1B1B18;
       --sub: #6E6B62;
       --line: #E4E0D5;
-      --accent: #C8102E;
+      --accent: #8B0000;
       --accent-dim: #F4DDDF;
       --ok: #2F6B4F;
       --ok-bg: #E5F1EA;
@@ -39,7 +42,7 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
       -webkit-font-smoothing: antialiased;
     }
     .container {
-      max-width: 900px;
+      max-width: 920px;
       margin: 40px auto;
       padding: 0 20px;
     }
@@ -58,12 +61,12 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
     }
     .cover h1 {
       color: var(--accent);
-      font-size: 30px;
+      font-size: 32px;
       font-weight: 800;
       margin: 14px 0;
     }
     .cover .subtitle {
-      font-size: 18px;
+      font-size: 19px;
       color: var(--ink);
       font-weight: 700;
       margin-bottom: 24px;
@@ -85,51 +88,74 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
       display: inline-block;
       min-width: 140px;
     }
+    /* TOC with Dotted Leader lines matching image media_1788397544077.png */
     .toc {
       background: #FCFBF9;
       border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 24px;
-      margin-bottom: 36px;
+      padding: 28px;
+      margin-bottom: 40px;
     }
-    .toc h3 {
+    .toc h2 {
       margin-top: 0;
       color: var(--accent);
-      font-size: 18px;
+      font-size: 22px;
       font-weight: 800;
+      text-align: center;
+      padding-bottom: 12px;
       border-bottom: 2px solid var(--accent);
-      padding-bottom: 8px;
+      margin-bottom: 20px;
     }
-    .toc a {
-      color: var(--ink);
+    .toc-row {
+      display: flex;
+      align-items: baseline;
       text-decoration: none;
-      display: block;
+      color: var(--ink);
       padding: 6px 0;
       font-size: 14px;
-      font-weight: 600;
-      border-bottom: 1px dashed #EAE8E0;
+      font-weight: 700;
       transition: color 0.15s;
     }
-    .toc a:hover {
+    .toc-row:hover {
       color: var(--accent);
     }
-    .toc-sub {
+    .toc-row.sub {
       padding-${isAr ? 'right' : 'left'}: 24px;
-    }
-    .toc-sub a {
       font-size: 13px;
-      color: var(--sub);
+      font-weight: 500;
+      color: var(--ok);
     }
-    .toc-sub a:hover {
+    .toc-dots {
+      flex-grow: 1;
+      border-bottom: 2px dotted #C8C4BA;
+      margin: 0 10px;
+      position: relative;
+      top: -4px;
+    }
+    .toc-page {
       color: var(--accent);
+      font-weight: 800;
+      min-width: 24px;
+      text-align: ${isAr ? 'left' : 'right'};
     }
     h2.section-title {
       font-size: 20px;
       font-weight: 800;
-      color: var(--ink);
+      color: var(--accent);
       border-bottom: 2px solid var(--accent);
       padding-bottom: 8px;
       margin-top: 40px;
+    }
+    .course-card {
+      background: #FDF8F8;
+      border: 1px solid #F0D0D0;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 20px 0;
+      font-size: 14px;
+      text-align: center;
+      font-weight: 700;
+      color: var(--accent);
     }
     .week-block {
       margin-bottom: 32px;
@@ -173,39 +199,68 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
       background: var(--accent-dim);
       color: var(--accent);
     }
+    .supervisor-signbox {
+      padding: 12px 16px;
+      background: #FAF9F6;
+      border-top: 1px dashed var(--line);
+      font-size: 12.5px;
+      color: var(--sub);
+    }
+    .approval-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 24px;
+      font-size: 13.5px;
+    }
+    .approval-table td {
+      width: 50%;
+      padding: 18px;
+      border: 1px solid var(--ink);
+      vertical-align: top;
+    }
     .print-bar {
       position: sticky;
       top: 10px;
       z-index: 100;
       display: flex;
-      justify-content: flex-end;
-      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(8px);
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
       margin-bottom: 20px;
+      border: 1px solid var(--line);
     }
     .btn {
       background: var(--accent);
       color: white;
       border: none;
-      padding: 9px 18px;
-      border-radius: 7px;
-      font-family: inherit;
-      font-size: 13.5px;
+      padding: 8px 18px;
+      border-radius: 6px;
       font-weight: 700;
       cursor: pointer;
+      font-size: 13px;
     }
     .page-break {
       page-break-before: always;
       break-before: page;
     }
+    /* Suppress browser print header/footer */
+    @page {
+      size: A4 portrait;
+      margin: 0;
+    }
     @media print {
-      @page {
-        margin: 2.5cm;
-        size: A4 portrait;
+      body {
+        background: white;
+        margin: 0;
+        padding: 2cm 1.6cm;
       }
-      body { background: white; }
       .container { max-width: 100%; margin: 0; padding: 0; }
       .report-paper { border: none; box-shadow: none; padding: 0; }
-      .print-bar { display: none; }
+      .print-bar { display: none !important; }
       .week-block { break-inside: avoid; }
     }
   </style>
@@ -213,6 +268,9 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
 <body>
   <div class="container">
     <div class="print-bar">
+      <span style="font-size: 13px; color: var(--sub);">
+        💡 ${isAr ? 'لطباعة نقية كـ PDF: ألغِ خيار (الرؤوس والتذييلات / Headers & Footers) في نافذة الطباعة لإخفاء الرابط والتاريخ.' : 'Tip: Uncheck "Headers and Footers" in print options to hide page URLs and dates.'}
+      </span>
       <button class="btn" onclick="window.print()">${isAr ? 'طباعة التقرير / حفظ PDF' : 'Print / Save as PDF'}</button>
     </div>
     <div class="report-paper">
@@ -225,7 +283,7 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
           ${profile.trainingUnit || (isAr ? 'الوحدة التدريبية / الكلية' : 'Academic Institution')}
         </div>
         <h1>${isAr ? 'التقرير النهائي للتدريب التعاوني (Co-op Report)' : 'Cooperative Training Final Report'}</h1>
-        <div class="subtitle">${profile.entityAddress || (isAr ? 'هواوي السعودية (Huawei Tech Saudi)' : 'Huawei Tech Saudi')}</div>
+        <div class="subtitle">${entityName}</div>
         
         <div class="meta-grid">
           <div class="meta-item"><b>${isAr ? 'اسم المتدرب:' : 'Trainee Name:'}</b> ${escapeHtml(profile.studentName) || '—'}</div>
@@ -233,39 +291,88 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
           <div class="meta-item"><b>${isAr ? 'القسم / التخصص:' : 'Department:'}</b> ${escapeHtml(profile.department) || '—'}</div>
           <div class="meta-item"><b>${isAr ? 'المشرف الأكاديمي:' : 'Academic Supervisor:'}</b> ${escapeHtml(profile.supervisorName) || '—'}</div>
           <div class="meta-item"><b>${isAr ? 'المشرف الميداني:' : 'Field Supervisor:'}</b> ${escapeHtml(profile.responsibleName) || '—'}</div>
-          <div class="meta-item"><b>${isAr ? 'إجمالي الساعات المعتمدة:' : 'Total Hours:'}</b> ${totalHours} ${isAr ? 'ساعة' : 'hrs'}</div>
+          <div class="meta-item"><b>${isAr ? 'ساعات المقرر المطلوبة:' : 'Course Hours:'}</b> ${courseHours} ${isAr ? 'ساعة' : 'hrs'}</div>
+          <div class="meta-item"><b>${isAr ? 'إجمالي الساعات المنجزة:' : 'Logged Hours:'}</b> ${totalHours} ${isAr ? 'ساعة' : 'hrs'} (${progressPercent}%)</div>
+          <div class="meta-item"><b>${isAr ? 'مدة التدريب المعتمدة:' : 'Training Duration:'}</b> ${profile.trainingWeeks || 14} ${isAr ? 'أسبوعاً' : 'weeks'}</div>
         </div>
       </div>
 
-      <!-- TOC (Clickable for Instant Seamless Navigation) -->
+      <!-- TOC matching exact format of image media_1788397544077.png -->
       <div class="toc" id="sec-toc">
-        <h3>${isAr ? 'فهرس المحتويات (انقر للانتقال المباشر للقسم)' : 'Table of Contents (Click to Navigate)'}</h3>
-        <a href="#sec-cover">${isAr ? '• صفحة الغلاف والبيانات الأساسية' : '• Cover & Basic Metadata'}</a>
-        <a href="#sec-intro">${isAr ? '• 1. المقدمة وأهداف التدريب التعاوني' : '• 1. Introduction & Objectives'}</a>
-        <a href="#sec-entity">${isAr ? '• 2. التعريف بجهة التدريب وطبيعة العمل' : '• 2. Organization Overview'}</a>
-        <a href="#sec-timeline">${isAr ? '• 3. الخطة والجدول الزمني للتدريب الأسبوعي' : '• 3. Training Timeline & Weekly Breakdown'}</a>
-        <div class="toc-sub">
-          ${weeks.map((w) => `<a href="#week-${w.weekIndex}">— ${isAr ? 'الأسبوع' : 'Week'} ${w.weekIndex} (${w.weekStart} إلى ${w.weekEnd}) [${w.totalHours} ${isAr ? 'ساعة' : 'hrs'}]</a>`).join('')}
-        </div>
-        <a href="#sec-skills">${isAr ? '• 4. المعارف والمهارات والتجارب المكتسبة' : '• 4. Acquired Knowledge & Skills'}</a>
-        <a href="#sec-conclusion">${isAr ? '• 5. الخاتمة والتوصيات العامة' : '• 5. Conclusion & Recommendations'}</a>
+        <h2>${isAr ? 'فهرس المحتويات' : 'Table of Contents'}</h2>
+        
+        <a class="toc-row" href="#sec-cover">
+          <span>${isAr ? '• صفحة الغلاف والبيانات الأساسية' : '• Cover & Basic Metadata'}</span>
+          <span class="toc-dots"></span>
+          <span class="toc-page">١</span>
+        </a>
+
+        <a class="toc-row" href="#sec-intro">
+          <span>${isAr ? '• 1. المقدمة وأهداف التدريب وبيانات المقرر' : '• 1. Introduction & Course Requirements'}</span>
+          <span class="toc-dots"></span>
+          <span class="toc-page">٢</span>
+        </a>
+
+        <a class="toc-row" href="#sec-entity">
+          <span>${isAr ? '• 2. التعريف بجهة التدريب وطبيعة العمل' : '• 2. Host Organization Overview'}</span>
+          <span class="toc-dots"></span>
+          <span class="toc-page">٣</span>
+        </a>
+
+        <a class="toc-row" href="#sec-timeline">
+          <span>${isAr ? `• 3. الخطة وسجل التدريب الأسبوعي (${profile.trainingWeeks || 14} أسبوعاً)` : `• 3. Weekly Training Timeline (${profile.trainingWeeks || 14} Weeks)`}</span>
+          <span class="toc-dots"></span>
+          <span class="toc-page">٤</span>
+        </a>
+
+        ${weeks.map((w, idx) => `
+          <a class="toc-row sub" href="#week-${w.weekIndex}">
+            <span>${isAr ? `— الأسبوع ${w.weekIndex} (${w.weekStart} إلى ${w.weekEnd}) [${w.totalHours} ساعة]` : `— Week ${w.weekIndex} (${w.weekStart} to ${w.weekEnd}) [${w.totalHours} hrs]`}</span>
+            <span class="toc-dots"></span>
+            <span class="toc-page">${5 + idx * 2}</span>
+          </a>
+        `).join('')}
+
+        <a class="toc-row" href="#sec-skills">
+          <span>${isAr ? '• 4. المعارف والمهارات والتجارب المكتسبة' : '• 4. Acquired Knowledge & Skills'}</span>
+          <span class="toc-dots"></span>
+          <span class="toc-page">${5 + weeks.length * 2}</span>
+        </a>
+
+        <a class="toc-row" href="#sec-conclusion">
+          <span>${isAr ? '• 5. الخاتمة والتوصيات العامة' : '• 5. Conclusion & Recommendations'}</span>
+          <span class="toc-dots"></span>
+          <span class="toc-page">${6 + weeks.length * 2}</span>
+        </a>
+
+        <a class="toc-row" href="#sec-approval">
+          <span>${isAr ? '• 6. استمارة تقييم واعتماد المشرفين' : '• 6. Supervisory Approval Form'}</span>
+          <span class="toc-dots"></span>
+          <span class="toc-page">${7 + weeks.length * 2}</span>
+        </a>
       </div>
 
       <!-- Section 1 -->
-      <h2 class="section-title page-break" id="sec-intro">${isAr ? '1. المقدمة وأهداف التدريب التعاوني' : '1. Introduction'}</h2>
+      <h2 class="section-title page-break" id="sec-intro">${isAr ? '1. المقدمة وأهداف التدريب وساعات المقرر' : '1. Introduction & Course Requirements'}</h2>
       <p>${escapeHtml(profile.introText)}</p>
 
+      <div class="course-card">
+        ${isAr
+          ? `ساعات المقرر المطلوبة: ${courseHours} ساعة  |  الساعات المنجزة: ${totalHours} ساعة (${progressPercent}%)  |  الخطة: ${profile.trainingWeeks || 14} أسبوعاً  |  البداية: ${profile.startDate || 'حسب التقويم'}`
+          : `Required: ${courseHours} hrs  |  Completed: ${totalHours} hrs (${progressPercent}%)  |  Plan: ${profile.trainingWeeks || 14} Weeks  |  Start: ${profile.startDate || 'As Scheduled'}`}
+      </div>
+
       <!-- Section 2 -->
-      <h2 class="section-title" id="sec-entity">${isAr ? '2. التعريف بجهة التدريب وطبيعة العمل' : '2. Organization Overview'}</h2>
+      <h2 class="section-title" id="sec-entity">${isAr ? '2. التعريف بجهة التدريب وطبيعة العمل' : '2. Host Organization Overview'}</h2>
       <p>${escapeHtml(profile.entityIntroText)}</p>
       <div style="background: #FAFAFA; padding: 14px 18px; border-radius: 6px; font-size: 13.5px; border: 1px solid var(--line); margin: 16px 0;">
-        <b>${isAr ? 'المقر:' : 'Address:'}</b> ${escapeHtml(profile.entityAddress)} | 
+        <b>${isAr ? 'جهة التدريب:' : 'Organization:'}</b> ${escapeHtml(entityName)} | 
         <b>${isAr ? 'عدد الموظفين:' : 'Employees:'}</b> ${escapeHtml(profile.employeesCount) || '—'} |
         <b>${isAr ? 'المشرف الميداني:' : 'Supervisor:'}</b> ${escapeHtml(profile.responsibleName) || '—'}
       </div>
 
       <!-- Section 3 -->
-      <h2 class="section-title page-break" id="sec-timeline">${isAr ? '3. الخطة والجدول الزمني للتدريب الأسبوعي' : '3. Training Timeline'}</h2>
+      <h2 class="section-title page-break" id="sec-timeline">${isAr ? `3. الخطة وسجل التدريب الأسبوعي (${profile.trainingWeeks || 14} أسبوعاً)` : `3. Training Timeline (${profile.trainingWeeks || 14} Weeks)`}</h2>
       ${weeks.map((w) => `
         <div class="week-block page-break" id="week-${w.weekIndex}">
           <div class="week-header">
@@ -276,22 +383,33 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
             <thead>
               <tr>
                 <th style="width: 15%;">${isAr ? 'التاريخ' : 'Date'}</th>
-                <th style="width: 25%;">${isAr ? 'العنوان / التصنيف' : 'Title / Category'}</th>
-                <th style="width: 15%;">${isAr ? 'الوقت' : 'Time'}</th>
-                <th style="width: 45%;">${isAr ? 'تفاصيل الإنجاز' : 'Details'}</th>
+                <th style="width: 25%;">${isAr ? 'المهمة / التصنيف' : 'Title / Category'}</th>
+                <th style="width: 15%;">${isAr ? 'الفترة' : 'Time'}</th>
+                <th style="width: 45%;">${isAr ? 'التفاصيل والتوثيق الأكاديمي' : 'Details & Tasks'}</th>
               </tr>
             </thead>
             <tbody>
-              ${w.entries.map((e) => `
+              ${w.entries.length > 0 ? w.entries.map((e) => `
                 <tr>
-                  <td>${formatDateArabic(e.entryDate)}</td>
+                  <td>${e.entryDate ? formatDateArabic(e.entryDate) : '—'}</td>
                   <td><b>${escapeHtml(e.title)}</b><br><span class="badge">${escapeHtml(e.category)}</span></td>
                   <td>${e.timeFrom} - ${e.timeTo}</td>
                   <td>${escapeHtml(e.description)}</td>
                 </tr>
-              `).join('')}
+              `).join('') : `
+                <tr>
+                  <td colspan="4" style="text-align: center; color: var(--sub); padding: 22px; font-style: italic;">
+                    ${isAr ? 'أسبوع تدريبي مؤجل أو لم تسجل به مهام بعد — متاح للتوثيق والاستكمال لاحقاً' : 'Postponed or pending training week — available for updates anytime'}
+                  </td>
+                </tr>
+              `}
             </tbody>
           </table>
+          <div class="supervisor-signbox">
+            ${isAr
+              ? `اعتماد المشرف الميداني (${escapeHtml(profile.responsibleName) || '....................'}) | التقييم: [  ] ممتاز  [  ] جيد جداً  [  ] جيد | التوقيع: ....................`
+              : `Supervisor Sign-off (${escapeHtml(profile.responsibleName) || '....................'}) | Rating: [  ] Excellent  [  ] Very Good  [  ] Good | Signature: ....................`}
+          </div>
         </div>
       `).join('')}
 
@@ -300,12 +418,27 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
       <p>${escapeHtml(profile.skillsText)}</p>
 
       <!-- Section 5 -->
-      <h2 class="section-title page-break" id="sec-conclusion">${isAr ? '5. الخاتمة والتوصيات' : '5. Conclusion & Recommendations'}</h2>
+      <h2 class="section-title page-break" id="sec-conclusion">${isAr ? '5. الخاتمة والتوصيات العامة' : '5. Conclusion'}</h2>
       <p>${escapeHtml(profile.conclusionText)}</p>
 
-      <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 13px; color: var(--sub); text-align: center;">
-        ${isAr ? 'تم إنشاء التقرير بواسطة نظام COOP Report — سجل التدريب التعاوني الذكي' : 'Generated by COOP Report System'}
-      </div>
+      <!-- Section 6: Approval -->
+      <h2 class="section-title page-break" id="sec-approval">${isAr ? '6. استمارة اعتماد وتوقيعات الإشراف' : '6. Supervisory Approval & Final Sign-Off'}</h2>
+      <table class="approval-table">
+        <tr>
+          <td>
+            <b>${isAr ? 'اعتماد المشرف الميداني (جهة التدريب):' : 'Field Supervisor Approval:'}</b><br><br>
+            ${isAr ? 'الاسم:' : 'Name:'} ${escapeHtml(profile.responsibleName) || '....................'}<br><br>
+            ${isAr ? 'الساعات المعتمدة:' : 'Approved Hours:'} ${totalHours} / ${courseHours}<br><br>
+            ${isAr ? 'التوقيع والختم: ........................................' : 'Signature & Stamp: ........................................'}
+          </td>
+          <td>
+            <b>${isAr ? 'اعتماد المشرف الأكاديمي (الكلية / الجامعة):' : 'Academic Supervisor Approval:'}</b><br><br>
+            ${isAr ? 'الاسم:' : 'Name:'} ${escapeHtml(profile.supervisorName) || '....................'}<br><br>
+            ${isAr ? 'الدرجة النهائية:' : 'Final Grade:'} ....................<br><br>
+            ${isAr ? 'التوقيع والختم: ........................................' : 'Signature & Stamp: ........................................'}
+          </td>
+        </tr>
+      </table>
     </div>
   </div>
 </body>

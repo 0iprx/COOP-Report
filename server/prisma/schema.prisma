@@ -64,6 +64,9 @@ model ReportProfile {
   responsibleName String   @default("") @map("responsible_name") @db.VarChar(100)
   entityAddress   String   @default("") @map("entity_address") @db.VarChar(200)
   employeesCount  String   @default("") @map("employees_count") @db.VarChar(50)
+  trainingWeeks   Int      @default(14) @map("training_weeks")
+  courseHours     Int      @default(280) @map("course_hours")
+  startDate       String   @default("") @map("start_date") @db.VarChar(20)
   introText       String   @default("") @map("intro_text") @db.Text
   entityIntroText String   @default("") @map("entity_intro_text") @db.Text
   skillsText      String   @default("") @map("skills_text") @db.Text

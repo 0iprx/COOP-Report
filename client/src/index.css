@@ -333,23 +333,29 @@ input::placeholder, textarea::placeholder {
     display: none !important;
   }
 
+  @page {
+    size: A4 portrait;
+    margin: 0 !important;
+  }
+
   body {
     background: #fff !important;
     color: #000 !important;
     font-size: 11pt;
     line-height: 1.7;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
-  @page {
-    size: A4 portrait;
-    margin: 2.5cm;
+  .print-page-wrapper {
+    padding: 2.2cm 1.8cm !important;
+    box-sizing: border-box !important;
   }
 
   .print-only-container {
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;
-    padding: 0 !important;
     box-shadow: none !important;
     border: none !important;
   }
