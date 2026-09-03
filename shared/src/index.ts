@@ -113,6 +113,15 @@ export interface ReportProfileDTO {
   supervisorApprovedAt?: string | null;
 }
 
+export interface WeeklyEvidenceDTO {
+  id: number;
+  userId: number;
+  weekIndex: number;
+  caption: string;
+  imageData: string;
+  createdAt: string;
+}
+
 export interface WeekGroup {
   weekIndex: number;
   weekStart: string;
@@ -120,6 +129,7 @@ export interface WeekGroup {
   totalHours: number;
   totalDays: number;
   entries: EntryDTO[];
+  evidence?: WeeklyEvidenceDTO[];
   status?: 'completed' | 'in_progress' | 'pending' | 'postponed';
 }
 

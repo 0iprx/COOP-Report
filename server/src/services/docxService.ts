@@ -20,7 +20,8 @@ import {
   TabStopPosition,
   LeaderType,
   TableOfContents,
-  PageReference
+  PageReference,
+  ImageRun
 } from 'docx';
 import { FinalReportData, formatDateArabic, formatDateEnglish } from '@coop/shared';
 
@@ -459,6 +460,9 @@ export async function generateAcademicDocx(reportData: FinalReportData, lang: 'a
 
             // Week Detailed Entries Table
             createWeekEntriesTable(w.entries, isAr),
+
+            // Week Evidence Photos
+            ...createWeekEvidenceBlocks(w.evidence, isAr),
 
             // Week Supervisor Review & Sign-Off Box
             createSupervisorWeekSignoff(profile.responsibleName, isAr)
@@ -1015,6 +1019,66 @@ function createWeekEntriesTable(entries: FinalReportData['weeks'][0]['entries'],
     width: { size: 100, type: WidthType.PERCENTAGE },
     rows: [headerRow, ...rows]
   });
+}
+
+function createWeekEvidenceBlocks(evidence: any[] | undefined, isAr: boolean): Paragraph[] {
+  if (!evidence || evidence.length === 0) return [];
+
+  const paragraphs: Paragraph[] = [
+    new Paragraph({
+      bidirectional: isAr,
+      spacing: { before: 240, after: 120 },
+      children: [
+        new TextRun({
+          text: isAr ? 'الصور التوثيقية والأدلة الميدانية للأسبوع:' : 'Weekly Field Documentation Photos:',
+          bold: true,
+          size: 22,
+          color: '2F6B4F'
+        })
+      ]
+    })
+  ];
+
+  for (const ev of evidence) {
+    try {
+      const match = ev.imageData.match(/^data:image\/(jpeg|jpg|png|webp);base64,(.+)$/);
+      if (match) {
+        const imgBuffer = Buffer.from(match[2], 'base64');
+        paragraphs.push(
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 120, after: 60 },
+            children: [
+              new ImageRun({
+                data: imgBuffer,
+                transformation: {
+                  width: 480,
+                  height: 270
+                }
+              })
+            ]
+          }),
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            bidirectional: isAr,
+            spacing: { before: 0, after: 160 },
+            children: [
+              new TextRun({
+                text: `شكل توثيقي: ${ev.caption}`,
+                size: 20,
+                italics: true,
+                color: '6E6B62'
+              })
+            ]
+          })
+        );
+      }
+    } catch {
+      // Gracefully ignore broken image without crashing docx generation
+    }
+  }
+
+  return paragraphs;
 }
 
 function createSupervisorWeekSignoff(supervisorName: string, isAr: boolean): Table {

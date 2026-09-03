@@ -2,11 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { FinalReportData, EntryDTO, formatDateArabic } from '@coop/shared';
-import { Calendar, Clock, CheckCircle2, Copy, Download, FileText, Check, AlertCircle } from 'lucide-react';
+import { WeeklyEvidenceSection } from './WeeklyEvidenceSection';
+import {
+  Calendar,
+  Clock,
+  CheckCircle2,
+  Copy,
+  Download,
+  Check,
+  Presentation
+} from 'lucide-react';
 
 export const WeeklyTab: React.FC = () => {
   const [selectedWeek, setSelectedWeek] = useState<string>('');
   const [copied, setCopied] = useState<boolean>(false);
+  const [downloadingPptx, setDownloadingPptx] = useState<boolean>(false);
 
   // Fetch final report to get the full academic schedule of all 14 weeks
   const { data: finalReportData } = useQuery<FinalReportData>({
@@ -23,7 +33,6 @@ export const WeeklyTab: React.FC = () => {
   // Set default selected week to first week or current active
   useEffect(() => {
     if (weeksList.length > 0 && !selectedWeek) {
-      // Pick first week with entries, or week 1
       const activeWeek = weeksList.find((w) => w.entries.length > 0) || weeksList[0];
       setSelectedWeek(activeWeek.weekStart);
     }
@@ -88,6 +97,28 @@ export const WeeklyTab: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  const handleDownloadPresentation = async () => {
+    try {
+      setDownloadingPptx(true);
+      const res = await api.get('/reports/export/presentation', { responseType: 'blob' });
+      const blob = new Blob([res.data], {
+        type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `عرض_مناقشة_${entityName.replace(/\s+/g, '_')}.pptx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch {
+      alert('تعذر تحميل عرض PowerPoint، يرجى المحاولة لاحقاً');
+    } finally {
+      setDownloadingPptx(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="bg-card border border-line rounded-2xl p-6 shadow-sm">
@@ -102,13 +133,23 @@ export const WeeklyTab: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={handleDownloadPresentation}
+              disabled={downloadingPptx}
+              className="px-3.5 py-1.5 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
+              title="تصدير شرائح عرض تقديمي للمناقشة (.pptx) متضمناً صور الداتا سنتر وبيئة العمل والأسابيع الـ 14"
+            >
+              <Download className={`w-3.5 h-3.5 text-accent ${downloadingPptx ? 'animate-bounce' : ''}`} />
+              <span>{downloadingPptx ? 'جارٍ التوليد...' : 'عرض PowerPoint (.pptx)'}</span>
+            </button>
+
             <button
               onClick={handleCopyText}
               className="px-3 py-1.5 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-colors flex items-center gap-1.5"
             >
               {copied ? <Check className="w-3.5 h-3.5 text-ok" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copied ? 'تم النسخ!' : 'نسخ التقرير'}</span>
+              <span>{copied ? 'تم النسخ!' : 'نسخ النص'}</span>
             </button>
 
             <button
@@ -116,7 +157,7 @@ export const WeeklyTab: React.FC = () => {
               className="px-3 py-1.5 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-colors flex items-center gap-1.5"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>تصدير Markdown</span>
+              <span>Markdown</span>
             </button>
           </div>
         </div>
@@ -124,7 +165,7 @@ export const WeeklyTab: React.FC = () => {
         {/* 14 Weeks Navigation Strip */}
         <div className="space-y-2 mb-6">
           <div className="flex items-center justify-between text-xs font-bold text-sub">
-            <span>اختر الأسبوع للمعاينة أو التعديل:</span>
+            <span>اختر الأسبوع للمعاينة وإرفاق الصور:</span>
             <span className="text-[11px] text-muted">يمكنك تأجيل أو تخطي أي أسبوع والعودة له لاحقاً</span>
           </div>
 
@@ -132,28 +173,26 @@ export const WeeklyTab: React.FC = () => {
             {weeksList.map((w) => {
               const isSelected = selectedWeek === w.weekStart;
               const hasEntries = w.entries && w.entries.length > 0;
+              const hasEvidence = w.evidence && w.evidence.length > 0;
               return (
                 <button
                   key={w.weekIndex}
-                  type="button"
                   onClick={() => setSelectedWeek(w.weekStart)}
-                  className={`flex-shrink-0 px-3.5 py-2 rounded-xl text-xs font-bold transition-all border flex flex-col items-center gap-1 min-w-[5.5rem] ${
+                  className={`px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex flex-col items-center gap-0.5 border ${
                     isSelected
                       ? 'bg-accent text-white border-accent shadow-sm'
                       : hasEntries
-                        ? 'bg-card text-ink border-line hover:border-ok'
-                        : 'bg-bg text-sub border-line hover:border-accent/40 opacity-80'
+                        ? 'bg-bg hover:bg-line text-ink border-line'
+                        : 'bg-bg/40 text-muted border-dashed border-line'
                   }`}
                 >
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className={`w-2 h-2 rounded-full ${
-                        hasEntries ? (isSelected ? 'bg-white' : 'bg-ok') : isSelected ? 'bg-white/60' : 'bg-muted'
-                      }`}
-                    />
+                  <div className="flex items-center gap-1">
                     <span>الأسبوع {w.weekIndex}</span>
+                    {hasEvidence && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-ok shrink-0" title="يحتوي على صور توثيقية" />
+                    )}
                   </div>
-                  <span className={`text-[10px] font-medium ${isSelected ? 'text-white/80' : 'text-muted'}`}>
+                  <span className="text-[10px] opacity-80">
                     {hasEntries ? `${w.totalHours} ساعة` : 'مؤجل / فارغ'}
                   </span>
                 </button>
@@ -162,20 +201,44 @@ export const WeeklyTab: React.FC = () => {
           </div>
         </div>
 
-        {/* Active Week Content */}
+        {/* Selected Week View */}
         {isLoading ? (
-          <div className="text-center py-12 text-sub text-sm">جارٍ تحميل بيانات الأسبوع...</div>
+          <div className="text-center py-12 text-sub text-sm">جارٍ تحميل تقرير الأسبوع...</div>
         ) : (
           <div className="space-y-6">
-            {/* Stat Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-ok-bg/50 border border-ok/20 rounded-xl p-4">
-                <div className="flex items-center justify-between text-sub mb-1">
-                  <span className="text-xs font-bold">أيام العمل المسجلة</span>
-                  <Calendar className="w-4 h-4 text-ok" />
+            {/* Header info */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-bg rounded-xl border border-line">
+              <div>
+                <span className="text-xs text-sub font-bold block">فترة الأسبوع:</span>
+                <span className="text-sm font-extrabold text-ink">
+                  {weekReport ? `${formatDateArabic(weekReport.weekStart)} إلى ${formatDateArabic(weekReport.weekEnd)}` : '—'}
+                </span>
+              </div>
+
+              {currentWeekObj && (
+                <div className="flex items-center gap-2">
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                    currentWeekObj.status === 'completed'
+                      ? 'bg-ok-bg text-ok'
+                      : currentWeekObj.status === 'in_progress'
+                        ? 'bg-accent-dim text-accent'
+                        : 'bg-warn-bg text-warn'
+                  }`}>
+                    {currentWeekObj.status === 'completed' ? 'مكتمل ومعتمد' : currentWeekObj.status === 'in_progress' ? 'قيد التنفيذ' : 'مؤجل'}
+                  </span>
                 </div>
-                <div className="text-2xl font-black text-ok">{weekReport?.totalDays || 0}</div>
-                <div className="text-[11px] text-sub mt-0.5">أيام نشاط فعلي</div>
+              )}
+            </div>
+
+            {/* Quick Metrics */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="bg-bg border border-line rounded-xl p-4">
+                <div className="flex items-center justify-between text-sub mb-1">
+                  <span className="text-xs font-bold">أيام العمل المنجزة</span>
+                  <Calendar className="w-4 h-4 text-accent" />
+                </div>
+                <div className="text-2xl font-black text-ink">{weekReport?.totalDays || 0}</div>
+                <div className="text-[11px] text-sub mt-0.5">أيام موثقة بالأسبوع</div>
               </div>
 
               <div className="bg-ok-bg/50 border border-ok/20 rounded-xl p-4">
@@ -242,6 +305,11 @@ export const WeeklyTab: React.FC = () => {
                   </tbody>
                 </table>
               </div>
+            )}
+
+            {/* Weekly Field Evidence Photos Component */}
+            {currentWeekObj && (
+              <WeeklyEvidenceSection weekIndex={currentWeekObj.weekIndex} />
             )}
           </div>
         )}

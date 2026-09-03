@@ -99,6 +99,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
   const [backupNotice, setBackupNotice] = useState<string>('');
   const [downloadingDocx, setDownloadingDocx] = useState<boolean>(false);
   const [downloadingHtml, setDownloadingHtml] = useState<boolean>(false);
+  const [downloadingPptx, setDownloadingPptx] = useState<boolean>(false);
 
   const triggerError = (msg: string) => {
     setErrorToast(msg);
@@ -313,6 +314,31 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
       triggerError(err.response?.data?.error || 'فشل استيراد النسخة الاحتياطية (تأكد من سلامة الملف)');
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  // Export PowerPoint Presentation Deck (.pptx)
+  const handleExportPresentation = async () => {
+    try {
+      setDownloadingPptx(true);
+      const res = await api.get('/reports/export/presentation', { responseType: 'blob' });
+      const blob = new Blob([res.data], {
+        type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const rawEntity = profileData.entityAddress || 'COOP_Defense';
+      const safeEntity = rawEntity.replace(/[\\/:*?"<>|\s]/g, '_').slice(0, 40);
+      a.download = `عرض_مناقشة_${safeEntity}.pptx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch {
+      triggerError('تعذر تصدير عرض PowerPoint، يرجى المحاولة لاحقاً');
+    } finally {
+      setDownloadingPptx(false);
     }
   };
 
@@ -1060,6 +1086,16 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
               <span>English</span>
             </button>
           </div>
+
+          <button
+            onClick={handleExportPresentation}
+            disabled={downloadingPptx}
+            className="px-3.5 py-2 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
+            title="تنزيل شرائح عرض تقديمي متكاملة للمناقشة أمام اللجنة (.pptx) متضمنة الصور التوثيقية والأسابيع"
+          >
+            <Download className={`w-4 h-4 text-accent ${downloadingPptx ? 'animate-bounce' : ''}`} />
+            <span>{downloadingPptx ? 'جارٍ تصدير PowerPoint...' : 'عرض PowerPoint (.pptx)'}</span>
+          </button>
 
           <button
             onClick={handleExportDocx}

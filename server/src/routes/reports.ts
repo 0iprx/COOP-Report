@@ -4,6 +4,7 @@ import { authenticate, AuthenticatedRequest } from '../middleware/auth.js';
 import { buildFinalReportData } from '../services/reportService.js';
 import { generateAcademicDocx } from '../services/docxService.js';
 import { generateStandaloneHTMLReport } from '../services/htmlReportService.js';
+import { generatePresentationBuffer } from '../services/presentationService.js';
 import { calculateHoursBetween, getWeekEnd, getWeekStart } from '@coop/shared';
 import { logger } from '../logger.js';
 
@@ -153,6 +154,31 @@ router.get('/export/html', async (req: AuthenticatedRequest, res: Response): Pro
   } catch (err) {
     logger.error({ err }, 'Error exporting HTML');
     res.status(500).json({ error: 'تعذر تصدير ملف HTML' });
+  }
+});
+
+// GET /api/reports/export/presentation (PowerPoint Defense Deck)
+router.get('/export/presentation', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const targetUserId = await resolveTargetUserId(req);
+    if (!targetUserId) {
+      res.status(403).json({ error: 'غير مصرح لك بتصدير عرض هذا المتدرب' });
+      return;
+    }
+
+    const reportData = await buildFinalReportData(targetUserId);
+    const buffer = await generatePresentationBuffer(reportData);
+
+    const rawEntity = reportData.profile.entityAddress || 'COOP_Defense';
+    const safeEntity = rawEntity.replace(/[\\/:*?"<>|\s]/g, '_').slice(0, 40);
+    const filename = encodeURIComponent(`عرض_مناقشة_${safeEntity}.pptx`);
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${filename}`);
+    res.send(buffer);
+  } catch (err) {
+    logger.error({ err }, 'Error exporting PowerPoint presentation');
+    res.status(500).json({ error: 'تعذر تصدير شرائح العرض التقديمي' });
   }
 });
 

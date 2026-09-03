@@ -3,6 +3,7 @@ import {
   FinalReportData,
   WeekGroup,
   EntryDTO,
+  WeeklyEvidenceDTO,
   ReportProfileDTO,
   calculateHoursBetween,
   getWeekStart,
@@ -108,6 +109,27 @@ export async function buildFinalReportData(userId: number): Promise<FinalReportD
       ? getWeekStart(entries[0].entryDate)
       : getWeekStart(new Date().toISOString().split('T')[0]);
 
+  // Fetch weekly evidence photos (excluding soft-deleted)
+  const evidenceRaw = await prisma.weeklyEvidence.findMany({
+    where: { userId, deletedAt: null },
+    orderBy: { createdAt: 'asc' }
+  });
+
+  const evidenceMap = new Map<number, WeeklyEvidenceDTO[]>();
+  for (const ev of evidenceRaw) {
+    if (!evidenceMap.has(ev.weekIndex)) {
+      evidenceMap.set(ev.weekIndex, []);
+    }
+    evidenceMap.get(ev.weekIndex)!.push({
+      id: ev.id,
+      userId: ev.userId,
+      weekIndex: ev.weekIndex,
+      caption: ev.caption,
+      imageData: ev.imageData,
+      createdAt: ev.createdAt.toISOString()
+    });
+  }
+
   // Construct all training weeks (e.g. 1 to 14)
   const weeks: WeekGroup[] = [];
   const baseDate = new Date(`${baseWeekStart}T00:00:00Z`);
@@ -131,6 +153,7 @@ export async function buildFinalReportData(userId: number): Promise<FinalReportD
       totalHours: Number(totalHours.toFixed(1)),
       totalDays: uniqueDays,
       entries: weekEntries,
+      evidence: evidenceMap.get(i + 1) || [],
       status
     });
   }

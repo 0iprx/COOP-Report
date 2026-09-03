@@ -419,6 +419,21 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
               `}
             </tbody>
           </table>
+          ${w.evidence && w.evidence.length > 0 ? `
+            <div style="margin-top: 14px; padding: 12px; background: #FAFAFA; border: 1px solid var(--line); border-radius: 6px;">
+              <div style="font-size: 12px; font-weight: bold; color: var(--accent); margin-bottom: 8px;">
+                ${isAr ? 'الصور التوثيقية والأدلة الميدانية للأسبوع:' : 'Weekly Documentation & Field Evidence Photos:'}
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                ${w.evidence.map(ev => `
+                  <div style="border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: #FFF;">
+                    <img src="${ev.imageData}" alt="${escapeHtml(ev.caption)}" style="width: 100%; height: 140px; object-fit: cover; display: block;" />
+                    <div style="padding: 8px; font-size: 11.5px; color: var(--ink); line-height: 1.4;">${escapeHtml(ev.caption)}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
           <div class="supervisor-signbox">
             ${isAr
               ? `اعتماد المشرف الميداني (${escapeHtml(profile.responsibleName) || '....................'}) | التقييم: [  ] ممتاز  [  ] جيد جداً  [  ] جيد | التوقيع: ....................`

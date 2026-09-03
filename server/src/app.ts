@@ -15,6 +15,7 @@ import reportsRoutes from './routes/reports.js';
 import aiRoutes from './routes/ai.js';
 import supervisorRoutes from './routes/supervisor.js';
 import backupRoutes from './routes/backup.js';
+import evidenceRoutes from './routes/evidence.js';
 import { syncDatabaseSchema } from './startup.js';
 
 // Process Crash Shields (prevents container crashes from unexpected async rejections)
@@ -69,6 +70,7 @@ app.use('/api/reports', reportsRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/supervisor', supervisorRoutes);
 app.use('/api/backup', backupRoutes);
+app.use('/api/evidence', evidenceRoutes);
 
 // Serve Frontend Static Files (Vite SPA)
 const clientDistCandidates = [
