@@ -343,26 +343,26 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
           <a class="toc-row sub" href="#week-${w.weekIndex}">
             <span>${isAr ? `— الأسبوع ${w.weekIndex} (${w.weekStart} إلى ${w.weekEnd}) [${w.totalHours} ساعة]` : `— Week ${w.weekIndex} (${w.weekStart} to ${w.weekEnd}) [${w.totalHours} hrs]`}</span>
             <span class="toc-dots"></span>
-            <span class="toc-page">${5 + idx * 2}</span>
+            <span class="toc-page">${5 + idx}</span>
           </a>
         `).join('')}
 
         <a class="toc-row" href="#sec-skills">
           <span>${isAr ? '• 4. المعارف والمهارات والتجارب المكتسبة' : '• 4. Acquired Knowledge & Skills'}</span>
           <span class="toc-dots"></span>
-          <span class="toc-page">${5 + weeks.length * 2}</span>
+          <span class="toc-page">${5 + weeks.length}</span>
         </a>
 
         <a class="toc-row" href="#sec-conclusion">
           <span>${isAr ? '• 5. الخاتمة والتوصيات العامة' : '• 5. Conclusion & Recommendations'}</span>
           <span class="toc-dots"></span>
-          <span class="toc-page">${6 + weeks.length * 2}</span>
+          <span class="toc-page">${6 + weeks.length}</span>
         </a>
 
         <a class="toc-row" href="#sec-approval">
-          <span>${isAr ? '• 6. استمارة تقييم واعتماد المشرفين' : '• 6. Supervisory Approval Form'}</span>
+          <span>${isAr ? '• 6. استمارة تقييم واعتماد المشرفين والملاحق' : '• 6. Supervisory Approval Form & Appendices'}</span>
           <span class="toc-dots"></span>
-          <span class="toc-page">${7 + weeks.length * 2}</span>
+          <span class="toc-page">${7 + weeks.length}</span>
         </a>
       </div>
 

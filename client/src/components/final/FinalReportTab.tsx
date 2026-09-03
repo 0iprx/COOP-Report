@@ -1226,7 +1226,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             {displayWeeks.map((w, idx) => {
               const isLast = idx === displayWeeks.length - 1;
               const treeSymbol = isLast ? '└──' : '├──';
-              const pageNum = 5 + idx * 2;
+              const pageNum = 5 + idx;
               const hasEvidence = w.evidence && w.evidence.length > 0;
 
               return (
@@ -1272,7 +1272,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
               {isAr ? '٤. المعارف والمهارات والتجارب المكتسبة' : '4. Acquired Competencies & Technical Skills'}
             </span>
             <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
-            <span className="text-[#8B0000] font-black">{isAr ? toArabicIndic(5 + displayWeeks.length * 2) : 5 + displayWeeks.length * 2}</span>
+            <span className="text-[#8B0000] font-black">{isAr ? toArabicIndic(5 + displayWeeks.length) : 5 + displayWeeks.length}</span>
           </a>
 
           <a href="#sec-conclusion" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
@@ -1280,7 +1280,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
               {isAr ? '٥. الخاتمة والتوصيات العامة' : '5. Conclusion & Recommendations'}
             </span>
             <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
-            <span className="text-[#8B0000] font-black">{isAr ? toArabicIndic(6 + displayWeeks.length * 2) : 6 + displayWeeks.length * 2}</span>
+            <span className="text-[#8B0000] font-black">{isAr ? toArabicIndic(6 + displayWeeks.length) : 6 + displayWeeks.length}</span>
           </a>
 
           <a href="#sec-approval" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
@@ -1288,7 +1288,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
               {isAr ? '٦. استمارة تقييم واعتماد المشرفين والملاحق' : '6. Supervisory Approval Form & Appendices'}
             </span>
             <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
-            <span className="text-[#8B0000] font-black">{isAr ? toArabicIndic(7 + displayWeeks.length * 2) : 7 + displayWeeks.length * 2}</span>
+            <span className="text-[#8B0000] font-black">{isAr ? toArabicIndic(7 + displayWeeks.length) : 7 + displayWeeks.length}</span>
           </a>
         </div>
       </div>
