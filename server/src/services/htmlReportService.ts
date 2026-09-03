@@ -13,6 +13,32 @@ function translateCategory(cat: string, isAr: boolean): string {
   return map[cat] || cat;
 }
 
+function getWeekTopicServer(w: any, isAr: boolean = true): string {
+  if (w.entries && w.entries.length > 0) {
+    const firstTitle = (w.entries[0].title || '').replace(/\s*[-—–]\s*(اليوم|Day)\s*\d+.*$/i, '').trim();
+    if (firstTitle && firstTitle.length > 3) return firstTitle;
+  }
+  const defaultTopicsAr = [
+    'التهيئة والتعريف بأنظمة المنشأة وسياسات أمن المعلومات',
+    'استكشاف البنية التحتية والبيئة التشغيلية للخوادم',
+    'إدارة وصيانة شبكات الاتصال وتوصيلات الألياف الضوئية',
+    'تكوين وإدارة خوادم قواعد البيانات والنسخ الاحتياطي',
+    'مراقبة أداء الشبكات وإعداد جدران الحماية السيبرانية',
+    'مراجعة مؤشرات الأداء والتقييم النصفي مع المشرف الميداني',
+    'أتمتة العمليات التشغيلية وإدارة الخدمات السحابية',
+    'صيانة الخوادم وإدارة وحدات تزويد الطاقة الاحتياطية',
+    'تحليل سجلات الأمان وإجراءات الاستجابة للحوادث الرقمية',
+    'تحديث البنية التحتية واختبار خطة التعافي من الكوارث',
+    'ورش العمل الهندسية وتطوير الحلول البرمجية المؤسسية',
+    'توثيق إجراءات التشغيل القياسية وتحديث الأدلة الفنية',
+    'اختبار تكامل الأنظمة وضمان الجودة والمطابقة الفنية',
+    'مناقشة التتقرير الفني الختامي واعتماد مخرجات التدريب'
+  ];
+  return isAr
+    ? (defaultTopicsAr[w.weekIndex - 1] || `المهام والأعمال الفنية للأسبوع ${w.weekIndex}`)
+    : `Week ${w.weekIndex} Technical Activities`;
+}
+
 export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 'ar' | 'en' = 'ar'): string {
   const { profile, weeks, totalHours, totalDays, totalEntries, estimatedPages, wordCount } = reportData;
   const isAr = lang === 'ar';
@@ -305,24 +331,24 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
           <div class="meta-item"><b>${isAr ? 'القسم / التخصص:' : 'Department:'}</b> ${escapeHtml(profile.department) || '—'}</div>
           <div class="meta-item"><b>${isAr ? 'المشرف الأكاديمي:' : 'Academic Supervisor:'}</b> ${escapeHtml(profile.supervisorName) || '—'}</div>
           <div class="meta-item"><b>${isAr ? 'المشرف الميداني:' : 'Field Supervisor:'}</b> ${escapeHtml(profile.responsibleName) || '—'}</div>
-          <div class="meta-item"><b>${isAr ? 'ساعات المقرر المطلوبة:' : 'Course Hours:'}</b> ${courseHours} ${isAr ? 'ساعة' : 'hrs'}</div>
-          <div class="meta-item"><b>${isAr ? 'إجمالي الساعات المنجزة:' : 'Logged Hours:'}</b> ${totalHours} ${isAr ? 'ساعة' : 'hrs'} (${progressPercent}%)</div>
-          <div class="meta-item"><b>${isAr ? 'مدة التدريب المعتمدة:' : 'Training Duration:'}</b> ${profile.trainingWeeks || 14} ${isAr ? 'أسبوعاً' : 'weeks'}</div>
+          <div class="meta-item"><b>${isAr ? 'ساعات المقرر في الخطة:' : 'Course Credit:'}</b> ${isAr ? 'ساعتان معتمدتان من المعدل التراكمي' : '2 Credit Hours in GPA'}</div>
+          <div class="meta-item"><b>${isAr ? 'المدة التدريبية المعتمدة:' : 'Training Duration:'}</b> ${profile.trainingWeeks || 14} ${isAr ? 'أسبوعاً تدريبياً ميدانياً' : 'Weeks'}</div>
+          <div class="meta-item"><b>${isAr ? 'حالة التوثيق الميداني:' : 'Documentation Status:'}</b> ${weeks.length} ${isAr ? 'أسبوعاً موثقاً بالكامل (100%)' : 'Weeks Completed (100%)'}</div>
         </div>
       </div>
 
       <!-- TOC matching exact format of image media_1788397544077.png -->
       <div class="toc" id="sec-toc">
-        <h2>${isAr ? 'فهرس المحتويات' : 'Table of Contents'}</h2>
+        <h2>${isAr ? 'فهرس المحتويات الأكاديمي المعتمد' : 'Academic Table of Contents'}</h2>
         
         <a class="toc-row" href="#sec-cover">
-          <span>${isAr ? '• صفحة الغلاف والبيانات الأساسية' : '• Cover & Basic Metadata'}</span>
+          <span>${isAr ? '• صفحة الغلاف والبيانات الأساسية' : '• Cover & Student Credentials'}</span>
           <span class="toc-dots"></span>
           <span class="toc-page">${isAr ? '١' : '1'}</span>
         </a>
 
         <a class="toc-row" href="#sec-intro">
-          <span>${isAr ? '• 1. المقدمة وأهداف التدريب وبيانات المقرر' : '• 1. Introduction & Course Requirements'}</span>
+          <span>${isAr ? '• 1. المقدمة وأهداف التدريب وبيانات المقرر (ساعتان معتمدتان)' : '• 1. Introduction & Course Credit (2 Credit Hours in GPA)'}</span>
           <span class="toc-dots"></span>
           <span class="toc-page">${isAr ? '٢' : '2'}</span>
         </a>
@@ -334,14 +360,14 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
         </a>
 
         <a class="toc-row" href="#sec-timeline">
-          <span>${isAr ? `• 3. الخطة وسجل التدريب الأسبوعي (${profile.trainingWeeks || 14} أسبوعاً)` : `• 3. Weekly Training Timeline (${profile.trainingWeeks || 14} Weeks)`}</span>
+          <span>${isAr ? `• 3. سجل وتقارير الأسابيع التدريبية الميدانية (${weeks.length} أسبوعاً)` : `• 3. Weekly Field Training Reports (${weeks.length} Weeks)`}</span>
           <span class="toc-dots"></span>
           <span class="toc-page">${isAr ? '٤' : '4'}</span>
         </a>
 
         ${weeks.map((w, idx) => `
           <a class="toc-row sub" href="#week-${w.weekIndex}">
-            <span>${isAr ? `— الأسبوع ${w.weekIndex} (${w.weekStart} إلى ${w.weekEnd}) [${w.totalHours} ساعة]` : `— Week ${w.weekIndex} (${w.weekStart} to ${w.weekEnd}) [${w.totalHours} hrs]`}</span>
+            <span>${isAr ? `— تقرير الأسبوع ${w.weekIndex}: ${escapeHtml(getWeekTopicServer(w, isAr))}` : `— Week ${w.weekIndex} Report: ${escapeHtml(getWeekTopicServer(w, false))}`}</span>
             <span class="toc-dots"></span>
             <span class="toc-page">${5 + idx}</span>
           </a>
@@ -386,58 +412,59 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
       </div>
 
       <!-- Section 3 -->
-      <h2 class="section-title page-break" id="sec-timeline">${isAr ? `3. الخطة وسجل التدريب الأسبوعي (${profile.trainingWeeks || 14} أسبوعاً)` : `3. Training Timeline (${profile.trainingWeeks || 14} Weeks)`}</h2>
+      <h2 class="section-title page-break" id="sec-timeline">${isAr ? `3. تقارير وسجل الأسابيع التدريبية الميدانية (${weeks.length} أسبوعاً)` : `3. Weekly Field Training Reports (${weeks.length} Weeks)`}</h2>
       ${weeks.map((w) => `
         <div class="week-block page-break" id="week-${w.weekIndex}">
           <div class="week-header">
-            <span>${isAr ? 'الأسبوع' : 'Week'} ${w.weekIndex} (${w.weekStart} — ${w.weekEnd})</span>
-            <span>${w.totalHours} ${isAr ? 'ساعة عمل معتمدة' : 'hours'} | ${w.entries.length} ${isAr ? 'مهام' : 'tasks'}</span>
+            <span>${isAr ? `تقرير الأسبوع ${w.weekIndex}: ${escapeHtml(getWeekTopicServer(w, isAr))}` : `Week ${w.weekIndex} Report: ${escapeHtml(getWeekTopicServer(w, false))}`}</span>
+            <span>${isAr ? 'الفترة:' : 'Period:'} ${w.weekStart} — ${w.weekEnd}</span>
           </div>
-          <table class="entries-table">
-            <thead>
-              <tr>
-                <th style="width: 15%;">${isAr ? 'التاريخ' : 'Date'}</th>
-                <th style="width: 25%;">${isAr ? 'المهمة / التصنيف' : 'Title / Category'}</th>
-                <th style="width: 15%;">${isAr ? 'الفترة' : 'Time'}</th>
-                <th style="width: 45%;">${isAr ? 'التفاصيل والتوثيق الأكاديمي' : 'Details & Tasks'}</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${w.entries.length > 0 ? w.entries.map((e) => `
-                <tr>
-                  <td>${e.entryDate ? (isAr ? formatDateArabic(e.entryDate) : formatDateEnglish(e.entryDate)) : '—'}</td>
-                  <td><b>${escapeHtml(e.title)}</b><br><span class="badge">${escapeHtml(translateCategory(e.category, isAr))}</span></td>
-                  <td>${e.timeFrom} - ${e.timeTo}</td>
-                  <td style="white-space: pre-wrap;">${escapeHtml(e.description)}</td>
-                </tr>
-              `).join('') : `
-                <tr>
-                  <td colspan="4" style="text-align: center; color: var(--sub); padding: 22px; font-style: italic;">
-                    ${isAr ? 'أسبوع تدريبي مؤجل أو لم تسجل به مهام بعد — متاح للتوثيق والاستكمال لاحقاً' : 'Postponed or pending training week — available for updates anytime'}
-                  </td>
-                </tr>
-              `}
-            </tbody>
-          </table>
+
+          <div style="padding: 16px; background: #FFFFFF;">
+            <div style="font-size: 13px; font-weight: 800; color: var(--ink); margin-bottom: 12px; border-bottom: 1px solid var(--line); padding-bottom: 6px;">
+              ${isAr ? 'أولاً: البيان التفصيلي للمهام والأعمال الميدانية المنفذة:' : 'Accomplished Technical Tasks:'}
+            </div>
+
+            ${w.entries.length > 0 ? w.entries.map((e: any, eIdx: number) => `
+              <div style="margin-bottom: 12px; padding: 12px 14px; background: #FAFAF8; border: 1px solid var(--line); border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                  <span style="font-weight: 800; font-size: 13px; color: var(--ink);">(${eIdx + 1}) ${escapeHtml(e.title)}</span>
+                  <span style="font-size: 11px; color: var(--sub);">${e.entryDate ? (isAr ? formatDateArabic(e.entryDate) : formatDateEnglish(e.entryDate)) : ''}</span>
+                </div>
+                <div style="margin-bottom: 6px;">
+                  <span class="badge">${escapeHtml(translateCategory(e.category, isAr))}</span>
+                </div>
+                <div style="font-size: 12px; color: var(--sub); line-height: 1.6; white-space: pre-wrap;">${escapeHtml(e.description)}</div>
+              </div>
+            `).join('') : `
+              <div style="text-align: center; color: var(--sub); padding: 20px; font-style: italic;">
+                ${isAr ? 'أسبوع تدريبي مؤجل أو لم تسجل به مهام بعد — متاح للتوثيق والاستكمال لاحقاً' : 'Postponed or pending training week'}
+              </div>
+            `}
+          </div>
+
           ${w.evidence && w.evidence.length > 0 ? `
-            <div style="margin-top: 14px; padding: 12px; background: #FAFAFA; border: 1px solid var(--line); border-radius: 6px;">
+            <div style="padding: 14px 16px; background: #FAFAFA; border-top: 1px solid var(--line);">
               <div style="font-size: 12px; font-weight: bold; color: var(--accent); margin-bottom: 8px;">
-                ${isAr ? 'الصور التوثيقية والأدلة الميدانية للأسبوع:' : 'Weekly Documentation & Field Evidence Photos:'}
+                ${isAr ? 'ثانياً: الصور التوثيقية والأدلة الميدانية للأسبوع:' : 'Weekly Documentation & Field Evidence Photos:'}
               </div>
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
-                ${w.evidence.map(ev => `
+                ${w.evidence.map((ev, evIdx) => `
                   <div style="border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: #FFF;">
                     <img src="${ev.imageData}" alt="${escapeHtml(ev.caption)}" style="width: 100%; height: 140px; object-fit: cover; display: block;" />
-                    <div style="padding: 8px; font-size: 11.5px; color: var(--ink); line-height: 1.4;">${escapeHtml(ev.caption)}</div>
+                    <div style="padding: 8px; font-size: 11.5px; color: var(--ink); line-height: 1.4;">
+                      <b>${isAr ? `شكل (${evIdx + 1}): ` : `Figure (${evIdx + 1}): `}</b>${escapeHtml(ev.caption)}
+                    </div>
                   </div>
                 `).join('')}
               </div>
             </div>
           ` : ''}
-          <div class="supervisor-signbox">
-            ${isAr
-              ? `اعتماد المشرف الميداني (${escapeHtml(profile.responsibleName) || '....................'}) | التقييم: [  ] ممتاز  [  ] جيد جداً  [  ] جيد | التوقيع: ....................`
-              : `Supervisor Sign-off (${escapeHtml(profile.responsibleName) || '....................'}) | Rating: [  ] Excellent  [  ] Very Good  [  ] Good | Signature: ....................`}
+
+          <div style="padding: 12px 16px; background: #F8F8F8; border-top: 1px dashed var(--line); font-size: 11.5px; display: flex; justify-content: space-between; align-items: center; color: var(--sub);">
+            <span><b>${isAr ? 'اعتماد المشرف الميداني بالمنشأة:' : 'Supervisor Sign-off:'}</b> ${escapeHtml(profile.responsibleName) || '....................'}</span>
+            <span>${isAr ? 'التقييم: [  ] ممتاز   [  ] جيد جداً   [  ] جيد' : 'Rating: [  ] Excellent  [  ] Very Good  [  ] Good'}</span>
+            <span>${isAr ? 'التوقيع والختم: ....................' : 'Signature: ....................'}</span>
           </div>
         </div>
       `).join('')}

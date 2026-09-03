@@ -38,6 +38,32 @@ function translateCategory(cat: string, isAr: boolean): string {
   return map[cat] || cat;
 }
 
+function getWeekTopicServer(w: any, isAr: boolean = true): string {
+  if (w.entries && w.entries.length > 0) {
+    const firstTitle = (w.entries[0].title || '').replace(/\s*[-—–]\s*(اليوم|Day)\s*\d+.*$/i, '').trim();
+    if (firstTitle && firstTitle.length > 3) return firstTitle;
+  }
+  const defaultTopicsAr = [
+    'التهيئة والتعريف بأنظمة المنشأة وسياسات أمن المعلومات',
+    'استكشاف البنية التحتية والبيئة التشغيلية للخوادم',
+    'إدارة وصيانة شبكات الاتصال وتوصيلات الألياف الضوئية',
+    'تكوين وإدارة خوادم قواعد البيانات والنسخ الاحتياطي',
+    'مراقبة أداء الشبكات وإعداد جدران الحماية السيبرانية',
+    'مراجعة مؤشرات الأداء والتقييم النصفي مع المشرف الميداني',
+    'أتمتة العمليات التشغيلية وإدارة الخدمات السحابية',
+    'صيانة الخوادم وإدارة وحدات تزويد الطاقة الاحتياطية',
+    'تحليل سجلات الأمان وإجراءات الاستجابة للحوادث الرقمية',
+    'تحديث البنية التحتية واختبار خطة التعافي من الكوارث',
+    'ورش العمل الهندسية وتطوير الحلول البرمجية المؤسسية',
+    'توثيق إجراءات التشغيل القياسية وتحديث الأدلة الفنية',
+    'اختبار تكامل الأنظمة وضمان الجودة والمطابقة الفنية',
+    'مناقشة التقرير الفني الختامي واعتماد مخرجات التدريب'
+  ];
+  return isAr
+    ? (defaultTopicsAr[w.weekIndex - 1] || `المهام والأعمال الفنية للأسبوع ${w.weekIndex}`)
+    : `Week ${w.weekIndex} Technical Activities`;
+}
+
 export async function generateAcademicDocx(reportData: FinalReportData, lang: 'ar' | 'en' = 'ar'): Promise<Buffer> {
   const { profile, weeks, totalHours, totalDays, totalEntries } = reportData;
   const isAr = lang === 'ar';
@@ -227,7 +253,7 @@ export async function generateAcademicDocx(reportData: FinalReportData, lang: 'a
           // Chapter 1: Introduction
           createTOCChapterItem('chap_intro', isAr ? 'الفصل الأول: المقدمة وأهداف التدريب وبيانات المقرر' : 'CHAPTER 1: INTRODUCTION & OBJECTIVES', isAr),
           createTOCSubItem('sec_intro_obj', isAr ? '1.1 أهداف التدريب التعاوني ودوافعه الأكاديمية' : '1.1 Objectives & Academic Motivations', isAr),
-          createTOCSubItem('sec_intro_req', isAr ? `1.2 متطلبات المقرر وساعات التدريب (${courseHours} ساعة)` : `1.2 Course Hours & Framework (${courseHours} hrs)`, isAr),
+          createTOCSubItem('sec_intro_req', isAr ? '1.2 متطلبات المقرر في الخطة الدراسية (ساعتان معتمدتان من المعدل)' : '1.2 Course Credit in Study Plan (2 Credit Hours in GPA)', isAr),
 
           // Chapter 2: Host Organization
           createTOCChapterItem('chap_org', isAr ? `الفصل الثاني: التعريف بجهة التدريب (${entityName})` : `CHAPTER 2: TRAINING ORGANIZATION (${entityName})`, isAr),
@@ -235,16 +261,14 @@ export async function generateAcademicDocx(reportData: FinalReportData, lang: 'a
           createTOCSubItem('sec_org_plan', isAr ? `2.2 الخطة المعتمدة للتدريب (${trainingWeeksCount} أسبوعاً)` : `2.2 Approved COOP Plan (${trainingWeeksCount} Weeks)`, isAr),
 
           // Chapter 3: Weekly Training Timeline (All 14 Weeks)
-          createTOCChapterItem('chap_timeline', isAr ? `الفصل الثالث: السجل الزمني والتفصيلي للأسابيع التدريبية (${trainingWeeksCount} أسبوعاً)` : `CHAPTER 3: WEEKLY TRAINING TIMELINE (${trainingWeeksCount} WEEKS)`, isAr),
+          createTOCChapterItem('chap_timeline', isAr ? `الفصل الثالث: تقارير وسجل الأسابيع التدريبية الميدانية (${trainingWeeksCount} أسبوعاً)` : `CHAPTER 3: WEEKLY TRAINING REPORTS (${trainingWeeksCount} WEEKS)`, isAr),
 
-          // Dynamic Entries for each week from 1 to 14
+          // Dynamic Narrative Topic Entries for each week from 1 to 14
           ...weeks.map((w) => {
-            const weekTaskSnippet = w.entries && w.entries.length > 0
-              ? w.entries[0].title
-              : (isAr ? 'أسبوع تدريبي مؤجل / متاح للتوثيق لاحقاً' : 'Postponed / Available for Logging');
+            const weekTopic = getWeekTopicServer(w, isAr);
             const weekFullTitle = isAr
-              ? `الأسبوع ${w.weekIndex} (${w.weekStart} إلى ${w.weekEnd}): ${weekTaskSnippet}`
-              : `Week ${w.weekIndex} (${w.weekStart} to ${w.weekEnd}): ${weekTaskSnippet}`;
+              ? `تقرير الأسبوع ${w.weekIndex}: ${weekTopic}`
+              : `Week ${w.weekIndex} Report: ${weekTopic}`;
             return createTOCWeekItem(`week_${w.weekIndex}`, weekFullTitle, isAr);
           }),
 
@@ -355,59 +379,10 @@ export async function generateAcademicDocx(reportData: FinalReportData, lang: 'a
               })
             ]
           }),
-
-          new Paragraph({
-            heading: HeadingLevel.HEADING_2,
-            bidirectional: isAr,
-            spacing: { before: 200, after: 100 },
-            children: [
-              new Bookmark({
-                id: 'sec_org_about',
-                children: [
-                  new TextRun({
-                    text: isAr ? '2.1 نبذة عن جهة التدريب وهيكلها الإداري' : '2.1 Host Organization & Structure',
-                    bold: true,
-                    size: 26,
-                    color: '2F6B4F'
-                  })
-                ]
-              })
-            ]
-          }),
-          new Paragraph({
-            bidirectional: isAr,
-            alignment: AlignmentType.JUSTIFIED,
-            children: [
-              new TextRun({
-                text: profile.entityIntroText || (isAr
-                  ? `تُعد ${entityName} من المؤسسات الرائدة التي تتيح للمتدربين بيئة عمل تقنية متكاملة تدعم الابتكار والتطوير المستمر...`
-                  : `${entityName} is a prestigious professional organization providing trainees with comprehensive exposure to modern systems...`)
-              })
-            ]
-          }),
-
-          new Paragraph({
-            heading: HeadingLevel.HEADING_2,
-            bidirectional: isAr,
-            spacing: { before: 300, after: 100 },
-            children: [
-              new Bookmark({
-                id: 'sec_org_plan',
-                children: [
-                  new TextRun({
-                    text: isAr ? `2.2 الخطة المعتمدة ومسؤوليات التدريب (${trainingWeeksCount} أسبوعاً)` : `2.2 Approved Plan & Responsibilities (${trainingWeeksCount} Weeks)`,
-                    bold: true,
-                    size: 26,
-                    color: '2F6B4F'
-                  })
-                ]
-              })
-            ]
-          }),
           createOrgOverviewCard(profile, isAr),
 
           // ==========================================
-          // CHAPTER 3: WEEKLY TRAINING TIMELINE (14 WEEKS)
+          // CHAPTER 3: WEEKLY TRAINING REPORTS (14 WEEKS)
           // ==========================================
           new Paragraph({
             pageBreakBefore: true,

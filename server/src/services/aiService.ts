@@ -228,11 +228,83 @@ async function executeBuiltInEngine(text: string, action: AIAction, targetLang: 
 }
 
 /**
- * Free instant translation API with multi-chunk support
+ * Free instant translation API with multi-chunk support and MyMemory fallback
  */
 async function translateWithWebAPI(text: string, targetLang: 'ar' | 'en'): Promise<string | null> {
+  const clean = text.trim();
+  if (!clean) return '';
+
+  // If text is short, translate directly
+  if (clean.length <= 400) {
+    const single = await fetchSingleChunkTranslation(clean, targetLang);
+    if (single) return single;
+  }
+
+  // Split into paragraphs for long texts
+  const paragraphs = clean.split(/\n\s*\n/);
+  const translatedParagraphs: string[] = [];
+
+  for (const para of paragraphs) {
+    const trimmedPara = para.trim();
+    if (!trimmedPara) {
+      translatedParagraphs.push('');
+      continue;
+    }
+
+    if (trimmedPara.length <= 400) {
+      const trans = await fetchSingleChunkTranslation(trimmedPara, targetLang);
+      translatedParagraphs.push(trans || trimmedPara);
+    } else {
+      // Split by sentences if a single paragraph is very long
+      const sentences = trimmedPara.match(/[^.!?،؟\n]+[.!?،؟\n]*/g) || [trimmedPara];
+      const translatedSentences: string[] = [];
+      for (const sent of sentences) {
+        const s = sent.trim();
+        if (!s) continue;
+        const trans = await fetchSingleChunkTranslation(s, targetLang);
+        translatedSentences.push(trans || s);
+      }
+      translatedParagraphs.push(translatedSentences.join(' '));
+    }
+  }
+
+  const result = translatedParagraphs.join('\n\n').trim();
+  return result || null;
+}
+
+/**
+ * Tries Google GTX first, then MyMemory Translate API
+ */
+async function fetchSingleChunkTranslation(chunk: string, targetLang: 'ar' | 'en'): Promise<string | null> {
+  if (!chunk.trim()) return '';
+
+  // 1. Google GTX
   try {
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(chunk)}`;
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      },
+      signal: AbortSignal.timeout(6000)
+    });
+    if (res.ok) {
+      const data: any = await res.json();
+      if (Array.isArray(data?.[0])) {
+        const fullTranslation = data[0]
+          .map((c: any) => (Array.isArray(c) && c[0] ? c[0] : ''))
+          .join('')
+          .trim();
+        if (fullTranslation) return fullTranslation;
+      }
+    }
+  } catch {
+    // Continue to fallback
+  }
+
+  // 2. MyMemory Translate API
+  try {
+    const langpair = targetLang === 'en' ? 'ar|en' : 'en|ar';
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunk)}&langpair=${langpair}`;
     const res = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
@@ -241,16 +313,13 @@ async function translateWithWebAPI(text: string, targetLang: 'ar' | 'en'): Promi
     });
     if (res.ok) {
       const data: any = await res.json();
-      if (Array.isArray(data?.[0])) {
-        const fullTranslation = data[0]
-          .map((chunk: any) => (Array.isArray(chunk) && chunk[0] ? chunk[0] : ''))
-          .join('')
-          .trim();
-        if (fullTranslation) return fullTranslation;
+      const translated = data?.responseData?.translatedText?.trim();
+      if (translated && !translated.startsWith('MYMEMORY WARNING')) {
+        return translated;
       }
     }
-  } catch (err: any) {
-    logger.warn({ err: err?.message }, 'Web translation failed, falling back to dictionary mapping');
+  } catch {
+    // Continue
   }
 
   return null;
