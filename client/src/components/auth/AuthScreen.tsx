@@ -3,7 +3,8 @@ import { useAuth } from '../../context/AuthContext';
 import {
   ShieldCheck, UserCheck, AlertCircle,
   Lock, User, BookOpen, Sparkles,
-  Eye, EyeOff, CheckCircle2, ArrowLeft, ArrowRight
+  Eye, EyeOff, CheckCircle2, KeyRound,
+  Copy, Check
 } from 'lucide-react';
 
 export const AuthScreen: React.FC = () => {
@@ -14,6 +15,8 @@ export const AuthScreen: React.FC = () => {
   const [confirmPassword, setConfirmPass] = useState<string>('');
   const [role, setRole]                   = useState<'trainee' | 'supervisor'>('trainee');
   const [showPw, setShowPw]               = useState<boolean>(false);
+  const [copied, setCopied]               = useState<boolean>(false);
+  const [genToast, setGenToast]           = useState<boolean>(false);
   const [error, setError]                 = useState<string>('');
   const [loading, setLoading]             = useState<boolean>(false);
 
@@ -23,6 +26,62 @@ export const AuthScreen: React.FC = () => {
     setUsername('');
     setPassword('');
     setConfirmPass('');
+    setGenToast(false);
+  };
+
+  // Generate strong, cryptographic password
+  const generateStrongPassword = () => {
+    const charsLower = 'abcdefghijkmnpqrstuvwxyz';
+    const charsUpper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const numbers = '23456789';
+    const symbols = '!@#$%^&*-_+=';
+    const all = charsLower + charsUpper + numbers + symbols;
+
+    let pwd = '';
+    pwd += charsLower[Math.floor(Math.random() * charsLower.length)];
+    pwd += charsUpper[Math.floor(Math.random() * charsUpper.length)];
+    pwd += numbers[Math.floor(Math.random() * numbers.length)];
+    pwd += symbols[Math.floor(Math.random() * symbols.length)];
+
+    const length = 14;
+    const array = new Uint32Array(length - 4);
+    if (window.crypto && window.crypto.getRandomValues) {
+      window.crypto.getRandomValues(array);
+      for (let i = 0; i < array.length; i++) {
+        pwd += all[array[i] % all.length];
+      }
+    } else {
+      for (let i = 4; i < length; i++) {
+        pwd += all[Math.floor(Math.random() * all.length)];
+      }
+    }
+
+    const shuffled = pwd.split('').sort(() => 0.5 - Math.random()).join('');
+    setPassword(shuffled);
+    setConfirmPass(shuffled);
+    setShowPw(true);
+    setCopied(false);
+    setGenToast(true);
+    setTimeout(() => setGenToast(false), 5000);
+  };
+
+  const copyPasswordToClipboard = async () => {
+    if (!password) return;
+    try {
+      await navigator.clipboard.writeText(password);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      // Fallback if clipboard API unavailable
+      const textArea = document.createElement('textarea');
+      textArea.value = password;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -64,7 +123,7 @@ export const AuthScreen: React.FC = () => {
     if (!password) return { score: 0, text: '', color: 'bg-line' };
     if (password.length < 8) return { score: 33, text: 'قصيرة (أقل من 8 أحرف)', color: 'bg-accent' };
     if (password.length < 12) return { score: 66, text: 'جيدة', color: 'bg-warn' };
-    return { score: 100, text: 'قوية ومحمية', color: 'bg-ok' };
+    return { score: 100, text: 'قوية ومحمية بنجاح', color: 'bg-ok' };
   };
 
   const pwStrength = getPasswordStrength();
@@ -128,6 +187,24 @@ export const AuthScreen: React.FC = () => {
             <div className="mb-4 p-3 rounded-xl bg-accent-dim border border-accent/30 text-accent text-xs font-bold flex items-start gap-2.5 animate-fade-in">
               <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
               <span className="leading-relaxed">{error}</span>
+            </div>
+          )}
+
+          {/* Generated Password Notification */}
+          {genToast && (
+            <div className="mb-4 p-3 rounded-xl bg-ok-bg border border-ok/30 text-ok text-xs font-bold flex items-center justify-between gap-2 animate-fade-in shadow-sm">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>تم توليد كلمة مرور قوية وتعبئة التأكيد تلقائياً!</span>
+              </div>
+              <button
+                type="button"
+                onClick={copyPasswordToClipboard}
+                className="px-2.5 py-1 bg-white border border-ok/30 rounded-lg text-[11px] font-extrabold text-ok hover:bg-ok-bg transition-colors flex items-center gap-1 shadow-sm shrink-0"
+              >
+                {copied ? <Check className="w-3.5 h-3.5 text-ok" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copied ? 'تم النسخ' : 'نسخ'}</span>
+              </button>
             </div>
           )}
 
@@ -211,7 +288,21 @@ export const AuthScreen: React.FC = () => {
 
             {/* Password Input Field */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-sub">كلمة المرور</label>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-sub">كلمة المرور</label>
+                {!isLogin && (
+                  <button
+                    type="button"
+                    onClick={generateStrongPassword}
+                    className="text-[11px] font-extrabold text-accent hover:text-accent-mid flex items-center gap-1 transition-colors py-0.5 px-2 rounded-lg bg-accent/5 hover:bg-accent/10 border border-accent/20"
+                    title="توليد كلمة مرور عشوائية قوية وتعبئة حقل التأكيد تلقائياً"
+                  >
+                    <KeyRound className="w-3.5 h-3.5" />
+                    <span>توليد كلمة مرور قوية</span>
+                  </button>
+                )}
+              </div>
+
               <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-line bg-bg focus-within:border-accent focus-within:bg-card focus-within:ring-2 focus-within:ring-accent-dim transition-all">
                 <Lock className="w-4 h-4 text-muted shrink-0" />
                 <input
@@ -224,6 +315,20 @@ export const AuthScreen: React.FC = () => {
                   dir="ltr"
                   required
                 />
+
+                {/* Quick Copy Action if Password is typed */}
+                {password && (
+                  <button
+                    type="button"
+                    onClick={copyPasswordToClipboard}
+                    className="p-1 text-muted hover:text-ink transition-colors shrink-0"
+                    title={copied ? 'تم النسخ!' : 'نسخ كلمة المرور'}
+                  >
+                    {copied ? <Check className="w-4 h-4 text-ok" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                )}
+
+                {/* Show/Hide Toggle */}
                 <button
                   type="button"
                   onClick={() => setShowPw(!showPw)}
@@ -244,7 +349,7 @@ export const AuthScreen: React.FC = () => {
                     />
                   </div>
                   <div className="flex justify-between items-center text-[10px] text-muted">
-                    <span>قوة كلمة المرور:</span>
+                    <span>مستوى الأمان:</span>
                     <span className="font-bold">{pwStrength.text}</span>
                   </div>
                 </div>
