@@ -5,7 +5,12 @@ import { prisma } from './db.js';
 import { logger } from './logger.js';
 
 export async function syncDatabaseSchema(): Promise<void> {
-  const dbUrl = process.env.DATABASE_URL;
+  let dbUrl = process.env.DATABASE_URL?.trim();
+  if (dbUrl) {
+    dbUrl = dbUrl.replace(/^["']|["']$/g, '').trim();
+    process.env.DATABASE_URL = dbUrl;
+  }
+
   if (!dbUrl) {
     logger.warn('⚠️ DATABASE_URL is not set in environment variables! Database operations will fail.');
     return;
@@ -27,7 +32,11 @@ export async function syncDatabaseSchema(): Promise<void> {
       logger.info({ targetSchema }, 'Running automatic prisma db push...');
       execSync(`npx prisma db push --schema="${targetSchema}" --skip-generate --accept-data-loss`, {
         stdio: 'inherit',
-        timeout: 30000
+        timeout: 30000,
+        env: {
+          ...process.env,
+          DATABASE_URL: dbUrl
+        }
       });
       logger.info('✅ Database schema synchronized successfully (all tables are ready).');
     }
