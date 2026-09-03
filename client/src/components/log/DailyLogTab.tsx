@@ -17,7 +17,8 @@ import {
   History,
   Archive,
   Check,
-  X
+  X,
+  Edit3
 } from 'lucide-react';
 import { DiffModal } from '../common/DiffModal';
 
@@ -27,6 +28,7 @@ export const DailyLogTab: React.FC = () => {
   const queryClient = useQueryClient();
 
   // Form State
+  const [editingEntryId, setEditingEntryId] = useState<number | null>(null);
   const [entryDate, setEntryDate] = useState<string>(new Date().toISOString().slice(0, 10));
   const [timeFrom, setTimeFrom] = useState<string>('08:00');
   const [timeTo, setTimeTo] = useState<string>('16:00');
@@ -123,6 +125,26 @@ export const DailyLogTab: React.FC = () => {
       setDescription('');
       setFormError('');
       localStorage.removeItem(DRAFT_KEY);
+      showToast('تمت إضافة وتوثيق المهمة بنجاح', 'success');
+    }
+  });
+
+  // Update mutation
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      const res = await api.put(`/entries/${id}`, data);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['entries'] });
+      queryClient.invalidateQueries({ queryKey: ['weekly'] });
+      queryClient.invalidateQueries({ queryKey: ['finalReport'] });
+      setEditingEntryId(null);
+      setTitle('');
+      setDescription('');
+      setFormError('');
+      localStorage.removeItem(DRAFT_KEY);
+      showToast('تم تحديث الإدخال وحفظ نسخة سابقة تلقائياً في سجل الإصدارات', 'success');
     }
   });
 
@@ -151,6 +173,26 @@ export const DailyLogTab: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['finalReport'] });
     }
   });
+
+  // Start editing existing entry
+  const handleStartEdit = (entry: EntryDTO) => {
+    setEditingEntryId(entry.id);
+    setEntryDate(entry.entryDate);
+    setTimeFrom(entry.timeFrom);
+    setTimeTo(entry.timeTo);
+    setTitle(entry.title);
+    setCategory(entry.category);
+    setDescription(entry.description);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    showToast('تم تحميل بيانات الإدخال في النموذج للتعديل', 'success');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingEntryId(null);
+    setTitle('');
+    setDescription('');
+    setFormError('');
+  };
 
   // View entry revisions
   const handleOpenRevisions = async (entry: EntryDTO) => {
@@ -186,14 +228,20 @@ export const DailyLogTab: React.FC = () => {
       return;
     }
     setFormError('');
-    createMutation.mutate({
+    const payload = {
       entryDate,
       timeFrom,
       timeTo,
       title: title.trim(),
       category,
       description: description.trim()
-    });
+    };
+
+    if (editingEntryId) {
+      updateMutation.mutate({ id: editingEntryId, data: payload });
+    } else {
+      createMutation.mutate(payload);
+    }
   };
 
   // AI action handler
@@ -255,7 +303,18 @@ export const DailyLogTab: React.FC = () => {
         <div className="flex items-center justify-between pb-4 mb-4 border-b border-line">
           <div className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-accent" />
-            <h2 className="text-base font-extrabold text-ink">إضافة إنجاز يومي جديد</h2>
+            <h2 className="text-base font-extrabold text-ink">
+              {editingEntryId ? 'تعديل الإنجاز اليومي' : 'إضافة إنجاز يومي جديد'}
+            </h2>
+            {editingEntryId && (
+              <button
+                type="button"
+                onClick={handleCancelEdit}
+                className="text-xs text-sub hover:text-accent underline mr-2"
+              >
+                (إلغاء التعديل والعودة للإضافة)
+              </button>
+            )}
           </div>
           <div className="flex items-center gap-2">
             {trashData?.entries && trashData.entries.length > 0 && (
@@ -455,11 +514,17 @@ export const DailyLogTab: React.FC = () => {
           <div className="pt-2 flex justify-end">
             <button
               type="submit"
-              disabled={createMutation.isPending}
+              disabled={createMutation.isPending || updateMutation.isPending}
               className="px-6 py-2.5 bg-accent hover:bg-accent/90 disabled:opacity-50 text-white font-bold rounded-xl transition-all shadow-sm text-sm flex items-center gap-2"
             >
-              <Plus className="w-4 h-4" />
-              <span>{createMutation.isPending ? 'جارٍ الحفظ...' : 'حفظ الإدخال اليومي'}</span>
+              {editingEntryId ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+              <span>
+                {createMutation.isPending || updateMutation.isPending
+                  ? 'جارٍ الحفظ...'
+                  : editingEntryId
+                  ? 'تحديث الإدخال وحفظ تعديل جديد'
+                  : 'حفظ الإدخال اليومي'}
+              </span>
             </button>
           </div>
         </form>
@@ -505,6 +570,15 @@ export const DailyLogTab: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-1">
+                  {/* Edit button */}
+                  <button
+                    onClick={() => handleStartEdit(entry)}
+                    className="p-2 text-sub hover:text-accent rounded-lg hover:bg-bg transition-colors"
+                    title="تعديل وتحديث هذا الإدخال"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+
                   {/* Revision History button */}
                   <button
                     onClick={() => handleOpenRevisions(entry)}

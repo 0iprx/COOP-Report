@@ -56,9 +56,9 @@ export async function buildFinalReportData(userId: number): Promise<FinalReportD
     conclusionText: profileRecord.conclusionText
   };
 
-  // Fetch entries
+  // Fetch entries (excluding soft-deleted)
   const entriesRaw = await prisma.entry.findMany({
-    where: { userId },
+    where: { userId, deletedAt: null },
     orderBy: { entryDate: 'asc' }
   });
 

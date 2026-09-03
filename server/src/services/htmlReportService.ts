@@ -1,4 +1,17 @@
-import { FinalReportData, formatDateArabic } from '@coop/shared';
+import { FinalReportData, formatDateArabic, formatDateEnglish } from '@coop/shared';
+
+function translateCategory(cat: string, isAr: boolean): string {
+  if (isAr) return cat;
+  const map: Record<string, string> = {
+    'تطوير / برمجة': 'Development & Programming',
+    'اجتماعات': 'Meetings & Alignment',
+    'تدريب وتعلّم': 'Training & Learning',
+    'توثيق': 'Documentation',
+    'دعم فني': 'Technical Support',
+    'أخرى': 'Other'
+  };
+  return map[cat] || cat;
+}
 
 export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 'ar' | 'en' = 'ar'): string {
   const { profile, weeks, totalHours, totalDays, totalEntries, estimatedPages, wordCount } = reportData;
@@ -304,25 +317,25 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
         <a class="toc-row" href="#sec-cover">
           <span>${isAr ? '• صفحة الغلاف والبيانات الأساسية' : '• Cover & Basic Metadata'}</span>
           <span class="toc-dots"></span>
-          <span class="toc-page">١</span>
+          <span class="toc-page">${isAr ? '١' : '1'}</span>
         </a>
 
         <a class="toc-row" href="#sec-intro">
           <span>${isAr ? '• 1. المقدمة وأهداف التدريب وبيانات المقرر' : '• 1. Introduction & Course Requirements'}</span>
           <span class="toc-dots"></span>
-          <span class="toc-page">٢</span>
+          <span class="toc-page">${isAr ? '٢' : '2'}</span>
         </a>
 
         <a class="toc-row" href="#sec-entity">
           <span>${isAr ? '• 2. التعريف بجهة التدريب وطبيعة العمل' : '• 2. Host Organization Overview'}</span>
           <span class="toc-dots"></span>
-          <span class="toc-page">٣</span>
+          <span class="toc-page">${isAr ? '٣' : '3'}</span>
         </a>
 
         <a class="toc-row" href="#sec-timeline">
           <span>${isAr ? `• 3. الخطة وسجل التدريب الأسبوعي (${profile.trainingWeeks || 14} أسبوعاً)` : `• 3. Weekly Training Timeline (${profile.trainingWeeks || 14} Weeks)`}</span>
           <span class="toc-dots"></span>
-          <span class="toc-page">٤</span>
+          <span class="toc-page">${isAr ? '٤' : '4'}</span>
         </a>
 
         ${weeks.map((w, idx) => `
@@ -354,7 +367,7 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
 
       <!-- Section 1 -->
       <h2 class="section-title page-break" id="sec-intro">${isAr ? '1. المقدمة وأهداف التدريب وساعات المقرر' : '1. Introduction & Course Requirements'}</h2>
-      <p>${escapeHtml(profile.introText)}</p>
+      <p style="white-space: pre-wrap;">${escapeHtml(profile.introText)}</p>
 
       <div class="course-card">
         ${isAr
@@ -364,7 +377,7 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
 
       <!-- Section 2 -->
       <h2 class="section-title" id="sec-entity">${isAr ? '2. التعريف بجهة التدريب وطبيعة العمل' : '2. Host Organization Overview'}</h2>
-      <p>${escapeHtml(profile.entityIntroText)}</p>
+      <p style="white-space: pre-wrap;">${escapeHtml(profile.entityIntroText)}</p>
       <div style="background: #FAFAFA; padding: 14px 18px; border-radius: 6px; font-size: 13.5px; border: 1px solid var(--line); margin: 16px 0;">
         <b>${isAr ? 'جهة التدريب:' : 'Organization:'}</b> ${escapeHtml(entityName)} | 
         <b>${isAr ? 'عدد الموظفين:' : 'Employees:'}</b> ${escapeHtml(profile.employeesCount) || '—'} |
@@ -391,10 +404,10 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
             <tbody>
               ${w.entries.length > 0 ? w.entries.map((e) => `
                 <tr>
-                  <td>${e.entryDate ? formatDateArabic(e.entryDate) : '—'}</td>
-                  <td><b>${escapeHtml(e.title)}</b><br><span class="badge">${escapeHtml(e.category)}</span></td>
+                  <td>${e.entryDate ? (isAr ? formatDateArabic(e.entryDate) : formatDateEnglish(e.entryDate)) : '—'}</td>
+                  <td><b>${escapeHtml(e.title)}</b><br><span class="badge">${escapeHtml(translateCategory(e.category, isAr))}</span></td>
                   <td>${e.timeFrom} - ${e.timeTo}</td>
-                  <td>${escapeHtml(e.description)}</td>
+                  <td style="white-space: pre-wrap;">${escapeHtml(e.description)}</td>
                 </tr>
               `).join('') : `
                 <tr>

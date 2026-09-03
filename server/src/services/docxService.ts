@@ -22,7 +22,20 @@ import {
   TableOfContents,
   PageReference
 } from 'docx';
-import { FinalReportData, formatDateArabic } from '@coop/shared';
+import { FinalReportData, formatDateArabic, formatDateEnglish } from '@coop/shared';
+
+function translateCategory(cat: string, isAr: boolean): string {
+  if (isAr) return cat;
+  const map: Record<string, string> = {
+    'تطوير / برمجة': 'Development & Programming',
+    'اجتماعات': 'Meetings & Alignment',
+    'تدريب وتعلّم': 'Training & Learning',
+    'توثيق': 'Documentation',
+    'دعم فني': 'Technical Support',
+    'أخرى': 'Other'
+  };
+  return map[cat] || cat;
+}
 
 export async function generateAcademicDocx(reportData: FinalReportData, lang: 'ar' | 'en' = 'ar'): Promise<Buffer> {
   const { profile, weeks, totalHours, totalDays, totalEntries } = reportData;
@@ -954,12 +967,12 @@ function createWeekEntriesTable(entries: FinalReportData['weeks'][0]['entries'],
           new TableRow({
             children: [
               new TableCell({
-                children: [new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: formatDateArabic(e.entryDate), size: 20 })] })]
+                children: [new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: isAr ? formatDateArabic(e.entryDate) : formatDateEnglish(e.entryDate), size: 20 })] })]
               }),
               new TableCell({
                 children: [
                   new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: e.title, bold: true, size: 20 })] }),
-                  new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: `[${e.category}]`, size: 18, color: '8B0000' })] })
+                  new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: `[${translateCategory(e.category, isAr)}]`, size: 18, color: '8B0000' })] })
                 ]
               }),
               new TableCell({
@@ -1066,7 +1079,7 @@ function createFinalApprovalTable(
               new Paragraph({
                 bidirectional: isAr,
                 spacing: { before: 100 },
-                children: [new TextRun({ text: `${isAr ? 'الساعات المعتمدة المنجزة:' : 'Approved Hours:'} ${totalHours} / ${courseHours} ساعة`, size: 22 })]
+                children: [new TextRun({ text: `${isAr ? 'الساعات المعتمدة المنجزة:' : 'Approved Hours:'} ${totalHours} / ${courseHours} ${isAr ? 'ساعة' : 'hrs'}`, size: 22 })]
               }),
               new Paragraph({
                 bidirectional: isAr,
