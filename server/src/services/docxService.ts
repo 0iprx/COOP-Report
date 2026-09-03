@@ -19,7 +19,8 @@ import {
   TabStopType,
   TabStopPosition,
   LeaderType,
-  TableOfContents
+  TableOfContents,
+  PageReference
 } from 'docx';
 import { FinalReportData, formatDateArabic } from '@coop/shared';
 
@@ -206,45 +207,44 @@ export async function generateAcademicDocx(reportData: FinalReportData, lang: 'a
           }),
 
           // Abstract & Acknowledgment
-          createTOCDottedItem('sec_cover', isAr ? 'صفحة الغلاف والبيانات الأساسية' : 'Cover Page & Student Info', 'i', isAr),
-          createTOCDottedItem('sec_toc', isAr ? 'فهرس المحتويات' : 'Table of Contents', 'ii', isAr),
+          createTOCDottedItem('sec_cover', isAr ? 'صفحة الغلاف والبيانات الأساسية' : 'Cover Page & Student Info', isAr),
+          createTOCDottedItem('sec_toc', isAr ? 'فهرس المحتويات' : 'Table of Contents', isAr),
 
           // Chapter 1: Introduction
-          createTOCChapterItem('chap_intro', isAr ? 'الفصل الأول: المقدمة وأهداف التدريب وبيانات المقرر' : 'CHAPTER 1: INTRODUCTION & OBJECTIVES', '1', isAr),
-          createTOCSubItem('sec_intro_obj', isAr ? '1.1 أهداف التدريب التعاوني ودوافعه الأكاديمية' : '1.1 Objectives & Academic Motivations', '1', isAr),
-          createTOCSubItem('sec_intro_req', isAr ? `1.2 متطلبات المقرر وساعات التدريب (${courseHours} ساعة)` : `1.2 Course Hours & Framework (${courseHours} hrs)`, '2', isAr),
+          createTOCChapterItem('chap_intro', isAr ? 'الفصل الأول: المقدمة وأهداف التدريب وبيانات المقرر' : 'CHAPTER 1: INTRODUCTION & OBJECTIVES', isAr),
+          createTOCSubItem('sec_intro_obj', isAr ? '1.1 أهداف التدريب التعاوني ودوافعه الأكاديمية' : '1.1 Objectives & Academic Motivations', isAr),
+          createTOCSubItem('sec_intro_req', isAr ? `1.2 متطلبات المقرر وساعات التدريب (${courseHours} ساعة)` : `1.2 Course Hours & Framework (${courseHours} hrs)`, isAr),
 
           // Chapter 2: Host Organization
-          createTOCChapterItem('chap_org', isAr ? `الفصل الثاني: التعريف بجهة التدريب (${entityName})` : `CHAPTER 2: TRAINING ORGANIZATION (${entityName})`, '3', isAr),
-          createTOCSubItem('sec_org_about', isAr ? '2.1 نبذة عن جهة التدريب وهيكلها الإداري' : '2.1 Host Organization & Department', '3', isAr),
-          createTOCSubItem('sec_org_plan', isAr ? `2.2 الخطة المعتمدة للتدريب (${trainingWeeksCount} أسبوعاً)` : `2.2 Approved COOP Plan (${trainingWeeksCount} Weeks)`, '4', isAr),
+          createTOCChapterItem('chap_org', isAr ? `الفصل الثاني: التعريف بجهة التدريب (${entityName})` : `CHAPTER 2: TRAINING ORGANIZATION (${entityName})`, isAr),
+          createTOCSubItem('sec_org_about', isAr ? '2.1 نبذة عن جهة التدريب وهيكلها الإداري' : '2.1 Host Organization & Department', isAr),
+          createTOCSubItem('sec_org_plan', isAr ? `2.2 الخطة المعتمدة للتدريب (${trainingWeeksCount} أسبوعاً)` : `2.2 Approved COOP Plan (${trainingWeeksCount} Weeks)`, isAr),
 
           // Chapter 3: Weekly Training Timeline (All 14 Weeks)
-          createTOCChapterItem('chap_timeline', isAr ? `الفصل الثالث: السجل الزمني والتفصيلي للأسابيع التدريبية (${trainingWeeksCount} أسبوعاً)` : `CHAPTER 3: WEEKLY TRAINING TIMELINE (${trainingWeeksCount} WEEKS)`, '5', isAr),
+          createTOCChapterItem('chap_timeline', isAr ? `الفصل الثالث: السجل الزمني والتفصيلي للأسابيع التدريبية (${trainingWeeksCount} أسبوعاً)` : `CHAPTER 3: WEEKLY TRAINING TIMELINE (${trainingWeeksCount} WEEKS)`, isAr),
 
           // Dynamic Entries for each week from 1 to 14
-          ...weeks.map((w, idx) => {
-            const pageEstimate = 5 + idx * 2;
+          ...weeks.map((w) => {
             const weekTaskSnippet = w.entries && w.entries.length > 0
               ? w.entries[0].title
               : (isAr ? 'أسبوع تدريبي مؤجل / متاح للتوثيق لاحقاً' : 'Postponed / Available for Logging');
             const weekFullTitle = isAr
               ? `الأسبوع ${w.weekIndex} (${w.weekStart} إلى ${w.weekEnd}): ${weekTaskSnippet}`
               : `Week ${w.weekIndex} (${w.weekStart} to ${w.weekEnd}): ${weekTaskSnippet}`;
-            return createTOCWeekItem(`week_${w.weekIndex}`, weekFullTitle, `${pageEstimate}`, isAr);
+            return createTOCWeekItem(`week_${w.weekIndex}`, weekFullTitle, isAr);
           }),
 
           // Chapter 4: Acquired Skills
-          createTOCChapterItem('chap_skills', isAr ? 'الفصل الرابع: المعارف والمهارات والخبرات المكتسبة' : 'CHAPTER 4: ACQUIRED KNOWLEDGE & SKILLS', `${5 + weeks.length * 2}`, isAr),
-          createTOCSubItem('sec_skills_tech', isAr ? '4.1 المهارات التقنية والبرمجية والتطبيقية' : '4.1 Technical & Practical Competencies', `${5 + weeks.length * 2}`, isAr),
-          createTOCSubItem('sec_skills_soft', isAr ? '4.2 مهارات التواصل المؤسسي والانضباط المهني' : '4.2 Professional Discipline & Teamwork', `${6 + weeks.length * 2}`, isAr),
+          createTOCChapterItem('chap_skills', isAr ? 'الفصل الرابع: المعارف والمهارات والخبرات المكتسبة' : 'CHAPTER 4: ACQUIRED KNOWLEDGE & SKILLS', isAr),
+          createTOCSubItem('sec_skills_tech', isAr ? '4.1 المهارات التقنية والبرمجية والتطبيقية' : '4.1 Technical & Practical Competencies', isAr),
+          createTOCSubItem('sec_skills_soft', isAr ? '4.2 مهارات التواصل المؤسسي والانضباط المهني' : '4.2 Professional Discipline & Teamwork', isAr),
 
           // Chapter 5: Conclusions & Recommendations
-          createTOCChapterItem('chap_conclusion', isAr ? 'الفصل الخامس: الخاتمة والتوصيات العامة' : 'CHAPTER 5: CONCLUSIONS & RECOMMENDATIONS', `${7 + weeks.length * 2}`, isAr),
+          createTOCChapterItem('chap_conclusion', isAr ? 'الفصل الخامس: الخاتمة والتوصيات العامة' : 'CHAPTER 5: CONCLUSIONS & RECOMMENDATIONS', isAr),
 
           // Appendices
-          createTOCChapterItem('chap_appendix_a', isAr ? 'الملاحق: استمارة تقييم واعتماد المشرف الميداني' : 'APPENDIX A: FIELD SUPERVISOR EVALUATION', `${8 + weeks.length * 2}`, isAr),
-          createTOCChapterItem('chap_appendix_b', isAr ? 'الملاحق: اعتماد المشرف الأكاديمي وسجل الحضور' : 'APPENDIX B: ACADEMIC APPROVAL & ATTENDANCE', `${9 + weeks.length * 2}`, isAr),
+          createTOCChapterItem('chap_appendix_a', isAr ? 'الملاحق: استمارة تقييم واعتماد المشرف الميداني' : 'APPENDIX A: FIELD SUPERVISOR EVALUATION', isAr),
+          createTOCChapterItem('chap_appendix_b', isAr ? 'الملاحق: اعتماد المشرف الأكاديمي وسجل الحضور' : 'APPENDIX B: ACADEMIC APPROVAL & ATTENDANCE', isAr),
 
           // ==========================================
           // CHAPTER 1: INTRODUCTION & OBJECTIVES
@@ -621,9 +621,9 @@ export async function generateAcademicDocx(reportData: FinalReportData, lang: 'a
 }
 
 // ────────────────────────────────────────────────────────────
-// TOC Items with Dotted Leaders (matching user image media_1788397796626.png)
+// TOC Items with Dotted Leaders & Dynamic PageReference (calculates exact text dimensions in Word)
 // ────────────────────────────────────────────────────────────
-function createTOCChapterItem(anchorId: string, title: string, pageStr: string, isAr: boolean): Paragraph {
+function createTOCChapterItem(anchorId: string, title: string, isAr: boolean): Paragraph {
   return new Paragraph({
     bidirectional: isAr,
     spacing: { before: 120, after: 60 },
@@ -647,17 +647,12 @@ function createTOCChapterItem(anchorId: string, title: string, pageStr: string, 
         ]
       }),
       new TextRun({ children: [new Tab()] }),
-      new TextRun({
-        text: pageStr,
-        bold: true,
-        size: 24,
-        color: '8B0000'
-      })
+      new PageReference(anchorId)
     ]
   });
 }
 
-function createTOCSubItem(anchorId: string, title: string, pageStr: string, isAr: boolean): Paragraph {
+function createTOCSubItem(anchorId: string, title: string, isAr: boolean): Paragraph {
   return new Paragraph({
     bidirectional: isAr,
     indent: { [isAr ? 'right' : 'left']: 360 },
@@ -681,16 +676,12 @@ function createTOCSubItem(anchorId: string, title: string, pageStr: string, isAr
         ]
       }),
       new TextRun({ children: [new Tab()] }),
-      new TextRun({
-        text: pageStr,
-        size: 22,
-        color: '6E6B62'
-      })
+      new PageReference(anchorId)
     ]
   });
 }
 
-function createTOCWeekItem(anchorId: string, title: string, pageStr: string, isAr: boolean): Paragraph {
+function createTOCWeekItem(anchorId: string, title: string, isAr: boolean): Paragraph {
   return new Paragraph({
     bidirectional: isAr,
     indent: { [isAr ? 'right' : 'left']: 480 },
@@ -714,16 +705,12 @@ function createTOCWeekItem(anchorId: string, title: string, pageStr: string, isA
         ]
       }),
       new TextRun({ children: [new Tab()] }),
-      new TextRun({
-        text: pageStr,
-        size: 21,
-        color: '6E6B62'
-      })
+      new PageReference(anchorId)
     ]
   });
 }
 
-function createTOCDottedItem(anchorId: string, title: string, pageStr: string, isAr: boolean): Paragraph {
+function createTOCDottedItem(anchorId: string, title: string, isAr: boolean): Paragraph {
   return new Paragraph({
     bidirectional: isAr,
     spacing: { before: 80, after: 80 },
@@ -747,12 +734,7 @@ function createTOCDottedItem(anchorId: string, title: string, pageStr: string, i
         ]
       }),
       new TextRun({ children: [new Tab()] }),
-      new TextRun({
-        text: pageStr,
-        bold: true,
-        size: 23,
-        color: '6E6B62'
-      })
+      new PageReference(anchorId)
     ]
   });
 }

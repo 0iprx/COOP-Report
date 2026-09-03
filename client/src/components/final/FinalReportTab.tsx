@@ -827,7 +827,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
         className="bg-card border border-line rounded-2xl p-8 sm:p-12 shadow-sm leading-relaxed text-ink space-y-8 print-only-container print-page-wrapper"
       >
         {/* Cover Page */}
-        <div id="sec-cover" className="text-center pb-10 border-b-2 border-line space-y-4">
+        <div id="sec-cover" className="scroll-mt-24 text-center pb-10 border-b-2 border-line space-y-4">
           <div className="text-xs font-bold text-sub">المملكة العربية السعودية</div>
           <div className="text-sm font-bold text-ink">{profileData.trainingUnit || 'الوحدة التدريبية / الكلية'}</div>
           <h1 className="text-2xl sm:text-3xl font-black text-accent mt-4">
@@ -866,7 +866,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
         </div>
 
         {/* Section 1: Intro */}
-        <div id="sec-intro" className="space-y-3 pt-4">
+        <div id="sec-intro" className="scroll-mt-24 space-y-3 pt-4">
           <h2 className="text-lg font-extrabold text-ink border-b-2 border-accent pb-1.5 inline-block">
             1. المقدمة وأهداف التدريب
           </h2>
@@ -876,7 +876,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
         </div>
 
         {/* Section 2: Entity */}
-        <div id="sec-entity" className="space-y-3 pt-4">
+        <div id="sec-entity" className="scroll-mt-24 space-y-3 pt-4">
           <h2 className="text-lg font-extrabold text-ink border-b-2 border-accent pb-1.5 inline-block">
             2. التعريف بجهة التدريب وطبيعة العمل
           </h2>
@@ -891,7 +891,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
         </div>
 
         {/* Section 3: Detailed Timeline */}
-        <div id="sec-timeline" className="space-y-6 pt-4 page-break">
+        <div id="sec-timeline" className="scroll-mt-24 space-y-6 pt-4 page-break">
           <h2 className="text-lg font-extrabold text-ink border-b-2 border-accent pb-1.5 inline-block">
             3. الخطة والجدول الزمني للتدريب الأسبوعي
           </h2>
@@ -900,7 +900,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             <p className="text-sm text-sub">لا توجد إدخالات أسبوعية مسجلة بعد.</p>
           ) : (
             reportData.weeks.map((w) => (
-              <div key={w.weekIndex} id={`week-${w.weekIndex}`} className="border border-line rounded-xl overflow-hidden mb-6 page-break">
+              <div key={w.weekIndex} id={`week-${w.weekIndex}`} className="scroll-mt-24 border border-line rounded-xl overflow-hidden mb-6 page-break">
                 <div className="bg-bg px-4 py-2.5 border-b border-line flex items-center justify-between text-xs font-bold text-ok">
                   <span>
                     الأسبوع {w.weekIndex} ({w.weekStart} — {w.weekEnd})
@@ -938,7 +938,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
         </div>
 
         {/* Section 4: Skills */}
-        <div id="sec-skills" className="space-y-3 pt-4 page-break">
+        <div id="sec-skills" className="scroll-mt-24 space-y-3 pt-4 page-break">
           <h2 className="text-lg font-extrabold text-ink border-b-2 border-accent pb-1.5 inline-block">
             4. المعارف والمهارات والتجارب المكتسبة
           </h2>
@@ -948,7 +948,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
         </div>
 
         {/* Section 5: Conclusion */}
-        <div id="sec-conclusion" className="space-y-3 pt-4 page-break">
+        <div id="sec-conclusion" className="scroll-mt-24 space-y-3 pt-4 page-break">
           <h2 className="text-lg font-extrabold text-ink border-b-2 border-accent pb-1.5 inline-block">
             5. الخاتمة والتوصيات
           </h2>
