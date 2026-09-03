@@ -8,8 +8,9 @@ import { DailyLogTab } from './components/log/DailyLogTab';
 import { WeeklyTab } from './components/weekly/WeeklyTab';
 import { FinalReportTab } from './components/final/FinalReportTab';
 import { SupervisorTab } from './components/supervisor/SupervisorTab';
+import { TestDevLab } from './components/testdev/TestDevLab';
 import { OnboardingModal } from './components/common/OnboardingModal';
-import { Calendar, Clock, FileText, ShieldCheck } from 'lucide-react';
+import { Calendar, Clock, FileText, ShieldCheck, Layers } from 'lucide-react';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,13 +22,14 @@ const queryClient = new QueryClient({
   }
 });
 
-type TabType = 'log' | 'weekly' | 'final' | 'supervisor';
+type TabType = 'log' | 'weekly' | 'final' | 'supervisor' | 'testdev';
 
 const tabs: { id: TabType; labelAr: string; labelEn: string; icon: React.ReactNode }[] = [
   { id: 'log', labelAr: 'التسجيل اليومي', labelEn: 'Daily Log', icon: <Calendar className="w-4 h-4" /> },
   { id: 'weekly', labelAr: 'التقرير الأسبوعي', labelEn: 'Weekly Report', icon: <Clock className="w-4 h-4" /> },
   { id: 'final', labelAr: 'التقرير النهائي', labelEn: 'Final Report', icon: <FileText className="w-4 h-4" /> },
-  { id: 'supervisor', labelAr: 'بوابة المشرف', labelEn: 'Supervisor Portal', icon: <ShieldCheck className="w-4 h-4" /> }
+  { id: 'supervisor', labelAr: 'بوابة المشرف', labelEn: 'Supervisor Portal', icon: <ShieldCheck className="w-4 h-4" /> },
+  { id: 'testdev', labelAr: 'مختبر الفحص (/testdev)', labelEn: 'Test Lab (/testdev)', icon: <Layers className="w-4 h-4 text-accent" /> }
 ];
 
 const MainDashboard: React.FC = () => {
@@ -35,6 +37,13 @@ const MainDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('log');
   const [lang, setLang] = useState<'ar' | 'en'>('ar');
   const [onboardingOpen, setOnboardingOpen] = useState<boolean>(false);
+
+  // Sync /testdev URL directly
+  useEffect(() => {
+    if (window.location.pathname === '/testdev' || window.location.hash === '#/testdev') {
+      setActiveTab('testdev');
+    }
+  }, []);
 
   useEffect(() => {
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
@@ -84,6 +93,17 @@ const MainDashboard: React.FC = () => {
 
   const visibleTabs = tabs.filter((t) => t.id !== 'supervisor' || user.role === 'supervisor');
 
+  const handleTabClick = (tabId: TabType) => {
+    setActiveTab(tabId);
+    if (tabId === 'testdev') {
+      window.history.pushState(null, '', '/testdev');
+    } else {
+      if (window.location.pathname === '/testdev') {
+        window.history.pushState(null, '', '/');
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-bg">
       <Navbar currentLang={lang} onToggleLang={() => setLang((p) => (p === 'ar' ? 'en' : 'ar'))} />
@@ -94,7 +114,7 @@ const MainDashboard: React.FC = () => {
           {visibleTabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabClick(tab.id)}
               className={`tab-item ${activeTab === tab.id ? 'active' : ''}`}
             >
               {tab.icon}
@@ -109,6 +129,7 @@ const MainDashboard: React.FC = () => {
           {activeTab === 'weekly' && <WeeklyTab />}
           {activeTab === 'final' && <FinalReportTab currentLang={lang} />}
           {activeTab === 'supervisor' && user.role === 'supervisor' && <SupervisorTab />}
+          {activeTab === 'testdev' && <TestDevLab />}
         </div>
       </main>
 
@@ -124,7 +145,16 @@ const MainDashboard: React.FC = () => {
       <footer className="no-print border-t border-line bg-card/50 py-5 text-center text-[11px] text-muted">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span className="font-bold text-sub">COOP Report &mdash; نظام التوثيق الأكاديمي الذكي</span>
-          <span>بيانات مشفرة &middot; نسخ احتياطي آمن &middot; تصدير DOCX / PDF / HTML</span>
+          <div className="flex items-center gap-3">
+            <span>بيانات مشفرة &middot; نسخ احتياطي آمن &middot; تصدير DOCX / PDF / HTML</span>
+            <span>&middot;</span>
+            <button
+              onClick={() => handleTabClick('testdev')}
+              className="text-accent hover:underline font-bold flex items-center gap-1"
+            >
+              <span>مختبر المحاكاة /testdev</span>
+            </button>
+          </div>
         </div>
       </footer>
     </div>
