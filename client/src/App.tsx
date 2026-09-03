@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { api } from './services/api';
 import { Navbar } from './components/common/Navbar';
 import { AuthScreen } from './components/auth/AuthScreen';
 import { DailyLogTab } from './components/log/DailyLogTab';
 import { WeeklyTab } from './components/weekly/WeeklyTab';
 import { FinalReportTab } from './components/final/FinalReportTab';
 import { SupervisorTab } from './components/supervisor/SupervisorTab';
+import { OnboardingModal } from './components/common/OnboardingModal';
 import { Calendar, Clock, FileText, ShieldCheck } from 'lucide-react';
 
 const queryClient = new QueryClient({
@@ -22,21 +24,42 @@ const queryClient = new QueryClient({
 type TabType = 'log' | 'weekly' | 'final' | 'supervisor';
 
 const tabs: { id: TabType; labelAr: string; labelEn: string; icon: React.ReactNode }[] = [
-  { id: 'log',        labelAr: 'التسجيل اليومي',       labelEn: 'Daily Log',         icon: <Calendar   className="w-4 h-4" /> },
-  { id: 'weekly',     labelAr: 'التقرير الأسبوعي',     labelEn: 'Weekly Report',     icon: <Clock      className="w-4 h-4" /> },
-  { id: 'final',      labelAr: 'التقرير النهائي',       labelEn: 'Final Report',      icon: <FileText   className="w-4 h-4" /> },
-  { id: 'supervisor', labelAr: 'بوابة المشرف',          labelEn: 'Supervisor Portal', icon: <ShieldCheck className="w-4 h-4" /> }
+  { id: 'log', labelAr: 'التسجيل اليومي', labelEn: 'Daily Log', icon: <Calendar className="w-4 h-4" /> },
+  { id: 'weekly', labelAr: 'التقرير الأسبوعي', labelEn: 'Weekly Report', icon: <Clock className="w-4 h-4" /> },
+  { id: 'final', labelAr: 'التقرير النهائي', labelEn: 'Final Report', icon: <FileText className="w-4 h-4" /> },
+  { id: 'supervisor', labelAr: 'بوابة المشرف', labelEn: 'Supervisor Portal', icon: <ShieldCheck className="w-4 h-4" /> }
 ];
 
 const MainDashboard: React.FC = () => {
   const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('log');
   const [lang, setLang] = useState<'ar' | 'en'>('ar');
+  const [onboardingOpen, setOnboardingOpen] = useState<boolean>(false);
 
   useEffect(() => {
-    document.documentElement.dir  = lang === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
     document.documentElement.lang = lang;
   }, [lang]);
+
+  // Check if trainee needs initial plan setup
+  const { data: reportData } = useQuery<{ profile: any }>({
+    queryKey: ['finalReport'],
+    queryFn: async () => {
+      const res = await api.get('/reports/final');
+      return res.data;
+    },
+    enabled: !!user && user.role === 'trainee'
+  });
+
+  useEffect(() => {
+    if (user?.role === 'trainee' && reportData?.profile) {
+      const hasEntity = !!reportData.profile.entityAddress?.trim();
+      const dismissed = sessionStorage.getItem('coop_onboarding_completed') === 'true';
+      if (!hasEntity && !dismissed) {
+        setOnboardingOpen(true);
+      }
+    }
+  }, [user, reportData]);
 
   /* ── Loading ─────────────────────────────────────────── */
   if (loading) {
@@ -59,40 +82,43 @@ const MainDashboard: React.FC = () => {
 
   if (!user) return <AuthScreen />;
 
+  const visibleTabs = tabs.filter((t) => t.id !== 'supervisor' || user.role === 'supervisor');
+
   return (
     <div className="min-h-screen flex flex-col bg-bg">
       <Navbar currentLang={lang} onToggleLang={() => setLang((p) => (p === 'ar' ? 'en' : 'ar'))} />
 
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6">
-
         {/* ── Tab Navigation ──────────────────────────────── */}
         <div className="tabs-container no-scrollbar no-print flex items-center overflow-x-auto border-b border-line mb-6 gap-1 px-1 sm:px-0">
-          {tabs.map((tab) => (
+          {visibleTabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`tab-item ${activeTab === tab.id ? 'active' : ''}`}
             >
               {tab.icon}
-              <span>
-                {lang === 'ar'
-                  ? tab.labelAr
-                  : tab.id === 'supervisor' && user.role === 'supervisor'
-                    ? 'Supervisor Portal'
-                    : tab.labelEn}
-              </span>
+              <span>{lang === 'ar' ? tab.labelAr : tab.labelEn}</span>
             </button>
           ))}
         </div>
 
         {/* ── Tab Content ─────────────────────────────────── */}
         <div className="animate-fade-in" key={activeTab}>
-          {activeTab === 'log'        && <DailyLogTab />}
-          {activeTab === 'weekly'     && <WeeklyTab />}
-          {activeTab === 'final'      && <FinalReportTab currentLang={lang} />}
-          {activeTab === 'supervisor' && <SupervisorTab />}
+          {activeTab === 'log' && <DailyLogTab />}
+          {activeTab === 'weekly' && <WeeklyTab />}
+          {activeTab === 'final' && <FinalReportTab currentLang={lang} />}
+          {activeTab === 'supervisor' && user.role === 'supervisor' && <SupervisorTab />}
         </div>
       </main>
+
+      {/* Onboarding Wizard Modal */}
+      <OnboardingModal
+        isOpen={onboardingOpen}
+        onClose={() => setOnboardingOpen(false)}
+        initialHours={reportData?.profile?.courseHours || 280}
+        initialWeeks={reportData?.profile?.trainingWeeks || 14}
+      />
 
       {/* ── Footer ──────────────────────────────────────── */}
       <footer className="no-print border-t border-line bg-card/50 py-5 text-center text-[11px] text-muted">

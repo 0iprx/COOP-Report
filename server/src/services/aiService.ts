@@ -92,84 +92,106 @@ async function callAvailableLLM(
 
   // A. Anthropic
   if (anthropicClient) {
-    const res = await anthropicClient.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 1800,
-      temperature: 0.25,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userPrompt }]
-    });
-    const block = res.content[0];
-    if (block && block.type === 'text') return block.text.trim();
+    try {
+      const res = await anthropicClient.messages.create(
+        {
+          model: 'claude-3-5-sonnet-20241022',
+          max_tokens: 1800,
+          temperature: 0.25,
+          system: systemPrompt,
+          messages: [{ role: 'user', content: userPrompt }]
+        },
+        { timeout: 10000 }
+      );
+      const block = res.content[0];
+      if (block && block.type === 'text') return block.text.trim();
+    } catch (e: any) {
+      logger.warn({ err: e?.message }, 'Anthropic provider error or timeout');
+    }
   }
 
   // B. Google Gemini
   if (geminiKey) {
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`;
-    const res = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }]
-          }
-        ]
-      })
-    });
-    if (res.ok) {
-      const data: any = await res.json();
-      const content = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (content) return content.trim();
+    try {
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`;
+      const res = await fetch(geminiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(10000),
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }]
+            }
+          ]
+        })
+      });
+      if (res.ok) {
+        const data: any = await res.json();
+        const content = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (content) return content.trim();
+      }
+    } catch (e: any) {
+      logger.warn({ err: e?.message }, 'Gemini provider error or timeout');
     }
   }
 
   // C. Groq
   if (groqKey) {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${groqKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: 0.25
-      })
-    });
-    if (res.ok) {
-      const data: any = await res.json();
-      const content = data?.choices?.[0]?.message?.content;
-      if (content) return content.trim();
+    try {
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${groqKey}`,
+          'Content-Type': 'application/json'
+        },
+        signal: AbortSignal.timeout(10000),
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          temperature: 0.25
+        })
+      });
+      if (res.ok) {
+        const data: any = await res.json();
+        const content = data?.choices?.[0]?.message?.content;
+        if (content) return content.trim();
+      }
+    } catch (e: any) {
+      logger.warn({ err: e?.message }, 'Groq provider error or timeout');
     }
   }
 
   // D. OpenAI
   if (openaiKey) {
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: 0.25
-      })
-    });
-    if (res.ok) {
-      const data: any = await res.json();
-      const content = data?.choices?.[0]?.message?.content;
-      if (content) return content.trim();
+    try {
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openaiKey}`,
+          'Content-Type': 'application/json'
+        },
+        signal: AbortSignal.timeout(10000),
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          temperature: 0.25
+        })
+      });
+      if (res.ok) {
+        const data: any = await res.json();
+        const content = data?.choices?.[0]?.message?.content;
+        if (content) return content.trim();
+      }
+    } catch (e: any) {
+      logger.warn({ err: e?.message }, 'OpenAI provider error or timeout');
     }
   }
 
@@ -214,7 +236,8 @@ async function translateWithWebAPI(text: string, targetLang: 'ar' | 'en'): Promi
     const res = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
-      }
+      },
+      signal: AbortSignal.timeout(6000)
     });
     if (res.ok) {
       const data: any = await res.json();
