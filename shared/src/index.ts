@@ -107,6 +107,10 @@ export interface ReportProfileDTO {
   entityIntroText: string;
   skillsText: string;
   conclusionText: string;
+  supervisorNotes?: string;
+  supervisorRating?: string;
+  supervisorApproved?: boolean;
+  supervisorApprovedAt?: string | null;
 }
 
 export interface WeekGroup {

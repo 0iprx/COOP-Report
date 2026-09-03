@@ -70,8 +70,11 @@ model ReportProfile {
   introText       String   @default("") @map("intro_text") @db.Text
   entityIntroText String   @default("") @map("entity_intro_text") @db.Text
   skillsText      String   @default("") @map("skills_text") @db.Text
-  conclusionText  String   @default("") @map("conclusion_text") @db.Text
-  supervisorNotes String   @default("") @map("supervisor_notes") @db.Text
+  conclusionText       String    @default("") @map("conclusion_text") @db.Text
+  supervisorNotes      String    @default("") @map("supervisor_notes") @db.Text
+  supervisorRating     String    @default("") @map("supervisor_rating") @db.VarChar(50)
+  supervisorApproved   Boolean   @default(false) @map("supervisor_approved")
+  supervisorApprovedAt DateTime? @map("supervisor_approved_at")
 
   @@map("report_profile")
 }

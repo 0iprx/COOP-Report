@@ -53,7 +53,11 @@ export async function buildFinalReportData(userId: number): Promise<FinalReportD
     introText: profileRecord.introText,
     entityIntroText: profileRecord.entityIntroText,
     skillsText: profileRecord.skillsText,
-    conclusionText: profileRecord.conclusionText
+    conclusionText: profileRecord.conclusionText,
+    supervisorNotes: (profileRecord as any).supervisorNotes || '',
+    supervisorRating: (profileRecord as any).supervisorRating || '',
+    supervisorApproved: !!(profileRecord as any).supervisorApproved,
+    supervisorApprovedAt: (profileRecord as any).supervisorApprovedAt ? (profileRecord as any).supervisorApprovedAt.toISOString() : null
   };
 
   // Fetch entries (excluding soft-deleted)
