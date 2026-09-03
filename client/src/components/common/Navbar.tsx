@@ -1,14 +1,11 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { LogOut, Shield, User, Languages, BookOpen, ChevronDown } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
+import { LogOut, Shield, User, BookOpen } from 'lucide-react';
 
-interface NavbarProps {
-  currentLang: 'ar' | 'en';
-  onToggleLang: () => void;
-}
-
-export const Navbar: React.FC<NavbarProps> = ({ currentLang, onToggleLang }) => {
+export const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
+  const { lang, setLang, t } = useLanguage();
 
   return (
     <nav className="sticky top-0 z-40 border-b border-line glass">
@@ -17,35 +14,51 @@ export const Navbar: React.FC<NavbarProps> = ({ currentLang, onToggleLang }) => 
         {/* ── Brand ────────────────────────────────────────── */}
         <div className="flex items-center gap-3 shrink-0">
           <div className="w-9 h-9 rounded-xl bg-accent text-white flex items-center justify-center shadow-sm shrink-0">
-            <BookOpen className="w-4.5 h-4.5 w-[18px] h-[18px]" />
+            <BookOpen className="w-[18px] h-[18px]" />
           </div>
           <div>
             <div className="font-black text-[1.05rem] tracking-tight text-ink leading-none flex items-baseline gap-2">
               <span>COOP Report</span>
               <span className="badge badge-accent hidden sm:inline-flex text-[10px] tracking-wide uppercase">
-                Co-op Training
+                {t('مساعد التدريب التعاوني', 'Co-op Assistant')}
               </span>
             </div>
             <p className="text-[11px] text-muted hidden sm:block mt-0.5 leading-none">
-              {currentLang === 'ar'
-                ? 'سجل التدريب التعاوني الأكاديمي الذكي'
-                : 'Smart Academic Cooperative Training Log'}
+              {t('سجل ومساعد تدوين وتقارير التدريب التعاوني', 'Cooperative Training Logging & Reporting Assistant')}
             </p>
           </div>
         </div>
 
         {/* ── Actions ──────────────────────────────────────── */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
 
-          {/* Language */}
-          <button
-            onClick={onToggleLang}
-            className="btn-ghost text-xs gap-1.5 py-1.5 px-2.5"
-            title="تبديل لغة العرض"
-          >
-            <Languages className="w-3.5 h-3.5 text-accent" />
-            <span className="text-[11px]">{currentLang === 'ar' ? 'English' : 'عربي'}</span>
-          </button>
+          {/* Explicit Language Switcher: Arabic & English Buttons */}
+          <div className="inline-flex p-0.5 bg-bg border border-line rounded-xl text-xs font-bold shadow-2xs">
+            <button
+              type="button"
+              onClick={() => setLang('ar')}
+              className={`px-3 py-1 rounded-lg transition-all ${
+                lang === 'ar'
+                  ? 'bg-accent text-white shadow-xs font-extrabold'
+                  : 'text-sub hover:text-ink'
+              }`}
+              title="تحويل الموقع بالكامل إلى العربية"
+            >
+              العربية
+            </button>
+            <button
+              type="button"
+              onClick={() => setLang('en')}
+              className={`px-3 py-1 rounded-lg transition-all ${
+                lang === 'en'
+                  ? 'bg-accent text-white shadow-xs font-extrabold'
+                  : 'text-sub hover:text-ink'
+              }`}
+              title="Switch entire website to English"
+            >
+              English
+            </button>
+          </div>
 
           {/* User Menu */}
           {user && (
@@ -64,7 +77,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentLang, onToggleLang }) => 
                 <div className="hidden md:block text-start leading-tight">
                   <div className="text-xs font-bold text-ink">{user.username}</div>
                   <div className="text-[10px] text-muted">
-                    {user.role === 'supervisor' ? 'مشرف ميداني' : 'متدرب تعاوني'}
+                    {user.role === 'supervisor' ? t('مشرف ميداني', 'Field Supervisor') : t('متدرب تعاوني', 'Co-op Trainee')}
                   </div>
                 </div>
               </div>
@@ -72,7 +85,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentLang, onToggleLang }) => 
               <button
                 onClick={logout}
                 className="p-1.5 text-muted hover:text-accent rounded-lg hover:bg-accent-dim/40 transition-colors"
-                title="تسجيل الخروج"
+                title={t('تسجيل الخروج', 'Sign Out')}
               >
                 <LogOut className="w-4 h-4" />
               </button>

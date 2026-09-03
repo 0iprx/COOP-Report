@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
+import { useLanguage } from '../../context/LanguageContext';
 import { ENTRY_CATEGORIES, EntryDTO, DiffChunk } from '@coop/shared';
 import {
   Calendar,
@@ -24,8 +25,18 @@ import { DiffModal } from '../common/DiffModal';
 
 const DRAFT_KEY = 'coop_entry_draft_v2';
 
+const CATEGORY_TRANSLATIONS: Record<string, string> = {
+  'تطوير / برمجة': 'Development / Programming',
+  'اجتماعات': 'Meetings',
+  'تدريب وتعلّم': 'Training & Learning',
+  'توثيق': 'Documentation',
+  'دعم فني': 'Technical Support',
+  'أخرى': 'Other'
+};
+
 export const DailyLogTab: React.FC = () => {
   const queryClient = useQueryClient();
+  const { lang, isAr, t } = useLanguage();
 
   // Form State
   const [editingEntryId, setEditingEntryId] = useState<number | null>(null);
@@ -59,42 +70,37 @@ export const DailyLogTab: React.FC = () => {
     setTimeout(() => setToast(null), 4000);
   };
 
-  // 1. Auto-save & Restore Draft (Zero Data Loss on typing)
+  // Restore autosaved draft on mount
   useEffect(() => {
     try {
       const savedDraft = localStorage.getItem(DRAFT_KEY);
       if (savedDraft) {
         const parsed = JSON.parse(savedDraft);
-        if (parsed.title || parsed.description) {
+        if (parsed.description || parsed.title) {
           setTitle(parsed.title || '');
           setDescription(parsed.description || '');
+          if (parsed.category) setCategory(parsed.category);
           if (parsed.entryDate) setEntryDate(parsed.entryDate);
           if (parsed.timeFrom) setTimeFrom(parsed.timeFrom);
           if (parsed.timeTo) setTimeTo(parsed.timeTo);
-          if (parsed.category) setCategory(parsed.category);
           setDraftRestoredNotice(true);
-          setTimeout(() => setDraftRestoredNotice(false), 5000);
         }
       }
-    } catch {}
+    } catch {
+      // Ignore JSON parse errors
+    }
   }, []);
 
-  // Debounced auto-save to localStorage
+  // Autosave draft to localStorage
   useEffect(() => {
-    const handler = setTimeout(() => {
-      if (title.trim() || description.trim()) {
-        localStorage.setItem(
-          DRAFT_KEY,
-          JSON.stringify({ entryDate, timeFrom, timeTo, title, category, description })
-        );
-      }
-    }, 400);
+    if (!editingEntryId) {
+      const draft = { title, description, category, entryDate, timeFrom, timeTo };
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    }
+  }, [title, description, category, entryDate, timeFrom, timeTo, editingEntryId]);
 
-    return () => clearTimeout(handler);
-  }, [entryDate, timeFrom, timeTo, title, category, description]);
-
-  // Fetch entries
-  const { data: entriesData, isLoading } = useQuery<{ entries: EntryDTO[] }>({
+  // Fetch all active entries
+  const { data: entriesData, isLoading } = useQuery({
     queryKey: ['entries'],
     queryFn: async () => {
       const res = await api.get('/entries');
@@ -102,11 +108,11 @@ export const DailyLogTab: React.FC = () => {
     }
   });
 
-  // Fetch soft-deleted trash
-  const { data: trashData } = useQuery<{ entries: EntryDTO[] }>({
-    queryKey: ['entriesTrash'],
+  // Fetch trash entries
+  const { data: trashData } = useQuery({
+    queryKey: ['entries-trash'],
     queryFn: async () => {
-      const res = await api.get('/backup/trash');
+      const res = await api.get('/entries/trash');
       return res.data;
     }
   });
@@ -121,11 +127,12 @@ export const DailyLogTab: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['entries'] });
       queryClient.invalidateQueries({ queryKey: ['weekly'] });
       queryClient.invalidateQueries({ queryKey: ['finalReport'] });
-      setTitle('');
-      setDescription('');
-      setFormError('');
+      resetForm();
       localStorage.removeItem(DRAFT_KEY);
-      showToast('تمت إضافة وتوثيق المهمة بنجاح', 'success');
+      showToast(t('تم تسجيل وحفظ إنجاز اليوم بنجاح!', 'Task saved successfully!'));
+    },
+    onError: (err: any) => {
+      setFormError(err.response?.data?.message || t('حدث خطأ أثناء حفظ الإدخال', 'Failed to save entry'));
     }
   });
 
@@ -139,101 +146,121 @@ export const DailyLogTab: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['entries'] });
       queryClient.invalidateQueries({ queryKey: ['weekly'] });
       queryClient.invalidateQueries({ queryKey: ['finalReport'] });
-      setEditingEntryId(null);
-      setTitle('');
-      setDescription('');
-      setFormError('');
-      localStorage.removeItem(DRAFT_KEY);
-      showToast('تم تحديث الإدخال وحفظ نسخة سابقة تلقائياً في سجل الإصدارات', 'success');
+      resetForm();
+      showToast(t('تم تحديث الإدخال وحفظ نسخة جديدة في سجل المراجعات!', 'Entry updated successfully!'));
+    },
+    onError: (err: any) => {
+      setFormError(err.response?.data?.message || t('حدث خطأ أثناء تحديث الإدخال', 'Failed to update entry'));
     }
   });
 
   // Soft delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      await api.delete(`/entries/${id}`);
+      const res = await api.delete(`/entries/${id}`);
+      return res.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['entries'] });
-      queryClient.invalidateQueries({ queryKey: ['entriesTrash'] });
+      queryClient.invalidateQueries({ queryKey: ['entries-trash'] });
       queryClient.invalidateQueries({ queryKey: ['weekly'] });
       queryClient.invalidateQueries({ queryKey: ['finalReport'] });
+    },
+    onError: () => {
+      showToast(t('تعذر حذف الإدخال، يرجى المحاولة مرة أخرى', 'Failed to delete entry'), 'error');
     }
   });
 
-  // Restore from trash mutation
+  // Restore mutation
   const restoreMutation = useMutation({
     mutationFn: async (id: number) => {
-      await api.post(`/backup/restore/${id}`);
+      const res = await api.post(`/entries/${id}/restore`);
+      return res.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['entries'] });
-      queryClient.invalidateQueries({ queryKey: ['entriesTrash'] });
+      queryClient.invalidateQueries({ queryKey: ['entries-trash'] });
       queryClient.invalidateQueries({ queryKey: ['weekly'] });
       queryClient.invalidateQueries({ queryKey: ['finalReport'] });
+      showToast(t('تمت استعادة الإدخال بنجاح إلى جدول المهام!', 'Entry restored successfully!'));
+    },
+    onError: () => {
+      showToast(t('تعذر استعادة الإدخال', 'Failed to restore entry'), 'error');
     }
   });
 
-  // Start editing existing entry
-  const handleStartEdit = (entry: EntryDTO) => {
-    setEditingEntryId(entry.id);
-    setEntryDate(entry.entryDate);
-    setTimeFrom(entry.timeFrom);
-    setTimeTo(entry.timeTo);
-    setTitle(entry.title);
-    setCategory(entry.category);
-    setDescription(entry.description);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    showToast('تم تحميل بيانات الإدخال في النموذج للتعديل', 'success');
-  };
-
-  const handleCancelEdit = () => {
-    setEditingEntryId(null);
-    setTitle('');
-    setDescription('');
-    setFormError('');
-  };
-
-  // View entry revisions
-  const handleOpenRevisions = async (entry: EntryDTO) => {
-    setActiveEntryForRevisions(entry);
-    try {
-      const res = await api.get(`/backup/revisions/${entry.id}`);
-      setEntryRevisionsList(res.data.revisions || []);
-      setRevisionsModalOpen(true);
-    } catch {
-      showToast('تعذر جلب سجل التعديلات', 'error');
-    }
-  };
-
-  // Revert to revision
-  const handleRevertToRevision = async (revisionId: number) => {
-    if (!activeEntryForRevisions) return;
-    try {
-      await api.post(`/backup/revert/${activeEntryForRevisions.id}/${revisionId}`);
+  // Rollback revision mutation
+  const rollbackMutation = useMutation({
+    mutationFn: async ({ entryId, revId }: { entryId: number; revId: number }) => {
+      const res = await api.post(`/entries/${entryId}/revisions/${revId}/rollback`);
+      return res.data;
+    },
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['entries'] });
       queryClient.invalidateQueries({ queryKey: ['weekly'] });
       queryClient.invalidateQueries({ queryKey: ['finalReport'] });
       setRevisionsModalOpen(false);
-      showToast('تم استرجاع النسخة السابقة بنجاح', 'success');
+      showToast(t('تم التراجع عن التعديل واستعادة النسخة السابقة بنجاح!', 'Rolled back to previous revision!'));
+    },
+    onError: () => {
+      showToast(t('تعذر التراجع عن التعديل', 'Failed to roll back'), 'error');
+    }
+  });
+
+  const resetForm = () => {
+    setEditingEntryId(null);
+    setTitle('');
+    setDescription('');
+    setCategory(ENTRY_CATEGORIES[0]);
+    setFormError('');
+  };
+
+  const handleStartEdit = (entry: any) => {
+    setEditingEntryId(entry.id);
+    setEntryDate(entry.entryDate);
+    setTimeFrom(entry.timeFrom || '08:00');
+    setTimeTo(entry.timeTo || '16:00');
+    setTitle(entry.title);
+    setCategory(entry.category);
+    setDescription(entry.description);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCancelEdit = () => {
+    resetForm();
+  };
+
+  const handleOpenRevisions = async (entry: any) => {
+    setActiveEntryForRevisions(entry);
+    setRevisionsModalOpen(true);
+    try {
+      const res = await api.get(`/entries/${entry.id}/revisions`);
+      setEntryRevisionsList(res.data.revisions || []);
     } catch {
-      showToast('تعذر استرجاع النسخة', 'error');
+      showToast(t('تعذر تحميل سجل التعديلات', 'Failed to load revisions'), 'error');
     }
   };
 
+  // Submit Handler
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !description.trim()) {
-      setFormError('يرجى كتابة عنوان اليوم وتفاصيل الإنجاز');
+    if (!title.trim()) {
+      setFormError(t('يرجى كتابة عنوان مختصر لليوم', 'Please enter a task title'));
       return;
     }
+    if (!description.trim()) {
+      setFormError(t('يرجى كتابة تفاصيل المهام المنفذة', 'Please enter task details'));
+      return;
+    }
+
     setFormError('');
+
     const payload = {
       entryDate,
       timeFrom,
       timeTo,
       title: title.trim(),
-      category,
+      category: category.trim(),
       description: description.trim()
     };
 
@@ -247,17 +274,17 @@ export const DailyLogTab: React.FC = () => {
   // AI action handler
   const handleAIAction = async (action: 'polish' | 'spellcheck' | 'summarize' | 'translate') => {
     if (!description.trim()) {
-      setFormError('يرجى كتابة تفاصيل الإنجاز أولاً لمعالجتها بالذكاء الاصطناعي');
+      setFormError(t('يرجى كتابة تفاصيل الإنجاز أولاً لمعالجتها بالذكاء الاصطناعي', 'Please enter description first to use AI tools'));
       return;
     }
     setFormError('');
     setAiLoading(true);
 
     const actionTitles: Record<string, string> = {
-      polish: 'تنقيح وصياغة أكاديمية رصينة',
-      spellcheck: 'تصحيح إملائي ونحوي دقيق',
-      summarize: 'اختصار وإيجاز مع حفظ الأرقام والإنجازات',
-      translate: 'ترجمة فورية للإنجليزية الأكاديمية'
+      polish: t('تنقيح وصياغة أكاديمية رصينة', 'Academic Polishing & Refinement'),
+      spellcheck: t('تصحيح إملائي ونحوي دقيق', 'Grammar & Spell Check'),
+      summarize: t('اختصار وإيجاز مع حفظ الأرقام والإنجازات', 'Concise Technical Summary'),
+      translate: t('ترجمة فورية للإنجليزية الأكاديمية', 'Academic English Translation')
     };
 
     try {
@@ -265,35 +292,35 @@ export const DailyLogTab: React.FC = () => {
         text: description,
         action,
         targetLang: action === 'translate' ? 'en' : 'ar',
-        context: `عنوان اليوم: ${title} | التصنيف: ${category}`
+        context: `Task: ${title} | Category: ${category}`
       });
 
-      setDiffTitle(actionTitles[action] || 'معالجة النص');
+      setDiffTitle(actionTitles[action] || t('معالجة النص', 'Text Processing'));
       setOriginalText(description);
       setImprovedText(res.data.result);
       setDiffChunks(res.data.diff || []);
       setDiffModalOpen(true);
     } catch {
-      setFormError('تعذر معالجة النص بالذكاء الاصطناعي، يرجى المحاولة مرة أخرى');
+      setFormError(t('تعذر معالجة النص بالذكاء الاصطناعي، يرجى المحاولة مرة أخرى', 'AI processing failed, please try again'));
     } finally {
       setAiLoading(false);
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir={isAr ? 'rtl' : 'ltr'}>
       {/* Draft Restored Banner */}
       {draftRestoredNotice && (
         <div className="p-3.5 rounded-xl bg-ok-bg border border-ok/30 text-ok text-xs font-bold flex items-center justify-between animate-fade-in shadow-sm">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span>تم استرجاع مسودتك المكتوبة تلقائياً لحمايتها من أي ضياع أو إغلاق مفاجئ.</span>
+            <span>{t('تم استرجاع مسودتك المكتوبة تلقائياً لحمايتها من أي ضياع أو إغلاق مفاجئ.', 'Your saved draft was automatically restored.')}</span>
           </div>
           <button
             onClick={() => setDraftRestoredNotice(false)}
             className="text-sub hover:text-ink text-xs font-normal"
           >
-            إغلاق
+            {t('إغلاق', 'Dismiss')}
           </button>
         </div>
       )}
@@ -304,15 +331,15 @@ export const DailyLogTab: React.FC = () => {
           <div className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-accent" />
             <h2 className="text-base font-extrabold text-ink">
-              {editingEntryId ? 'تعديل الإنجاز اليومي' : 'إضافة إنجاز يومي جديد'}
+              {editingEntryId ? t('تعديل الإنجاز اليومي', 'Edit Daily Task') : t('إضافة إنجاز يومي جديد', 'Add New Daily Task')}
             </h2>
             {editingEntryId && (
               <button
                 type="button"
                 onClick={handleCancelEdit}
-                className="text-xs text-sub hover:text-accent underline mr-2"
+                className="text-xs text-sub hover:text-accent underline mx-2"
               >
-                (إلغاء التعديل والعودة للإضافة)
+                ({t('إلغاء التعديل والعودة للإضافة', 'Cancel edit & return to add')})
               </button>
             )}
           </div>
@@ -322,13 +349,13 @@ export const DailyLogTab: React.FC = () => {
                 type="button"
                 onClick={() => setTrashModalOpen(true)}
                 className="px-3 py-1 text-xs font-bold text-accent bg-accent-dim hover:bg-accent-dim/80 rounded-xl border border-accent/20 transition-colors flex items-center gap-1.5"
-                title="سلة المحذوفات الآمنة"
+                title={t('سلة المحذوفات الآمنة', 'Safe Trash Archive')}
               >
                 <Archive className="w-3.5 h-3.5" />
-                <span>سلة المحذوفات ({trashData.entries.length})</span>
+                <span>{t(`سلة المحذوفات (${trashData.entries.length})`, `Trash (${trashData.entries.length})`)}</span>
               </button>
             )}
-            <span className="text-xs text-sub hidden sm:inline">حفظ فوري للمسودة مفعل</span>
+            <span className="text-xs text-sub hidden sm:inline">{t('حفظ فوري للمسودة مفعل', 'Autosave active')}</span>
           </div>
         </div>
 
@@ -343,42 +370,39 @@ export const DailyLogTab: React.FC = () => {
           {/* Date & Times Row */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="space-y-1">
-              <label className="block text-xs font-bold text-sub">التاريخ</label>
+              <label className="block text-xs font-bold text-sub">{t('التاريخ', 'Date')}</label>
               <div className="relative">
-                <Calendar className="w-4 h-4 text-sub absolute right-3 top-3" />
                 <input
                   type="date"
                   value={entryDate}
                   onChange={(e) => setEntryDate(e.target.value)}
-                  className="w-full pr-9 pl-3 py-2 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent"
+                  className="w-full px-3 py-2 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent text-ink"
                   required
                 />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="block text-xs font-bold text-sub">من الساعة</label>
+              <label className="block text-xs font-bold text-sub">{t('من الساعة', 'From')}</label>
               <div className="relative">
-                <Clock className="w-4 h-4 text-sub absolute right-3 top-3" />
                 <input
                   type="time"
                   value={timeFrom}
                   onChange={(e) => setTimeFrom(e.target.value)}
-                  className="w-full pr-9 pl-3 py-2 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent"
+                  className="w-full px-3 py-2 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent text-ink"
                   required
                 />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="block text-xs font-bold text-sub">إلى الساعة</label>
+              <label className="block text-xs font-bold text-sub">{t('إلى الساعة', 'To')}</label>
               <div className="relative">
-                <Clock className="w-4 h-4 text-sub absolute right-3 top-3" />
                 <input
                   type="time"
                   value={timeTo}
                   onChange={(e) => setTimeTo(e.target.value)}
-                  className="w-full pr-9 pl-3 py-2 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent"
+                  className="w-full px-3 py-2 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent text-ink"
                   required
                 />
               </div>
@@ -388,38 +412,34 @@ export const DailyLogTab: React.FC = () => {
           {/* Title & Category */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="sm:col-span-2 space-y-1">
-              <label className="block text-xs font-bold text-sub">عنوان اليوم (مختصر ودقيق)</label>
+              <label className="block text-xs font-bold text-sub">{t('عنوان اليوم (مختصر ودقيق)', 'Task Title (Concise & Accurate)')}</label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="مثال: تهيئة أجهزة توجيه الشبكة والتحقق من التوصيلات"
-                className="w-full px-3 py-2 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent"
+                placeholder={t('مثال: تهيئة أجهزة توجيه الشبكة والتحقق من التوصيلات', 'e.g. Network router configuration and link verification')}
+                className="w-full px-3 py-2 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent text-ink"
                 required
               />
             </div>
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="block text-xs font-bold text-sub">التصنيف</label>
-                <span className="text-[10px] text-muted">اختر أو اكتب تصنيفاً مخصصاً</span>
+                <label className="block text-xs font-bold text-sub">{t('التصنيف الفني', 'Technical Category')}</label>
               </div>
               <div className="relative">
-                <Tag className="w-4 h-4 text-sub absolute right-3 top-3 pointer-events-none" />
-                <input
-                  type="text"
-                  list="category-suggestions"
+                <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  placeholder="اختر أو اكتب تصنيفاً مخصصاً..."
-                  className="w-full pr-9 pl-3 py-2 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent"
+                  className="w-full px-3 py-2 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent text-ink font-bold"
                   required
-                />
-                <datalist id="category-suggestions">
+                >
                   {ENTRY_CATEGORIES.map((cat) => (
-                    <option key={cat} value={cat} />
+                    <option key={cat} value={cat}>
+                      {isAr ? cat : (CATEGORY_TRANSLATIONS[cat] || cat)}
+                    </option>
                   ))}
-                </datalist>
+                </select>
               </div>
 
               {/* Quick Preset Tags */}
@@ -435,7 +455,7 @@ export const DailyLogTab: React.FC = () => {
                         : 'bg-bg hover:bg-line text-sub border border-line'
                     }`}
                   >
-                    {cat}
+                    {isAr ? cat : (CATEGORY_TRANSLATIONS[cat] || cat)}
                   </button>
                 ))}
               </div>
@@ -445,16 +465,16 @@ export const DailyLogTab: React.FC = () => {
           {/* Description & AI Toolbar */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="block text-xs font-bold text-sub">تفاصيل الإنجاز والمهام المنفذة</label>
-              <span className="text-[11px] text-sub">يُحفظ تلقائياً كمسودة أثناء الكتابة</span>
+              <label className="block text-xs font-bold text-sub">{t('تفاصيل الإنجاز والمهام المنفذة', 'Task Details & Accomplishments')}</label>
+              <span className="text-[11px] text-sub">{t('يُحفظ تلقائياً كمسودة أثناء الكتابة', 'Draft is saved automatically')}</span>
             </div>
 
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={4}
-              placeholder="اشرح ما أنجزته بدقة، والبرمجيات أو الأجهزة التي تعاملت معها، والتحديات الفنية التي تم حلها..."
-              className="w-full p-3 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent leading-relaxed"
+              placeholder={t('اشرح ما أنجزته بدقة، والبرمجيات أو الأجهزة التي تعاملت معها، والتحديات الفنية التي تم حلها...', 'Explain in detail what you accomplished, software/hardware tools used, and technical solutions...')}
+              className="w-full p-3 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent leading-relaxed text-ink"
               required
             />
 
@@ -462,7 +482,7 @@ export const DailyLogTab: React.FC = () => {
             <div className="flex flex-wrap items-center gap-2 pt-1">
               <span className="text-xs font-bold text-sub flex items-center gap-1">
                 <Sparkles className="w-3.5 h-3.5 text-accent" />
-                <span>أدوات الذكاء الاصطناعي:</span>
+                <span>{t('أدوات الذكاء الاصطناعي:', 'AI Tools:')}</span>
               </span>
 
               <button
@@ -470,10 +490,10 @@ export const DailyLogTab: React.FC = () => {
                 disabled={aiLoading}
                 onClick={() => handleAIAction('polish')}
                 className="px-2.5 py-1 text-xs font-bold text-accent bg-accent-dim hover:bg-accent-dim/80 rounded-lg transition-colors flex items-center gap-1"
-                title="تحسين الأسلوب ليصبح أكاديمياً رسمياً"
+                title={t('تحسين الأسلوب ليصبح أكاديمياً رسمياً', 'Refine text to sound professional and academic')}
               >
                 <Sparkles className="w-3 h-3" />
-                <span>تنقيح أكاديمي</span>
+                <span>{t('تنقيح أكاديمي', 'AI Polish')}</span>
               </button>
 
               <button
@@ -481,10 +501,10 @@ export const DailyLogTab: React.FC = () => {
                 disabled={aiLoading}
                 onClick={() => handleAIAction('spellcheck')}
                 className="px-2.5 py-1 text-xs font-bold text-ok bg-ok-bg hover:bg-ok-bg/80 rounded-lg transition-colors flex items-center gap-1"
-                title="تصحيح إملائي ونحوي وتدقيق الهمزات"
+                title={t('تصحيح إملائي ونحوي وتدقيق الهمزات', 'Check spelling and grammar')}
               >
                 <CheckCircle2 className="w-3 h-3" />
-                <span>تصحيح إملائي</span>
+                <span>{t('تصحيح إملائي', 'Spellcheck')}</span>
               </button>
 
               <button
@@ -492,10 +512,10 @@ export const DailyLogTab: React.FC = () => {
                 disabled={aiLoading}
                 onClick={() => handleAIAction('summarize')}
                 className="px-2.5 py-1 text-xs font-bold text-ink bg-bg hover:bg-line rounded-lg transition-colors border border-line flex items-center gap-1"
-                title="اختصار وإيجاز مع حفظ الأرقام والإنجازات"
+                title={t('اختصار وإيجاز مع حفظ الأرقام والإنجازات', 'Summarize key metrics and achievements')}
               >
                 <FileText className="w-3 h-3" />
-                <span>اختصار وإيجاز</span>
+                <span>{t('اختصار وإيجاز', 'Summarize')}</span>
               </button>
 
               <button
@@ -503,10 +523,10 @@ export const DailyLogTab: React.FC = () => {
                 disabled={aiLoading}
                 onClick={() => handleAIAction('translate')}
                 className="px-2.5 py-1 text-xs font-bold text-sub bg-bg hover:bg-line rounded-lg transition-colors border border-line flex items-center gap-1"
-                title="ترجمة فورية للإنجليزية"
+                title={t('ترجمة فورية للإنجليزية', 'Translate to English')}
               >
                 <Languages className="w-3 h-3" />
-                <span>ترجمة للإنجليزية</span>
+                <span>{t('ترجمة للإنجليزية', 'Translate')}</span>
               </button>
             </div>
           </div>
@@ -520,10 +540,10 @@ export const DailyLogTab: React.FC = () => {
               {editingEntryId ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
               <span>
                 {createMutation.isPending || updateMutation.isPending
-                  ? 'جارٍ الحفظ...'
+                  ? t('جارٍ الحفظ...', 'Saving...')
                   : editingEntryId
-                  ? 'تحديث الإدخال وحفظ تعديل جديد'
-                  : 'حفظ الإدخال اليومي'}
+                  ? t('تحديث الإدخال وحفظ تعديل جديد', 'Update Task')
+                  : t('حفظ الإدخال اليومي', 'Save Daily Task')}
               </span>
             </button>
           </div>
@@ -535,18 +555,18 @@ export const DailyLogTab: React.FC = () => {
         <div className="flex items-center justify-between pb-4 mb-4 border-b border-line">
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-accent" />
-            <h3 className="text-base font-extrabold text-ink">سجل الإدخالات المعتمدة</h3>
+            <h3 className="text-base font-extrabold text-ink">{t('سجل المهام اليومية الموثقة', 'Logged Daily Tasks')}</h3>
           </div>
           <span className="text-xs font-bold text-sub">
-            {entriesData?.entries?.length || 0} إدخال مسجّل
+            {entriesData?.entries?.length || 0} {t('إدخال مسجّل', 'logged entries')}
           </span>
         </div>
 
         {isLoading ? (
-          <div className="text-center py-8 text-sub text-sm">جارٍ تحميل السجلات...</div>
+          <div className="text-center py-8 text-sub text-sm">{t('جارٍ تحميل السجلات...', 'Loading tasks...')}</div>
         ) : !entriesData?.entries?.length ? (
           <div className="text-center py-12 text-sub text-sm">
-            لا توجد إدخالات مسجلة بعد. استخدم النموذج أعلاه لتوثيق إنجاز أول يوم تدريبي لك.
+            {t('لا توجد إدخالات مسجلة بعد. استخدم النموذج أعلاه لتوثيق إنجاز أول يوم تدريبي لك.', 'No entries logged yet. Use the form above to record your first day of training.')}
           </div>
         ) : (
           <div className="divide-y divide-line">
@@ -557,11 +577,11 @@ export const DailyLogTab: React.FC = () => {
                     <span className="font-extrabold text-ink">{entry.entryDate}</span>
                     <span className="text-sub">({entry.timeFrom} - {entry.timeTo})</span>
                     <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-accent-dim text-accent">
-                      {entry.category}
+                      {isAr ? entry.category : (CATEGORY_TRANSLATIONS[entry.category] || entry.category)}
                     </span>
                     {entry._count?.revisions > 0 && (
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-ok-bg text-ok">
-                        {entry._count.revisions} تعديلات محفوظة
+                        {entry._count.revisions} {t('تعديلات محفوظة', 'revisions saved')}
                       </span>
                     )}
                   </div>
@@ -574,7 +594,7 @@ export const DailyLogTab: React.FC = () => {
                   <button
                     onClick={() => handleStartEdit(entry)}
                     className="p-2 text-sub hover:text-accent rounded-lg hover:bg-bg transition-colors"
-                    title="تعديل وتحديث هذا الإدخال"
+                    title={t('تعديل وتحديث هذا الإدخال', 'Edit task')}
                   >
                     <Edit3 className="w-4 h-4" />
                   </button>
@@ -583,7 +603,7 @@ export const DailyLogTab: React.FC = () => {
                   <button
                     onClick={() => handleOpenRevisions(entry)}
                     className="p-2 text-sub hover:text-ok rounded-lg hover:bg-bg transition-colors"
-                    title="سجل التعديلات والنسخ السابقة"
+                    title={t('سجل التعديلات والنسخ السابقة', 'Revision history')}
                   >
                     <History className="w-4 h-4" />
                   </button>
@@ -593,13 +613,13 @@ export const DailyLogTab: React.FC = () => {
                     onClick={() => {
                       deleteMutation.mutate(entry.id, {
                         onSuccess: () => {
-                          showToast('تم نقل الإدخال إلى سلة المحذوفات بنجاح (يمكن استعادته بأي وقت)', 'success');
+                          showToast(t('تم نقل الإدخال إلى سلة المحذوفات بنجاح (يمكن استعادته بأي وقت)', 'Moved to trash safely (can be restored anytime)'), 'success');
                         }
                       });
                     }}
                     disabled={deleteMutation.isPending}
                     className="p-2 text-sub hover:text-accent rounded-lg hover:bg-bg transition-colors"
-                    title="نقل لسلة المحذوفات بأمان"
+                    title={t('نقل لسلة المحذوفات بأمان', 'Move to trash')}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -610,91 +630,116 @@ export const DailyLogTab: React.FC = () => {
         )}
       </div>
 
-      {/* Trash Modal (سلة المحذوفات) */}
+      {/* Trash Modal */}
       {trashModalOpen && (
-        <div className="fixed inset-0 bg-ink/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-card border border-line rounded-2xl p-6 shadow-2xl max-w-xl w-full max-h-[80vh] flex flex-col overflow-hidden">
+        <div className="fixed inset-0 bg-ink/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-card border border-line rounded-2xl p-6 shadow-2xl max-w-xl w-full max-h-[80vh] flex flex-col overflow-hidden text-start">
             <div className="flex items-center justify-between pb-4 border-b border-line">
               <h3 className="text-base font-extrabold text-ink flex items-center gap-2">
                 <Archive className="w-5 h-5 text-accent" />
-                <span>سلة المحذوفات الآمنة (يمكن استرجاع أي إدخال)</span>
+                <span>{t('سلة المحذوفات الآمنة', 'Safe Trash Archive')}</span>
               </h3>
-              <button onClick={() => setTrashModalOpen(false)} className="text-sub hover:text-ink">
+              <button
+                onClick={() => setTrashModalOpen(false)}
+                className="p-1 rounded-lg text-sub hover:text-ink hover:bg-line transition-colors"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="py-4 overflow-y-auto space-y-3 flex-1 divide-y divide-line">
+            <div className="overflow-y-auto py-4 flex-1 divide-y divide-line">
               {!trashData?.entries?.length ? (
-                <div className="text-center py-8 text-sub text-xs">سلة المحذوفات فارغة حالياً.</div>
+                <div className="text-center py-8 text-sub text-xs">{t('سلة المحذوفات فارغة تماماً.', 'Trash is empty.')}</div>
               ) : (
-                trashData.entries.map((item) => (
-                  <div key={item.id} className="pt-3 first:pt-0 flex items-center justify-between gap-3 text-xs">
+                trashData.entries.map((entry: any) => (
+                  <div key={entry.id} className="py-3 flex items-center justify-between gap-4">
                     <div>
-                      <div className="font-bold text-ink">{item.title}</div>
-                      <div className="text-sub text-[11px]">{item.entryDate} | {item.category}</div>
+                      <div className="font-bold text-xs text-ink">{entry.title}</div>
+                      <div className="text-[11px] text-sub">{entry.entryDate} &middot; {entry.category}</div>
                     </div>
                     <button
-                      onClick={() => {
-                        restoreMutation.mutate(item.id);
-                        if (trashData.entries.length <= 1) setTrashModalOpen(false);
-                      }}
-                      className="px-3 py-1.5 bg-ok text-white font-bold rounded-lg hover:bg-ok/90 transition-colors flex items-center gap-1"
+                      onClick={() => restoreMutation.mutate(entry.id)}
+                      disabled={restoreMutation.isPending}
+                      className="px-3 py-1.5 rounded-xl bg-ok-bg text-ok hover:bg-ok-bg/80 text-xs font-bold transition-colors flex items-center gap-1"
                     >
                       <RotateCcw className="w-3.5 h-3.5" />
-                      <span>استرجاع</span>
+                      <span>{t('استعادة', 'Restore')}</span>
                     </button>
                   </div>
                 ))
               )}
             </div>
+
+            <div className="pt-4 border-t border-line flex justify-end">
+              <button
+                onClick={() => setTrashModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-bg hover:bg-line text-xs font-bold text-ink transition-colors"
+              >
+                {t('إغلاق', 'Close')}
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Revision History Modal (سجل التعديلات) */}
-      {revisionsModalOpen && (
-        <div className="fixed inset-0 bg-ink/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-card border border-line rounded-2xl p-6 shadow-2xl max-w-xl w-full max-h-[80vh] flex flex-col overflow-hidden">
+      {/* Revisions History Modal */}
+      {revisionsModalOpen && activeEntryForRevisions && (
+        <div className="fixed inset-0 bg-ink/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-card border border-line rounded-2xl p-6 shadow-2xl max-w-xl w-full max-h-[80vh] flex flex-col overflow-hidden text-start">
             <div className="flex items-center justify-between pb-4 border-b border-line">
               <h3 className="text-base font-extrabold text-ink flex items-center gap-2">
-                <History className="w-5 h-5 text-ok" />
-                <span>سجل النسخ السابقة للإدخال</span>
+                <History className="w-5 h-5 text-accent" />
+                <span>{t('سجل النسخ والتعديلات المحفوظة', 'Revision History')}</span>
               </h3>
-              <button onClick={() => setRevisionsModalOpen(false)} className="text-sub hover:text-ink">
+              <button
+                onClick={() => setRevisionsModalOpen(false)}
+                className="p-1 rounded-lg text-sub hover:text-ink hover:bg-line transition-colors"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="py-4 overflow-y-auto space-y-4 flex-1">
-              {!entryRevisionsList.length ? (
-                <div className="text-center py-8 text-sub text-xs">لا توجد تعديلات سابقة مسجلة لهذا الإدخال.</div>
+            <div className="overflow-y-auto py-4 flex-1 space-y-3">
+              {!entryRevisionsList?.length ? (
+                <div className="text-center py-8 text-sub text-xs">
+                  {t('لا توجد نسخ سابقة محفوظة لهذا الإدخال.', 'No past revisions found for this entry.')}
+                </div>
               ) : (
                 entryRevisionsList.map((rev) => (
-                  <div key={rev.id} className="p-3 bg-bg border border-line rounded-xl space-y-2 text-xs">
-                    <div className="flex items-center justify-between text-sub font-bold text-[11px]">
-                      <span>تاريخ النسخة: {new Date(rev.createdAt).toLocaleString('ar-SA')}</span>
+                  <div key={rev.id} className="p-3 rounded-xl border border-line bg-bg space-y-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-extrabold text-ink">{rev.title}</span>
                       <button
-                        onClick={() => handleRevertToRevision(rev.id)}
-                        className="px-2.5 py-1 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors flex items-center gap-1 font-bold"
+                        onClick={() => rollbackMutation.mutate({ entryId: activeEntryForRevisions.id, revId: rev.id })}
+                        disabled={rollbackMutation.isPending}
+                        className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-accent text-white hover:bg-accent/90 transition-colors flex items-center gap-1"
                       >
                         <RotateCcw className="w-3 h-3" />
-                        <span>استرجاع هذه النسخة</span>
+                        <span>{t('العودة لهذه النسخة', 'Rollback to this version')}</span>
                       </button>
                     </div>
-                    <div className="font-bold text-ink">{rev.title}</div>
-                    <p className="text-sub leading-relaxed whitespace-pre-wrap">{rev.description}</p>
+                    <div className="text-[11px] text-sub leading-relaxed">{rev.description}</div>
                   </div>
                 ))
               )}
+            </div>
+
+            <div className="pt-4 border-t border-line flex justify-end">
+              <button
+                onClick={() => setRevisionsModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-bg hover:bg-line text-xs font-bold text-ink transition-colors"
+              >
+                {t('إغلاق', 'Close')}
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Diff Modal */}
+      {/* AI Diff Modal */}
       <DiffModal
         isOpen={diffModalOpen}
+        onClose={() => setDiffModalOpen(false)}
         actionTitle={diffTitle}
         originalText={originalText}
         improvedText={improvedText}
@@ -702,27 +747,19 @@ export const DailyLogTab: React.FC = () => {
         onAccept={() => {
           setDescription(improvedText);
           setDiffModalOpen(false);
+          showToast(t('تم تطبيق التعديلات الذكية بنجاح!', 'AI improvements applied successfully!'));
         }}
-        onClose={() => setDiffModalOpen(false)}
       />
 
-      {/* Floating In-App Toast */}
+      {/* Floating Toast Notification */}
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 max-w-[90%] text-center animate-slide-up">
-          <div
-            className={`px-5 py-2.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-2 ${
-              toast.type === 'success'
-                ? 'bg-ink text-white'
-                : 'bg-accent text-white'
-            }`}
-          >
-            {toast.type === 'success' ? (
-              <Check className="w-4 h-4 text-ok shrink-0" />
-            ) : (
-              <AlertCircle className="w-4 h-4 text-white shrink-0" />
-            )}
-            <span>{toast.message}</span>
-          </div>
+        <div
+          className={`fixed bottom-6 left-1/2 -translate-x-1/2 px-5 py-2.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-2 z-50 animate-fade-in text-white ${
+            toast.type === 'error' ? 'bg-warn' : 'bg-ok'
+          }`}
+        >
+          {toast.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
+          <span>{toast.message}</span>
         </div>
       )}
     </div>

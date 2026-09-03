@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { api } from './services/api';
 import { Navbar } from './components/common/Navbar';
 import { AuthScreen } from './components/auth/AuthScreen';
@@ -35,8 +36,8 @@ const tabs: { id: TabType; labelAr: string; labelEn: string; icon: React.ReactNo
 
 const MainDashboard: React.FC = () => {
   const { user, loading } = useAuth();
+  const { lang, isAr, t } = useLanguage();
   const [activeTab, setActiveTab] = useState<TabType>('log');
-  const [lang, setLang] = useState<'ar' | 'en'>('ar');
   const [onboardingOpen, setOnboardingOpen] = useState<boolean>(false);
 
   // Sync /testdev URL directly
@@ -45,11 +46,6 @@ const MainDashboard: React.FC = () => {
       setActiveTab('testdev');
     }
   }, []);
-
-  useEffect(() => {
-    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-    document.documentElement.lang = lang;
-  }, [lang]);
 
   // Check if trainee needs initial plan setup
   const { data: reportData } = useQuery<{ profile: any }>({
@@ -76,7 +72,6 @@ const MainDashboard: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-bg">
         <div className="text-center space-y-4 animate-fade-in">
-          {/* Branded spinner */}
           <div className="relative w-14 h-14 mx-auto">
             <div className="absolute inset-0 rounded-full border-2 border-line" />
             <div className="absolute inset-0 rounded-full border-2 border-t-accent border-r-transparent border-b-transparent border-l-transparent animate-spin" />
@@ -84,7 +79,9 @@ const MainDashboard: React.FC = () => {
               <Calendar className="w-4 h-4 text-accent" />
             </div>
           </div>
-          <div className="text-xs font-bold text-sub">جارٍ تحميل COOP Report...</div>
+          <div className="text-xs font-bold text-sub">
+            {t('جارٍ تحميل COOP Report...', 'Loading COOP Report...')}
+          </div>
         </div>
       </div>
     );
@@ -109,7 +106,7 @@ const MainDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-bg">
-      <Navbar currentLang={lang} onToggleLang={() => setLang((p) => (p === 'ar' ? 'en' : 'ar'))} />
+      <Navbar />
 
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6">
         {/* ── Tab Navigation ──────────────────────────────── */}
@@ -147,15 +144,17 @@ const MainDashboard: React.FC = () => {
       {/* ── Footer ──────────────────────────────────────── */}
       <footer className="no-print border-t border-line bg-card/50 py-5 text-center text-[11px] text-muted">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span className="font-bold text-sub">COOP Report &mdash; نظام التوثيق الأكاديمي الذكي</span>
+          <span className="font-bold text-sub">
+            {t('COOP Report — مساعد توثيق التدريب التعاوني وتدوين التقارير', 'COOP Report — Co-op Training Logging & Documentation Assistant')}
+          </span>
           <div className="flex items-center gap-3">
-            <span>بيانات مشفرة &middot; نسخ احتياطي آمن &middot; تصدير DOCX / PDF / HTML</span>
+            <span>{t('تصدير مستندات Word و PDF وشرائح PowerPoint للمناقشة', 'Exports editable Word (.docx), PDF & PowerPoint (.pptx) slides')}</span>
             <span>&middot;</span>
             <button
               onClick={() => handleTabClick('testdev')}
               className="text-accent hover:underline font-bold flex items-center gap-1"
             >
-              <span>مختبر المحاكاة /testdev</span>
+              <span>{t('مختبر المحاكاة /testdev', 'Simulation Lab /testdev')}</span>
             </button>
           </div>
         </div>
@@ -168,8 +167,11 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <MainDashboard />
+        <LanguageProvider>
+          <MainDashboard />
+        </LanguageProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
 }
+
