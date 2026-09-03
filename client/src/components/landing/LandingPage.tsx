@@ -18,7 +18,10 @@ import {
   BookmarkCheck,
   Search,
   FolderPlus,
-  Layers
+  Layers,
+  Sparkles,
+  AlertCircle,
+  CheckCircle2
 } from 'lucide-react';
 
 export const LandingPage: React.FC<{ onOpenTestDev?: () => void }> = ({ onOpenTestDev }) => {
@@ -131,6 +134,7 @@ export const LandingPage: React.FC<{ onOpenTestDev?: () => void }> = ({ onOpenTe
           {/* Desktop Navigation Links */}
           <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-sub">
             <a href="#how-it-helps" className="hover:text-ink transition-colors">{t('كيف يساعدك؟', 'How It Helps')}</a>
+            <a href="#story" className="hover:text-ink transition-colors font-bold text-accent">{t('قصة المشروع والحل', 'Project Story & Solution')}</a>
             <a href="#timeline" className="hover:text-ink transition-colors">{t('متابعة الأسابيع الـ 14', '14 Weeks Tracking')}</a>
             <a href="#preview" className="hover:text-ink transition-colors">{t('معاينة التقارير والشرائح', 'Report & Slides')}</a>
             <a href="#faq" className="hover:text-ink transition-colors">{t('الأسئلة الشائعة', 'FAQ')}</a>
@@ -218,6 +222,7 @@ export const LandingPage: React.FC<{ onOpenTestDev?: () => void }> = ({ onOpenTe
         {mobileMenuOpen && (
           <div className="sm:hidden max-w-7xl mx-auto mt-2 bg-card border border-line rounded-2xl p-4 shadow-xl space-y-3 text-xs font-bold">
             <a href="#how-it-helps" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sub hover:text-ink">{t('كيف يساعدك؟', 'How It Helps')}</a>
+            <a href="#story" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-accent font-bold">{t('قصة المشروع والحل', 'Project Story & Solution')}</a>
             <a href="#timeline" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sub hover:text-ink">{t('الأسابيع الـ 14', '14 Weeks Tracking')}</a>
             <a href="#preview" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sub hover:text-ink">{t('معاينة التقارير', 'Report Preview')}</a>
             <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sub hover:text-ink">{t('الأسئلة الشائعة', 'FAQ')}</a>
@@ -684,7 +689,112 @@ export const LandingPage: React.FC<{ onOpenTestDev?: () => void }> = ({ onOpenTe
         </div>
       </section>
 
-      {/* ── 6. FAQ Section ────────────────────────────────────────────────── */}
+      {/* ── 6. Developer Story: The Problem, The Solution & Why Optimal ───── */}
+      <section id="story" className="py-16 px-4 sm:px-6 bg-card border-y border-line">
+        <div className="max-w-5xl mx-auto space-y-12">
+          
+          <div className="text-center space-y-3 max-w-2xl mx-auto">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-accent-dim text-accent border border-accent/20 text-xs font-bold shadow-2xs">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>{t('من وحي التجربة الميدانية • Multi-Agent AI Architecture', 'Field-Inspired Engineering • Multi-Agent AI Architecture')}</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-ink tracking-tight">
+              {t('قصة المشروع: المشكلة، والحل، ولماذا هذا هو الخيار الأمثل؟', 'Behind the Project: The Problem, The Solution & Why It Is Optimal')}
+            </h2>
+            <p className="text-xs sm:text-sm text-sub leading-relaxed">
+              {t(
+                'تم بناء وتطوير هذا الموقع والمساعد بالكامل بواسطة منظومة وكلاء ذكاء اصطناعي متخصصين (Multi-Agent System) لحل مشكلة حقيقية واجهها المطور أثناء تدريبه التعاوني: نسيان الأعمال والمهام المنفذة على مدار 14 أسبوعاً.',
+                'This platform and assistant was architected and built via specialized AI agents (Multi-Agent System) to solve a genuine dilemma the developer faced during his co-op training: forgetting daily accomplishments over 14 grueling weeks.'
+              )}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-start">
+            {/* 1. The Problem */}
+            <div className="p-6 bg-bg border border-line rounded-2xl space-y-4 shadow-xs hover:border-warn/50 transition-all flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="w-10 h-10 rounded-xl bg-warn-bg text-warn flex items-center justify-center font-black">
+                  <AlertCircle className="w-5 h-5" />
+                </div>
+                <div className="text-xs font-extrabold text-warn uppercase tracking-wider">
+                  {t('المشكلة الواقعية', 'The Real Problem')}
+                </div>
+                <h3 className="text-base font-black text-ink">
+                  {t('تراكم 14 أسبوعاً وضياع تفاصيل الإنجازات', '14 Weeks of Tasks Forgotten at the Deadline')}
+                </h3>
+                <p className="text-xs text-sub leading-relaxed">
+                  {t(
+                    'يمتد التدريب التعاوني إلى 70 يوماً من العمل والمهام التقنية المتلاحقة. ومع الانشغال اليومي، تتلاشى التفاصيل وتُنسى أسماء الأنظمة والأجهزة والحلول المطبقة، ليجد المتدرب نفسه في نهاية الفصل مجبراً على كتابة تقرير من الذاكرة، مما ينتج تقارير ركيكة ومكررة لا تعكس جهده الفعلي.',
+                    'Co-op training spans 70 full working days of continuous technical tasks. In the daily rush, system names, terminal commands, and specific solutions are easily forgotten. Trainees end up having to reconstruct 14 weeks from memory, resulting in generic, rushed reports that fail to showcase their true efforts.'
+                  )}
+                </p>
+              </div>
+              <div className="p-3 bg-card rounded-xl border border-line/60 text-[11px] text-sub font-semibold">
+                {t('⚠️ النتيجة السابقة: ضغط نفسي وتخمين عشوائي بنهاية الفصل', '⚠️ The Old Reality: Extreme deadline panic & vague guessing')}
+              </div>
+            </div>
+
+            {/* 2. The Solution & Multi-Agent Build */}
+            <div className="p-6 bg-bg border border-line rounded-2xl space-y-4 shadow-xs hover:border-accent/50 transition-all flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="w-10 h-10 rounded-xl bg-accent-dim text-accent flex items-center justify-center font-black">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <div className="text-xs font-extrabold text-accent uppercase tracking-wider">
+                  {t('الحل وهندسة الـ Multi-Agent', 'The Solution & Multi-Agent Build')}
+                </div>
+                <h3 className="text-base font-black text-ink">
+                  {t('مساعد تدوين فوري شُيّد بعدة وكلاء AI', 'Instant Logging Assistant Built with Multi-Agent AI')}
+                </h3>
+                <p className="text-xs text-sub leading-relaxed">
+                  {t(
+                    'قام المطور بهندسة وبناء المنصة بالكامل بالتعاون مع وكلاء ذكاء اصطناعي متخصصين (Multi-Agent Architecture): وكيل لنمذجة البيانات وحفظ المسودات فورياً، وكيل لتوليد مستندات Word وشرائح PowerPoint الرسمية، ووكيل لغوي لضمان الصياغة الهندسية الأكاديمية الصارمة.',
+                    'The developer engineered the platform using a collaborative Multi-Agent AI architecture: a Data Resilience Agent for instant auto-saving, an Office Generation Agent for compiling native Word and PowerPoint decks, and an Academic Language Agent enforcing rigorous engineering phrasing without fluff.'
+                  )}
+                </p>
+              </div>
+              <div className="p-3 bg-accent-dim/40 rounded-xl border border-accent/20 text-[11px] text-accent font-bold">
+                {t('⚡ تم البناء عبر: Data Agent + Office Agent + Academic Agent', '⚡ Engineered by: Data Agent + Office Agent + Academic Agent')}
+              </div>
+            </div>
+
+            {/* 3. Why This Solution is Optimal */}
+            <div className="p-6 bg-bg border border-line rounded-2xl space-y-4 shadow-xs hover:border-ok/50 transition-all flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="w-10 h-10 rounded-xl bg-ok-bg text-ok flex items-center justify-center font-black">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <div className="text-xs font-extrabold text-ok uppercase tracking-wider">
+                  {t('لماذا هذا الحل هو الأمثل؟', 'Why This Solution is Optimal')}
+                </div>
+                <h3 className="text-base font-black text-ink">
+                  {t('3 ركائز تجعله البديل الأذكى عالمياً', '3 Pillars That Make It the Ideal Choice')}
+                </h3>
+                <ul className="text-xs text-sub space-y-2 leading-relaxed list-disc list-inside">
+                  <li>
+                    <strong className="text-ink">{t('التدوين اللحظي (Micro-Logging):', 'Micro-Logging:')}</strong>{' '}
+                    {t('دقيقتان يومياً تقضيان تماماً على نسيان 14 أسبوعاً.', '2 minutes a day eliminates 14 weeks of memory loss.')}
+                  </li>
+                  <li>
+                    <strong className="text-ink">{t('فصل التدوين عن التنسيق:', 'Separation of Concerns:')}</strong>{' '}
+                    {t('المتدرب يركز على إنجازه فقط، والنظام يبني الفهارس وملفات Word و PPTX.', 'You focus solely on your work; the system structures files & slides.')}
+                  </li>
+                  <li>
+                    <strong className="text-ink">{t('أمان وموثوقية محلية:', 'Local Resilience:')}</strong>{' '}
+                    {t('حفظ فوري للمسودات، استرجاع التعديلات السابقة، ودعم كامل للغتين.', 'Instant draft caching, full revision rollback, and bilingual support.')}
+                  </li>
+                </ul>
+              </div>
+              <div className="p-3 bg-ok-bg/50 rounded-xl border border-ok/30 text-[11px] text-ok font-bold">
+                {t('🎯 النتيجة: تقرير هندسي متكامل وعرض مناقشة جاهز دون ضغط', '🎯 Result: Flawless technical report & slides ready without stress')}
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ── 7. FAQ Section ────────────────────────────────────────────────── */}
       <section id="faq" className="py-16 px-4 sm:px-6">
         <div className="max-w-3xl mx-auto space-y-8">
           
