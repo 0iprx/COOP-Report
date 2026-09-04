@@ -19,8 +19,12 @@ import {
   Sparkles,
   X,
   Save,
-  CheckCircle
+  CheckCircle,
+  Languages,
+  FileText,
+  CheckCheck
 } from 'lucide-react';
+import { DiffModal } from '../common/DiffModal';
 
 const CATEGORIES: Array<EntryDTO['category']> = [
   'تطوير / برمجة',
@@ -242,19 +246,40 @@ export const WeeklyTab: React.FC = () => {
     }
   };
 
-  // Polish entry description using AI
-  const handlePolishDailyText = async () => {
+  // AI Enhancement State for Day Editing Modal
+  const [diffModalOpen, setDiffModalOpen] = useState<boolean>(false);
+  const [diffTitle, setDiffTitle] = useState<string>('');
+  const [originalText, setOriginalText] = useState<string>('');
+  const [improvedText, setImprovedText] = useState<string>('');
+  const [diffChunks, setDiffChunks] = useState<any[]>([]);
+
+  // AI Actions Handler (Polish, Spellcheck, Summarize, Translate)
+  const handleAIAction = async (action: 'polish' | 'spellcheck' | 'summarize' | 'translate') => {
     if (!editingEntry?.description?.trim()) return;
     setAiPolishing(true);
+
+    const actionTitles: Record<string, string> = {
+      polish: t('تنقيح وصياغة أكاديمية رصينة', 'Academic Polishing & Refinement'),
+      spellcheck: t('تصحيح إملائي ونحوي دقيق', 'Grammar & Spell Check'),
+      summarize: t('اختصار وإيجاز فني مكثف', 'Concise Technical Summary'),
+      translate: t('ترجمة فورية للإنجليزية الأكاديمية', 'Academic English Translation')
+    };
+
     try {
       const res = await api.post('/ai/process', {
         text: editingEntry.description,
-        action: 'polish',
-        targetLang: isAr ? 'ar' : 'en'
+        action,
+        targetLang: action === 'translate' ? (isAr ? 'en' : 'ar') : 'ar',
+        context: `Task: ${editingEntry.title || ''} | Category: ${editingEntry.category || ''}`
       });
-      setEditingEntry((prev) => (prev ? { ...prev, description: res.data.result } : null));
+
+      setDiffTitle(actionTitles[action] || t('معالجة النص', 'Text Processing'));
+      setOriginalText(editingEntry.description);
+      setImprovedText(res.data.result);
+      setDiffChunks(res.data.diff || []);
+      setDiffModalOpen(true);
     } catch {
-      setErrorToast(t('تعذر تنقيح النص ذكياً، يرجى المحاولة لاحقاً', 'AI Polish failed, please try again'));
+      setErrorToast(t('تعذر معالجة النص ذكياً، يرجى المحاولة لاحقاً', 'AI processing failed'));
       setTimeout(() => setErrorToast(''), 3000);
     } finally {
       setAiPolishing(false);
@@ -653,19 +678,53 @@ export const WeeklyTab: React.FC = () => {
                 />
               </div>
 
-              <div className="space-y-1">
-                <div className="flex items-center justify-between">
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <label className="block font-bold text-sub">{t('التفاصيل والسرد الأكاديمي للمهمة', 'Task Details & Narrative')}</label>
-                  <button
-                    type="button"
-                    disabled={aiPolishing || !editingEntry.description}
-                    onClick={handlePolishDailyText}
-                    className="text-[11px] font-bold text-accent hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-accent-dim/60 disabled:opacity-50"
-                    title={t('تنقيح الصياغة لغوياً وتقنياً', 'Polish phrasing using AI')}
-                  >
-                    <Sparkles className="w-3 h-3" />
-                    <span>{aiPolishing ? t('جارٍ التنقيح...', 'Polishing...') : t('تنقيح الصياغة (AI)', 'AI Polish')}</span>
-                  </button>
+                  
+                  {/* AI Quick Actions Toolbar */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <button
+                      type="button"
+                      disabled={aiPolishing || !editingEntry.description}
+                      onClick={() => handleAIAction('polish')}
+                      className="text-[11px] font-bold text-accent hover:bg-accent hover:text-white transition-colors flex items-center gap-1 px-2.5 py-1 rounded-lg bg-accent-dim/60 border border-accent/20 disabled:opacity-40"
+                      title={t('تنقيح الصياغة لغوياً وتقنياً', 'Polish phrasing using AI')}
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>{t('تنقيح الصياغة', 'Polish')}</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={aiPolishing || !editingEntry.description}
+                      onClick={() => handleAIAction('spellcheck')}
+                      className="text-[11px] font-bold text-ok hover:bg-ok hover:text-white transition-colors flex items-center gap-1 px-2.5 py-1 rounded-lg bg-ok-bg border border-ok/20 disabled:opacity-40"
+                      title={t('تصحيح إملائي ونحوي', 'Spell & Grammar check')}
+                    >
+                      <CheckCheck className="w-3 h-3" />
+                      <span>{t('تصحيح إملائي', 'Spellcheck')}</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={aiPolishing || !editingEntry.description}
+                      onClick={() => handleAIAction('summarize')}
+                      className="text-[11px] font-bold text-ink hover:bg-line transition-colors flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface border border-line disabled:opacity-40"
+                      title={t('اختصار وإيجاز فني', 'Summarize')}
+                    >
+                      <FileText className="w-3 h-3" />
+                      <span>{t('إيجاز', 'Summary')}</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={aiPolishing || !editingEntry.description}
+                      onClick={() => handleAIAction('translate')}
+                      className="text-[11px] font-bold text-ink hover:bg-line transition-colors flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface border border-line disabled:opacity-40"
+                      title={t('ترجمة فورية للإنجليزية', 'Translate to English')}
+                    >
+                      <Languages className="w-3 h-3" />
+                      <span>{isAr ? 'ترجمة EN' : 'ترجمة AR'}</span>
+                    </button>
+                  </div>
                 </div>
                 <textarea
                   rows={5}
@@ -698,6 +757,22 @@ export const WeeklyTab: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* AI Diff Modal for Weekly Tab */}
+      <DiffModal
+        isOpen={diffModalOpen}
+        onClose={() => setDiffModalOpen(false)}
+        actionTitle={diffTitle}
+        originalText={originalText}
+        improvedText={improvedText}
+        diffChunks={diffChunks}
+        onAccept={() => {
+          setEditingEntry((prev) => (prev ? { ...prev, description: improvedText } : null));
+          setDiffModalOpen(false);
+          setSaveToast(t('تم تطبيق التعديلات الذكية بنجاح!', 'AI improvements applied successfully!'));
+          setTimeout(() => setSaveToast(''), 3000);
+        }}
+      />
     </div>
   );
 };

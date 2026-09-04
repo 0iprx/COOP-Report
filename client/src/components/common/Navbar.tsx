@@ -69,7 +69,7 @@ export const Navbar: React.FC = () => {
               type="button"
               onClick={handleSafetyBackup}
               disabled={isDownloadingBackup}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-line bg-bg text-xs font-bold text-sub hover:text-accent hover:border-accent/40 transition-colors disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border border-line bg-bg text-xs font-bold text-sub hover:text-accent hover:border-accent/40 transition-colors disabled:opacity-60 shrink-0"
               title={t(
                 'تنزيل نسخة احتياطية قابلة للقراءة من كل ما سجّلته حتى الآن، احتياطاً لأي مشكلة في الموقع.',
                 'Download a readable safety copy of everything you have logged so far, in case the site ever has an issue.'
@@ -78,9 +78,9 @@ export const Navbar: React.FC = () => {
               {isDownloadingBackup ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : (
-                <ShieldCheck className="w-3.5 h-3.5" />
+                <ShieldCheck className="w-3.5 h-3.5 text-accent" />
               )}
-              <span>{t('نسخة احتياطية', 'Safety Backup')}</span>
+              <span className="hidden sm:inline">{t('نسخة احتياطية', 'Safety Backup')}</span>
             </button>
           )}
 

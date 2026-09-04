@@ -125,6 +125,203 @@ const TiltStepCard: React.FC<{
   );
 };
 
+// ─── Creative 3D Step Pipeline ──────────────────────────────────────────────
+// An interactive 3D perspective pipeline: Features 3 floating isometric cards
+// connected by animated glowing data conduits, floating 3D badges, and depth layering.
+const Creative3DStepPipeline: React.FC<{
+  isAr: boolean;
+  t: (ar: string, en: string) => string;
+}> = ({ isAr, t }) => {
+  const [activeStep, setActiveStep] = useState<number>(0);
+  const [isHovered, setIsHovered] = useState<boolean>(false);
+
+  // Auto-cycle through steps every 4.5s unless user is interacting
+  useEffect(() => {
+    if (isHovered) return;
+    const timer = setInterval(() => {
+      setActiveStep((prev) => (prev + 1) % 3);
+    }, 4800);
+    return () => clearInterval(timer);
+  }, [isHovered]);
+
+  const steps = [
+    {
+      num: '01',
+      title: t('سجّل مهام يومك', 'Log Your Daily Tasks'),
+      headline: t('التدوين الميداني اللحظي', 'Real-Time Micro-Logging'),
+      description: t(
+        'في نهاية كل يوم تدريبي، خصص دقيقتين لتوثيق ما قمت بإنجازه، الأدوات والأنظمة المستخدمة، وتصنيف الساعات.',
+        'At the end of each training day, take two minutes to log completed activities, systems configured, and working hours.'
+      ),
+      badge: t('حفظ فوري للمسودات', 'Instant Auto-Save'),
+      icon: <NotebookPen className="w-5 h-5 text-white" />,
+      chips: [t('70 يوماً ميدانياً', '70 Training Days'), t('تدقيق وتصحيح ذكي', 'Instant AI Audit'), t('حماية المسودات', 'Zero Data Loss')]
+    },
+    {
+      num: '02',
+      title: t('أرفق صور الأدلة', 'Attach Visual Artifacts'),
+      headline: t('التوثيق بالشواهد والأشكال', 'Visual Field Proofs & Captions'),
+      description: t(
+        'التقط صوراً لبيئة عملك وخوادمك وشاشات الإعداد واربطها بأسبوعها التدريبي مع تسميات أكاديمية موثقة.',
+        'Capture photos of server racks, network topologies, and configs, linked by week with academic figure numbering.'
+      ),
+      badge: t('شواهد مرئية معتمدة', 'Verified Field Proofs'),
+      icon: <ImagePlus className="w-5 h-5 text-white" />,
+      chips: [t('ترقيم رسمي للأشكال', 'Figure Numbering'), t('ضغط وحفظ تلقائي', 'Optimized Artifacts'), t('توثيق أسبوعي', 'Weekly Linked')]
+    },
+    {
+      num: '03',
+      title: t('نزّل التقرير والشرائح', 'Download Deliverables'),
+      headline: t('التصدير الأكاديمي المزدوج', 'Official Multi-Format Export'),
+      description: t(
+        'صدّر مستند الوورد الأكاديمي الكامل وشرائح العرض 16:9 بنسختين عربية وإنجليزية، مع أرشيف الطوارئ الشامل.',
+        'Export your formal academic Word report, 16:9 defense deck in Arabic and English, plus full emergency archive.'
+      ),
+      badge: t('جاهز للطباعة والمناقشة', 'Ready for Defense & Print'),
+      icon: <FileDown className="w-5 h-5 text-white" />,
+      chips: [t('DOCX جامعي رسمي', 'Academic DOCX'), t('PowerPoint عريض 16:9', '16:9 Defense Deck'), t('أرشيف طوارئ CSV/JSON', 'Emergency Archive')]
+    }
+  ];
+
+  return (
+    <div
+      className="space-y-8 select-none"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* 3D Step Switcher Tabs */}
+      <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
+        {steps.map((s, idx) => {
+          const isActive = idx === activeStep;
+          return (
+            <button
+              key={s.num}
+              type="button"
+              onClick={() => setActiveStep(idx)}
+              className={`group flex items-center gap-2.5 px-4 py-2.5 rounded-xl font-bold text-xs transition-all duration-300 relative ${
+                isActive
+                  ? 'bg-accent text-white shadow-lg shadow-accent/25 scale-105'
+                  : 'bg-card text-sub hover:text-ink hover:bg-surface border border-line'
+              }`}
+            >
+              <span
+                className={`w-5 h-5 rounded-lg flex items-center justify-center text-[11px] font-black transition-colors ${
+                  isActive ? 'bg-white/20 text-white' : 'bg-surface text-sub group-hover:text-ink'
+                }`}
+              >
+                {s.num}
+              </span>
+              <span>{s.title}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 3D Perspective Stage */}
+      <div
+        className="relative grid grid-cols-1 md:grid-cols-3 gap-6 text-start"
+        style={{ perspective: '1400px' }}
+      >
+        {steps.map((step, idx) => {
+          const isActive = idx === activeStep;
+
+          return (
+            <div
+              key={step.num}
+              onClick={() => setActiveStep(idx)}
+              className="cursor-pointer transition-all duration-500"
+              style={{
+                transform: isActive
+                  ? 'translateZ(40px) scale(1.03)'
+                  : 'translateZ(-15px) scale(0.97)',
+                transformStyle: 'preserve-3d'
+              }}
+            >
+              <div
+                className={`relative h-full p-6 sm:p-7 rounded-2xl border transition-all duration-500 overflow-hidden flex flex-col justify-between ${
+                  isActive
+                    ? 'bg-gradient-to-b from-card via-card to-accent/[0.04] border-accent/40 shadow-2xl shadow-accent/15 ring-2 ring-accent/20'
+                    : 'bg-card/90 hover:bg-card border-line hover:border-accent/30 shadow-sm opacity-85 hover:opacity-100'
+                }`}
+              >
+                {/* 3D Floating Glow Orb */}
+                <div
+                  className={`pointer-events-none absolute -top-12 -end-12 w-32 h-32 rounded-full blur-3xl transition-opacity duration-500 ${
+                    isActive ? 'bg-accent/20 opacity-100' : 'bg-accent/5 opacity-0'
+                  }`}
+                />
+
+                {/* Top Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-sm shadow-md transition-transform duration-500 ${
+                          isActive ? 'bg-accent scale-110 shadow-accent/30' : 'bg-sub/20 text-ink'
+                        }`}
+                        style={{ transform: isActive ? 'translateZ(30px)' : 'translateZ(10px)' }}
+                      >
+                        {step.icon}
+                      </div>
+                      <div>
+                        <div className="text-[11px] font-black text-accent uppercase tracking-wider">
+                          {t('خطوة', 'Step')} {step.num}
+                        </div>
+                        <h3 className="text-base font-black text-ink">{step.title}</h3>
+                      </div>
+                    </div>
+
+                    <span
+                      className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold border transition-colors ${
+                        isActive
+                          ? 'bg-accent-dim text-accent border-accent/30'
+                          : 'bg-surface text-sub border-line'
+                      }`}
+                    >
+                      {step.badge}
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-sub leading-relaxed">
+                    {step.description}
+                  </p>
+                </div>
+
+                {/* Bottom Chips */}
+                <div className="pt-5 mt-5 border-t border-line/70">
+                  <div className="flex flex-wrap gap-1.5">
+                    {step.chips.map((chip, cIdx) => (
+                      <span
+                        key={cIdx}
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-md border transition-colors ${
+                          isActive
+                            ? 'bg-surface text-ink border-line'
+                            : 'bg-bg/60 text-sub border-line/50'
+                        }`}
+                      >
+                        {chip}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Giant watermark number in background */}
+                <div
+                  className={`absolute -bottom-3 end-3 text-7xl font-black select-none pointer-events-none transition-colors duration-500 ${
+                    isActive ? 'text-accent/[0.08]' : 'text-ink/[0.03]'
+                  }`}
+                >
+                  {step.num}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 export const LandingPage: React.FC<{ onOpenTestDev?: () => void }> = ({ onOpenTestDev }) => {
   const { demoLogin } = useAuth();
   const { lang, setLang, isAr, t } = useLanguage();

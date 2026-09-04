@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
-import { FinalReportData, ProfileInput, DiffChunk, formatDateArabic, formatDateEnglish, countWords } from '@coop/shared';
+import { FinalReportData, ProfileInput, DiffChunk, formatDateArabic, formatDateEnglish, countWords, calculateHoursBetween } from '@coop/shared';
 import {
   FileText,
   Save,
@@ -531,6 +531,74 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
       triggerError('تعذر إكمال الترجمة الذاتية للتقرير');
     } finally {
       setAiLoading(false);
+    }
+  };
+
+  // ── Emergency Offline Backup Handlers ──────────────────────────────────────
+  const [downloadingArchive, setDownloadingArchive] = useState<string | null>(null);
+
+  const handleDownloadBackupJSON = async () => {
+    try {
+      setDownloadingArchive('json');
+      const res = await api.get('/reports/export/backup/json', { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/json' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `نسخة_احتياطية_شاملة_${profileData.studentName || 'trainee'}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      setSaveToast('تم تحميل ملف النسخة الاحتياطية الكاملة (JSON) بنجاح');
+      setTimeout(() => setSaveToast(''), 3500);
+    } catch {
+      triggerError('تعذر استخراج النسخة الاحتياطية');
+    } finally {
+      setDownloadingArchive(null);
+    }
+  };
+
+  const handleDownloadBackupCSV = async () => {
+    try {
+      setDownloadingArchive('csv');
+      const res = await api.get('/reports/export/backup/csv', { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'text/csv;charset=utf-8' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `سجل_مهام_التدريب_التعاوني_${profileData.studentName || 'trainee'}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      setSaveToast('تم تحميل جدول المهام اليومية (Excel CSV) بنجاح');
+      setTimeout(() => setSaveToast(''), 3500);
+    } catch {
+      triggerError('تعذر استخراج ملف CSV');
+    } finally {
+      setDownloadingArchive(null);
+    }
+  };
+
+  const handleDownloadBackupMarkdown = async (lang: 'ar' | 'en' = 'ar') => {
+    try {
+      setDownloadingArchive(`md-${lang}`);
+      const res = await api.get(`/reports/export/backup/markdown?lang=${lang}`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'text/markdown;charset=utf-8' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = lang === 'en'
+        ? `${profileData.studentName || 'Trainee'}_Coop_Dossier.md`
+        : `ملف_التدريب_الكامل_${profileData.studentName || 'المتدرب'}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      setSaveToast(lang === 'en' ? 'Complete training text dossier downloaded!' : 'تم تحميل ملف التقرير النصي الشامل لجميع الأسابيع بنجاح');
+      setTimeout(() => setSaveToast(''), 3500);
+    } catch {
+      triggerError('تعذر استخراج الملف النصي للتقرير');
+    } finally {
+      setDownloadingArchive(null);
     }
   };
 
@@ -1418,27 +1486,57 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                         <span className="text-[11px] text-muted font-normal">{w.entries.length} {isAr ? 'مهام موثقة' : 'tasks'}</span>
                       </div>
                       <div className="space-y-3">
-                        {w.entries.map((entry, eIdx) => (
-                          <div key={entry.id || eIdx} className="p-3.5 rounded-xl bg-surface/60 border border-line/80 space-y-1.5 text-xs">
-                            <div className="flex flex-wrap items-center justify-between gap-2 font-bold text-ink">
-                              <div className="flex items-center gap-2">
-                                <span className="w-5 h-5 rounded-md bg-accent text-white flex items-center justify-center text-[10px] font-black shrink-0">
-                                  {eIdx + 1}
-                                </span>
-                                <span className="text-sm">{entry.title}</span>
+                        {w.entries.map((entry, eIdx) => {
+                          const entryHours = calculateHoursBetween(entry.timeFrom, entry.timeTo);
+                          return (
+                            <div key={entry.id || eIdx} className="rounded-xl border border-line bg-card overflow-hidden text-xs shadow-2xs">
+                              {/* Entry Header: Day Badge, Date, Time Span, Hours, Category */}
+                              <div className="bg-surface/80 px-4 py-2.5 border-b border-line flex flex-wrap items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="px-2.5 py-0.5 rounded-md bg-accent text-white text-[11px] font-black">
+                                    {isAr ? `اليوم ${eIdx + 1}` : `Day ${eIdx + 1}`}
+                                  </span>
+                                  <span className="font-extrabold text-ink text-xs">
+                                    {isAr ? formatDateArabic(entry.entryDate) : formatDateEnglish(entry.entryDate)}
+                                  </span>
+                                  <span className="text-sub text-[11px] font-medium">
+                                    ({entry.timeFrom || '08:00'} — {entry.timeTo || '16:00'})
+                                  </span>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-accent-dim text-accent border border-accent/20">
+                                    {translateCategory(entry.category, isAr)}
+                                  </span>
+                                  <span className="text-[11px] font-bold text-sub">
+                                    {entryHours} {isAr ? 'ساعات' : 'hrs'}
+                                  </span>
+                                </div>
                               </div>
-                              <span className="text-sub font-normal text-[11px]">
-                                {isAr ? formatDateArabic(entry.entryDate) : formatDateEnglish(entry.entryDate)}
-                              </span>
+
+                              {/* Entry Body: Formal Task Title & Procedural Narrative */}
+                              <div className="p-4 space-y-2.5">
+                                <div>
+                                  <div className="text-[10px] font-black text-accent uppercase tracking-wider mb-0.5">
+                                    {isAr ? 'النشاط الفني والمهمة التشغيلية الميدانية:' : 'Technical Activity & Operational Scope:'}
+                                  </div>
+                                  <h4 className="text-sm font-black text-ink leading-snug">
+                                    {entry.title}
+                                  </h4>
+                                </div>
+
+                                <div className="pt-2 border-t border-line/60">
+                                  <div className="text-[10px] font-black text-sub uppercase tracking-wider mb-1">
+                                    {isAr ? 'السرد الإجرائي ونتائج التنفيذ الهندسي:' : 'Procedural Narrative & Engineering Results:'}
+                                  </div>
+                                  <p className="text-ink/90 leading-relaxed whitespace-pre-wrap text-xs bg-bg/50 p-3 rounded-lg border border-line/60">
+                                    {entry.description}
+                                  </p>
+                                </div>
+                              </div>
                             </div>
-                            <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-accent-dim text-accent">
-                              {translateCategory(entry.category, isAr)}
-                            </span>
-                            <p className="text-sub leading-relaxed whitespace-pre-wrap pt-1 pr-7">
-                              {entry.description}
-                            </p>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -1618,6 +1716,9 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             const updated = { ...profileData, [currentTargetField]: improvedText };
             setProfileData(updated);
             recordVersion(`بعد ${diffTitle}: ${fieldLabels[currentTargetField as TextProfileField] || currentTargetField}`, updated);
+            saveProfileMutation.mutate(updated);
+            setSaveToast(previewLang === 'en' ? 'AI improvements applied and saved!' : 'تم تطبيق التعديلات الذكية وحفظها تلقائياً!');
+            setTimeout(() => setSaveToast(''), 3000);
           }
           setDiffModalOpen(false);
         }}

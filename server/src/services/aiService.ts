@@ -239,47 +239,23 @@ async function translateWithWebAPI(text: string, targetLang: 'ar' | 'en'): Promi
   const clean = text.trim();
   if (!clean) return '';
 
-  // If text is short, translate directly
   if (clean.length <= 400) {
     const single = await fetchSingleChunkTranslation(clean, targetLang);
     if (single) return single;
   }
 
-  // Split into paragraphs for long texts
   const paragraphs = clean.split(/\n\s*\n/);
   const translatedParagraphs: string[] = [];
 
   for (const para of paragraphs) {
-    const trimmedPara = para.trim();
-    if (!trimmedPara) {
-      translatedParagraphs.push('');
-      continue;
-    }
-
-    if (trimmedPara.length <= 400) {
-      const trans = await fetchSingleChunkTranslation(trimmedPara, targetLang);
-      translatedParagraphs.push(trans || trimmedPara);
-    } else {
-      // Split by sentences if a single paragraph is very long
-      const sentences = trimmedPara.match(/[^.!?،؟\n]+[.!?،؟\n]*/g) || [trimmedPara];
-      const translatedSentences: string[] = [];
-      for (const sent of sentences) {
-        const s = sent.trim();
-        if (!s) continue;
-        const trans = await fetchSingleChunkTranslation(s, targetLang);
-        translatedSentences.push(trans || s);
-      }
-      translatedParagraphs.push(translatedSentences.join(' '));
-    }
+    if (!para.trim()) continue;
+    const trans = await fetchSingleChunkTranslation(para, targetLang);
+    translatedParagraphs.push(trans || para);
   }
 
-  const result = translatedParagraphs.join('\n\n').trim();
-  return result || null;
+  return translatedParagraphs.length > 0 ? translatedParagraphs.join('\n\n') : null;
 }
 
-/**
- * Tries Google GTX first, then MyMemory Translate API
- */
 async function fetchSingleChunkTranslation(chunk: string, targetLang: 'ar' | 'en'): Promise<string | null> {
   if (!chunk.trim()) return '';
 
@@ -302,9 +278,7 @@ async function fetchSingleChunkTranslation(chunk: string, targetLang: 'ar' | 'en
         if (fullTranslation) return fullTranslation;
       }
     }
-  } catch {
-    // Continue to fallback
-  }
+  } catch {}
 
   // 2. MyMemory Translate API
   try {
@@ -323,54 +297,91 @@ async function fetchSingleChunkTranslation(chunk: string, targetLang: 'ar' | 'en
         return translated;
       }
     }
-  } catch {
-    // Continue
-  }
+  } catch {}
 
   return null;
 }
 
 /**
- * Academic elevation for Arabic report logs and sections
+ * Advanced Academic Elevation for Arabic field logs and reports
  */
 function polishArabicText(input: string): string {
   let s = applyArabicSpellCorrections(input);
 
-  // Common phrases elevation
+  // 1. Structural casual phrase replacements
   const phraseReplacements: Array<[RegExp, string]> = [
-    // Casual work phrases
-    [/اليوم قمت بالعمل على/gu, 'إنجاز وتنفيذ المهام التشغيلية الخاصة بـ'],
-    [/اليوم قمت بـ/gu, 'تم تنفيذ وإنجاز'],
-    [/قمت بالعمل على/gu, 'تنفيذ المهام التقنية المتعلقة بـ'],
-    [/قمت بعمل/gu, 'تنفيذ وإنجاز'],
-    [/سويت/gu, 'تم إنجاز'],
-    [/عملت على/gu, 'تنفيذ ومتابعة'],
-    [/اشتغلت على/gu, 'مباشرة وإدارة أعمال'],
-    [/حضرت اجتماع/gu, 'المشاركة الفعالة في جلسة العمل والتنسيق الفني'],
-    [/رحت اجتماع/gu, 'حضور الاجتماع التنسيقي'],
-    [/فهمت/gu, 'استيعاب وتطبيق المعارف الخاصة بـ'],
-    [/تعلمت كيف/gu, 'اكتساب المهارة العملية في'],
-    [/تعلمت/gu, 'اكتساب وتطبيق المهارات المتخصصة في'],
-    [/صلحت المشكلة/gu, 'استكشاف الخلل التقني وتحليله ومعالجته بنجاح'],
-    [/صلحت/gu, 'معالجة وتصحيح'],
-    [/حليت المشكلة/gu, 'تشخيص الخلل الفني وتطبيق الحل الهندسي الملائم'],
-    [/شفت/gu, 'متابعة ورصد العمليات التشغيلية'],
-    [/راقبت/gu, 'رصد وتحليل مؤشرات الأداء'],
-    [/جربت/gu, 'إجراء الاختبارات والتحقق العملي من كفاءة التشغيل'],
-    [/بشكل كويس|بشكل ممتاز/gu, 'وفق أعلى المعايير المهنية المعتمدة'],
-    [/كلمت المشرف/gu, 'التنسيق والمراجعة المباشرة مع المشرف الميداني'],
-    [/تأكدت من/gu, 'التحقق البرمجي والتشغيلي من سلامة']
+    [/(?<![\u0600-\u06FF])اليوم قمت بالعمل على(?![\u0600-\u06FF])/gu, 'إنجاز وتنفيذ المهام التشغيلية الخاصة بـ'],
+    [/(?<![\u0600-\u06FF])اليوم قمت بـ(?![\u0600-\u06FF])/gu, 'تنفيذ وإنجاز'],
+    [/(?<![\u0600-\u06FF])قمت بالعمل على(?![\u0600-\u06FF])/gu, 'تنفيذ المهام التقنية المتعلقة بـ'],
+    [/(?<![\u0600-\u06FF])قمت بعمل(?![\u0600-\u06FF])/gu, 'تنفيذ وإنجاز'],
+    [/(?<![\u0600-\u06FF])سويت(?![\u0600-\u06FF])/gu, 'تم تنفيذ وتكوين'],
+    [/(?<![\u0600-\u06FF])سوينا(?![\u0600-\u06FF])/gu, 'تم تنفيذ وإنجاز'],
+    [/(?<![\u0600-\u06FF])عملت على(?![\u0600-\u06FF])/gu, 'تنفيذ ومتابعة'],
+    [/(?<![\u0600-\u06FF])اشتغلت على(?![\u0600-\u06FF])/gu, 'مباشرة وإدارة أعمال'],
+    [/(?<![\u0600-\u06FF])حضرت اجتماع(?![\u0600-\u06FF])/gu, 'المشاركة الفعالة في جلسة العمل والتنسيق الفني'],
+    [/(?<![\u0600-\u06FF])رحت اجتماع(?![\u0600-\u06FF])/gu, 'حضور الاجتماع التنسيقي الميداني'],
+    [/(?<![\u0600-\u06FF])فهمت(?![\u0600-\u06FF])/gu, 'استيعاب وتطبيق المعارف الخاصة بـ'],
+    [/(?<![\u0600-\u06FF])تعلمت كيف(?![\u0600-\u06FF])/gu, 'اكتساب وتطبيق المهارة العملية في'],
+    [/(?<![\u0600-\u06FF])تعلمت(?![\u0600-\u06FF])/gu, 'اكتساب وتطبيق المهارات الميدانية في'],
+    [/(?<![\u0600-\u06FF])صلحت المشكلة(?![\u0600-\u06FF])/gu, 'استكشاف الخلل التقني وتحليله ومعالجته بنجاح'],
+    [/(?<![\u0600-\u06FF])صلحت(?![\u0600-\u06FF])/gu, 'معالجة وتصحيح الخلل في'],
+    [/(?<![\u0600-\u06FF])حليت المشكلة(?![\u0600-\u06FF])/gu, 'تشخيص الخلل الفني وتطبيق الحل الهندسي الملائم'],
+    [/(?<![\u0600-\u06FF])شفت(?![\u0600-\u06FF])/gu, 'معاينة ومتابعة العمليات التشغيلية لـ'],
+    [/(?<![\u0600-\u06FF])شيكت على(?![\u0600-\u06FF])/gu, 'فحص وتدقيق الجاهزية التشغيلية لـ'],
+    [/(?<![\u0600-\u06FF])شيكت(?![\u0600-\u06FF])/gu, 'فحص وتدقيق'],
+    [/(?<![\u0600-\u06FF])راقبت(?![\u0600-\u06FF])/gu, 'رصد وتحليل مؤشرات الأداء الخاصة بـ'],
+    [/(?<![\u0600-\u06FF])جربت(?![\u0600-\u06FF])/gu, 'إجراء الاختبارات والتحقق العملي من كفاءة'],
+    [/(?<![\u0600-\u06FF])بشكل كويس|بشكل ممتاز|كويس مره(?![\u0600-\u06FF])/gu, 'وفق المعايير والممارسات المهنية المعتمدة'],
+    [/(?<![\u0600-\u06FF])كلمت المشرف(?![\u0600-\u06FF])/gu, 'التنسيق والمراجعة المباشرة مع المشرف الميداني'],
+    [/(?<![\u0600-\u06FF])تأكدت من(?![\u0600-\u06FF])/gu, 'التحقق البرمجي والتشغيلي من سلامة'],
+    [/(?<![\u0600-\u06FF])نزلت البرنامج(?![\u0600-\u06FF])/gu, 'تثبيت وتهيئة الحزمة البرمجية'],
+    [/(?<![\u0600-\u06FF])فرمت الجهاز(?![\u0600-\u06FF])/gu, 'إعادة تهيئة النظام وتثبيت بيئة التشغيل المعيارية'],
+    [/(?<![\u0600-\u06FF])ربطت السيرفر(?![\u0600-\u06FF])/gu, 'توصيل وضبط إعدادات الخادم وتأمين مسار الاتصال الشبكي']
   ];
 
   for (const [re, rep] of phraseReplacements) {
     s = s.replace(re, rep);
   }
 
-  // If text is very concise (e.g., "شبكة" or "العمل على الشبكة"), expand with academic context
-  if (s.trim().split(/\s+/).length <= 4 && /شبك|برمج|سيرفر|نظام|أمن/gu.test(s)) {
-    if (/شبك/gu.test(s) && !/إعداد|تهيئة|فحص/gu.test(s)) {
-      s = `${s}، والتحقق من كفاءة الربط واستقرار حركة البيانات وفق المعايير الفنية.`;
+  // 2. Expand short fragments into complete formal academic engineering descriptions
+  const trimmed = s.trim();
+  const wordCount = trimmed.split(/\s+/).length;
+
+  if (wordCount <= 6) {
+    if (/شبك|فيلان|راوتر|سويتش|كيبل|vlan|switch|router/i.test(trimmed)) {
+      if (!/تحقق|استقرار|معايير|كفاءة/.test(trimmed)) {
+        s = `${trimmed}، وضبط منافذ الاتصال والتحقق من كفاءة الربط واستقرار حركة البيانات وفق المعايير الهندسية.`;
+      }
+    } else if (/سيرفر|خادم|لينكس|ويندوز|ubuntu|linux|server|vmware/i.test(trimmed)) {
+      if (!/جاهزية|استقرار|أداء|حماية/.test(trimmed)) {
+        s = `${trimmed}، وضبط صلاحيات الوصول والتحقق من استقرار الخدمات التشغيلية ومؤشرات استهلاك الموارد.`;
+      }
+    } else if (/دوكر|حاوي|docker|compose|container/i.test(trimmed)) {
+      if (!/عزل|استقرار|تشغيل/.test(trimmed)) {
+        s = `${trimmed}، وبناء بيئة الحاويات المعزولة واختبار استقرار الخدمات المشتركة وسجلات التشغيل.`;
+      }
+    } else if (/قواعد بيانات|قاعدة بيانات|داتابيز|postgres|mysql|database/i.test(trimmed)) {
+      if (!/سلامة|نسخ|استعلام/.test(trimmed)) {
+        s = `${trimmed}، ومراجعة العلاقات والتحقق من سلامة البيانات وخطة النسخ الاحتياطي الدوري.`;
+      }
+    } else if (/أمن|حماي|ثغر|جدار ناري|firewall|security/i.test(trimmed)) {
+      if (!/سياسات|ضوابط|حماية/.test(trimmed)) {
+        s = `${trimmed}، وتطبيق الضوابط الأمنية المعتمدة لتقليل المخاطر السيبرانية وحماية الأنظمة.`;
+      }
+    } else if (/دعم|تذاكر|itil|مستخدم|ticket|support/i.test(trimmed)) {
+      if (!/معالجة|مستوى الخدمة/.test(trimmed)) {
+        s = `${trimmed}، وتصنيف البلاغات التقنية ومعالجة الأعطال الطارئة وفق اتفاقيات مستوى الخدمة (SLA).`;
+      }
+    } else if (/توثيق|تقرير|دليل|sop|documentation/i.test(trimmed)) {
+      if (!/اعتماد|معايير/.test(trimmed)) {
+        s = `${trimmed}، وإعداد أدلة التشغيل القياسية وحفظ الوثائق في قاعدة المعرفة الداخلية للقسم.`;
+      }
     }
+  }
+
+  s = s.trim();
+  if (s && !/[.!?؟]$/.test(s)) {
+    s += '.';
   }
 
   return s;
@@ -385,25 +396,25 @@ function summarizeText(text: string): string {
     .map(s => s.trim())
     .filter(s => s.length > 0);
 
-  if (sentences.length === 1) {
-    const s = sentences[0];
+  if (sentences.length <= 1) {
+    const s = sentences[0] || text;
     const cleaned = s
       .replace(/^(اليوم|في هذا اليوم|خلال اليوم)\s*/gu, '')
-      .replace(/^(قمت بالعمل على|قمت بعمل|قمت بـ|عملت على|اشتغلت على|سويت)\s*/gu, '');
-    return `موجز الإنجاز: إتمام وإنجاز أعمال ${cleaned} والتحقق من كفاءة الأداء الفني والتشغيلي.`;
+      .replace(/^(قمت بالعمل على|قمت بعمل|قمت بـ|عملت على|اشتغلت على|سويت)\s*/gu, '')
+      .replace(/[.!?؟]$/, '');
+    return `موجز الإنجاز: إتمام وتنفيذ ${cleaned}، والتحقق العملي من استقرار الأنظمة وجودة الأداء التشغيلي.`;
   }
 
-  // Select key informative sentences
   const keySentences = sentences.filter(s =>
-    /\d+|تنفيذ|تطوير|إنجاز|شبكة|نظام|تحليل|مشروع|اجتماع|تدريب|حل|إعداد|اختبار/gu.test(s)
+    /\d+|تنفيذ|تطوير|إنجاز|شبكة|نظام|تحليل|مشروع|اجتماع|تدريب|حل|إعداد|اختبار|أمن|خادم/gu.test(s)
   );
 
   const selected = keySentences.length > 0 ? keySentences.slice(0, 3) : sentences.slice(0, 2);
-  return `موجز الإنجاز:\n• ` + selected.join('\n• ');
+  return `موجز الإنجاز التنفيذي:\n• ` + selected.map(s => s.replace(/[.!?؟]$/, '')).join('.\n• ') + '.';
 }
 
 /**
- * Orthographic & Spelling rules (Hamzat, Ta' Marbuta, punctuation)
+ * Comprehensive Orthographic & Spelling rules (Hamzat, Ta' Marbuta, Tanween, Grammatical Rules)
  */
 function applyArabicSpellCorrections(input: string): string {
   let s = input;
@@ -414,7 +425,8 @@ function applyArabicSpellCorrections(input: string): string {
     [/([،,؛;:!?.؟])(?=[^\s\d])/gu, '$1 '],
 
     // Common spelling errors in formal Arabic
-    [/\bانشاءالله\b/gu, 'إن شاء الله'],
+    [/(?<![\u0600-\u06FF])انشاءالله(?![\u0600-\u06FF])/gu, 'إن شاء الله'],
+    [/(?<![\u0600-\u06FF])ان شاء الله(?![\u0600-\u06FF])/gu, 'إن شاء الله'],
     [/(?<![\u0600-\u06FF])ايظا(?![\u0600-\u06FF])/gu, 'أيضاً'],
     [/(?<![\u0600-\u06FF])هاذا(?![\u0600-\u06FF])/gu, 'هذا'],
     [/(?<![\u0600-\u06FF])هاذه(?![\u0600-\u06FF])/gu, 'هذه'],
@@ -427,15 +439,111 @@ function applyArabicSpellCorrections(input: string): string {
     [/(?<![\u0600-\u06FF])مسؤل(?![\u0600-\u06FF])/gu, 'مسؤول'],
     [/(?<![\u0600-\u06FF])شؤن(?![\u0600-\u06FF])/gu, 'شؤون'],
     [/(?<![\u0600-\u06FF])رئيسيئ(?![\u0600-\u06FF])/gu, 'رئيسي'],
+    [/(?<![\u0600-\u06FF])فنيئ(?![\u0600-\u06FF])/gu, 'فني'],
+    [/(?<![\u0600-\u06FF])تائكيد(?![\u0600-\u06FF])/gu, 'تأكيد'],
+    [/(?<![\u0600-\u06FF])تائهيل(?![\u0600-\u06FF])/gu, 'تأهيل'],
 
-    // Common Hamzat
+    // Essential Hamzat al-Qat' (إ words)
     [/(?<![\u0600-\u06FF])اعداد(?![\u0600-\u06FF])/gu, 'إعداد'],
+    [/(?<![\u0600-\u06FF])اعدادات(?![\u0600-\u06FF])/gu, 'إعدادات'],
     [/(?<![\u0600-\u06FF])انجاز(?![\u0600-\u06FF])/gu, 'إنجاز'],
+    [/(?<![\u0600-\u06FF])انجازات(?![\u0600-\u06FF])/gu, 'إنجازات'],
     [/(?<![\u0600-\u06FF])ادارة(?![\u0600-\u06FF])/gu, 'إدارة'],
+    [/(?<![\u0600-\u06FF])اداري(?![\u0600-\u06FF])/gu, 'إداري'],
     [/(?<![\u0600-\u06FF])اشراف(?![\u0600-\u06FF])/gu, 'إشراف'],
     [/(?<![\u0600-\u06FF])ارسال(?![\u0600-\u06FF])/gu, 'إرسال'],
     [/(?<![\u0600-\u06FF])اتمام(?![\u0600-\u06FF])/gu, 'إتمام'],
-    [/(?<![\u0600-\u06FF])امكانية(?![\u0600-\u06FF])/gu, 'إمكانية']
+    [/(?<![\u0600-\u06FF])امكانية(?![\u0600-\u06FF])/gu, 'إمكانية'],
+    [/(?<![\u0600-\u06FF])انشاء(?![\u0600-\u06FF])/gu, 'إنشاء'],
+    [/(?<![\u0600-\u06FF])انهاء(?![\u0600-\u06FF])/gu, 'إنهاء'],
+    [/(?<![\u0600-\u06FF])الغاء(?![\u0600-\u06FF])/gu, 'إلغاء'],
+    [/(?<![\u0600-\u06FF])اجراء(?![\u0600-\u06FF])/gu, 'إجراء'],
+    [/(?<![\u0600-\u06FF])اجراءات(?![\u0600-\u06FF])/gu, 'إجراءات'],
+    [/(?<![\u0600-\u06FF])ادخال(?![\u0600-\u06FF])/gu, 'إدخال'],
+    [/(?<![\u0600-\u06FF])اخراج(?![\u0600-\u06FF])/gu, 'إخراج'],
+    [/(?<![\u0600-\u06FF])اصلاح(?![\u0600-\u06FF])/gu, 'إصلاح'],
+    [/(?<![\u0600-\u06FF])اسناد(?![\u0600-\u06FF])/gu, 'إسناد'],
+    [/(?<![\u0600-\u06FF])اضافي(?![\u0600-\u06FF])/gu, 'إضافي'],
+    [/(?<![\u0600-\u06FF])اضافية(?![\u0600-\u06FF])/gu, 'إضافية'],
+    [/(?<![\u0600-\u06FF])الكتروني(?![\u0600-\u06FF])/gu, 'إلكتروني'],
+    [/(?<![\u0600-\u06FF])الكترونية(?![\u0600-\u06FF])/gu, 'إلكترونية'],
+    [/(?<![\u0600-\u06FF])ارشادات(?![\u0600-\u06FF])/gu, 'إرشادات'],
+    [/(?<![\u0600-\u06FF])ارشادي(?![\u0600-\u06FF])/gu, 'إرشادي'],
+    [/(?<![\u0600-\u06FF])اشعار(?![\u0600-\u06FF])/gu, 'إشعار'],
+    [/(?<![\u0600-\u06FF])اشعارات(?![\u0600-\u06FF])/gu, 'إشعارات'],
+
+    // Essential Hamzat al-Wasl corrections (words mistakenly written with إ)
+    [/(?<![\u0600-\u06FF])إجتماع(?![\u0600-\u06FF])/gu, 'اجتماع'],
+    [/(?<![\u0600-\u06FF])إجتماعات(?![\u0600-\u06FF])/gu, 'اجتماعات'],
+    [/(?<![\u0600-\u06FF])إستكشاف(?![\u0600-\u06FF])/gu, 'استكشاف'],
+    [/(?<![\u0600-\u06FF])إختبار(?![\u0600-\u06FF])/gu, 'اختبار'],
+    [/(?<![\u0600-\u06FF])إختبارات(?![\u0600-\u06FF])/gu, 'اختبارات'],
+    [/(?<![\u0600-\u06FF])إستخدام(?![\u0600-\u06FF])/gu, 'استخدام'],
+    [/(?<![\u0600-\u06FF])إسترجاع(?![\u0600-\u06FF])/gu, 'استرجاع'],
+    [/(?<![\u0600-\u06FF])إتصال(?![\u0600-\u06FF])/gu, 'اتصال'],
+    [/(?<![\u0600-\u06FF])إعتماد(?![\u0600-\u06FF])/gu, 'اعتماد'],
+    [/(?<![\u0600-\u06FF])إستيعاب(?![\u0600-\u06FF])/gu, 'استيعاب'],
+    [/(?<![\u0600-\u06FF])إستقرار(?![\u0600-\u06FF])/gu, 'استقرار'],
+    [/(?<![\u0600-\u06FF])إستجابة(?![\u0600-\u06FF])/gu, 'استجابة'],
+
+    // Tanween al-Fath corrections
+    [/(?<![\u0600-\u06FF])ايضا(?![\u0600-\u06FF])/gu, 'أيضاً'],
+    [/(?<![\u0600-\u06FF])فورا(?![\u0600-\u06FF])/gu, 'فوراً'],
+    [/(?<![\u0600-\u06FF])تلقائيا(?![\u0600-\u06FF])/gu, 'تلقائياً'],
+    [/(?<![\u0600-\u06FF])دوريا(?![\u0600-\u06FF])/gu, 'دورياً'],
+    [/(?<![\u0600-\u06FF])نهائيا(?![\u0600-\u06FF])/gu, 'نهائياً'],
+    [/(?<![\u0600-\u06FF])جزئيا(?![\u0600-\u06FF])/gu, 'جزئياً'],
+    [/(?<![\u0600-\u06FF])كليا(?![\u0600-\u06FF])/gu, 'كلياً'],
+    [/(?<![\u0600-\u06FF])رسميا(?![\u0600-\u06FF])/gu, 'رسمياً'],
+    [/(?<![\u0600-\u06FF])عمليا(?![\u0600-\u06FF])/gu, 'عملياً'],
+    [/(?<![\u0600-\u06FF])فعليا(?![\u0600-\u06FF])/gu, 'فعلياً'],
+    [/(?<![\u0600-\u06FF])يوميا(?![\u0600-\u06FF])/gu, 'يومياً'],
+    [/(?<![\u0600-\u06FF])اسبوعيا(?![\u0600-\u06FF])/gu, 'أسبوعياً'],
+    [/(?<![\u0600-\u06FF])أسبوعيا(?![\u0600-\u06FF])/gu, 'أسبوعياً'],
+    [/(?<![\u0600-\u06FF])شهريا(?![\u0600-\u06FF])/gu, 'شهرياً'],
+    [/(?<![\u0600-\u06FF])سنويا(?![\u0600-\u06FF])/gu, 'سنوياً'],
+    [/(?<![\u0600-\u06FF])شكرا(?![\u0600-\u06FF])/gu, 'شكراً'],
+    [/(?<![\u0600-\u06FF])جدا(?![\u0600-\u06FF])/gu, 'جداً'],
+
+    // Common Ta' Marbuta vs Ha' mistakes
+    [/(?<![\u0600-\u06FF])تقنيه(?![\u0600-\u06FF])/gu, 'تقنية'],
+    [/(?<![\u0600-\u06FF])شبكه(?![\u0600-\u06FF])/gu, 'شبكة'],
+    [/(?<![\u0600-\u06FF])صيانه(?![\u0600-\u06FF])/gu, 'صيانة'],
+    [/(?<![\u0600-\u06FF])برمجه(?![\u0600-\u06FF])/gu, 'برمجة'],
+    [/(?<![\u0600-\u06FF])بنيه(?![\u0600-\u06FF])/gu, 'بنية'],
+    [/(?<![\u0600-\u06FF])حمايه(?![\u0600-\u06FF])/gu, 'حماية'],
+    [/(?<![\u0600-\u06FF])منشأه(?![\u0600-\u06FF])/gu, 'منشأة'],
+    [/(?<![\u0600-\u06FF])كفاءه(?![\u0600-\u06FF])/gu, 'كفاءة'],
+    [/(?<![\u0600-\u06FF])جلسه(?![\u0600-\u06FF])/gu, 'جلسة'],
+    [/(?<![\u0600-\u06FF])كتابه(?![\u0600-\u06FF])/gu, 'كتابة'],
+    [/(?<![\u0600-\u06FF])لوحه(?![\u0600-\u06FF])/gu, 'لوحة'],
+    [/(?<![\u0600-\u06FF])شاشه(?![\u0600-\u06FF])/gu, 'شاشة'],
+    [/(?<![\u0600-\u06FF])قاعده(?![\u0600-\u06FF])/gu, 'قاعدة'],
+    [/(?<![\u0600-\u06FF])مهمه(?![\u0600-\u06FF])/gu, 'مهمة'],
+    [/(?<![\u0600-\u06FF])اسبوعيه(?![\u0600-\u06FF])/gu, 'أسبوعية'],
+    [/(?<![\u0600-\u06FF])أسبوعيه(?![\u0600-\u06FF])/gu, 'أسبوعية'],
+    [/(?<![\u0600-\u06FF])يوميه(?![\u0600-\u06FF])/gu, 'يومية'],
+    [/(?<![\u0600-\u06FF])نهائيه(?![\u0600-\u06FF])/gu, 'نهائية'],
+    [/(?<![\u0600-\u06FF])فتره(?![\u0600-\u06FF])/gu, 'فترة'],
+    [/(?<![\u0600-\u06FF])خطه(?![\u0600-\u06FF])/gu, 'خطة'],
+    [/(?<![\u0600-\u06FF])دوره(?![\u0600-\u06FF])/gu, 'دورة'],
+    [/(?<![\u0600-\u06FF])خبره(?![\u0600-\u06FF])/gu, 'خبرة'],
+    [/(?<![\u0600-\u06FF])تجربه(?![\u0600-\u06FF])/gu, 'تجربة'],
+    [/(?<![\u0600-\u06FF])طريقه(?![\u0600-\u06FF])/gu, 'طريقة'],
+    [/(?<![\u0600-\u06FF])صوره(?![\u0600-\u06FF])/gu, 'صورة'],
+    [/(?<![\u0600-\u06FF])بيئه(?![\u0600-\u06FF])/gu, 'بيئة'],
+    [/(?<![\u0600-\u06FF])معاينه(?![\u0600-\u06FF])/gu, 'معاينة'],
+    [/(?<![\u0600-\u06FF])مشاركه(?![\u0600-\u06FF])/gu, 'مشاركة'],
+
+    // Yaa vs Alif Maqsura
+    [/(?<![\u0600-\u06FF])الي(?![\u0600-\u06FF])/gu, 'إلى'],
+    [/(?<![\u0600-\u06FF])علي(?![\u0600-\u06FF])/gu, 'على'],
+    [/(?<![\u0600-\u06FF])حتي(?![\u0600-\u06FF])/gu, 'حتى'],
+    [/(?<![\u0600-\u06FF])مستوي(?![\u0600-\u06FF])/gu, 'مستوى'],
+    [/(?<![\u0600-\u06FF])اخري(?![\u0600-\u06FF])/gu, 'أخرى'],
+    [/(?<![\u0600-\u06FF])اعلي(?![\u0600-\u06FF])/gu, 'أعلى'],
+    [/(?<![\u0600-\u06FF])ادني(?![\u0600-\u06FF])/gu, 'أدنى'],
+    [/(?<![\u0600-\u06FF])لدا(?![\u0600-\u06FF])/gu, 'لدى']
   ];
 
   for (const [regex, replacement] of rules) {
