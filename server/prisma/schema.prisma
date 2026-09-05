@@ -68,6 +68,12 @@ model ReportProfile {
   trainingWeeks   Int      @default(14) @map("training_weeks")
   courseHours     Int      @default(280) @map("course_hours")
   startDate            String    @default("") @map("start_date") @db.VarChar(20)
+  companyLogo          String?   @map("company_logo") @db.MediumText
+  institutionLogo      String?   @map("institution_logo") @db.MediumText
+  reportTemplate       String    @default("royal") @map("report_template") @db.VarChar(50)
+  executiveSummary     String?   @map("executive_summary") @db.Text
+  challengesText       String?   @map("challenges_text") @db.Text
+  recommendationsText  String?   @map("recommendations_text") @db.Text
   introText            String?   @map("intro_text") @db.Text
   entityIntroText      String?   @map("entity_intro_text") @db.Text
   skillsText           String?   @map("skills_text") @db.Text

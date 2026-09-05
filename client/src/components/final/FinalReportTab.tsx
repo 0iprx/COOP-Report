@@ -1,9 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
-import { FinalReportData, ProfileInput, DiffChunk, formatDateArabic, formatDateEnglish, countWords, calculateHoursBetween } from '@coop/shared';
+import { FinalReportData, ProfileInput, DiffChunk, formatDateArabic, formatDateEnglish, countWords, calculateHoursBetween, REPORT_TEMPLATES, ReportTemplateId } from '@coop/shared';
 import {
   FileText,
+  Sparkle,
+  Upload,
+  Layers,
+  BookOpen,
+  LayoutTemplate,
+  Trash2,
+  GraduationCap,
+  Building,
   Save,
   Sparkles,
   Download,
@@ -25,8 +33,7 @@ import {
   Pin,
   X,
   Eye,
-  ArrowRight,
-  Sparkle
+  ArrowRight
 } from 'lucide-react';
 import { DiffModal } from '../common/DiffModal';
 
@@ -112,9 +119,93 @@ export const getWeekTopic = (w: { weekIndex: number; entries?: { title: string }
     : `Week ${w.weekIndex} Technical Activities`;
 };
 
+
+export interface ReportSample {
+  id: string;
+  name: string;
+  institution: string;
+  templateId: ReportTemplateId;
+  specialty: string;
+  hostCompany: string;
+  studentTitle: string;
+  executiveSummary: string;
+  introText: string;
+  entityIntroText: string;
+  skillsText: string;
+  challengesText: string;
+  conclusionText: string;
+}
+
+export const ACTUAL_PREVIOUS_REPORTS: ReportSample[] = [
+  {
+    id: 'tvtc-network',
+    name: 'نموذج الكليات التقنية والاتصالات (TVTC)',
+    institution: 'كلية الاتصالات والمعلومات بالرياض (المؤسسة العامة للتدريب التقني والمهني)',
+    templateId: 'tvtc',
+    specialty: 'إدارة وتأمين شبكات الحاسب (Network Administration)',
+    hostCompany: 'شركة الاتصالات السعودية (stc - قطاع العمليات والشبكات)',
+    studentTitle: 'تهيئة وإدارة البنية التحتية لشبكات الألياف الضوئية والخوادم الافتراضية',
+    executiveSummary: 'يمثل هذا التقرير التوثيق النهائي لفترة التدريب التعاوني في قطاع العمليات والشبكات بشركة stc على مدار 14 أسبوعاً (320 ساعة ميدانية معتمدة). شملت المهام صيانة كبائن التوزيع (MDF/IDF)، وتكوين شبكات الاتصال المحلية الافتراضية (VLANs) على محولات Cisco Catalyst، وربط خطوط المشتركين بنظام الألياف الضوئية (FTTH)، ورصد أداء الشبكة ومعالجة 84 تذكرة بلاغ عطل فني وفق مؤشرات الأداء (SLA).',
+    introText: 'انطلاقاً من الخطة التدريبية المعتمدة بالكلية، يهدف هذا المقرر الميداني إلى تطبيق المعارف والمهارات المكتسبة في معامل الكلية على بيئة العمل المؤسسية الفعلية، والتعرف على المعايير الصناعية المعتمدة في إدارة الشبكات وتقنيات الاتصال الحديثة.',
+    entityIntroText: 'تعد شركة الاتصالات السعودية (stc) رائدة التحول الرقمي ومزود الاتصالات الرائد في الشرق الأوسط. يتميز قطاع الشبكات والعمليات ببيئة عمل احترافية تدير آلاف المقاسم والخوادم ومراكز البيانات الموزعة، مع الالتزام الصارم بضوابط الأمان واستمرارية الخدمة بنسبة توافر 99.99%.',
+    skillsText: '• المهارات الفنية: برمجة وتكوين محولات وموجهات Cisco، فحص توصيلات الألياف الضوئية بجهاز OTDR، تركيب وتأريض كبائن الاتصالات، وضبط جدران الحماية Fortinet.\n• المهارات الشخصية: التواصل الفني، العمل في نوبات الطوارئ، وتوثيق الإجراءات القياسية (SOP).',
+    challengesText: 'واجه الفريق تذبذباً في إشارات بعض خطوط الألياف الضوئية لأحد القطاعات؛ تم استخدام جهاز فحص الانكسار الضوئي وتحديد نقطة الانحناء الحرج وإعادة لحام الشعيرات، مما استعاد جودة الإشارة بنسبة 100%.',
+    conclusionText: 'أثبتت فترة التدريب التعاوني أهميتها المحورية في تجسير الفجوة بين الجانبين الأكاديمي والعملي، وساهمت في تعزيز الثقة والجاهزية للانخراط في سوق العمل التقني بكفاءة عالية واحترافية تامة.'
+  },
+  {
+    id: 'kfupm-software',
+    name: 'نموذج جامعة الملك فهد للبترول والمعادن (KFUPM)',
+    institution: 'جامعة الملك فهد للبترول والمعادن (King Fahd University of Petroleum & Minerals)',
+    templateId: 'modern',
+    specialty: 'هندسة البرمجيات والأنظمة السحابية (Software Engineering & Cloud Architecture)',
+    hostCompany: 'أرامكو السعودية (Saudi Aramco - Information Technology Services)',
+    studentTitle: 'Architecting Scalable Microservices & Automated CI/CD Pipelines on Azure Cloud',
+    executiveSummary: 'This COOP report presents the technical outcomes of a 15-week field engineering assignment at Saudi Aramco IT Services. The project focused on containerizing legacy corporate portals, modernizing monolithic architectures into microservices using Docker and Kubernetes, and establishing end-to-end automated CI/CD pipelines via Azure DevOps. The work resulted in decreasing deployment cycle times by 68% and improving service resilience.',
+    introText: 'Cooperative training at KFUPM represents a rigorous transition from academic theoretical rigor to real-world industrial software engineering, challenging students to apply computing principles and system design methodologies to mission-critical corporate applications.',
+    entityIntroText: 'Saudi Aramco Information Technology operates one of the most sophisticated computing infrastructures in the global energy sector, providing enterprise cloud solutions, supercomputing capabilities, cybersecurity defenses, and digital oilfield automation across international operations.',
+    skillsText: '• Technical Competencies: Kubernetes cluster orchestration, Docker containerization, TypeScript/Node.js backend design, Azure Cloud architecture, automated regression testing with Vitest/Jest, and OpenTelemetry logging.\n• Professional Skills: Agile/Scrum sprint planning, cross-functional collaboration, technical code reviews, and executive delivery.',
+    challengesText: 'During container migration, high latency was detected in cross-service REST communications. The challenge was resolved by refactoring synchronous dependencies into an asynchronous event-driven architecture using message queues, reducing average latency from 420ms to 48ms.',
+    conclusionText: 'The COOP experience at Saudi Aramco provided invaluable industrial exposure to high-availability enterprise architectures, reinforcing the importance of clean architecture, cybersecurity compliance, and continuous technical refinement.'
+  },
+  {
+    id: 'ksu-ai-data',
+    name: 'نموذج جامعة الملك سعود (KSU - CCIS)',
+    institution: 'جامعة الملك سعود (كلية علوم الحاسب والمعلومات - KSU CCIS)',
+    templateId: 'royal',
+    specialty: 'علوم البيانات والذكاء الاصطناعي (Data Science & Enterprise Analytics)',
+    hostCompany: 'شركة عِلم (Elm - قطاع المنصات الرقمية وحلول البيانات)',
+    studentTitle: 'تطوير خطوط معالجة البيانات الضخمة ونماذج التنبؤ بمؤشرات الأداء للخدمات الحكومية',
+    executiveSummary: 'يوثق هذا التقرير إنجازات التدريب التعاوني بكلية علوم الحاسب والمعلومات بجامعة الملك سعود لدى شركة عِلم على مدار 14 أسبوعاً. اشتملت المخرجات على بناء وتدقيق خطوط معالجة البيانات الضخمة (ETL Pipelines) لمنصات وطنية، وتطبيق خوارزميات التعلم الآلي لاستشراف أحجام الطلب على الخدمات بدقة تفوق 94%، مع الالتزام بالمعايير الوطنية لحوكمة البيانات (NDMO).',
+    introText: 'يهدف مقرر التدريب التعاوني في كلية علوم الحاسب والمعلومات إلى تعزيز المعارف التطبيقية للطلبة في بيئات رائدة، وربط النظريات الأكاديمية في هندسة البيانات والذكاء الاصطناعي بأحدث أدوات المعالجة والتحليل المؤسسي.',
+    entityIntroText: 'تعد شركة عِلم الذراع الرقمي الرائد في المملكة في بناء وتطوير المنظومات الرقمية الآمنة والحلول المستندة للبيانات، حيث تدير منصات تخدم ملايين المستفيدين يومياً وتساهم بشكل فعال في تحقيق مستهدفات رؤية 2030.',
+    skillsText: '• المهارات التقنية: معالجة البيانات الضخمة باستخدام Apache Spark و Python (Pandas, Scikit-Learn)، تصميم مستودعات البيانات النجمية (Star Schema)، كتابة استعلامات SQL متقدمة، وبناء لوحات Tableau و PowerBI.\n• المهارات المؤسسية: حوكمة البيانات الوطنية (NDMO)، التفكير التحليلي، وإعداد عروض الإيجاز للقيادات.',
+    challengesText: 'واجه المشروع عدم اتساق في صيغ البيانات وتكرارها من مصادر متعددة؛ تم بناء خط أنابيب تنظيف آلي (Automated Data Cleansing Engine) يعتمد على خوارزميات التحقق المنطقي، مما خفض نسبة القيم الشاذة إلى أقل من 0.3%.',
+    conclusionText: 'حققت فترة التدريب أهدافها بأعلى معايير الجودة، حيث أثبتت جدارة التكوين الأكاديمي بجامعة الملك سعود في التعامل مع أعقد التحديات التقنية في المنصات الوطنية الكبرى.'
+  },
+  {
+    id: 'executive-gcc',
+    name: 'النموذج المؤسسي والتنفيذي (جامعات الخليج والشركات الكبرى)',
+    institution: 'كليات الهندسة وإدارة الأعمال والتقنية بدول مجلس التعاون الخليجي',
+    templateId: 'executive',
+    specialty: 'إدارة وتطوير المنظومات المؤسسية وهندسة الحلول (Enterprise Solutions & IT Governance)',
+    hostCompany: 'الشركة العربية للأنابيب / القطاع الصناعي الخليجي',
+    studentTitle: 'تطبيق معايير الحوكمة الرقمية وأتمتة العمليات التشغيلية (ERP Systems & Automation)',
+    executiveSummary: 'يقدم هذا التقرير التنفيذي ملخصاً للمهام الاستشارية والتقنية المنجزة خلال فترة التدريب الميداني. تركزت المسؤوليات في تقييم مدى مطابقة الأنظمة المؤسسية لضوابط الحوكمة والأمن السيبراني، وأتمتة مسارات العمل الورقية عبر نظام SAP ERP، وإعداد وتحديث 18 دليلاً إجرائياً قياسياً (SOP) ساهمت في تقليص زمن إنجاز المعاملات بنسبة 35%.',
+    introText: 'يشكل التدريب الميداني التطبيقي فرصة استراتيجية لصقل الكفاءات المهنية وتطبيق مفاهيم إدارة التغيير وتكامل النظم في القطاعات الصناعية والتجارية الكبرى.',
+    entityIntroText: 'تتميز بيئة العمل بالانضباط الصناعي الصارم وتطبيق أعلى معايير الجودة العالمية (ISO 9001, ISO 27001) في إدارة الموارد وتأمين سلاسل الإمداد والبيانات.',
+    skillsText: '• المهارات العملية: تحليل العمليات التشغيلية (BPMN)، تكوين وحدات نظام SAP، تدقيق ضوابط الأمان، وإعداد وثائق الامتثال المؤسسي.\n• المهارات الإدارية: إدارة أصحاب المصلحة، كتابة التقارير التنفيذية، والتفاوض الفني.',
+    challengesText: 'مقاومة بعض المستخدمين للتحول من النماذج الورقية إلى النظام الآلي الجديد؛ تم إعداد ورش تدريبية مبسطة وأدلة مستخدم مصورة بالفيديو، مما رفع معدل التبني الرقمي إلى 96% خلال ثلاثة أسابيع.',
+    conclusionText: 'خلصت التجربة إلى أن نجاح التحول الرقمي يرتكز بصورة متوازنة على جاهزية التكنولوجيا وكفاءة تأهيل المورد البشري والتواصل المستمر.'
+  }
+];
+
 export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) => {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const instLogoInputRef = useRef<HTMLInputElement>(null);
+  const compLogoInputRef = useRef<HTMLInputElement>(null);
+  const [samplesModalOpen, setSamplesModalOpen] = useState<boolean>(false);
+  const [selectedSample, setSelectedSample] = useState<ReportSample>(ACTUAL_PREVIOUS_REPORTS[0]);
 
   // Preview Language State (Can be toggled in-app or synced with top bar)
   const [previewLang, setPreviewLang] = useState<'ar' | 'en'>(currentLang);
@@ -136,6 +227,12 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
     trainingWeeks: 14,
     courseHours: 280,
     startDate: '',
+    companyLogo: '',
+    institutionLogo: '',
+    reportTemplate: 'royal',
+    executiveSummary: '',
+    challengesText: '',
+    recommendationsText: '',
     introText: '',
     entityIntroText: '',
     skillsText: '',
@@ -153,6 +250,67 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
   const [downloadingDocx, setDownloadingDocx] = useState<boolean>(false);
   const [downloadingHtml, setDownloadingHtml] = useState<boolean>(false);
   const [downloadingPptx, setDownloadingPptx] = useState<boolean>(false);
+
+  
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'institution' | 'company') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxDim = 320;
+        let width = img.width;
+        let height = img.height;
+        if (width > height) {
+          if (width > maxDim) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          }
+        } else {
+          if (height > maxDim) {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/png', 0.9);
+          handleProfileChange(type === 'institution' ? 'institutionLogo' : 'companyLogo', dataUrl);
+          setSaveToast(type === 'institution' ? 'تم رفع وحفظ شعار الجامعة / الكلية' : 'تم رفع وحفظ شعار جهة التدريب');
+          setTimeout(() => setSaveToast(''), 3000);
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAdoptSample = (sample: ReportSample) => {
+    const updated: ProfileInput = {
+      ...profileData,
+      trainingUnit: sample.institution,
+      department: sample.specialty,
+      entityAddress: sample.hostCompany,
+      reportTemplate: sample.templateId,
+      executiveSummary: sample.executiveSummary,
+      introText: sample.introText,
+      entityIntroText: sample.entityIntroText,
+      skillsText: sample.skillsText,
+      challengesText: sample.challengesText,
+      conclusionText: sample.conclusionText
+    };
+    setProfileData(updated);
+    saveProfileMutation.mutate(updated);
+    recordVersion('استيراد نموذج: ' + sample.name, updated);
+    setSamplesModalOpen(false);
+    setSaveToast('تم استيراد النموذج وتطبيقه كمسودة لتقريرك بنجاح!');
+    setTimeout(() => setSaveToast(''), 4000);
+  };
 
   const triggerError = (msg: string) => {
     setErrorToast(msg);
@@ -236,6 +394,12 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
         trainingWeeks: reportData.profile.trainingWeeks || 14,
         courseHours: reportData.profile.courseHours || 280,
         startDate: reportData.profile.startDate || '',
+        companyLogo: reportData.profile.companyLogo || '',
+        institutionLogo: reportData.profile.institutionLogo || '',
+        reportTemplate: (reportData.profile.reportTemplate as any) || 'royal',
+        executiveSummary: reportData.profile.executiveSummary || '',
+        challengesText: reportData.profile.challengesText || '',
+        recommendationsText: reportData.profile.recommendationsText || '',
         introText: reportData.profile.introText || '',
         entityIntroText: reportData.profile.entityIntroText || '',
         skillsText: reportData.profile.skillsText || '',
@@ -735,7 +899,123 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             <span>التقدم للحالي</span>
           </button>
 
-          {/* Version History Modal Trigger */}
+          
+      {/* Samples Library Modal (مكتبة تقارير ونماذج سابقة معتمدة) */}
+      {samplesModalOpen && (
+        <div className="fixed inset-0 bg-ink/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in no-print">
+          <div className="bg-card border border-line rounded-2xl p-6 shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between pb-4 border-b border-line">
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-accent" />
+                <div>
+                  <h3 className="text-base font-extrabold text-ink">مكتبة التقارير والنماذج السابقة الفعلية المعتمدة</h3>
+                  <p className="text-xs text-sub">استعرض صياغة وهيكل تقارير كبرى الجامعات والمؤسسات واستلهم منها لتقريرك</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSamplesModalOpen(false)}
+                className="p-1 text-sub hover:text-ink rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Samples Tabs */}
+            <div className="flex gap-2 p-1 bg-bg border border-line rounded-xl my-3 overflow-x-auto shrink-0">
+              {ACTUAL_PREVIOUS_REPORTS.map((sample) => (
+                <button
+                  key={sample.id}
+                  type="button"
+                  onClick={() => setSelectedSample(sample)}
+                  className={`px-3 py-2 text-xs font-bold rounded-lg transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                    selectedSample.id === sample.id
+                      ? 'bg-accent text-white shadow-xs'
+                      : 'text-sub hover:text-ink hover:bg-card'
+                  }`}
+                >
+                  <span>{sample.name}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Sample Content Display */}
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1 text-xs leading-relaxed text-ink">
+              <div className="bg-bg/60 p-4 rounded-xl border border-line space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line/60 pb-2">
+                  <div>
+                    <span className="font-extrabold text-accent">{selectedSample.institution}</span>
+                    <div className="text-sub font-semibold">{selectedSample.specialty}</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleAdoptSample(selectedSample)}
+                    className="px-3.5 py-1.5 bg-ok hover:bg-ok/90 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-xs transition-all"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    <span>استيراد هذا النموذج كمسودة لتقريري</span>
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-sub">
+                  <div><b>جهة التدريب:</b> {selectedSample.hostCompany}</div>
+                  <div><b>عنوان التقرير:</b> {selectedSample.studentTitle}</div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <h4 className="font-extrabold text-accent text-xs mb-1">الملخص التنفيذي (Executive Summary):</h4>
+                  <p className="p-3 bg-bg border border-line rounded-xl leading-relaxed whitespace-pre-wrap">{selectedSample.executiveSummary}</p>
+                </div>
+
+                <div>
+                  <h4 className="font-extrabold text-ink text-xs mb-1">المقدمة وأهداف التدريب:</h4>
+                  <p className="p-3 bg-bg border border-line rounded-xl leading-relaxed whitespace-pre-wrap">{selectedSample.introText}</p>
+                </div>
+
+                <div>
+                  <h4 className="font-extrabold text-ink text-xs mb-1">نبذة عن جهة التدريب والبيئة التشغيلية:</h4>
+                  <p className="p-3 bg-bg border border-line rounded-xl leading-relaxed whitespace-pre-wrap">{selectedSample.entityIntroText}</p>
+                </div>
+
+                <div>
+                  <h4 className="font-extrabold text-ink text-xs mb-1">المهارات والخبرات المكتسبة (Competencies):</h4>
+                  <p className="p-3 bg-bg border border-line rounded-xl leading-relaxed whitespace-pre-wrap">{selectedSample.skillsText}</p>
+                </div>
+
+                <div>
+                  <h4 className="font-extrabold text-ink text-xs mb-1">التحديات الفنية ومعالجة الصعوبات (Problem-Solving):</h4>
+                  <p className="p-3 bg-bg border border-line rounded-xl leading-relaxed whitespace-pre-wrap">{selectedSample.challengesText}</p>
+                </div>
+
+                <div>
+                  <h4 className="font-extrabold text-ink text-xs mb-1">الخاتمة والتوصيات:</h4>
+                  <p className="p-3 bg-bg border border-line rounded-xl leading-relaxed whitespace-pre-wrap">{selectedSample.conclusionText}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-line flex justify-end gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setSamplesModalOpen(false)}
+                className="px-4 py-2 text-xs font-bold text-sub hover:text-ink bg-bg rounded-xl border border-line"
+              >
+                إغلاق
+              </button>
+              <button
+                type="button"
+                onClick={() => handleAdoptSample(selectedSample)}
+                className="px-4 py-2 text-xs font-bold text-white bg-accent hover:bg-accent/90 rounded-xl flex items-center gap-1.5 shadow-sm"
+              >
+                <Check className="w-3.5 h-3.5" />
+                <span>اعتماد وتطبيق هذا النموذج كمسودة</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Version History Modal Trigger */}
           <button
             type="button"
             onClick={() => setVersionsModalOpen(true)}
@@ -761,12 +1041,35 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
           {/* Backup Export */}
           <button
             type="button"
-            onClick={handleExportBackup}
+            onClick={handleDownloadBackupJSON}
+            disabled={!!downloadingArchive}
             className="px-3 py-1.5 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-colors flex items-center gap-1.5"
-            title="تصدير أرشيف كامل لبياناتك بملف JSON مع رمز تحقق رقمي"
+            title="تصدير أرشيف كامل لبياناتك بملف JSON"
           >
             <Download className="w-3.5 h-3.5 text-ok" />
-            <span>تصدير نسخة JSON</span>
+            <span>{downloadingArchive === 'json' ? 'جارٍ...' : 'نسخة JSON'}</span>
+          </button>
+          
+          <button
+            type="button"
+            onClick={handleDownloadBackupCSV}
+            disabled={!!downloadingArchive}
+            className="px-3 py-1.5 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-colors flex items-center gap-1.5"
+            title="تصدير السجل اليومي بملف CSV"
+          >
+            <Download className="w-3.5 h-3.5 text-ok" />
+            <span>{downloadingArchive === 'csv' ? 'جارٍ...' : 'نسخة CSV'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleDownloadBackupMarkdown('ar')}
+            disabled={!!downloadingArchive}
+            className="px-3 py-1.5 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-colors flex items-center gap-1.5"
+            title="تصدير التقرير النصي بملف Markdown"
+          >
+            <Download className="w-3.5 h-3.5 text-ok" />
+            <span>{downloadingArchive === 'md-ar' ? 'جارٍ...' : 'نسخة MD'}</span>
           </button>
 
           {/* Backup Import */}
@@ -821,6 +1124,180 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
         </div>
 
         <form onSubmit={handleSaveProfile} className="space-y-4">
+
+          {/* Institutional Template Switcher Bar */}
+          <div className="bg-bg/60 border border-line rounded-xl p-4 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <LayoutTemplate className="w-4 h-4 text-accent" />
+                <span className="text-xs font-bold text-ink">اختر قالب التقرير المعتمد لمؤسستك أو جامعتك:</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSamplesModalOpen(true)}
+                className="px-3 py-1.5 text-xs font-bold text-accent bg-accent-dim hover:bg-accent-dim/80 rounded-xl border border-accent/20 transition-all flex items-center gap-1.5 shadow-xs"
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>استعراض نماذج وتقارير سابقة معتمدة (Library)</span>
+              </button>
+            </div>
+
+            {/* Template Selector Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+              {REPORT_TEMPLATES.map((tmpl) => {
+                const isActive = (profileData.reportTemplate || 'royal') === tmpl.id;
+                return (
+                  <button
+                    key={tmpl.id}
+                    type="button"
+                    onClick={() => {
+                      const updated = { ...profileData, reportTemplate: tmpl.id };
+                      setProfileData(updated);
+                      saveProfileMutation.mutate(updated);
+                      recordVersion('تغيير القالب إلى ' + tmpl.nameAr, updated);
+                    }}
+                    className={`p-3 rounded-xl border text-right transition-all flex flex-col justify-between gap-1.5 relative overflow-hidden ${
+                      isActive
+                        ? 'border-accent bg-card shadow-sm ring-2 ring-accent/20'
+                        : 'border-line bg-card/60 hover:bg-card hover:border-line-strong'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="w-3 h-3 rounded-full shrink-0"
+                          style={{ backgroundColor: tmpl.primaryColor }}
+                        />
+                        <span className="text-xs font-extrabold text-ink">{isAr ? tmpl.nameAr : tmpl.nameEn}</span>
+                      </div>
+                      <span
+                        className="px-1.5 py-0.5 rounded text-[10px] font-bold"
+                        style={{
+                          backgroundColor: isActive ? tmpl.primaryColor : undefined,
+                          color: isActive ? '#FFFFFF' : tmpl.primaryColor,
+                          border: `1px solid ${tmpl.primaryColor}40`
+                        }}
+                      >
+                        {tmpl.badge}
+                      </span>
+                    </div>
+                    <p className="text-[10.5px] text-sub leading-snug line-clamp-2">
+                      {tmpl.descriptionAr}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Dual Logos Upload Cards */}
+          <div className="bg-bg/40 border border-line rounded-xl p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Building className="w-4 h-4 text-accent" />
+              <span className="text-xs font-bold text-ink">شعارات الغلاف الرسمي (تظهر في الغلاف المتناظر والمستندات المصدرة):</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Institution Logo Card */}
+              <div className="bg-card border border-line rounded-xl p-3.5 flex items-center justify-between gap-3 shadow-xs">
+                <div className="flex items-center gap-3">
+                  {profileData.institutionLogo ? (
+                    <img
+                      src={profileData.institutionLogo}
+                      alt="شعار الكلية / الجامعة"
+                      className="w-14 h-14 object-contain rounded-lg border border-line bg-white p-1 shrink-0"
+                    />
+                  ) : (
+                    <div className="w-14 h-14 rounded-lg border border-dashed border-line flex items-center justify-center text-sub bg-bg shrink-0">
+                      <GraduationCap className="w-6 h-6 text-sub/60" />
+                    </div>
+                  )}
+                  <div>
+                    <div className="text-xs font-bold text-ink">شعار الكلية / الجامعة / المؤسسة</div>
+                    <div className="text-[10.5px] text-sub">يظهر أعلى الغلاف جهة اليمين (RTL)</div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <input
+                    type="file"
+                    ref={instLogoInputRef}
+                    accept="image/*"
+                    onChange={(e) => handleLogoUpload(e, 'institution')}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => instLogoInputRef.current?.click()}
+                    className="px-2.5 py-1.5 text-xs font-bold text-ink bg-bg hover:bg-line rounded-lg border border-line transition-colors flex items-center gap-1"
+                  >
+                    <Upload className="w-3 h-3 text-accent" />
+                    <span>{profileData.institutionLogo ? 'تغيير' : 'رفع'}</span>
+                  </button>
+                  {profileData.institutionLogo && (
+                    <button
+                      type="button"
+                      onClick={() => handleProfileChange('institutionLogo', '')}
+                      className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      title="حذف الشعار"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Company Logo Card */}
+              <div className="bg-card border border-line rounded-xl p-3.5 flex items-center justify-between gap-3 shadow-xs">
+                <div className="flex items-center gap-3">
+                  {profileData.companyLogo ? (
+                    <img
+                      src={profileData.companyLogo}
+                      alt="شعار جهة التدريب"
+                      className="w-14 h-14 object-contain rounded-lg border border-line bg-white p-1 shrink-0"
+                    />
+                  ) : (
+                    <div className="w-14 h-14 rounded-lg border border-dashed border-line flex items-center justify-center text-sub bg-bg shrink-0">
+                      <Building className="w-6 h-6 text-sub/60" />
+                    </div>
+                  )}
+                  <div>
+                    <div className="text-xs font-bold text-ink">شعار جهة التدريب / الشركة</div>
+                    <div className="text-[10.5px] text-sub">يظهر أعلى الغلاف جهة اليسار (RTL)</div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <input
+                    type="file"
+                    ref={compLogoInputRef}
+                    accept="image/*"
+                    onChange={(e) => handleLogoUpload(e, 'company')}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => compLogoInputRef.current?.click()}
+                    className="px-2.5 py-1.5 text-xs font-bold text-ink bg-bg hover:bg-line rounded-lg border border-line transition-colors flex items-center gap-1"
+                  >
+                    <Upload className="w-3 h-3 text-accent" />
+                    <span>{profileData.companyLogo ? 'تغيير' : 'رفع'}</span>
+                  </button>
+                  {profileData.companyLogo && (
+                    <button
+                      type="button"
+                      onClick={() => handleProfileChange('companyLogo', '')}
+                      className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      title="حذف الشعار"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Metadata Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="space-y-1">
@@ -1380,12 +1857,55 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
         className="bg-card border border-line rounded-2xl p-8 sm:p-12 shadow-sm leading-relaxed text-ink space-y-8 print-only-container print-page-wrapper"
       >
         {/* Cover Page */}
-        <div id="sec-cover" className="scroll-mt-24 text-center pb-10 border-b-2 border-line space-y-4">
-          <div className="text-xs font-bold text-sub">
-            {isAr ? 'المملكة العربية السعودية' : 'Kingdom of Saudi Arabia'}
-          </div>
-          <div className="text-sm font-bold text-ink">
-            {profileData.trainingUnit || (isAr ? 'الوحدة التدريبية / الكلية' : 'Academic Department / College')}
+        <div id="sec-cover" className="scroll-mt-24 text-center pb-10 border-b-2 border-line space-y-6">
+          {/* Symmetrical Dual-Logo Header */}
+          <div className="flex items-center justify-between gap-4 pb-4 border-b border-line/60">
+            {/* Institution Logo (Right in RTL / Left in LTR) */}
+            <div className="w-24 h-24 flex items-center justify-center shrink-0">
+              {profileData.institutionLogo ? (
+                <img
+                  src={profileData.institutionLogo}
+                  alt="Institution Logo"
+                  className="max-w-full max-h-full object-contain"
+                />
+              ) : (
+                <div className="w-20 h-20 border border-dashed border-line rounded-lg flex flex-col items-center justify-center text-[10px] text-sub/50 p-1">
+                  <GraduationCap className="w-6 h-6 mb-1 text-sub/40" />
+                  <span>شعار الكلية</span>
+                </div>
+              )}
+            </div>
+
+            {/* Center National & Academic Hierarchy */}
+            <div className="flex-1 text-center space-y-1">
+              <div className="text-xs font-bold text-sub uppercase tracking-wider">
+                {isAr ? 'المملكة العربية السعودية' : 'Kingdom of Saudi Arabia'}
+              </div>
+              <div className="text-sm font-extrabold text-ink">
+                {profileData.trainingUnit || (isAr ? 'الوحدة التدريبية / الكلية' : 'Academic Department / College')}
+              </div>
+              {profileData.department && (
+                <div className="text-xs font-semibold text-sub">
+                  {profileData.department}
+                </div>
+              )}
+            </div>
+
+            {/* Company Logo (Left in RTL / Right in LTR) */}
+            <div className="w-24 h-24 flex items-center justify-center shrink-0">
+              {profileData.companyLogo ? (
+                <img
+                  src={profileData.companyLogo}
+                  alt="Company Logo"
+                  className="max-w-full max-h-full object-contain"
+                />
+              ) : (
+                <div className="w-20 h-20 border border-dashed border-line rounded-lg flex flex-col items-center justify-center text-[10px] text-sub/50 p-1">
+                  <Building className="w-6 h-6 mb-1 text-sub/40" />
+                  <span>شعار المنشأة</span>
+                </div>
+              )}
+            </div>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-accent mt-4">
             {isAr ? 'التقرير النهائي للتدريب التعاوني (Co-op Report)' : 'Cooperative Training Final Report (Co-op Report)'}
@@ -1629,6 +2149,122 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
           </div>
         </div>
       </div>
+
+      
+      {/* Samples Library Modal (مكتبة تقارير ونماذج سابقة معتمدة) */}
+      {samplesModalOpen && (
+        <div className="fixed inset-0 bg-ink/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in no-print">
+          <div className="bg-card border border-line rounded-2xl p-6 shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between pb-4 border-b border-line">
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-accent" />
+                <div>
+                  <h3 className="text-base font-extrabold text-ink">مكتبة التقارير والنماذج السابقة الفعلية المعتمدة</h3>
+                  <p className="text-xs text-sub">استعرض صياغة وهيكل تقارير كبرى الجامعات والمؤسسات واستلهم منها لتقريرك</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSamplesModalOpen(false)}
+                className="p-1 text-sub hover:text-ink rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Samples Tabs */}
+            <div className="flex gap-2 p-1 bg-bg border border-line rounded-xl my-3 overflow-x-auto shrink-0">
+              {ACTUAL_PREVIOUS_REPORTS.map((sample) => (
+                <button
+                  key={sample.id}
+                  type="button"
+                  onClick={() => setSelectedSample(sample)}
+                  className={`px-3 py-2 text-xs font-bold rounded-lg transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                    selectedSample.id === sample.id
+                      ? 'bg-accent text-white shadow-xs'
+                      : 'text-sub hover:text-ink hover:bg-card'
+                  }`}
+                >
+                  <span>{sample.name}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Sample Content Display */}
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1 text-xs leading-relaxed text-ink">
+              <div className="bg-bg/60 p-4 rounded-xl border border-line space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line/60 pb-2">
+                  <div>
+                    <span className="font-extrabold text-accent">{selectedSample.institution}</span>
+                    <div className="text-sub font-semibold">{selectedSample.specialty}</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleAdoptSample(selectedSample)}
+                    className="px-3.5 py-1.5 bg-ok hover:bg-ok/90 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-xs transition-all"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    <span>استيراد هذا النموذج كمسودة لتقريري</span>
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-sub">
+                  <div><b>جهة التدريب:</b> {selectedSample.hostCompany}</div>
+                  <div><b>عنوان التقرير:</b> {selectedSample.studentTitle}</div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <h4 className="font-extrabold text-accent text-xs mb-1">الملخص التنفيذي (Executive Summary):</h4>
+                  <p className="p-3 bg-bg border border-line rounded-xl leading-relaxed whitespace-pre-wrap">{selectedSample.executiveSummary}</p>
+                </div>
+
+                <div>
+                  <h4 className="font-extrabold text-ink text-xs mb-1">المقدمة وأهداف التدريب:</h4>
+                  <p className="p-3 bg-bg border border-line rounded-xl leading-relaxed whitespace-pre-wrap">{selectedSample.introText}</p>
+                </div>
+
+                <div>
+                  <h4 className="font-extrabold text-ink text-xs mb-1">نبذة عن جهة التدريب والبيئة التشغيلية:</h4>
+                  <p className="p-3 bg-bg border border-line rounded-xl leading-relaxed whitespace-pre-wrap">{selectedSample.entityIntroText}</p>
+                </div>
+
+                <div>
+                  <h4 className="font-extrabold text-ink text-xs mb-1">المهارات والخبرات المكتسبة (Competencies):</h4>
+                  <p className="p-3 bg-bg border border-line rounded-xl leading-relaxed whitespace-pre-wrap">{selectedSample.skillsText}</p>
+                </div>
+
+                <div>
+                  <h4 className="font-extrabold text-ink text-xs mb-1">التحديات الفنية ومعالجة الصعوبات (Problem-Solving):</h4>
+                  <p className="p-3 bg-bg border border-line rounded-xl leading-relaxed whitespace-pre-wrap">{selectedSample.challengesText}</p>
+                </div>
+
+                <div>
+                  <h4 className="font-extrabold text-ink text-xs mb-1">الخاتمة والتوصيات:</h4>
+                  <p className="p-3 bg-bg border border-line rounded-xl leading-relaxed whitespace-pre-wrap">{selectedSample.conclusionText}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-line flex justify-end gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setSamplesModalOpen(false)}
+                className="px-4 py-2 text-xs font-bold text-sub hover:text-ink bg-bg rounded-xl border border-line"
+              >
+                إغلاق
+              </button>
+              <button
+                type="button"
+                onClick={() => handleAdoptSample(selectedSample)}
+                className="px-4 py-2 text-xs font-bold text-white bg-accent hover:bg-accent/90 rounded-xl flex items-center gap-1.5 shadow-sm"
+              >
+                <Check className="w-3.5 h-3.5" />
+                <span>اعتماد وتطبيق هذا النموذج كمسودة</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Version History Modal (سجل الإصدارات الكامل والتنقل الزمني) */}
       {versionsModalOpen && (

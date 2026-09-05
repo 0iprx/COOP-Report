@@ -52,6 +52,12 @@ export const profileSchema = z.object({
   trainingWeeks: z.number().int().min(1).max(30).default(14),
   courseHours: z.number().int().min(1).max(2000).default(280),
   startDate: z.string().max(20).default(''),
+  companyLogo: z.string().optional().default(''),
+  institutionLogo: z.string().optional().default(''),
+  reportTemplate: z.enum(['royal', 'modern', 'executive', 'tvtc']).default('royal'),
+  executiveSummary: z.string().optional().default(''),
+  challengesText: z.string().optional().default(''),
+  recommendationsText: z.string().optional().default(''),
   introText: z.string().default(''),
   entityIntroText: z.string().default(''),
   skillsText: z.string().default(''),
@@ -103,6 +109,12 @@ export interface ReportProfileDTO {
   trainingWeeks: number;
   courseHours: number;
   startDate: string;
+  companyLogo?: string;
+  institutionLogo?: string;
+  reportTemplate?: 'royal' | 'modern' | 'executive' | 'tvtc';
+  executiveSummary?: string;
+  challengesText?: string;
+  recommendationsText?: string;
   introText: string;
   entityIntroText: string;
   skillsText: string;
@@ -112,6 +124,47 @@ export interface ReportProfileDTO {
   supervisorApproved?: boolean;
   supervisorApprovedAt?: string | null;
 }
+
+export const REPORT_TEMPLATES = [
+  {
+    id: 'royal',
+    nameAr: 'الأكاديمي الملكي',
+    nameEn: 'Royal Academic',
+    primaryColor: '#8B0000',
+    secondaryColor: '#2F6B4F',
+    badge: 'معتمد',
+    descriptionAr: 'الطابع الأكاديمي الكلاسيكي المعتمد للجامعات بلمسات العنابي والخطوط الرصينة'
+  },
+  {
+    id: 'modern',
+    nameAr: 'الهندسي العصري',
+    nameEn: 'Modern Engineering',
+    primaryColor: '#0284C7',
+    secondaryColor: '#0F172A',
+    badge: 'تقني',
+    descriptionAr: 'تصميم تقني متطور بلون كحلي وسماوي مع بطاقات إنجاز بصرية عصرية'
+  },
+  {
+    id: 'executive',
+    nameAr: 'المؤسسي التنفيذي',
+    nameEn: 'Executive Institutional',
+    primaryColor: '#1E293B',
+    secondaryColor: '#D97706',
+    badge: 'إداري',
+    descriptionAr: 'تصميم تنفيذي يركز على مؤشرات الإنجاز، الملخص التنفيذي، وجداول الأعمال'
+  },
+  {
+    id: 'tvtc',
+    nameAr: 'نموذج الكليات التقنية',
+    nameEn: 'TVTC Standard',
+    primaryColor: '#065F46',
+    secondaryColor: '#1F2937',
+    badge: 'رسمي',
+    descriptionAr: 'مطابق للكليشات ونماذج التدريب الميداني المعتمدة بالمؤسسة العامة للتدريب التقني والمهني'
+  }
+] as const;
+
+export type ReportTemplateId = (typeof REPORT_TEMPLATES)[number]['id'];
 
 export interface WeeklyEvidenceDTO {
   id: number;

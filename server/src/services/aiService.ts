@@ -535,9 +535,7 @@ function applyArabicSpellCorrections(input: string): string {
     [/(?<![\u0600-\u06FF])معاينه(?![\u0600-\u06FF])/gu, 'معاينة'],
     [/(?<![\u0600-\u06FF])مشاركه(?![\u0600-\u06FF])/gu, 'مشاركة'],
 
-    // Yaa vs Alif Maqsura
-    [/(?<![\u0600-\u06FF])الي(?![\u0600-\u06FF])/gu, 'إلى'],
-    [/(?<![\u0600-\u06FF])علي(?![\u0600-\u06FF])/gu, 'على'],
+    // Yaa vs Alif Maqsura (علي and الي removed to protect proper names)
     [/(?<![\u0600-\u06FF])حتي(?![\u0600-\u06FF])/gu, 'حتى'],
     [/(?<![\u0600-\u06FF])مستوي(?![\u0600-\u06FF])/gu, 'مستوى'],
     [/(?<![\u0600-\u06FF])اخري(?![\u0600-\u06FF])/gu, 'أخرى'],

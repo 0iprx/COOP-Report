@@ -246,7 +246,7 @@ router.get('/export/backup/csv', async (req: AuthenticatedRequest, res: Response
 
     // Build CSV with UTF-8 BOM so Microsoft Excel opens Arabic perfectly without question marks
     const BOM = '\uFEFF';
-    let csv = BOM + 'الأسبوع,اليوم,التاريخ,من الساعة,إلى الساعة,الساعات,التصنيف التقني,عنوان المهمة,التفاصيل الإجرائية والنتائج\\n';
+    let csv = BOM + `الأسبوع,اليوم,التاريخ,من الساعة,إلى الساعة,الساعات,التصنيف التقني,عنوان المهمة,التفاصيل الإجرائية والنتائج\n`;
 
     reportData.weeks.forEach((w) => {
       w.entries.forEach((e, idx) => {
@@ -263,7 +263,7 @@ router.get('/export/backup/csv', async (req: AuthenticatedRequest, res: Response
           clean(e.title),
           clean(e.description)
         ];
-        csv += row.join(',') + '\\n';
+        csv += row.join(',') + '\n';
       });
     });
 
@@ -294,70 +294,76 @@ router.get('/export/backup/markdown', async (req: AuthenticatedRequest, res: Res
 
     let md = '';
     if (isAr) {
-      md += `# ملف الأرشيف الكامل والشامل للتدريب التعاوني الميداني\\n\\n`;
-      md += `> تم تصدير هذه النسخة الاحتياطية الشاملة بتاريخ: ${new Date().toLocaleDateString('ar-SA')} - ${new Date().toLocaleTimeString('ar-SA')}\\n\\n`;
-      md += `## بيانات المتدرب والاعتماد الأكاديمي\\n`;
-      md += `- **اسم المتدرب:** ${reportData.profile.studentName || '—'}\\n`;
-      md += `- **الرقم التدريبي:** ${reportData.profile.trainingNumber || '—'}\\n`;
-      md += `- **الكلية / الوحدة التدريبية:** ${reportData.profile.trainingUnit || '—'}\\n`;
-      md += `- **القسم والتخصص:** ${reportData.profile.department || '—'}\\n`;
-      md += `- **جهة التدريب:** ${reportData.profile.entityAddress || '—'}\\n`;
-      md += `- **المشرف الميداني:** ${reportData.profile.supervisorName || reportData.profile.responsibleName || '—'}\\n`;
-      md += `- **إجمالي الساعات المعتمدة:** ${reportData.totalHours} من ${reportData.profile.courseHours || 280} ساعة\\n`;
-      md += `- **إجمالي أيام التدريب المسجلة:** ${reportData.totalDays} يوم\\n\\n`;
+      md += `# ملف الأرشيف الكامل والشامل للتدريب التعاوني الميداني\n\n`;
+      md += `> تم تصدير هذه النسخة الاحتياطية الشاملة بتاريخ: ${new Date().toLocaleDateString('ar-SA')} - ${new Date().toLocaleTimeString('ar-SA')}\n\n`;
+      md += `## بيانات المتدرب والاعتماد الأكاديمي\n`;
+      md += `- **اسم المتدرب:** ${reportData.profile.studentName || '—'}\n`;
+      md += `- **الرقم التدريبي:** ${reportData.profile.trainingNumber || '—'}\n`;
+      md += `- **الكلية / الوحدة التدريبية:** ${reportData.profile.trainingUnit || '—'}\n`;
+      md += `- **القسم والتخصص:** ${reportData.profile.department || '—'}\n`;
+      md += `- **جهة التدريب:** ${reportData.profile.entityAddress || '—'}\n`;
+      md += `- **المشرف الميداني:** ${reportData.profile.supervisorName || reportData.profile.responsibleName || '—'}\n`;
+      md += `- **إجمالي الساعات المعتمدة:** ${reportData.totalHours} من ${reportData.profile.courseHours || 280} ساعة\n`;
+      md += `- **إجمالي أيام التدريب المسجلة:** ${reportData.totalDays} يوم\n\n`;
 
-      md += `---\\n\\n## الفصل الأول: مقدمة التدريب والأهداف\\n`;
-      md += (reportData.profile.introText || 'لا توجد مقدمة مسجلة.') + '\\n\\n';
+      md += `---\n\n## الفصل الأول: مقدمة التدريب والأهداف\n`;
+      md += (reportData.profile.introText || 'لا توجد مقدمة مسجلة.') + '\n\n';
 
-      md += `---\\n\\n## الفصل الثاني: نبذة عن جهة التدريب وبيئة العمل\\n`;
-      md += (reportData.profile.entityIntroText || 'لا توجد نبذة مسجلة.') + '\\n\\n';
+      md += `---\n\n## الفصل الثاني: نبذة عن جهة التدريب وبيئة العمل\n`;
+      md += (reportData.profile.entityIntroText || 'لا توجد نبذة مسجلة.') + '\n\n';
 
-      md += `---\\n\\n## الفصل الثالث: السجل اليومي للمهام والعمليات الميدانية (الأسابيع الـ 14)\\n\\n`;
+      md += `---\n\n## الفصل الثالث: السجل اليومي للمهام والعمليات الميدانية (الأسابيع الـ 14)\n\n`;
       reportData.weeks.forEach((w) => {
-        md += `### الأسبوع ${w.weekIndex} (الفترة: ${w.weekStart} إلى ${w.weekEnd} - الساعات: ${w.totalHours} س)\\n\\n`;
+        md += `### الأسبوع ${w.weekIndex} (الفترة: ${w.weekStart} إلى ${w.weekEnd} - الساعات: ${w.totalHours} س)\n\n`;
         if (!w.entries || w.entries.length === 0) {
-          md += `*لا توجد مدخلات مسجلة لهذا الأسبوع.*\\n\\n`;
+          md += `*لا توجد مدخلات مسجلة لهذا الأسبوع.*\n\n`;
         } else {
           w.entries.forEach((e, idx) => {
             const entryHours = calculateHoursBetween(e.timeFrom, e.timeTo);
-            md += `#### اليوم ${idx + 1} | التاريخ: ${e.entryDate} | الساعات: ${entryHours} س | التصنيف: ${e.category}\\n`;
-            md += `**عنوان المهمة:** ${e.title}\\n\\n`;
-            md += `**التفاصيل الفنية والنتائج:**\\n${e.description}\\n\\n`;
+            md += `#### اليوم ${idx + 1} | التاريخ: ${e.entryDate} | الساعات: ${entryHours} س | التصنيف: ${e.category}\n`;
+            md += `**عنوان المهمة:** ${e.title}\n\n`;
+            md += `**التفاصيل الفنية والنتائج:**\n${e.description}\n\n`;
           });
         }
       });
 
-      md += `---\\n\\n## الفصل الرابع: المهارات والخبرات المكتسبة\\n`;
-      md += (reportData.profile.skillsText || 'لا توجد مهارات مسجلة.') + '\\n\\n';
+      md += `---\n\n## الفصل الرابع: المهارات والخبرات المكتسبة\n`;
+      md += (reportData.profile.skillsText || 'لا توجد مهارات مسجلة.') + '\n\n';
 
-      md += `---\\n\\n## الفصل الخامس: التوصيات والخاتمة\\n`;
-      md += (reportData.profile.conclusionText || 'لا توجد خاتمة مسجلة.') + '\\n\\n';
+      md += `---\n\n## الفصل الخامس: التوصيات والخاتمة\n`;
+      md += (reportData.profile.conclusionText || 'لا توجد خاتمة مسجلة.') + '\n\n';
     } else {
-      md += `# Complete Field Cooperative Training Offline Dossier\\n\\n`;
-      md += `> Exported on: ${new Date().toISOString()}\\n\\n`;
-      md += `## Trainee & Academic Profile\\n`;
-      md += `- **Trainee Name:** ${reportData.profile.studentName || '—'}\\n`;
-      md += `- **Student ID:** ${reportData.profile.trainingNumber || '—'}\\n`;
-      md += `- **Department:** ${reportData.profile.department || '—'}\\n`;
-      md += `- **Host Organization:** ${reportData.profile.entityAddress || '—'}\\n`;
-      md += `- **Total Logged Hours:** ${reportData.totalHours} of ${reportData.profile.courseHours || 280} Credit Hours\\n\\n`;
+      md += `# Complete Field Cooperative Training Offline Dossier\n\n`;
+      md += `> Exported on: ${new Date().toISOString()}\n\n`;
+      md += `## Trainee & Academic Profile\n`;
+      md += `- **Trainee Name:** ${reportData.profile.studentName || '—'}\n`;
+      md += `- **Student ID:** ${reportData.profile.trainingNumber || '—'}\n`;
+      md += `- **Department:** ${reportData.profile.department || '—'}\n`;
+      md += `- **Host Organization:** ${reportData.profile.entityAddress || '—'}\n`;
+      md += `- **Total Logged Hours:** ${reportData.totalHours} of ${reportData.profile.courseHours || 280} Credit Hours\n\n`;
 
-      md += `---\\n\\n## Chapter 1: Introduction & Objectives\\n`;
-      md += (reportData.profile.introText || 'No introduction recorded.') + '\\n\\n';
+      md += `---\n\n## Chapter 1: Introduction & Objectives\n`;
+      md += (reportData.profile.introText || 'No introduction recorded.') + '\n\n';
 
-      md += `---\\n\\n## Chapter 2: Host Organization Profile\\n`;
-      md += (reportData.profile.entityIntroText || 'No profile recorded.') + '\\n\\n';
+      md += `---\n\n## Chapter 2: Host Organization Profile\n`;
+      md += (reportData.profile.entityIntroText || 'No profile recorded.') + '\n\n';
 
-      md += `---\\n\\n## Chapter 3: 14-Week Chronological Activity Log\\n\\n`;
+      md += `---\n\n## Chapter 3: 14-Week Chronological Activity Log\n\n`;
       reportData.weeks.forEach((w) => {
-        md += `### Week ${w.weekIndex} (${w.weekStart} to ${w.weekEnd} - ${w.totalHours} Hours)\\n\\n`;
+        md += `### Week ${w.weekIndex} (${w.weekStart} to ${w.weekEnd} - ${w.totalHours} Hours)\n\n`;
         w.entries.forEach((e, idx) => {
           const entryHours = calculateHoursBetween(e.timeFrom, e.timeTo);
-          md += `#### Day ${idx + 1} | Date: ${e.entryDate} | ${entryHours} Hours | Category: ${e.category}\\n`;
-          md += `**Task Title:** ${e.title}\\n\\n`;
-          md += `**Details:**\\n${e.description}\\n\\n`;
+          md += `#### Day ${idx + 1} | Date: ${e.entryDate} | ${entryHours} Hours | Category: ${e.category}\n`;
+          md += `**Task Title:** ${e.title}\n\n`;
+          md += `**Details:**\n${e.description}\n\n`;
         });
       });
+
+      md += `---\n\n## Chapter 4: Acquired Skills & Experiences\n`;
+      md += (reportData.profile.skillsText || 'No skills recorded.') + '\n\n';
+
+      md += `---\n\n## Chapter 5: Recommendations & Conclusion\n`;
+      md += (reportData.profile.conclusionText || 'No conclusion recorded.') + '\n\n';
     }
 
     const studentSafe = (reportData.profile.studentName || 'trainee').replace(/[\\/:*?"<>|\s]/g, '_');

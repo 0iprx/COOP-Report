@@ -325,15 +325,15 @@ export async function generatePresentationBuffer(
   });
 
   const scopeBullets = isAr
-    ? '• إدارة البنية التحتية وتجهيز كبائن الخوادم المركزية (Racks & Cabling)\\n\\n' +
-      '• تكوين وصيانة الشبكات المحلية وتقسيم الـ VLANs وأجهزة التوجيه\\n\\n' +
-      '• سياسات أمن المعلومات، النسخ الاحتياطي، وحماية البيانات المؤسسية\\n\\n' +
-      '• أتمتة العمليات اليومية وإدارة بيئات الحاويات والخدمات السحابية\\n\\n' +
+    ? '• إدارة البنية التحتية وتجهيز كبائن الخوادم المركزية (Racks & Cabling)\n\n' +
+      '• تكوين وصيانة الشبكات المحلية وتقسيم الـ VLANs وأجهزة التوجيه\n\n' +
+      '• سياسات أمن المعلومات، النسخ الاحتياطي، وحماية البيانات المؤسسية\n\n' +
+      '• أتمتة العمليات اليومية وإدارة بيئات الحاويات والخدمات السحابية\n\n' +
       '• توثيق أدلة التشغيل القياسية (SOP) وتقديم الدعم الفني المتقدم'
-    : '• Infrastructure and Server Rack Management (Cabling & Hardware)\\n\\n' +
-      '• Local Area Network Configuration (VLANs, Switches, Routers)\\n\\n' +
-      '• Information Security, Backup Schedules & Disaster Recovery\\n\\n' +
-      '• Cloud & Container Services Deployment and Automation\\n\\n' +
+    : '• Infrastructure and Server Rack Management (Cabling & Hardware)\n\n' +
+      '• Local Area Network Configuration (VLANs, Switches, Routers)\n\n' +
+      '• Information Security, Backup Schedules & Disaster Recovery\n\n' +
+      '• Cloud & Container Services Deployment and Automation\n\n' +
       '• Standard Operating Procedure Documentation & Technical Support';
 
   s2.addText(scopeBullets, {
@@ -665,7 +665,7 @@ export async function generatePresentationBuffer(
       align: isAr ? 'right' : 'left'
     });
 
-    const itemsText = col.items.map(item => `• ${item}`).join('\\n\\n');
+    const itemsText = col.items.map(item => `• ${item}`).join('\n\n');
 
     s5.addText(itemsText, {
       x: xPos + 0.25,
@@ -822,11 +822,11 @@ export async function generatePresentationBuffer(
 
   const rawConclusion = reportData.profile.conclusionText || (
     isAr
-      ? '١. التوسع في أتمتة البنية التحتية عبر حلول DevOps لتقليل الأخطاء البشرية.\\n\\n' +
-        '٢. تعزيز اختبارات الاستجابة للحوادث السيبرانية وتدريب الكوادر الميدانية دورياً.\\n\\n' +
+      ? '١. التوسع في أتمتة البنية التحتية عبر حلول DevOps لتقليل الأخطاء البشرية.\n\n' +
+        '٢. تعزيز اختبارات الاستجابة للحوادث السيبرانية وتدريب الكوادر الميدانية دورياً.\n\n' +
         '٣. توثيق كافة التغييرات الطارئة في دليل التشغيل القياسي (SOP) الموحد.'
-      : '1. Expand infrastructure automation through DevOps tools to reduce manual overhead.\\n\\n' +
-        '2. Conduct periodic disaster recovery drills and train technical field personnel.\\n\\n' +
+      : '1. Expand infrastructure automation through DevOps tools to reduce manual overhead.\n\n' +
+        '2. Conduct periodic disaster recovery drills and train technical field personnel.\n\n' +
         '3. Maintain up-to-date Standard Operating Procedures (SOP) across all systems.'
   );
 

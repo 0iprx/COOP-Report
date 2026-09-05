@@ -64,9 +64,140 @@ function getWeekTopicServer(w: any, isAr: boolean = true): string {
     : `Week ${w.weekIndex} Technical Activities`;
 }
 
+
+const TEMPLATE_COLORS: Record<string, { primary: string; secondary: string }> = {
+  royal: { primary: '8B0000', secondary: '2F6B4F' },
+  modern: { primary: '0284C7', secondary: '0F172A' },
+  executive: { primary: '1E293B', secondary: 'D97706' },
+  tvtc: { primary: '065F46', secondary: '1F2937' }
+};
+
+function tryParseBase64Image(dataUri?: string): Buffer | null {
+  if (!dataUri) return null;
+  const match = dataUri.match(/^data:image\/(jpeg|jpg|png|webp);base64,(.+)$/s);
+  if (!match) return null;
+  try {
+    return Buffer.from(match[2].trim(), 'base64');
+  } catch {
+    return null;
+  }
+}
+
+function createCoverLogosBlock(
+  instLogoUri?: string,
+  compLogoUri?: string,
+  trainingUnit?: string,
+  department?: string,
+  isAr: boolean = true
+): Table | Paragraph {
+  const instBuf = tryParseBase64Image(instLogoUri);
+  const compBuf = tryParseBase64Image(compLogoUri);
+
+  if (!instBuf && !compBuf) {
+    return new Paragraph({
+      alignment: AlignmentType.CENTER,
+      bidirectional: isAr,
+      spacing: { before: 200, after: 100 },
+      children: [
+        new TextRun({
+          text: isAr ? 'المملكة العربية السعودية' : 'Kingdom of Saudi Arabia',
+          bold: true,
+          size: 28,
+          color: '6E6B62'
+        })
+      ]
+    });
+  }
+
+  const borderNone = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
+  const borders = { top: borderNone, bottom: borderNone, left: borderNone, right: borderNone };
+
+  const leftBuf = isAr ? compBuf : instBuf;
+  const rightBuf = isAr ? instBuf : compBuf;
+
+  const leftChildren: Paragraph[] = [];
+  if (leftBuf) {
+    leftChildren.push(
+      new Paragraph({
+        alignment: AlignmentType.LEFT,
+        children: [
+          new ImageRun({
+            data: leftBuf,
+            transformation: { width: 80, height: 80 }
+          })
+        ]
+      })
+    );
+  } else {
+    leftChildren.push(new Paragraph({ children: [] }));
+  }
+
+  const rightChildren: Paragraph[] = [];
+  if (rightBuf) {
+    rightChildren.push(
+      new Paragraph({
+        alignment: AlignmentType.RIGHT,
+        children: [
+          new ImageRun({
+            data: rightBuf,
+            transformation: { width: 80, height: 80 }
+          })
+        ]
+      })
+    );
+  } else {
+    rightChildren.push(new Paragraph({ children: [] }));
+  }
+
+  const centerChildren = [
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      bidirectional: isAr,
+      spacing: { before: 40, after: 20 },
+      children: [
+        new TextRun({
+          text: isAr ? 'المملكة العربية السعودية' : 'Kingdom of Saudi Arabia',
+          bold: true,
+          size: 22,
+          color: '6E6B62'
+        })
+      ]
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      bidirectional: isAr,
+      spacing: { after: 20 },
+      children: [
+        new TextRun({
+          text: trainingUnit || (isAr ? 'الوحدة التدريبية / الكلية' : 'Academic Department'),
+          bold: true,
+          size: 24,
+          color: '1B1B18'
+        })
+      ]
+    })
+  ];
+
+  return new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    rows: [
+      new TableRow({
+        children: [
+          new TableCell({ width: { size: 25, type: WidthType.PERCENTAGE }, borders, children: leftChildren }),
+          new TableCell({ width: { size: 50, type: WidthType.PERCENTAGE }, borders, children: centerChildren }),
+          new TableCell({ width: { size: 25, type: WidthType.PERCENTAGE }, borders, children: rightChildren })
+        ]
+      })
+    ]
+  });
+}
+
 export async function generateAcademicDocx(reportData: FinalReportData, lang: 'ar' | 'en' = 'ar'): Promise<Buffer> {
   const { profile, weeks, totalHours, totalDays, totalEntries } = reportData;
   const isAr = lang === 'ar';
+  const tmplKey = (profile.reportTemplate || 'royal') as string;
+  const theme = TEMPLATE_COLORS[tmplKey] || TEMPLATE_COLORS.royal;
+  const primaryColor = theme.primary;
   const entityName = profile.entityAddress || (isAr ? 'جهة التدريب التعاوني' : 'Host Training Organization');
   const courseHours = profile.courseHours || 280;
   const progressPercent = Math.min(100, Math.round((totalHours / courseHours) * 100));
@@ -148,21 +279,9 @@ export async function generateAcademicDocx(reportData: FinalReportData, lang: 'a
         },
         children: [
           // ==========================================
-          // COVER PAGE
+          // COVER PAGE (WITH DUAL LOGOS & HIERARCHY)
           // ==========================================
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            bidirectional: isAr,
-            spacing: { before: 200, after: 100 },
-            children: [
-              new TextRun({
-                text: isAr ? 'المملكة العربية السعودية' : 'Kingdom of Saudi Arabia',
-                bold: true,
-                size: 28,
-                color: '6E6B62'
-              })
-            ]
-          }),
+          createCoverLogosBlock(profile.institutionLogo, profile.companyLogo, profile.trainingUnit, profile.department, isAr),
           new Paragraph({
             alignment: AlignmentType.CENTER,
             bidirectional: isAr,

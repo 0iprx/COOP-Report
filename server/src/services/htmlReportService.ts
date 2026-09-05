@@ -32,7 +32,7 @@ function getWeekTopicServer(w: any, isAr: boolean = true): string {
     'ورش العمل الهندسية وتطوير الحلول البرمجية المؤسسية',
     'توثيق إجراءات التشغيل القياسية وتحديث الأدلة الفنية',
     'اختبار تكامل الأنظمة وضمان الجودة والمطابقة الفنية',
-    'مناقشة التتقرير الفني الختامي واعتماد مخرجات التدريب'
+    'مناقشة التقرير الفني الختامي واعتماد مخرجات التدريب'
   ];
   return isAr
     ? (defaultTopicsAr[w.weekIndex - 1] || `المهام والأعمال الفنية للأسبوع ${w.weekIndex}`)
@@ -57,15 +57,48 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #F7F5F0;
+      --bg: ${
+        profile.reportTemplate === 'modern' ? '#F8FAFC' :
+        profile.reportTemplate === 'executive' ? '#F1F5F9' :
+        profile.reportTemplate === 'tvtc' ? '#F4FBF7' : '#F7F5F0'
+      };
       --card: #FFFFFF;
       --ink: #1B1B18;
       --sub: #6E6B62;
       --line: #E4E0D5;
-      --accent: #8B0000;
-      --accent-dim: #F4DDDF;
+      --accent: ${
+        profile.reportTemplate === 'modern' ? '#0284C7' :
+        profile.reportTemplate === 'executive' ? '#1E293B' :
+        profile.reportTemplate === 'tvtc' ? '#065F46' : '#8B0000'
+      };
+      --accent-dim: ${
+        profile.reportTemplate === 'modern' ? '#E0F2FE' :
+        profile.reportTemplate === 'executive' ? '#E2E8F0' :
+        profile.reportTemplate === 'tvtc' ? '#E6F4EA' : '#F4DDDF'
+      };
       --ok: #2F6B4F;
       --ok-bg: #E5F1EA;
+    }
+    .cover-logos {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding-bottom: 24px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--line);
+    }
+    .cover-logo-img {
+      max-width: 90px;
+      max-height: 90px;
+      object-fit: contain;
+    }
+    .cover-logo-box {
+      width: 90px;
+      height: 90px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     html {
       scroll-behavior: smooth;
