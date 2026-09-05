@@ -1,9 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
-import { FinalReportData, ProfileInput, DiffChunk, formatDateArabic, formatDateEnglish, countWords, calculateHoursBetween, REPORT_TEMPLATES, ReportTemplateId } from '@coop/shared';
+import { FinalReportData, ProfileInput, DiffChunk, formatDateArabic, formatDateEnglish, countWords, calculateHoursBetween, REPORT_TEMPLATES, ReportTemplateId, OrganizationLookupResult } from '@coop/shared';
 import {
   FileText,
+  Search,
+  Globe,
+  Building2,
+  Copy,
   Sparkle,
   Upload,
   Layers,
@@ -257,6 +261,15 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
   const [downloadingDocx, setDownloadingDocx] = useState<boolean>(false);
   const [downloadingHtml, setDownloadingHtml] = useState<boolean>(false);
   const [downloadingPptx, setDownloadingPptx] = useState<boolean>(false);
+
+  // Organization Academic AI Search State
+  const [orgSearchModalOpen, setOrgSearchModalOpen] = useState<boolean>(false);
+  const [orgSearchQuery, setOrgSearchQuery] = useState<string>('');
+  const [orgSearchDept, setOrgSearchDept] = useState<string>('');
+  const [orgSearching, setOrgSearching] = useState<boolean>(false);
+  const [orgSearchResult, setOrgSearchResult] = useState<OrganizationLookupResult | null>(null);
+  const [orgSearchActiveTab, setOrgSearchActiveTab] = useState<'entity' | 'intro' | 'skills' | 'conclusion'>('entity');
+  const [copiedText, setCopiedText] = useState<boolean>(false);
 
   
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'institution' | 'company') => {
@@ -665,6 +678,76 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
     } finally {
       setAiLoading(false);
     }
+  };
+
+  // Organization Academic Search & Generation Handlers
+  const handleOpenOrgSearchModal = (initialName?: string, targetTab: 'entity' | 'intro' | 'skills' | 'conclusion' | 'all' = 'entity') => {
+    const query = (initialName || profileData.entityAddress || '').trim();
+    setOrgSearchQuery(query);
+    setOrgSearchDept(profileData.department || '');
+    setOrgSearchActiveTab(targetTab === 'all' ? 'entity' : targetTab);
+    setOrgSearchModalOpen(true);
+
+    if (query && (!orgSearchResult || orgSearchResult.organizationName !== query)) {
+      executeOrgLookup(query, profileData.department || '');
+    }
+  };
+
+  const executeOrgLookup = async (name: string, dept: string) => {
+    if (!name || !name.trim()) {
+      triggerError('يرجى إدخال اسم جهة التدريب للبحث');
+      return;
+    }
+    setOrgSearching(true);
+    try {
+      const res = await api.post('/ai/organization-lookup', {
+        organizationName: name.trim(),
+        department: dept.trim()
+      });
+      setOrgSearchResult(res.data);
+    } catch (err: any) {
+      triggerError(err.response?.data?.error || 'تعذر استرجاع بيانات الجهة من الإنترنت حالياً');
+    } finally {
+      setOrgSearching(false);
+    }
+  };
+
+  const handleApplyOrgContent = (field: TextProfileField | 'all') => {
+    if (!orgSearchResult) return;
+
+    recordVersion(`قبل تعبئة بيانات الجهة (${orgSearchResult.foundName})`, profileData);
+
+    const updated: ProfileInput = { ...profileData };
+
+    if (!updated.entityAddress || updated.entityAddress.trim().length < 4) {
+      updated.entityAddress = orgSearchResult.foundName;
+    }
+
+    if (field === 'all') {
+      updated.entityIntroText = orgSearchResult.entityOverview;
+      updated.introText = orgSearchResult.suggestedIntro;
+      updated.skillsText = orgSearchResult.suggestedSkills;
+      updated.conclusionText = orgSearchResult.suggestedConclusion;
+      setSaveToast('تم تعبئة كافة الأقسام الأربعة بصياغة أكاديمية رصينة بنجاح!');
+    } else if (field === 'entityIntroText') {
+      updated.entityIntroText = orgSearchResult.entityOverview;
+      setSaveToast('تم تعبئة قسم (التعريف بجهة التدريب وطبيعة العمل) بنجاح!');
+    } else if (field === 'introText') {
+      updated.introText = orgSearchResult.suggestedIntro;
+      setSaveToast('تم تعبئة قسم (المقدمة وأهداف التدريب) بنجاح!');
+    } else if (field === 'skillsText') {
+      updated.skillsText = orgSearchResult.suggestedSkills;
+      setSaveToast('تم تعبئة قسم (المعارف والمهارات المكتسبة) بنجاح!');
+    } else if (field === 'conclusionText') {
+      updated.conclusionText = orgSearchResult.suggestedConclusion;
+      setSaveToast('تم تعبئة قسم (الخاتمة والتوصيات) بنجاح!');
+    }
+
+    setProfileData(updated);
+    saveProfileMutation.mutate(updated);
+    recordVersion(`بعد تعبئة بيانات الجهة (${orgSearchResult.foundName})`, updated);
+    setOrgSearchModalOpen(false);
+    setTimeout(() => setSaveToast(''), 4000);
   };
 
   // Auto-Translate Entire Report
@@ -1260,14 +1343,38 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             </div>
 
             <div className="space-y-1">
-              <label className="block text-xs font-bold text-sub">جهة التدريب</label>
-              <input
-                type="text"
-                value={profileData.entityAddress}
-                onChange={(e) => handleProfileChange('entityAddress', e.target.value)}
-                placeholder="اسم ومقر جهة التدريب"
-                className="w-full px-3 py-2 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent"
-              />
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-sub">جهة التدريب (المؤسسة أو الشركة)</label>
+                <button
+                  type="button"
+                  onClick={() => handleOpenOrgSearchModal(profileData.entityAddress, 'all')}
+                  className="text-[11px] font-bold text-accent hover:underline flex items-center gap-1 bg-accent/10 px-2 py-0.5 rounded-lg border border-accent/20 transition-all hover:bg-accent/20"
+                  title="بحث فوري في الإنترنت والموسوعات واسترجاع الصياغة الأكاديمية"
+                >
+                  <Globe className="w-3 h-3 text-accent" />
+                  <span>بحث فوري وصياغة أكاديمية من الإنترنت</span>
+                </button>
+              </div>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={profileData.entityAddress}
+                  onChange={(e) => handleProfileChange('entityAddress', e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleOpenOrgSearchModal(profileData.entityAddress, 'all')}
+                  placeholder="اسم ومقر جهة التدريب (مثال: أرامكو السعودية، سدايا، شركة علم، وزارة الصحة...)"
+                  className="w-full px-3 py-2 pl-24 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent"
+                />
+                <button
+                  type="button"
+                  disabled={orgSearching}
+                  onClick={() => handleOpenOrgSearchModal(profileData.entityAddress, 'all')}
+                  className="absolute left-1.5 top-1/2 -translate-y-1/2 px-2.5 py-1 text-xs font-bold bg-accent text-white rounded-lg hover:bg-accent/90 transition-all flex items-center gap-1 shadow-xs disabled:opacity-50"
+                  title="بحث فوري وتعبئة الأقسام"
+                >
+                  <Search className="w-3 h-3" />
+                  <span>بحث وتعبئة</span>
+                </button>
+              </div>
             </div>
 
             <div className="space-y-1">
@@ -1312,6 +1419,15 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             <div className="flex flex-wrap items-center justify-between gap-2">
               <label className="block text-xs font-bold text-sub">المقدمة (أهمية التدريب التعاوني وأهدافه)</label>
               <div className="flex flex-wrap items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => handleOpenOrgSearchModal(profileData.entityAddress, 'intro')}
+                  className="text-[11px] font-bold text-blue-700 dark:text-blue-300 hover:underline flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-blue-500/10 border border-blue-500/30 shadow-xs"
+                  title="توليد مقدمة أكاديمية مخصصة لجهة التدريب وتخصصك"
+                >
+                  <Sparkles className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                  <span>توليد من بيانات الجهة</span>
+                </button>
                 <button
                   type="button"
                   disabled={aiLoading}
@@ -1369,6 +1485,15 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
               <div className="flex flex-wrap items-center gap-1.5">
                 <button
                   type="button"
+                  onClick={() => handleOpenOrgSearchModal(profileData.entityAddress, 'entity')}
+                  className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 hover:underline flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 shadow-xs"
+                  title="بحث فوري في الإنترنت والمصادر الرسمية وتوليد صياغة أكاديمية رصينة للجهة"
+                >
+                  <Globe className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                  <span>بحث وتعبئة من الإنترنت</span>
+                </button>
+                <button
+                  type="button"
                   disabled={aiLoading}
                   onClick={() => handleAIField('entityIntroText', 'polish')}
                   className="text-[11px] font-bold text-accent hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-accent-dim/60"
@@ -1424,6 +1549,15 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
               <div className="flex flex-wrap items-center gap-1.5">
                 <button
                   type="button"
+                  onClick={() => handleOpenOrgSearchModal(profileData.entityAddress, 'skills')}
+                  className="text-[11px] font-bold text-purple-700 dark:text-purple-300 hover:underline flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-purple-500/10 border border-purple-500/30 shadow-xs"
+                  title="توليد مهارات وتجارب متوافقة مع نشاط جهة التدريب وتخصصك"
+                >
+                  <Sparkles className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                  <span>توليد من بيانات الجهة</span>
+                </button>
+                <button
+                  type="button"
                   disabled={aiLoading}
                   onClick={() => handleAIField('skillsText', 'polish')}
                   className="text-[11px] font-bold text-accent hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-accent-dim/60"
@@ -1477,6 +1611,15 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             <div className="flex flex-wrap items-center justify-between gap-2">
               <label className="block text-xs font-bold text-sub">الخاتمة والتوصيات العامة</label>
               <div className="flex flex-wrap items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => handleOpenOrgSearchModal(profileData.entityAddress, 'conclusion')}
+                  className="text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:underline flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/30 shadow-xs"
+                  title="توليد خاتمة وتوصيات منهجية مناسبة لبيئة الجهة والجامعة"
+                >
+                  <Sparkles className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                  <span>توليد من بيانات الجهة</span>
+                </button>
                 <button
                   type="button"
                   disabled={aiLoading}
@@ -2663,6 +2806,310 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
               >
                 إغلاق
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* Organization Academic Search & Auto-Fill Modal */}
+      {/* ========================================================================= */}
+      {orgSearchModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-card border border-line rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            {/* Header */}
+            <div className="p-4 sm:p-5 border-b border-line flex items-center justify-between bg-accent-dim/30">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-accent text-white flex items-center justify-center shadow-xs shrink-0">
+                  <Globe className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-ink flex items-center gap-2">
+                    <span>البحث الأكاديمي الذكي واسترجاع بيانات جهة التدريب</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/30 font-bold hidden sm:inline-block">
+                      بحث فوري من الإنترنت
+                    </span>
+                  </h3>
+                  <p className="text-xs text-sub mt-0.5">
+                    استرجاع الحقائق الموثقة وصياغة نصوص أكاديمية منمقة تملأ تقريرك وفق معايير الجامعات ورؤية 2030
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOrgSearchModalOpen(false)}
+                className="p-1.5 text-sub hover:text-ink rounded-lg hover:bg-bg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Search Input Bar */}
+            <div className="p-4 sm:p-5 border-b border-line bg-bg/50 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+                <div className="sm:col-span-2 space-y-1">
+                  <label className="block text-xs font-bold text-sub">اسم المؤسسة أو جهة التدريب</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={orgSearchQuery}
+                      onChange={(e) => setOrgSearchQuery(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && executeOrgLookup(orgSearchQuery, orgSearchDept)}
+                      placeholder="مثال: أرامكو السعودية، سدايا، شركة علم، STC، وزارة الصحة، مصرف الراجحي..."
+                      className="w-full px-3.5 py-2.5 pl-24 text-sm bg-card border border-line rounded-xl focus:outline-none focus:border-accent"
+                    />
+                    <button
+                      type="button"
+                      disabled={orgSearching || !orgSearchQuery.trim()}
+                      onClick={() => executeOrgLookup(orgSearchQuery, orgSearchDept)}
+                      className="absolute left-1.5 top-1/2 -translate-y-1/2 px-3 py-1.5 text-xs font-bold bg-accent text-white rounded-lg hover:bg-accent/90 transition-all flex items-center gap-1 shadow-xs disabled:opacity-50"
+                    >
+                      <Search className="w-3.5 h-3.5" />
+                      <span>{orgSearching ? 'جاري البحث...' : 'بحث بالإنترنت'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-sub">تخصصك الجامعي (لتخصيص المهارات)</label>
+                  <input
+                    type="text"
+                    value={orgSearchDept}
+                    onChange={(e) => setOrgSearchDept(e.target.value)}
+                    placeholder="مثال: هندسة برمجيات، إدارة أعمال..."
+                    className="w-full px-3 py-2.5 text-sm bg-card border border-line rounded-xl focus:outline-none focus:border-accent"
+                  />
+                </div>
+              </div>
+
+              {/* Quick suggestions */}
+              <div className="flex flex-wrap items-center gap-1.5 text-xs text-sub">
+                <span className="font-bold flex items-center gap-1">
+                  <Sparkle className="w-3 h-3 text-accent" />
+                  أمثلة شائعة:
+                </span>
+                {['أرامكو السعودية', 'سدايا SDAIA', 'شركة علم', 'stc', 'سابك', 'مصرف الراجحي', 'وزارة الصحة', 'نيوم NEOM', 'هيئة الزكاة والضريبة'].map((name) => (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => {
+                      setOrgSearchQuery(name);
+                      executeOrgLookup(name, orgSearchDept);
+                    }}
+                    className="px-2 py-0.5 rounded-md bg-card hover:bg-accent-dim hover:text-accent border border-line text-[11px] transition-colors"
+                  >
+                    {name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+              {orgSearching && (
+                <div className="py-12 flex flex-col items-center justify-center text-center space-y-3">
+                  <div className="w-10 h-10 rounded-full border-3 border-accent border-t-transparent animate-spin" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-extrabold text-ink">جاري البحث الفوري في المصادر الرسمية والموسوعات الرقمية...</p>
+                    <p className="text-xs text-sub">نقوم باسترجاع تاريخ الجهة، ورؤيتها، وهيكلها التقني، وصياغة نصوص أكاديمية منمقة</p>
+                  </div>
+                </div>
+              )}
+
+              {!orgSearching && !orgSearchResult && (
+                <div className="py-10 text-center space-y-3">
+                  <div className="w-14 h-14 rounded-2xl bg-accent-dim/60 text-accent mx-auto flex items-center justify-center">
+                    <Globe className="w-7 h-7" />
+                  </div>
+                  <div className="max-w-md mx-auto space-y-1">
+                    <h4 className="text-sm font-bold text-ink">أدخل اسم جهة التدريب واضغط "بحث بالإنترنت"</h4>
+                    <p className="text-xs text-sub leading-relaxed">
+                      سيقوم النظام بالبحث المباشر عن المؤسسة وجلب معلوماتها الموثقة وصياغة كلام أكاديمي رصين لتعبئة تقريرك بضغطة زر واحدة!
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {!orgSearching && orgSearchResult && (
+                <div className="space-y-4">
+                  {/* Entity Metadata Card */}
+                  <div className="bg-bg border border-line rounded-xl p-3.5 sm:p-4 space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="w-4 h-4 text-accent" />
+                        <span className="text-sm font-black text-ink">{orgSearchResult.foundName}</span>
+                      </div>
+                      <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-ok-bg text-ok border border-ok/30 font-bold flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" />
+                        المصدر: {orgSearchResult.source}
+                      </span>
+                    </div>
+
+                    {orgSearchResult.keyFacts && orgSearchResult.keyFacts.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {orgSearchResult.keyFacts.map((fact, idx) => (
+                          <span
+                            key={idx}
+                            className="text-[11px] bg-card border border-line px-2 py-1 rounded-md text-sub line-clamp-1 max-w-full"
+                            title={fact}
+                          >
+                            • {fact}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Section Tabs */}
+                  <div className="flex items-center gap-1 border-b border-line pb-1 overflow-x-auto text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setOrgSearchActiveTab('entity')}
+                      className={`px-3 py-1.5 rounded-lg font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                        orgSearchActiveTab === 'entity'
+                          ? 'bg-accent text-white shadow-xs'
+                          : 'text-sub hover:text-ink hover:bg-bg'
+                      }`}
+                    >
+                      <Building className="w-3.5 h-3.5" />
+                      <span>١. التعريف بجهة التدريب</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOrgSearchActiveTab('intro')}
+                      className={`px-3 py-1.5 rounded-lg font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                        orgSearchActiveTab === 'intro'
+                          ? 'bg-accent text-white shadow-xs'
+                          : 'text-sub hover:text-ink hover:bg-bg'
+                      }`}
+                    >
+                      <BookOpen className="w-3.5 h-3.5" />
+                      <span>٢. المقدمة وأهداف التدريب</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOrgSearchActiveTab('skills')}
+                      className={`px-3 py-1.5 rounded-lg font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                        orgSearchActiveTab === 'skills'
+                          ? 'bg-accent text-white shadow-xs'
+                          : 'text-sub hover:text-ink hover:bg-bg'
+                      }`}
+                    >
+                      <Award className="w-3.5 h-3.5" />
+                      <span>٣. المعارف والمهارات</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOrgSearchActiveTab('conclusion')}
+                      className={`px-3 py-1.5 rounded-lg font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                        orgSearchActiveTab === 'conclusion'
+                          ? 'bg-accent text-white shadow-xs'
+                          : 'text-sub hover:text-ink hover:bg-bg'
+                      }`}
+                    >
+                      <FileCheck className="w-3.5 h-3.5" />
+                      <span>٤. الخاتمة والتوصيات</span>
+                    </button>
+                  </div>
+
+                  {/* Active Tab Content Card */}
+                  <div className="bg-card border border-line rounded-xl p-4 space-y-3">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-extrabold text-ink">
+                        {orgSearchActiveTab === 'entity' && 'الصياغة الأكاديمية المقترحة لقسم (التعريف بجهة التدريب وطبيعة العمل)'}
+                        {orgSearchActiveTab === 'intro' && 'الصياغة الأكاديمية المقترحة لقسم (المقدمة وأهداف التدريب التعاوني)'}
+                        {orgSearchActiveTab === 'skills' && 'الصياغة الأكاديمية المقترحة لقسم (المعارف والمهارات والتجارب المكتسبة)'}
+                        {orgSearchActiveTab === 'conclusion' && 'الصياغة الأكاديمية المقترحة لقسم (الخاتمة والتوصيات العامة)'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const text =
+                            orgSearchActiveTab === 'entity'
+                              ? orgSearchResult.entityOverview
+                              : orgSearchActiveTab === 'intro'
+                              ? orgSearchResult.suggestedIntro
+                              : orgSearchActiveTab === 'skills'
+                              ? orgSearchResult.suggestedSkills
+                              : orgSearchResult.suggestedConclusion;
+                          navigator.clipboard.writeText(text);
+                          setCopiedText(true);
+                          setTimeout(() => setCopiedText(false), 2000);
+                        }}
+                        className="text-sub hover:text-accent font-bold flex items-center gap-1"
+                      >
+                        {copiedText ? <Check className="w-3.5 h-3.5 text-ok" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{copiedText ? 'تم النسخ!' : 'نسخ النص'}</span>
+                      </button>
+                    </div>
+
+                    <div className="p-3.5 bg-bg/80 border border-line rounded-lg text-xs leading-relaxed text-ink whitespace-pre-wrap font-sans max-h-60 overflow-y-auto">
+                      {orgSearchActiveTab === 'entity' && orgSearchResult.entityOverview}
+                      {orgSearchActiveTab === 'intro' && orgSearchResult.suggestedIntro}
+                      {orgSearchActiveTab === 'skills' && orgSearchResult.suggestedSkills}
+                      {orgSearchActiveTab === 'conclusion' && orgSearchResult.suggestedConclusion}
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                      <span className="text-[11px] text-sub">
+                        عدد الكلمات:{' '}
+                        <strong className="text-ink">
+                          {countWords(
+                            orgSearchActiveTab === 'entity'
+                              ? orgSearchResult.entityOverview
+                              : orgSearchActiveTab === 'intro'
+                              ? orgSearchResult.suggestedIntro
+                              : orgSearchActiveTab === 'skills'
+                              ? orgSearchResult.suggestedSkills
+                              : orgSearchResult.suggestedConclusion
+                          )}
+                        </strong>{' '}
+                        كلمة
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const field =
+                            orgSearchActiveTab === 'entity'
+                              ? 'entityIntroText'
+                              : orgSearchActiveTab === 'intro'
+                              ? 'introText'
+                              : orgSearchActiveTab === 'skills'
+                              ? 'skillsText'
+                              : 'conclusionText';
+                          handleApplyOrgContent(field);
+                        }}
+                        className="px-3 py-1.5 text-xs font-bold bg-accent/15 text-accent border border-accent/30 rounded-lg hover:bg-accent/25 transition-colors flex items-center gap-1"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        <span>تطبيق وتعبئة هذا القسم فقط</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-line bg-bg/50 flex flex-wrap items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => setOrgSearchModalOpen(false)}
+                className="px-4 py-2 text-xs font-bold text-sub hover:text-ink rounded-xl border border-line hover:bg-card transition-colors"
+              >
+                إغلاق
+              </button>
+
+              {orgSearchResult && (
+                <button
+                  type="button"
+                  onClick={() => handleApplyOrgContent('all')}
+                  className="px-5 py-2 text-xs font-black bg-accent text-white rounded-xl hover:bg-accent/90 transition-all flex items-center gap-2 shadow-md hover:shadow-lg"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>تعبئة كافة الأقسام الأربعة فوراً (المقدمة + الجهة + المهارات + الخاتمة)</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

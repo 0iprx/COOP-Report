@@ -71,6 +71,12 @@ export const aiProcessSchema = z.object({
   context: z.string().optional()
 });
 
+export const organizationLookupSchema = z.object({
+  organizationName: z.string().min(1, 'اسم جهة التدريب مطلوب للبحث'),
+  department: z.string().optional().default(''),
+  targetField: z.enum(['all', 'entityIntroText', 'introText', 'skillsText', 'conclusionText']).optional().default('all')
+});
+
 export const linkSupervisorSchema = z.object({
   supervisorUsernameOrCode: z.string().min(2, 'رمز أو اسم مستخدم المشرف مطلوب')
 });
@@ -83,6 +89,19 @@ export type LoginInput = z.infer<typeof loginSchema>;
 export type EntryInput = z.infer<typeof entrySchema>;
 export type ProfileInput = z.infer<typeof profileSchema>;
 export type AIProcessInput = z.infer<typeof aiProcessSchema>;
+export type OrganizationLookupInput = z.infer<typeof organizationLookupSchema>;
+
+export interface OrganizationLookupResult {
+  organizationName: string;
+  foundName: string;
+  source: string;
+  entityOverview: string;
+  suggestedIntro: string;
+  suggestedSkills: string;
+  suggestedConclusion: string;
+  keyFacts?: string[];
+  departmentFocus?: string;
+}
 
 export interface EntryDTO {
   id: number;
