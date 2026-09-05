@@ -45,6 +45,8 @@ export const WeeklyTab: React.FC = () => {
   // Edit / Add Day Modal State
   const [editingEntry, setEditingEntry] = useState<Partial<EntryDTO> | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
+  const [isCustomCategory, setIsCustomCategory] = useState<boolean>(false);
+  const [customCategory, setCustomCategory] = useState<string>('');
   const [aiPolishing, setAiPolishing] = useState<boolean>(false);
   const [saveToast, setSaveToast] = useState<string>('');
   const [errorToast, setErrorToast] = useState<string>('');
@@ -186,6 +188,9 @@ export const WeeklyTab: React.FC = () => {
       timeTo: entry.timeTo || '12:00',
       description: entry.description
     });
+    const isCustom = entry.category && !CATEGORIES.includes(entry.category as any);
+    setIsCustomCategory(!!isCustom);
+    setCustomCategory(isCustom ? (entry.category as string) : '');
     setIsEditModalOpen(true);
   };
 
@@ -199,6 +204,8 @@ export const WeeklyTab: React.FC = () => {
       timeTo: '12:00',
       description: ''
     });
+    setIsCustomCategory(false);
+    setCustomCategory('');
     setIsEditModalOpen(true);
   };
 
@@ -210,12 +217,23 @@ export const WeeklyTab: React.FC = () => {
       setTimeout(() => setErrorToast(''), 3000);
       return;
     }
+    if (isCustomCategory && !customCategory.trim()) {
+      setErrorToast(t('يرجى كتابة اسم التصنيف المخصص أو اختيار تصنيف من القائمة', 'Please enter a custom category name'));
+      setTimeout(() => setErrorToast(''), 3000);
+      return;
+    }
+
+    const finalCategory = isCustomCategory ? customCategory.trim() : (editingEntry.category || 'تطوير / برمجة');
+    const entryPayload = {
+      ...editingEntry,
+      category: finalCategory
+    };
 
     try {
-      if (editingEntry.id) {
-        await api.put(`/entries/${editingEntry.id}`, editingEntry);
+      if (entryPayload.id) {
+        await api.put(`/entries/${entryPayload.id}`, entryPayload);
       } else {
-        await api.post('/entries', editingEntry);
+        await api.post('/entries', entryPayload);
       }
       queryClient.invalidateQueries({ queryKey: ['weekly', selectedWeek] });
       queryClient.invalidateQueries({ queryKey: ['finalReport'] });
@@ -265,12 +283,14 @@ export const WeeklyTab: React.FC = () => {
       translate: t('ترجمة فورية للإنجليزية الأكاديمية', 'Academic English Translation')
     };
 
+    const activeCat = isCustomCategory ? (customCategory.trim() || 'أخرى') : (editingEntry.category || '');
+
     try {
       const res = await api.post('/ai/process', {
         text: editingEntry.description,
         action,
         targetLang: action === 'translate' ? (isAr ? 'en' : 'ar') : 'ar',
-        context: `Task: ${editingEntry.title || ''} | Category: ${editingEntry.category || ''}`
+        context: `Task: ${editingEntry.title || ''} | Category: ${activeCat}`
       });
 
       setDiffTitle(actionTitles[action] || t('معالجة النص', 'Text Processing'));
@@ -651,18 +671,52 @@ export const WeeklyTab: React.FC = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="block font-bold text-sub">{t('التصنيف الفني', 'Technical Category')}</label>
-                  <select
-                    value={editingEntry.category || 'تطوير / برمجة'}
-                    onChange={(e) => setEditingEntry({ ...editingEntry, category: e.target.value as EntryDTO['category'] })}
-                    className="w-full px-3 py-2 bg-bg border border-line rounded-xl focus:outline-none focus:border-accent text-ink font-bold"
-                  >
-                    {CATEGORIES.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="flex items-center justify-between">
+                    <label className="block font-bold text-sub">{t('التصنيف الفني', 'Technical Category')}</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCustomCategory(!isCustomCategory);
+                        if (!isCustomCategory && !customCategory) {
+                          setCustomCategory('');
+                        }
+                      }}
+                      className="text-[10px] font-bold text-accent hover:underline"
+                    >
+                      {isCustomCategory ? t('← قائمة التصنيفات', '← Preset Categories') : t('+ كتابة تصنيف مخصص', '+ Custom Category')}
+                    </button>
+                  </div>
+                  {isCustomCategory ? (
+                    <input
+                      type="text"
+                      value={customCategory}
+                      onChange={(e) => setCustomCategory(e.target.value)}
+                      placeholder={t('مثال: أمن سيبراني، ذكاء اصطناعي، شبكات...', 'e.g. Cyber Security, AI, Networks...')}
+                      className="w-full px-3 py-2 bg-bg border border-accent rounded-xl focus:outline-none focus:ring-1 focus:ring-accent text-ink font-bold"
+                      autoFocus
+                      required
+                    />
+                  ) : (
+                    <select
+                      value={editingEntry.category || 'تطوير / برمجة'}
+                      onChange={(e) => {
+                        if (e.target.value === '__custom__') {
+                          setIsCustomCategory(true);
+                          setCustomCategory('');
+                        } else {
+                          setEditingEntry({ ...editingEntry, category: e.target.value as EntryDTO['category'] });
+                        }
+                      }}
+                      className="w-full px-3 py-2 bg-bg border border-line rounded-xl focus:outline-none focus:border-accent text-ink font-bold"
+                    >
+                      {CATEGORIES.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                      <option value="__custom__">✨ {t('+ كتابة تصنيف مخصص...', '+ Custom category...')}</option>
+                    </select>
+                  )}
                 </div>
               </div>
 

@@ -12,7 +12,7 @@ export const ENTRY_CATEGORIES = [
   'أخرى'
 ] as const;
 
-export type EntryCategory = (typeof ENTRY_CATEGORIES)[number];
+export type EntryCategory = (typeof ENTRY_CATEGORIES)[number] | (string & {});
 
 export const USER_ROLES = ['trainee', 'supervisor'] as const;
 export type UserRole = (typeof USER_ROLES)[number];

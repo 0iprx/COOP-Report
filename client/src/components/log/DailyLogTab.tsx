@@ -45,6 +45,8 @@ export const DailyLogTab: React.FC = () => {
   const [timeTo, setTimeTo] = useState<string>('16:00');
   const [title, setTitle] = useState<string>('');
   const [category, setCategory] = useState<string>(ENTRY_CATEGORIES[0]);
+  const [isCustomCategory, setIsCustomCategory] = useState<boolean>(false);
+  const [customCategory, setCustomCategory] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [formError, setFormError] = useState<string>('');
   const [draftRestoredNotice, setDraftRestoredNotice] = useState<boolean>(false);
@@ -79,7 +81,13 @@ export const DailyLogTab: React.FC = () => {
         if (parsed.description || parsed.title) {
           setTitle(parsed.title || '');
           setDescription(parsed.description || '');
-          if (parsed.category) setCategory(parsed.category);
+          if (parsed.isCustomCategory || (parsed.category && !ENTRY_CATEGORIES.includes(parsed.category))) {
+            setIsCustomCategory(true);
+            setCustomCategory(parsed.category || '');
+          } else if (parsed.category) {
+            setIsCustomCategory(false);
+            setCategory(parsed.category);
+          }
           if (parsed.entryDate) setEntryDate(parsed.entryDate);
           if (parsed.timeFrom) setTimeFrom(parsed.timeFrom);
           if (parsed.timeTo) setTimeTo(parsed.timeTo);
@@ -94,10 +102,18 @@ export const DailyLogTab: React.FC = () => {
   // Autosave draft to localStorage
   useEffect(() => {
     if (!editingEntryId) {
-      const draft = { title, description, category, entryDate, timeFrom, timeTo };
+      const draft = {
+        title,
+        description,
+        category: isCustomCategory ? customCategory : category,
+        isCustomCategory,
+        entryDate,
+        timeFrom,
+        timeTo
+      };
       localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
     }
-  }, [title, description, category, entryDate, timeFrom, timeTo, editingEntryId]);
+  }, [title, description, category, isCustomCategory, customCategory, entryDate, timeFrom, timeTo, editingEntryId]);
 
   // Fetch all active entries
   const { data: entriesData, isLoading } = useQuery({
@@ -212,6 +228,8 @@ export const DailyLogTab: React.FC = () => {
     setTitle('');
     setDescription('');
     setCategory(ENTRY_CATEGORIES[0]);
+    setIsCustomCategory(false);
+    setCustomCategory('');
     setFormError('');
   };
 
@@ -221,7 +239,13 @@ export const DailyLogTab: React.FC = () => {
     setTimeFrom(entry.timeFrom || '08:00');
     setTimeTo(entry.timeTo || '16:00');
     setTitle(entry.title);
-    setCategory(entry.category);
+    if (entry.category && !ENTRY_CATEGORIES.includes(entry.category)) {
+      setIsCustomCategory(true);
+      setCustomCategory(entry.category);
+    } else {
+      setIsCustomCategory(false);
+      setCategory(entry.category || ENTRY_CATEGORIES[0]);
+    }
     setDescription(entry.description);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -248,6 +272,10 @@ export const DailyLogTab: React.FC = () => {
       setFormError(t('يرجى كتابة عنوان مختصر لليوم', 'Please enter a task title'));
       return;
     }
+    if (isCustomCategory && !customCategory.trim()) {
+      setFormError(t('يرجى كتابة اسم التصنيف المخصص أو اختيار تصنيف من القائمة', 'Please enter a custom category name'));
+      return;
+    }
     if (!description.trim()) {
       setFormError(t('يرجى كتابة تفاصيل المهام المنفذة', 'Please enter task details'));
       return;
@@ -255,12 +283,14 @@ export const DailyLogTab: React.FC = () => {
 
     setFormError('');
 
+    const finalCategory = isCustomCategory ? customCategory.trim() : category.trim();
+
     const payload = {
       entryDate,
       timeFrom,
       timeTo,
       title: title.trim(),
-      category: category.trim(),
+      category: finalCategory,
       description: description.trim()
     };
 
@@ -287,12 +317,14 @@ export const DailyLogTab: React.FC = () => {
       translate: t('ترجمة فورية للإنجليزية الأكاديمية', 'Academic English Translation')
     };
 
+    const activeCat = isCustomCategory ? (customCategory.trim() || 'أخرى') : category;
+
     try {
       const res = await api.post('/ai/process', {
         text: description,
         action,
         targetLang: action === 'translate' ? 'en' : 'ar',
-        context: `Task: ${title} | Category: ${category}`
+        context: `Task: ${title} | Category: ${activeCat}`
       });
 
       setDiffTitle(actionTitles[action] || t('معالجة النص', 'Text Processing'));
@@ -426,21 +458,67 @@ export const DailyLogTab: React.FC = () => {
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="block text-xs font-bold text-sub">{t('التصنيف الفني', 'Technical Category')}</label>
-              </div>
-              <div className="relative">
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent text-ink font-bold"
-                  required
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCustomCategory(!isCustomCategory);
+                    if (!isCustomCategory && !customCategory) {
+                      setCustomCategory('');
+                    }
+                  }}
+                  className="text-[11px] font-bold text-accent hover:underline flex items-center gap-1"
                 >
-                  {ENTRY_CATEGORIES.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {isAr ? cat : (CATEGORY_TRANSLATIONS[cat] || cat)}
-                    </option>
-                  ))}
-                </select>
+                  {isCustomCategory ? t('← قائمة التصنيفات', '← Preset Categories') : t('+ كتابة تصنيف مخصص', '+ Custom Category')}
+                </button>
               </div>
+
+              {isCustomCategory ? (
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="text"
+                    value={customCategory}
+                    onChange={(e) => setCustomCategory(e.target.value)}
+                    placeholder={t('اكتب تصنيفاً مخصصاً (مثال: أمن سيبراني، ذكاء اصطناعي...)', 'e.g. Cyber Security, AI, DevOps...')}
+                    className="w-full px-3 py-2 text-sm bg-bg border border-accent rounded-xl focus:outline-none focus:ring-1 focus:ring-accent text-ink font-bold"
+                    autoFocus
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCustomCategory(false);
+                      setCategory(ENTRY_CATEGORIES[0]);
+                    }}
+                    className="px-2.5 py-2 text-xs font-bold text-sub hover:text-ink bg-bg hover:bg-line border border-line rounded-xl shrink-0 transition-colors"
+                    title={t('العودة للتصنيفات الجاهزة', 'Return to presets')}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <div className="relative">
+                  <select
+                    value={category}
+                    onChange={(e) => {
+                      if (e.target.value === '__custom__') {
+                        setIsCustomCategory(true);
+                        setCustomCategory('');
+                      } else {
+                        setCategory(e.target.value);
+                      }
+                    }}
+                    className="w-full px-3 py-2 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent text-ink font-bold"
+                    required
+                  >
+                    {ENTRY_CATEGORIES.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {isAr ? cat : (CATEGORY_TRANSLATIONS[cat] || cat)}
+                      </option>
+                    ))}
+                    <option value="__custom__">✨ {t('+ كتابة تصنيف مخصص...', '+ Custom category...')}</option>
+                  </select>
+                </div>
+              )}
 
               {/* Quick Preset Tags */}
               <div className="flex flex-wrap gap-1.5 pt-0.5">
@@ -448,9 +526,12 @@ export const DailyLogTab: React.FC = () => {
                   <button
                     key={cat}
                     type="button"
-                    onClick={() => setCategory(cat)}
+                    onClick={() => {
+                      setIsCustomCategory(false);
+                      setCategory(cat);
+                    }}
                     className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all ${
-                      category === cat
+                      !isCustomCategory && category === cat
                         ? 'bg-accent text-white shadow-sm'
                         : 'bg-bg hover:bg-line text-sub border border-line'
                     }`}
@@ -458,6 +539,21 @@ export const DailyLogTab: React.FC = () => {
                     {isAr ? cat : (CATEGORY_TRANSLATIONS[cat] || cat)}
                   </button>
                 ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCustomCategory(true);
+                    if (!customCategory) setCustomCategory('');
+                  }}
+                  className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 ${
+                    isCustomCategory
+                      ? 'bg-accent text-white shadow-sm'
+                      : 'bg-accent/10 hover:bg-accent/20 text-accent border border-accent/30'
+                  }`}
+                >
+                  <Plus className="w-2.5 h-2.5" />
+                  <span>{t('مخصص', 'Custom')}</span>
+                </button>
               </div>
             </div>
           </div>
