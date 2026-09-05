@@ -1307,3 +1307,374 @@ function createAcademicSignoffTable(
     ]
   });
 }
+
+
+export async function generateWeeklyDocx(
+  reportData: FinalReportData,
+  targetWeekStart: string,
+  lang: 'ar' | 'en' = 'ar'
+): Promise<Buffer> {
+  const { profile, weeks } = reportData;
+  const isAr = lang === 'ar';
+  const tmplKey = (profile.reportTemplate || 'royal') as string;
+  const theme = TEMPLATE_COLORS[tmplKey] || TEMPLATE_COLORS.royal;
+  const primaryColor = theme.primary;
+
+  // Find target week or first week
+  const weekObj = weeks.find((w) => w.weekStart === targetWeekStart) || weeks[0];
+  const weekIndex = weekObj ? weekObj.weekIndex : 1;
+  const weekStartFormatted = isAr ? formatDateArabic(weekObj?.weekStart || '') : formatDateEnglish(weekObj?.weekStart || '');
+  const weekEndFormatted = isAr ? formatDateArabic(weekObj?.weekEnd || '') : formatDateEnglish(weekObj?.weekEnd || '');
+
+  // 1. Dual Logos Block
+  const coverLogosTable = createCoverLogosBlock(
+    profile.institutionLogo,
+    profile.companyLogo,
+    profile.trainingUnit,
+    profile.department,
+    isAr
+  );
+
+  // 2. Title & Date
+  const titleParagraph = new Paragraph({
+    alignment: AlignmentType.CENTER,
+    bidirectional: isAr,
+    spacing: { before: 240, after: 120 },
+    children: [
+      new TextRun({
+        text: isAr ? `تقرير الأسبوع التدريبي: الأسبوع ${weekIndex}` : `Weekly Training Report: Week ${weekIndex}`,
+        bold: true,
+        size: 32,
+        color: primaryColor
+      })
+    ]
+  });
+
+  const subtitleParagraph = new Paragraph({
+    alignment: AlignmentType.CENTER,
+    bidirectional: isAr,
+    spacing: { after: 240 },
+    children: [
+      new TextRun({
+        text: isAr
+          ? `الفترة الميدانية: من ${weekStartFormatted} إلى ${weekEndFormatted}`
+          : `Field Training Period: From ${weekStartFormatted} to ${weekEndFormatted}`,
+        size: 22,
+        color: '6E6B62'
+      })
+    ]
+  });
+
+  // 3. Trainee Meta Table
+  const borderThin = { style: BorderStyle.SINGLE, size: 4, color: 'D0CBC0' };
+  const cellBorders = { top: borderThin, bottom: borderThin, left: borderThin, right: borderThin };
+
+  const metaRows = [
+    [
+      { label: isAr ? 'اسم المتدرب:' : 'Trainee Name:', value: profile.studentName || '—' },
+      { label: isAr ? 'الرقم الأكاديمي:' : 'Training ID:', value: profile.trainingNumber || '—' }
+    ],
+    [
+      { label: isAr ? 'القسم / التخصص:' : 'Department / Major:', value: profile.department || '—' },
+      { label: isAr ? 'الوحدة / الكلية:' : 'College / Unit:', value: profile.trainingUnit || '—' }
+    ],
+    [
+      { label: isAr ? 'جهة التدريب:' : 'Host Organization:', value: profile.entityAddress || '—' },
+      { label: isAr ? 'المشرف الميداني:' : 'Field Supervisor:', value: profile.responsibleName || '—' }
+    ]
+  ];
+
+  const metaTable = new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    rows: metaRows.map((row) =>
+      new TableRow({
+        children: row.flatMap((col) => [
+          new TableCell({
+            width: { size: 20, type: WidthType.PERCENTAGE },
+            borders: cellBorders,
+            shading: { fill: 'F3F1EC' },
+            children: [
+              new Paragraph({
+                bidirectional: isAr,
+                children: [new TextRun({ text: col.label, bold: true, size: 20, color: '1B1B18' })]
+              })
+            ]
+          }),
+          new TableCell({
+            width: { size: 30, type: WidthType.PERCENTAGE },
+            borders: cellBorders,
+            children: [
+              new Paragraph({
+                bidirectional: isAr,
+                children: [new TextRun({ text: col.value, size: 20, color: '1B1B18' })]
+              })
+            ]
+          })
+        ])
+      })
+    )
+  });
+
+  // 4. Weekly Summary Box
+  const summaryBox = new Paragraph({
+    bidirectional: isAr,
+    spacing: { before: 240, after: 180 },
+    children: [
+      new TextRun({
+        text: isAr ? 'ملخص إنجاز الأسبوع: ' : 'Weekly Summary: ',
+        bold: true,
+        size: 22,
+        color: primaryColor
+      }),
+      new TextRun({
+        text: isAr
+          ? `عدد أيام العمل: ${weekObj?.totalDays || 0} أيام | إجمالي الساعات: ${weekObj?.totalHours || 0} ساعة | عدد المهام الموثقة: ${weekObj?.entries?.length || 0} مهام`
+          : `Work Days: ${weekObj?.totalDays || 0} | Hours: ${weekObj?.totalHours || 0} hrs | Tasks Logged: ${weekObj?.entries?.length || 0}`,
+        size: 20,
+        color: '444440'
+      })
+    ]
+  });
+
+  // 5. Tasks Table
+  const tableHeader = new TableRow({
+    tableHeader: true,
+    children: [
+      new TableCell({
+        width: { size: 18, type: WidthType.PERCENTAGE },
+        borders: cellBorders,
+        shading: { fill: primaryColor },
+        children: [new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: isAr ? 'التاريخ والوقت' : 'Date & Time', bold: true, size: 20, color: 'FFFFFF' })] })]
+      }),
+      new TableCell({
+        width: { size: 18, type: WidthType.PERCENTAGE },
+        borders: cellBorders,
+        shading: { fill: primaryColor },
+        children: [new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: isAr ? 'التصنيف الفني' : 'Category', bold: true, size: 20, color: 'FFFFFF' })] })]
+      }),
+      new TableCell({
+        width: { size: 24, type: WidthType.PERCENTAGE },
+        borders: cellBorders,
+        shading: { fill: primaryColor },
+        children: [new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: isAr ? 'عنوان المهمة' : 'Task Title', bold: true, size: 20, color: 'FFFFFF' })] })]
+      }),
+      new TableCell({
+        width: { size: 40, type: WidthType.PERCENTAGE },
+        borders: cellBorders,
+        shading: { fill: primaryColor },
+        children: [new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: isAr ? 'تفاصيل وسرد الإنجاز الأكاديمي الميداني' : 'Technical Description & Accomplishments', bold: true, size: 20, color: 'FFFFFF' })] })]
+      })
+    ]
+  });
+
+  const taskRows = (weekObj?.entries || []).map((entry, idx) => {
+    const dStr = isAr ? formatDateArabic(entry.entryDate) : formatDateEnglish(entry.entryDate);
+    const timeStr = `${entry.timeFrom} - ${entry.timeTo}`;
+    const fill = idx % 2 === 0 ? 'FFFFFF' : 'F9F8F5';
+
+    return new TableRow({
+      children: [
+        new TableCell({
+          width: { size: 18, type: WidthType.PERCENTAGE },
+          borders: cellBorders,
+          shading: { fill },
+          children: [
+            new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: dStr, bold: true, size: 19 })] }),
+            new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: timeStr, size: 17, color: '6E6B62' })] })
+          ]
+        }),
+        new TableCell({
+          width: { size: 18, type: WidthType.PERCENTAGE },
+          borders: cellBorders,
+          shading: { fill },
+          children: [
+            new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: translateCategory(entry.category, isAr), size: 19, bold: true, color: primaryColor })] })
+          ]
+        }),
+        new TableCell({
+          width: { size: 24, type: WidthType.PERCENTAGE },
+          borders: cellBorders,
+          shading: { fill },
+          children: [
+            new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: entry.title, bold: true, size: 19 })] })
+          ]
+        }),
+        new TableCell({
+          width: { size: 40, type: WidthType.PERCENTAGE },
+          borders: cellBorders,
+          shading: { fill },
+          children: [
+            new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: entry.description, size: 19, color: '1B1B18' })] })
+          ]
+        })
+      ]
+    });
+  });
+
+  const tasksTable = new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    rows: [tableHeader, ...(taskRows.length > 0 ? taskRows : [
+      new TableRow({
+        children: [
+          new TableCell({
+            columnSpan: 4,
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            borders: cellBorders,
+            children: [
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                bidirectional: isAr,
+                spacing: { before: 120, after: 120 },
+                children: [new TextRun({ text: isAr ? 'أسبوع تدريبي مؤجل أو لم تُسجل به مهام بعد.' : 'No entries logged for this training week yet.', size: 20, color: '6E6B62' })]
+              })
+            ]
+          })
+        ]
+      })
+    ])]
+  });
+
+  // 6. Evidence Photos
+  const evidenceChildren: (Paragraph | Table)[] = [];
+  if (weekObj?.evidence && weekObj.evidence.length > 0) {
+    evidenceChildren.push(
+      new Paragraph({
+        bidirectional: isAr,
+        spacing: { before: 240, after: 120 },
+        children: [
+          new TextRun({
+            text: isAr ? 'الصور التوثيقية الميدانية للأسبوع:' : 'Weekly Field Evidence Photos:',
+            bold: true,
+            size: 22,
+            color: primaryColor
+          })
+        ]
+      })
+    );
+
+    for (const ev of weekObj.evidence) {
+      const imgBuf = tryParseBase64Image(ev.imageData);
+      if (imgBuf) {
+        evidenceChildren.push(
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 100, after: 60 },
+            children: [
+              new ImageRun({
+                data: imgBuf,
+                transformation: { width: 380, height: 220 }
+              })
+            ]
+          }),
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            bidirectional: isAr,
+            spacing: { after: 160 },
+            children: [
+              new TextRun({
+                text: `${isAr ? 'شكل توثيقي:' : 'Figure:'} ${ev.caption}`,
+                size: 19,
+                color: '6E6B62',
+                italics: true
+              })
+            ]
+          })
+        );
+      }
+    }
+  }
+
+  // 7. Supervisor Sign-off Table
+  const signoffTable = new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    rows: [
+      new TableRow({
+        children: [
+          new TableCell({
+            borders: cellBorders,
+            width: { size: 50, type: WidthType.PERCENTAGE },
+            shading: { fill: 'F9F8F5' },
+            children: [
+              new Paragraph({
+                bidirectional: isAr,
+                children: [new TextRun({ text: isAr ? 'اعتماد المشرف الميداني (جهة التدريب):' : 'Field Supervisor Approval:', bold: true, size: 20, color: primaryColor })]
+              }),
+              new Paragraph({
+                bidirectional: isAr,
+                spacing: { before: 80 },
+                children: [new TextRun({ text: `${isAr ? 'تقييم الأسبوع:' : 'Weekly Rating:'} [   ] ممتاز    [   ] جيد جداً    [   ] جيد`, size: 19 })]
+              }),
+              new Paragraph({
+                bidirectional: isAr,
+                spacing: { before: 80 },
+                children: [new TextRun({ text: isAr ? 'التوقيع: ........................................' : 'Signature: ........................................', size: 19 })]
+              }),
+              new Paragraph({
+                bidirectional: isAr,
+                spacing: { before: 80 },
+                children: [new TextRun({ text: isAr ? 'الختم الرسمي للمنشأة:' : 'Official Stamp:', size: 19 })]
+              })
+            ]
+          }),
+          new TableCell({
+            borders: cellBorders,
+            width: { size: 50, type: WidthType.PERCENTAGE },
+            shading: { fill: 'F9F8F5' },
+            children: [
+              new Paragraph({
+                bidirectional: isAr,
+                children: [new TextRun({ text: isAr ? 'ملاحظات المشرف الأكاديمي (الكلية):' : 'Academic Supervisor Remarks:', bold: true, size: 20, color: primaryColor })]
+              }),
+              new Paragraph({
+                bidirectional: isAr,
+                spacing: { before: 80 },
+                children: [new TextRun({ text: isAr ? 'الملاحظات: ........................................' : 'Remarks: ........................................', size: 19 })]
+              }),
+              new Paragraph({
+                bidirectional: isAr,
+                spacing: { before: 80 },
+                children: [new TextRun({ text: isAr ? 'التاريخ والاعتماد: ........................................' : 'Date & Approval: ........................................', size: 19 })]
+              })
+            ]
+          })
+        ]
+      })
+    ]
+  });
+
+  const doc = new Document({
+    styles: {
+      default: {
+        document: {
+          run: {
+            font: isAr ? 'Traditional Arabic' : 'Times New Roman',
+            size: 24,
+            color: '1B1B18'
+          }
+        }
+      }
+    },
+    sections: [
+      {
+        properties: {
+          page: {
+            margin: { top: 1000, bottom: 1000, left: 1000, right: 1000 }
+          }
+        },
+        children: [
+          coverLogosTable,
+          titleParagraph,
+          subtitleParagraph,
+          metaTable,
+          summaryBox,
+          tasksTable,
+          ...evidenceChildren,
+          new Paragraph({ spacing: { before: 240 } }),
+          signoffTable
+        ]
+      }
+    ]
+  });
+
+  return await Packer.toBuffer(doc);
+}

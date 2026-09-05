@@ -22,7 +22,8 @@ import {
   CheckCircle,
   Languages,
   FileText,
-  CheckCheck
+  CheckCheck,
+  Printer
 } from 'lucide-react';
 import { DiffModal } from '../common/DiffModal';
 
@@ -41,6 +42,7 @@ export const WeeklyTab: React.FC = () => {
   const [selectedWeek, setSelectedWeek] = useState<string>('');
   const [copied, setCopied] = useState<boolean>(false);
   const [downloadingPptx, setDownloadingPptx] = useState<boolean>(false);
+  const [downloadingDocx, setDownloadingDocx] = useState<boolean>(false);
 
   // Edit / Add Day Modal State
   const [editingEntry, setEditingEntry] = useState<Partial<EntryDTO> | null>(null);
@@ -153,6 +155,34 @@ export const WeeklyTab: React.FC = () => {
     a.download = `Weekly_Report_${selectedWeek}.md`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadDocx = async () => {
+    try {
+      setDownloadingDocx(true);
+      const res = await api.get(`/reports/weekly/export/docx?week=${selectedWeek}&lang=${lang}`, {
+        responseType: 'blob'
+      });
+      const blob = new Blob([res.data], {
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Weekly_Report_${currentWeekObj ? currentWeekObj.weekIndex : selectedWeek}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch {
+      alert(t('تعذر تحميل مستند Word للأسبوع، يرجى المحاولة لاحقاً', 'Failed to export weekly Word report.'));
+    } finally {
+      setDownloadingDocx(false);
+    }
+  };
+
+  const handlePrintPDF = () => {
+    window.print();
   };
 
   const handleDownloadPresentation = async () => {
@@ -338,6 +368,25 @@ export const WeeklyTab: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={handleDownloadDocx}
+              disabled={downloadingDocx}
+              className="px-3.5 py-1.5 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
+              title={t('تنزيل تقرير الأسبوع كمستند Word رسمي معتمد (.docx) متضمناً جدول المهام والأختام', 'Download weekly Word report (.docx)')}
+            >
+              <FileText className={`w-3.5 h-3.5 text-accent ${downloadingDocx ? 'animate-bounce' : ''}`} />
+              <span>{downloadingDocx ? t('جارٍ تصدير Word...', 'Exporting Word...') : t('تقرير Word (.docx)', 'Word (.docx)')}</span>
+            </button>
+
+            <button
+              onClick={handlePrintPDF}
+              className="px-3.5 py-1.5 text-xs font-bold text-white bg-accent hover:bg-accent/90 rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
+              title={t('طباعة تقرير الأسبوع مباشرة أو حفظه كـ PDF رسمي متناسق', 'Print weekly report or save as PDF')}
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>{t('طباعة / حفظ PDF', 'Print / Save PDF')}</span>
+            </button>
+
             <button
               onClick={handleDownloadPresentation}
               disabled={downloadingPptx}

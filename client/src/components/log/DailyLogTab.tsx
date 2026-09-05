@@ -19,7 +19,9 @@ import {
   Archive,
   Check,
   X,
-  Edit3
+  Edit3,
+  Mic,
+  MicOff
 } from 'lucide-react';
 import { DiffModal } from '../common/DiffModal';
 
@@ -58,6 +60,55 @@ export const DailyLogTab: React.FC = () => {
   const [improvedText, setImprovedText] = useState<string>('');
   const [diffChunks, setDiffChunks] = useState<DiffChunk[]>([]);
   const [aiLoading, setAiLoading] = useState<boolean>(false);
+  const [isRecording, setIsRecording] = useState<boolean>(false);
+
+  const toggleVoiceRecording = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert(t('متصفحك لا يدعم الإملاء الصوتي المباشر. يُرجى استخدام متصفح Chrome أو Edge أو Safari.', 'Browser does not support voice speech recognition.'));
+      return;
+    }
+
+    if (isRecording) {
+      if ((window as any)._coopSpeechRec) {
+        (window as any)._coopSpeechRec.stop();
+      }
+      setIsRecording(false);
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = isAr ? 'ar-SA' : 'en-US';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onstart = () => {
+        setIsRecording(true);
+      };
+
+      recognition.onresult = (event: any) => {
+        const text = event.results[0][0].transcript;
+        if (text) {
+          setDescription((prev) => (prev ? prev.trim() + ' ' + text.trim() : text.trim()));
+        }
+      };
+
+      recognition.onerror = () => {
+        setIsRecording(false);
+      };
+
+      recognition.onend = () => {
+        setIsRecording(false);
+      };
+
+      (window as any)._coopSpeechRec = recognition;
+      recognition.start();
+    } catch {
+      setIsRecording(false);
+    }
+  };
+
 
   // Trash & Revisions Modal States
   const [trashModalOpen, setTrashModalOpen] = useState<boolean>(false);
@@ -560,9 +611,33 @@ export const DailyLogTab: React.FC = () => {
 
           {/* Description & AI Toolbar */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="block text-xs font-bold text-sub">{t('تفاصيل الإنجاز والمهام المنفذة', 'Task Details & Accomplishments')}</label>
-              <span className="text-[11px] text-sub">{t('يُحفظ تلقائياً كمسودة أثناء الكتابة', 'Draft is saved automatically')}</span>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <label className="block text-xs font-bold text-sub">{t('تفاصيل الإنجاز والمهام المنفذة', 'Task Details & Accomplishments')}</label>
+                
+                {/* Cutting-Edge Voice Dictation Button */}
+                <button
+                  type="button"
+                  onClick={toggleVoiceRecording}
+                  className={`px-2.5 py-0.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    isRecording
+                      ? 'bg-accent text-white animate-pulse shadow-sm ring-2 ring-accent/30'
+                      : 'bg-bg text-sub hover:text-accent border border-line hover:border-accent/40'
+                  }`}
+                  title={isRecording ? t('جارٍ الاستماع... انقر للإيقاف', 'Listening... Click to stop') : t('إملاء صوتي مباشر عبر المايكروفون', 'Voice Dictation via Microphone')}
+                >
+                  {isRecording ? <MicOff className="w-3.5 h-3.5 text-white" /> : <Mic className="w-3.5 h-3.5 text-accent" />}
+                  <span>{isRecording ? t('جارٍ الاستماع...', 'Listening...') : t('إملاء صوتي 🎙️', 'Voice 🎙️')}</span>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-3 text-[11px] text-sub">
+                <span>
+                  {description.trim() ? description.trim().split(/\s+/).length : 0} {t('كلمة', 'words')}
+                </span>
+                <span>•</span>
+                <span>{t('حفظ فوري للمسودة مفعل', 'Draft autosaved')}</span>
+              </div>
             </div>
 
             <textarea

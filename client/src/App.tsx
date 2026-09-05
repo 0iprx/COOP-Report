@@ -91,7 +91,11 @@ const MainDashboard: React.FC = () => {
     return <LandingPage onOpenTestDev={() => setActiveTab('testdev')} />;
   }
 
-  const visibleTabs = tabs.filter((t) => t.id !== 'supervisor' || user.role === 'supervisor');
+  const visibleTabs = tabs.filter(
+    (t) =>
+      (t.id !== 'supervisor' || user.role === 'supervisor') &&
+      (t.id !== 'testdev' || user.username === 'testdev_demo')
+  );
 
   const handleTabClick = (tabId: TabType) => {
     setActiveTab(tabId);

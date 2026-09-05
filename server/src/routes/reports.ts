@@ -2,7 +2,7 @@ import { Router, Response } from 'express';
 import { prisma } from '../db.js';
 import { authenticate, AuthenticatedRequest } from '../middleware/auth.js';
 import { buildFinalReportData } from '../services/reportService.js';
-import { generateAcademicDocx } from '../services/docxService.js';
+import { generateAcademicDocx, generateWeeklyDocx } from '../services/docxService.js';
 import { generateStandaloneHTMLReport } from '../services/htmlReportService.js';
 import { generatePresentationBuffer } from '../services/presentationService.js';
 import { calculateHoursBetween, getWeekEnd, getWeekStart } from '@coop/shared';
@@ -94,6 +94,41 @@ router.get('/final', async (req: AuthenticatedRequest, res: Response): Promise<v
   } catch (err) {
     logger.error({ err }, 'Error building final report');
     res.status(500).json({ error: 'تعذر تجميع التقرير النهائي' });
+  }
+});
+
+
+// GET /api/reports/weekly/export/docx?week=YYYY-MM-DD&lang=ar|en
+router.get('/weekly/export/docx', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const targetUserId = await resolveTargetUserId(req);
+    if (!targetUserId) {
+      res.status(403).json({ error: 'غير مصرح لك بتصدير تقرير هذا المتدرب' });
+      return;
+    }
+
+    const weekParam = (req.query.week as string) || '';
+    const lang = (req.query.lang as 'ar' | 'en') || 'ar';
+    const reportData = await buildFinalReportData(targetUserId);
+
+    const buffer = await generateWeeklyDocx(reportData, weekParam, lang);
+
+    const weekObj = reportData.weeks.find((w) => w.weekStart === weekParam) || reportData.weeks[0];
+    const weekIdx = weekObj ? weekObj.weekIndex : 1;
+
+    const rawEntity = reportData.profile.entityAddress || (lang === 'en' ? 'COOP' : 'التدريب');
+    const safeEntity = rawEntity.replace(/[\\/:*?"<>|\s]/g, '_').slice(0, 30);
+
+    const filename = encodeURIComponent(
+      lang === 'en' ? `Week_${weekIdx}_${safeEntity}_Report.docx` : `تقرير_الأسبوع_${weekIdx}_${safeEntity}.docx`
+    );
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${filename}`);
+    res.send(buffer);
+  } catch (err) {
+    logger.error({ err }, 'Error exporting weekly DOCX');
+    res.status(500).json({ error: 'تعذر تصدير تقرير الأسبوع كـ Word' });
   }
 });
 

@@ -437,6 +437,14 @@ router.post('/seed', async (req: AuthenticatedRequest, res: Response): Promise<v
   try {
     const userId = req.user!.userId;
 
+    // Critical safety guard: prevent wiping or seeding mock data on real user accounts
+    if (req.user!.username !== 'testdev_demo') {
+      res.status(403).json({
+        error: 'حسابك حساب شخصي حقيقي. حقن البيانات التجريبية متاح فقط في حساب المحاكاة والتجربة (testdev_demo) لحماية سجلاتك وبياناتك الحقيقية من أي فقدان أو استبدال.'
+      });
+      return;
+    }
+
     // 1. Seed Academic Profile (280 hours, 14 weeks) with pristine, non-cliché Arabic
     await prisma.reportProfile.upsert({
       where: { userId },
@@ -582,6 +590,14 @@ router.post('/seed', async (req: AuthenticatedRequest, res: Response): Promise<v
 router.post('/clear', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.userId;
+
+    // Critical safety guard: prevent clearing data on real user accounts
+    if (req.user!.username !== 'testdev_demo') {
+      res.status(403).json({
+        error: 'حسابك حساب شخصي حقيقي. تفريغ البيانات متاح فقط في حساب المحاكاة والتجربة (testdev_demo) لحماية سجلاتك وبياناتك الحقيقية من أي فقدان.'
+      });
+      return;
+    }
 
     await prisma.entry.updateMany({
       where: { userId, deletedAt: null },
