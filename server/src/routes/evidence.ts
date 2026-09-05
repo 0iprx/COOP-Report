@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import { prisma } from '../db.js';
 import { authenticate, AuthenticatedRequest } from '../middleware/auth.js';
+import { sanitizeAndProcessImage } from '../services/imageProcessingService.js';
 import { logger } from '../logger.js';
 import { z } from 'zod';
 
@@ -144,10 +145,13 @@ router.post('/', evidenceUploadLimiter, async (req: AuthenticatedRequest, res: R
     const base64Data = dataUriMatch[2];
     const buffer = Buffer.from(base64Data, 'base64');
 
-    // 2. Validate Buffer Size & Magic Bytes & EXIF
-    const validation = validateImageBuffer(buffer, mime);
-    if (!validation.valid) {
-      res.status(400).json({ error: validation.error });
+    // 2. Validate Buffer Size, Magic Bytes, and Re-encode with Sharp
+    let sanitizedDataUrl = imageData;
+    try {
+      const processed = await sanitizeAndProcessImage(buffer);
+      sanitizedDataUrl = processed.dataUrl;
+    } catch (valErr: any) {
+      res.status(400).json({ error: valErr?.message || 'فشلت معالجة الصورة والتأكد من أمانها' });
       return;
     }
 
@@ -174,7 +178,7 @@ router.post('/', evidenceUploadLimiter, async (req: AuthenticatedRequest, res: R
         userId,
         weekIndex,
         caption: cleanCaption,
-        imageData
+        imageData: sanitizedDataUrl
       }
     });
 

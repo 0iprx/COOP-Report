@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
-import { FinalReportData, EntryDTO, formatDateArabic, formatDateEnglish } from '@coop/shared';
+import { FinalReportData, EntryDTO, formatDateArabic, formatDateEnglish, calculateHoursBetween } from '@coop/shared';
 import { WeeklyEvidenceSection } from './WeeklyEvidenceSection';
 import {
   Calendar,
@@ -215,7 +215,7 @@ export const WeeklyTab: React.FC = () => {
       entryDate: entry.entryDate,
       category: entry.category,
       timeFrom: entry.timeFrom || '08:00',
-      timeTo: entry.timeTo || '12:00',
+      timeTo: entry.timeTo || '16:00',
       description: entry.description
     });
     const isCustom = entry.category && !CATEGORIES.includes(entry.category as any);
@@ -231,7 +231,7 @@ export const WeeklyTab: React.FC = () => {
       entryDate: selectedWeek || new Date().toISOString().split('T')[0],
       category: 'تطوير / برمجة',
       timeFrom: '08:00',
-      timeTo: '12:00',
+      timeTo: '16:00',
       description: ''
     });
     setIsCustomCategory(false);
@@ -353,7 +353,7 @@ export const WeeklyTab: React.FC = () => {
 
       <div className="bg-card border border-line rounded-2xl p-4 sm:p-6 shadow-sm">
         {/* Top Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 mb-4 border-b border-line">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 mb-4 border-b border-line no-print">
           <div>
             <h2 className="text-base font-extrabold text-ink flex items-center gap-2">
               <Calendar className="w-5 h-5 text-accent" />
@@ -416,7 +416,7 @@ export const WeeklyTab: React.FC = () => {
         </div>
 
         {/* 14 Weeks Navigation Bar with Right/Left Scrolling Buttons */}
-        <div className="space-y-2 mb-6">
+        <div className="space-y-2 mb-6 no-print">
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-sub">
             <div className="flex items-center gap-2">
               <span>{t('اختر الأسبوع للمعاينة والتعديل وإرفاق الصور:', 'Select week to review, edit, or attach photos:')}</span>
@@ -500,8 +500,34 @@ export const WeeklyTab: React.FC = () => {
           <div className="text-center py-12 text-sub text-sm">{t('جارٍ تحميل تقرير الأسبوع...', 'Loading weekly log...')}</div>
         ) : (
           <div className="space-y-6">
+            {/* Formal Printable Academic Weekly Header (Visible on print) */}
+            <div className="hidden print:block pb-5 mb-5 border-b-2 border-line text-center space-y-3">
+              <div className="flex items-center justify-between text-xs font-bold text-sub">
+                <span>{isAr ? 'المملكة العربية السعودية' : 'Kingdom of Saudi Arabia'}</span>
+                <span>{finalReportData?.profile?.trainingUnit || (isAr ? 'الوحدة التدريبية / الكلية' : 'Academic Institution')}</span>
+              </div>
+              <h1 className="text-xl font-black text-ink">
+                {isAr ? `تقرير المتابعة والتوثيق الأسبوعي — ${currentWeekObj ? `الأسبوع ${currentWeekObj.weekIndex}` : 'الأسبوع التدريبي'}` : `Weekly Training & Log Report — Week ${currentWeekObj?.weekIndex || 1}`}
+              </h1>
+              <div className="text-xs text-sub font-semibold">
+                {weekReport
+                  ? isAr
+                    ? `الفترة التدريبية: من ${formatDateArabic(weekReport.weekStart)} إلى ${formatDateArabic(weekReport.weekEnd)}`
+                    : `Training Period: From ${formatDateEnglish(weekReport.weekStart)} to ${formatDateEnglish(weekReport.weekEnd)}`
+                  : '—'}
+              </div>
+              <div className="p-4 bg-bg rounded-xl border border-line text-xs grid grid-cols-2 sm:grid-cols-3 gap-3 text-start">
+                <div><span className="font-bold text-sub">{isAr ? 'اسم المتدرب:' : 'Trainee Name:'}</span> <span className="font-extrabold text-ink">{finalReportData?.profile?.studentName || '—'}</span></div>
+                <div><span className="font-bold text-sub">{isAr ? 'الرقم التدريبي:' : 'Training ID:'}</span> <span className="font-extrabold text-ink">{finalReportData?.profile?.trainingNumber || '—'}</span></div>
+                <div><span className="font-bold text-sub">{isAr ? 'جهة التدريب:' : 'Host Org:'}</span> <span className="font-extrabold text-ink">{entityName}</span></div>
+                <div><span className="font-bold text-sub">{isAr ? 'المشرف الميداني:' : 'Field Supervisor:'}</span> <span className="font-extrabold text-ink">{finalReportData?.profile?.responsibleName || '—'}</span></div>
+                <div><span className="font-bold text-sub">{isAr ? 'أيام العمل المنجزة:' : 'Work Days:'}</span> <span className="font-extrabold text-ink">{weekReport?.totalDays || 0} {isAr ? 'أيام' : 'days'}</span></div>
+                <div><span className="font-bold text-sub">{isAr ? 'إجمالي الساعات الفعلية:' : 'Total Hours:'}</span> <span className="font-extrabold text-ink">{weekReport?.totalHours || 0} {isAr ? 'ساعة' : 'hrs'}</span></div>
+              </div>
+            </div>
+
             {/* Header info with Next / Previous Week Jumpers */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-bg rounded-xl border border-line">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-bg rounded-xl border border-line no-print">
               <div>
                 <span className="text-xs text-sub font-bold block">{t('فترة الأسبوع المحددة:', 'Selected Week Period:')}</span>
                 <span className="text-sm font-extrabold text-ink">
@@ -557,7 +583,7 @@ export const WeeklyTab: React.FC = () => {
             </div>
 
             {/* Quick Metrics */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 no-print">
               <div className="bg-bg border border-line rounded-xl p-4">
                 <div className="flex items-center justify-between text-sub mb-1">
                   <span className="text-xs font-bold">{t('أيام العمل المنجزة', 'Logged Work Days')}</span>
@@ -578,14 +604,14 @@ export const WeeklyTab: React.FC = () => {
             </div>
 
             {/* Section Header with Add New Day/Task Button */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 no-print">
               <div>
                 <h3 className="text-sm font-extrabold text-ink flex items-center gap-1.5">
                   <Edit3 className="w-4 h-4 text-accent" />
-                  <span>{t('جدول المهام والسرد اليومي للأسبوع', 'Weekly Task Schedule & Narrative')}</span>
+                  <span>{t('سجل المهام والسرد اليومي للأسبوع', 'Weekly Task Log & Daily Narrative')}</span>
                 </h3>
                 <p className="text-xs text-sub mt-0.5">
-                  {t('يمكنك تعديل أي يوم، إعادة صياغة التفاصيل، أو إضافة مهام جديدة بحرية تامة', 'Edit any day, refine details with AI, or add new tasks freely')}
+                  {t('كل يوم مدون بساعاته وتصنيفه وسرده الأكاديمي التفصيلي مع إمكانية التعديل والإضافة بحرية', 'Daily logs documented with hours, categories, and detailed academic narratives.')}
                 </p>
               </div>
 
@@ -624,37 +650,44 @@ export const WeeklyTab: React.FC = () => {
                 </button>
               </div>
             ) : (
-              <div className="overflow-x-auto border border-line rounded-xl">
-                <table className="w-full text-start text-xs">
-                  <thead className="bg-bg text-sub font-bold border-b border-line">
-                    <tr>
-                      <th className="py-3 px-4 w-28 text-start">{t('التاريخ', 'Date')}</th>
-                      <th className="py-3 px-4 w-52 text-start">{t('العنوان / التصنيف', 'Title / Category')}</th>
-                      <th className="py-3 px-4 text-start">{t('تفاصيل وسرد الإنجاز الأكاديمي', 'Task Details & Accomplishments')}</th>
-                      <th className="py-3 px-3 w-24 text-center">{t('إجراءات', 'Actions')}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-line">
-                    {weekReport.entries.map((entry: EntryDTO) => (
-                      <tr key={entry.id} className="hover:bg-bg/40 transition-colors group">
-                        <td className="py-3 px-4 font-bold text-ink whitespace-nowrap align-top">
-                          {isAr ? formatDateArabic(entry.entryDate) : formatDateEnglish(entry.entryDate)}
-                        </td>
-                        <td className="py-3 px-4 align-top space-y-1">
-                          <div className="font-bold text-ink text-xs">{entry.title}</div>
-                          <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-accent-dim text-accent">
+              <div className="space-y-4">
+                {weekReport.entries.map((entry: EntryDTO, dayIdx: number) => {
+                  const entryHours = calculateHoursBetween(entry.timeFrom || '08:00', entry.timeTo || '16:00');
+                  return (
+                    <div
+                      key={entry.id}
+                      className="border border-line rounded-2xl overflow-hidden bg-card shadow-xs hover:shadow-sm transition-all text-start"
+                    >
+                      {/* Day Card Header matching the user's uploaded image exactly */}
+                      <div className="bg-bg px-4 sm:px-5 py-3 border-b border-line flex flex-wrap items-center justify-between gap-2.5">
+                        {/* Right: Day badge, Date, and Time window */}
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <span className="px-3 py-1 rounded-lg text-xs font-black bg-[#C0102A] text-white shadow-xs">
+                            {isAr ? `اليوم ${dayIdx + 1}` : `Day ${dayIdx + 1}`}
+                          </span>
+                          <span className="font-extrabold text-ink text-xs sm:text-sm">
+                            {isAr ? formatDateArabic(entry.entryDate) : formatDateEnglish(entry.entryDate)}
+                          </span>
+                          <span className="text-sub text-xs font-semibold" dir="ltr">
+                            ({entry.timeFrom || '08:00'} – {entry.timeTo || '16:00'})
+                          </span>
+                        </div>
+
+                        {/* Left: Category Tag, Hours calculation, and Edit/Delete Actions */}
+                        <div className="flex items-center gap-2.5">
+                          <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-[#C0102A]/10 text-[#C0102A] border border-[#C0102A]/20">
                             {entry.category}
                           </span>
-                        </td>
-                        <td className="py-3 px-4 text-sub leading-relaxed whitespace-pre-wrap align-top">
-                          {entry.description}
-                        </td>
-                        <td className="py-3 px-3 text-center whitespace-nowrap align-top">
-                          <div className="flex items-center justify-center gap-1.5">
+                          <span className="text-xs font-bold text-sub">
+                            {entryHours} {isAr ? 'ساعات' : 'hrs'}
+                          </span>
+
+                          {/* Screen Actions (hidden when printing) */}
+                          <div className="flex items-center gap-1.5 no-print mr-1">
                             <button
                               type="button"
                               onClick={() => handleOpenEdit(entry)}
-                              className="p-1.5 rounded-lg bg-bg hover:bg-line text-ink hover:text-accent border border-line transition-all"
+                              className="p-1.5 rounded-lg bg-card hover:bg-line text-sub hover:text-accent border border-line transition-all shadow-xs"
                               title={t('تعديل هذا اليوم / المهمة', 'Edit Task')}
                             >
                               <Edit3 className="w-3.5 h-3.5" />
@@ -662,17 +695,78 @@ export const WeeklyTab: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => handleDeleteEntry(entry.id)}
-                              className="p-1.5 rounded-lg bg-bg hover:bg-warn-bg text-sub hover:text-warn border border-line transition-all"
+                              className="p-1.5 rounded-lg bg-card hover:bg-warn-bg text-sub hover:text-warn border border-line transition-all shadow-xs"
                               title={t('حذف المهمة', 'Delete Task')}
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </div>
+                      </div>
+
+                      {/* Day Card Body: Formal Task Title & Full Procedural Narrative */}
+                      <div className="p-4 sm:p-6 space-y-3.5">
+                        <div>
+                          <div className="text-xs font-black text-[#C0102A] uppercase tracking-wider mb-1">
+                            {isAr ? 'النشاط الفني والمهمة التشغيلية الميدانية:' : 'Technical Activity & Operational Scope:'}
+                          </div>
+                          <h4 className="text-sm sm:text-base font-black text-ink leading-snug">
+                            {entry.title}
+                          </h4>
+                        </div>
+
+                        <div className="pt-3 border-t border-line/60">
+                          <div className="text-xs font-black text-sub uppercase tracking-wider mb-1.5">
+                            {isAr ? 'السرد الإجرائي ونتائج التنفيذ الهندسي والميداني:' : 'Procedural Narrative & Engineering Results:'}
+                          </div>
+                          <div className="text-ink text-xs sm:text-sm leading-loose whitespace-pre-wrap bg-bg/50 p-4 rounded-xl border border-line/60">
+                            {entry.description}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Weekly Learning Synthesis & Acquired Competencies */}
+                <div className="mt-6 p-4 sm:p-5 bg-bg/60 border border-line rounded-2xl space-y-2 text-start">
+                  <div className="text-xs font-black text-ink flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-ok" />
+                    <span>{t('المخرجات والكفايات المكتسبة خلال الأسبوع:', 'Weekly Learning Outcomes & Acquired Competencies:')}</span>
+                  </div>
+                  <p className="text-xs text-sub leading-relaxed">
+                    {t(
+                      `تم إنجاز ${weekReport.totalTasks || 0} مهام ميدانية متخصصة بمجموع ${weekReport.totalHours || 0} ساعة تدريبية، شملت تطبيق معايير السلامة المهنية ومطابقة الإجراءات الفنية مع توجيهات المشرف الميداني بالمنشأة.`,
+                      `Completed ${weekReport.totalTasks || 0} specialized tasks across ${weekReport.totalHours || 0} training hours, strictly complying with host entity engineering standards and supervisory directions.`
+                    )}
+                  </p>
+                </div>
+
+                {/* Formal Supervisory Approval & Stamp Block (For Official Print & Defense) */}
+                <div className="mt-6 border border-line rounded-2xl overflow-hidden bg-card text-start">
+                  <div className="bg-bg px-5 py-3 border-b border-line flex items-center justify-between">
+                    <span className="text-xs font-black text-ink">{t('المصادقة والاعتماد الميداني للأسبوع', 'Field Supervisory Weekly Endorsement')}</span>
+                    <span className="text-[11px] font-bold text-accent">{entityName}</span>
+                  </div>
+                  <div className="p-5 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                    <div className="space-y-2 p-3 bg-bg/40 rounded-xl border border-line/60">
+                      <div className="font-bold text-sub">{t('توقيع المتدرب:', 'Trainee Signature:')}</div>
+                      <div className="font-extrabold text-ink">{finalReportData?.profile?.studentName || '—'}</div>
+                      <div className="text-[11px] text-muted pt-2 border-t border-line/40">التوقيع: ....................</div>
+                    </div>
+                    <div className="space-y-2 p-3 bg-bg/40 rounded-xl border border-line/60">
+                      <div className="font-bold text-sub">{t('اعتماد المشرف الميداني:', 'Field Supervisor Approval:')}</div>
+                      <div className="font-extrabold text-ink">{finalReportData?.profile?.responsibleName || '....................'}</div>
+                      <div className="text-[11px] text-muted pt-2 border-t border-line/40">التوقيع: ....................</div>
+                    </div>
+                    <div className="space-y-2 p-3 bg-bg/40 rounded-xl border border-line/60 flex flex-col justify-between">
+                      <div className="font-bold text-sub">{t('ختم جهة التدريب الرسمي:', 'Official Host Entity Stamp:')}</div>
+                      <div className="h-12 border border-dashed border-line rounded-lg flex items-center justify-center text-[10px] text-muted">
+                        [ موضع الختم الرسمي ]
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -766,6 +860,36 @@ export const WeeklyTab: React.FC = () => {
                       <option value="__custom__">✨ {t('+ كتابة تصنيف مخصص...', '+ Custom category...')}</option>
                     </select>
                   )}
+                </div>
+              </div>
+
+              {/* Work Hours & Daily Calculation */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="block font-bold text-sub">{t('وقت الحضور (البداية)', 'Start Time')}</label>
+                  <input
+                    type="time"
+                    required
+                    value={editingEntry.timeFrom || '08:00'}
+                    onChange={(e) => setEditingEntry({ ...editingEntry, timeFrom: e.target.value })}
+                    className="w-full px-3 py-2 bg-bg border border-line rounded-xl focus:outline-none focus:border-accent text-ink font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className="block font-bold text-sub">{t('وقت الانصراف (النهاية)', 'End Time')}</label>
+                    <span className="text-[11px] font-bold text-accent">
+                      {calculateHoursBetween(editingEntry.timeFrom || '08:00', editingEntry.timeTo || '16:00')} {t('ساعات تدريب', 'hrs')}
+                    </span>
+                  </div>
+                  <input
+                    type="time"
+                    required
+                    value={editingEntry.timeTo || '16:00'}
+                    onChange={(e) => setEditingEntry({ ...editingEntry, timeTo: e.target.value })}
+                    className="w-full px-3 py-2 bg-bg border border-line rounded-xl focus:outline-none focus:border-accent text-ink font-semibold"
+                  />
                 </div>
               </div>
 

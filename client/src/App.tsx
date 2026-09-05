@@ -12,6 +12,7 @@ import { SupervisorTab } from './components/supervisor/SupervisorTab';
 import { TestDevLab } from './components/testdev/TestDevLab';
 import { LandingPage } from './components/landing/LandingPage';
 import { OnboardingModal } from './components/common/OnboardingModal';
+import { VerifyPage } from './components/verify/VerifyPage';
 import { Calendar, Clock, FileText, ShieldCheck, Layers } from 'lucide-react';
 
 const queryClient = new QueryClient({
@@ -66,6 +67,14 @@ const MainDashboard: React.FC = () => {
       }
     }
   }, [user, reportData]);
+
+  const isVerifyRoute =
+    window.location.pathname.startsWith('/verify/') ||
+    window.location.hash.startsWith('#/verify/');
+
+  if (isVerifyRoute) {
+    return <VerifyPage />;
+  }
 
   /* ── Loading ─────────────────────────────────────────── */
   if (loading) {

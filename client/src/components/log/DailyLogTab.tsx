@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
+import { saveOfflineEntry, getPendingEntries, syncPendingEntries } from '../../services/offlineSync';
 import { useLanguage } from '../../context/LanguageContext';
 import { ENTRY_CATEGORIES, EntryDTO, DiffChunk } from '@coop/shared';
 import {
@@ -123,6 +124,42 @@ export const DailyLogTab: React.FC = () => {
     setTimeout(() => setToast(null), 4000);
   };
 
+  // Offline pending entries count & syncing state
+  const [pendingCount, setPendingCount] = useState<number>(0);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+
+  const checkPending = async () => {
+    const list = await getPendingEntries();
+    setPendingCount(list.length);
+  };
+
+  useEffect(() => {
+    checkPending();
+    const handler = () => checkPending();
+    window.addEventListener('coop:offline-changed', handler);
+    window.addEventListener('online', handler);
+    return () => {
+      window.removeEventListener('coop:offline-changed', handler);
+      window.removeEventListener('online', handler);
+    };
+  }, []);
+
+  const handleManualSync = async () => {
+    setIsSyncing(true);
+    try {
+      const res = await syncPendingEntries();
+      queryClient.invalidateQueries({ queryKey: ['entries'] });
+      queryClient.invalidateQueries({ queryKey: ['weekly'] });
+      queryClient.invalidateQueries({ queryKey: ['finalReport'] });
+      showToast(t(`تمت مزامنة ${res.success} سجل بنجاح!`, `Synced ${res.success} logs successfully!`));
+    } catch {
+      showToast(t('فشلت المزامنة، يرجى التحقق من اتصالك بالإنترنت', 'Sync failed, please check connection'), 'error');
+    } finally {
+      setIsSyncing(false);
+      checkPending();
+    }
+  };
+
   // Restore autosaved draft on mount
   useEffect(() => {
     try {
@@ -184,19 +221,37 @@ export const DailyLogTab: React.FC = () => {
     }
   });
 
-  // Create mutation
+  // Create mutation with offline fallback
   const createMutation = useMutation({
     mutationFn: async (newEntry: any) => {
-      const res = await api.post('/entries', newEntry);
-      return res.data;
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        await saveOfflineEntry(newEntry);
+        return { offline: true };
+      }
+      try {
+        const res = await api.post('/entries', newEntry);
+        return res.data;
+      } catch (err: any) {
+        // If network error (offline or server unreachable), safely stash locally in IndexedDB
+        if (!err.response) {
+          await saveOfflineEntry(newEntry);
+          return { offline: true };
+        }
+        throw err;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['entries'] });
       queryClient.invalidateQueries({ queryKey: ['weekly'] });
       queryClient.invalidateQueries({ queryKey: ['finalReport'] });
       resetForm();
       localStorage.removeItem(DRAFT_KEY);
-      showToast(t('تم تسجيل وحفظ إنجاز اليوم بنجاح!', 'Task saved successfully!'));
+      if (data?.offline) {
+        checkPending();
+        showToast(t('تم الحفظ محلياً في وضع عدم الاتصال! ستتم المزامنة تلقائياً فور عودة الشبكة.', 'Saved offline! Will sync automatically once reconnected.'));
+      } else {
+        showToast(t('تم تسجيل وحفظ إنجاز اليوم بنجاح!', 'Task saved successfully!'));
+      }
     },
     onError: (err: any) => {
       setFormError(err.response?.data?.message || t('حدث خطأ أثناء حفظ الإدخال', 'Failed to save entry'));
@@ -441,6 +496,28 @@ export const DailyLogTab: React.FC = () => {
             <span className="text-xs text-sub hidden sm:inline">{t('حفظ فوري للمسودة مفعل', 'Autosave active')}</span>
           </div>
         </div>
+
+        {pendingCount > 0 && (
+          <div className="mb-4 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-semibold flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+              <span>
+                {t(
+                  `لديك ${pendingCount} سجلات ميدانية محفوظة محلياً بانتظار المزامنة`,
+                  `You have ${pendingCount} offline field logs pending server sync`
+                )}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={handleManualSync}
+              disabled={isSyncing}
+              className="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg transition-colors text-xs disabled:opacity-50"
+            >
+              {isSyncing ? t('جارٍ المزامنة...', 'Syncing...') : t('مزامنة الآن', 'Sync Now')}
+            </button>
+          </div>
+        )}
 
         {formError && (
           <div className="mb-4 p-3 rounded-xl bg-accent-dim border border-accent/20 text-accent text-xs font-bold flex items-center gap-2">

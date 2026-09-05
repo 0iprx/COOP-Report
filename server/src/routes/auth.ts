@@ -1,24 +1,25 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import { prisma } from '../db.js';
 import { registerSchema, loginSchema } from '@coop/shared';
-import { authLimiter } from '../middleware/rateLimiter.js';
+import { authRateLimiter } from '../middleware/rateLimiter.js';
 import { authenticate, AuthenticatedRequest } from '../middleware/auth.js';
+import {
+  createSession,
+  rotateRefreshToken,
+  revokeSessionByToken,
+  revokeAllSessionsForUser,
+  setRefreshCookie,
+  clearRefreshCookie,
+  COOKIE_NAME
+} from '../services/sessionService.js';
+import { logAuditEvent } from '../services/auditService.js';
 import { logger } from '../logger.js';
 
 const router = Router();
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error('FATAL: JWT_SECRET environment variable is not set. Refusing to start in production without a secure secret.');
-  }
-  console.warn('[SECURITY WARNING] JWT_SECRET not set — using insecure dev fallback. Set JWT_SECRET before deploying.');
-}
-const JWT_KEY = JWT_SECRET || 'dev-only-insecure-key-do-not-deploy';
 
 // Register
-router.post('/register', async (req: Request, res: Response): Promise<void> => {
+router.post('/register', authRateLimiter, async (req: Request, res: Response): Promise<void> => {
   try {
     const parseResult = registerSchema.safeParse(req.body);
     if (!parseResult.success) {
@@ -43,7 +44,8 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
       data: {
         username,
         passwordHash,
-        role
+        role,
+        tenantId: 'default_tenant'
       }
     });
 
@@ -52,6 +54,7 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
       await prisma.reportProfile.create({
         data: {
           userId: user.id,
+          tenantId: 'default_tenant',
           entityAddress: '',
           introText:
             'يمثّل التدريب التعاوني حلقة الوصل بين ما يتلقاه الطالب من معارف أكاديمية وبين واقع سوق العمل التقني، إذ يتيح تطبيق المفاهيم النظرية عملياً في بيئة احترافية.',
@@ -64,28 +67,38 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
       });
     }
 
-    const token = jwt.sign(
-      { userId: user.id, username: user.username, role: user.role },
-      JWT_KEY,
-      { expiresIn: '180d' }
-    );
+    const deviceInfo = (req.headers['user-agent'] as string) || 'Browser';
+    const ipAddress = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || 'unknown';
 
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 180 * 24 * 60 * 60 * 1000
+    const { accessToken, rawRefreshToken } = await createSession({
+      userId: user.id,
+      deviceInfo,
+      ipAddress
     });
 
-    logger.info({ userId: user.id, username: user.username, role: user.role }, 'User registered successfully');
+    setRefreshCookie(res, rawRefreshToken);
+
+    await logAuditEvent({
+      userId: user.id,
+      tenantId: user.tenantId,
+      action: 'USER_REGISTER',
+      entityType: 'USER',
+      entityId: user.id,
+      metadata: { username: user.username, role: user.role },
+      req
+    });
+
+    logger.info({ userId: user.id, username: user.username, role: user.role }, 'User registered successfully with hardened session');
 
     res.status(201).json({
       message: 'تم إنشاء الحساب بنجاح',
-      token,
+      accessToken,
+      token: accessToken, // Backward compatibility
       user: {
         id: user.id,
         username: user.username,
-        role: user.role
+        role: user.role,
+        tenantId: user.tenantId
       }
     });
   } catch (err: any) {
@@ -95,7 +108,7 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
 });
 
 // Login
-router.post('/login', authLimiter, async (req: Request, res: Response): Promise<void> => {
+router.post('/login', authRateLimiter, async (req: Request, res: Response): Promise<void> => {
   try {
     const parseResult = loginSchema.safeParse(req.body);
     if (!parseResult.success) {
@@ -116,33 +129,51 @@ router.post('/login', authLimiter, async (req: Request, res: Response): Promise<
 
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
+      await logAuditEvent({
+        userId: user.id,
+        tenantId: user.tenantId,
+        action: 'LOGIN_FAILED_PASSWORD',
+        entityType: 'AUTH',
+        metadata: { username },
+        req
+      });
       res.status(401).json({ error: 'بيانات الدخول غير صحيحة' });
       return;
     }
 
-    const token = jwt.sign(
-      { userId: user.id, username: user.username, role: user.role },
-      JWT_KEY,
-      { expiresIn: '180d' }
-    );
+    const deviceInfo = (req.headers['user-agent'] as string) || 'Browser';
+    const ipAddress = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || 'unknown';
 
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 180 * 24 * 60 * 60 * 1000
+    const { accessToken, rawRefreshToken } = await createSession({
+      userId: user.id,
+      deviceInfo,
+      ipAddress
+    });
+
+    setRefreshCookie(res, rawRefreshToken);
+
+    await logAuditEvent({
+      userId: user.id,
+      tenantId: user.tenantId,
+      action: 'USER_LOGIN',
+      entityType: 'AUTH',
+      entityId: user.id,
+      metadata: { username: user.username, role: user.role },
+      req
     });
 
     logger.info({ userId: user.id, username: user.username }, 'User logged in successfully');
 
     res.json({
       message: 'تم تسجيل الدخول بنجاح',
-      token,
+      accessToken,
+      token: accessToken, // Backward compatibility
       user: {
         id: user.id,
         username: user.username,
         role: user.role,
-        supervisorId: user.supervisorId
+        supervisorId: user.supervisorId,
+        tenantId: user.tenantId
       }
     });
   } catch (err) {
@@ -151,7 +182,40 @@ router.post('/login', authLimiter, async (req: Request, res: Response): Promise<
   }
 });
 
-// 1-Click Sandbox Demo Login (for /testdev and preview without manual registration)
+// Refresh Token with Rotation & Reuse Detection
+router.post('/refresh', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const rawToken = req.cookies?.[COOKIE_NAME] || req.body?.refreshToken;
+
+    if (!rawToken) {
+      res.status(401).json({ error: 'رمز الجلسة مفقود، يرجى تسجيل الدخول' });
+      return;
+    }
+
+    const deviceInfo = (req.headers['user-agent'] as string) || 'Browser';
+    const ipAddress = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || 'unknown';
+
+    const { accessToken, rawRefreshToken: newRawToken, user } = await rotateRefreshToken({
+      rawRefreshToken: rawToken,
+      deviceInfo,
+      ipAddress
+    });
+
+    setRefreshCookie(res, newRawToken);
+
+    res.json({
+      accessToken,
+      token: accessToken, // Backward compatibility
+      user
+    });
+  } catch (err: any) {
+    clearRefreshCookie(res);
+    logger.warn({ err: err?.message }, 'Refresh token error');
+    res.status(401).json({ error: err?.message || 'انتهت صلاحية الجلسة، يرجى تسجيل الدخول' });
+  }
+});
+
+// 1-Click Sandbox Demo Login
 router.post('/demo', async (req: Request, res: Response): Promise<void> => {
   try {
     let demoUser = await prisma.user.findUnique({ where: { username: 'testdev_demo' } });
@@ -161,12 +225,14 @@ router.post('/demo', async (req: Request, res: Response): Promise<void> => {
         data: {
           username: 'testdev_demo',
           passwordHash,
-          role: 'trainee'
+          role: 'trainee',
+          tenantId: 'default_tenant'
         }
       });
       await prisma.reportProfile.create({
         data: {
           userId: demoUser.id,
+          tenantId: 'default_tenant',
           entityAddress: 'شركة تقنية الحوسبة المتقدمة والحلول السحابية (CloudTech Solutions)',
           introText: 'يعد التدريب التعاوني مرحلة تطبيقية متقدمة تهدف إلى ردم الفجوة بين المعارف النظرية الأكاديمية والممارسات المهنية الميدانية في قطاع تقنية المعلومات، وتطبيق المعايير الهندسية في بيئة تشغيلية حقيقية.',
           entityIntroText: 'تُعد الجهة من المنشآت المتخصصة في تقديم خدمات البنية التحتية والحلول الرقمية وإدارة مراكز البيانات وفق المعايير العالمية مثل ISO/IEC 27001 وإطار عمل ITIL.',
@@ -176,26 +242,26 @@ router.post('/demo', async (req: Request, res: Response): Promise<void> => {
       });
     }
 
-    const token = jwt.sign(
-      { userId: demoUser.id, username: demoUser.username, role: demoUser.role },
-      JWT_KEY,
-      { expiresIn: '180d' }
-    );
+    const deviceInfo = (req.headers['user-agent'] as string) || 'Browser';
+    const ipAddress = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || 'unknown';
 
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 180 * 24 * 60 * 60 * 1000
+    const { accessToken, rawRefreshToken } = await createSession({
+      userId: demoUser.id,
+      deviceInfo,
+      ipAddress
     });
+
+    setRefreshCookie(res, rawRefreshToken);
 
     res.json({
       message: 'تم تسجيل الدخول بحساب المعاينة والمختبر بنجاح',
-      token,
+      accessToken,
+      token: accessToken, // Backward compatibility
       user: {
         id: demoUser.id,
         username: demoUser.username,
-        role: demoUser.role
+        role: demoUser.role,
+        tenantId: demoUser.tenantId
       }
     });
   } catch (err) {
@@ -204,10 +270,39 @@ router.post('/demo', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
-// Logout
-router.post('/logout', (req: Request, res: Response) => {
-  res.clearCookie('token');
+// Logout (Revoke current session)
+router.post('/logout', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const rawToken = req.cookies?.[COOKIE_NAME] || req.body?.refreshToken;
+    if (rawToken) {
+      await revokeSessionByToken(rawToken);
+    }
+  } catch (err) {
+    // Ignore error
+  }
+  clearRefreshCookie(res);
   res.json({ message: 'تم تسجيل الخروج بنجاح' });
+});
+
+// Logout from all devices
+router.post('/logout-all', authenticate, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    await revokeAllSessionsForUser(req.user!.userId);
+    clearRefreshCookie(res);
+
+    await logAuditEvent({
+      userId: req.user!.userId,
+      tenantId: req.user!.tenantId || 'default_tenant',
+      action: 'LOGOUT_ALL_DEVICES',
+      entityType: 'AUTH',
+      entityId: req.user!.userId,
+      req
+    });
+
+    res.json({ message: 'تم تسجيل الخروج من كافة الأجهزة وإلغاء جميع الجلسات النشطة بنجاح' });
+  } catch (err) {
+    res.status(500).json({ error: 'حدث خطأ أثناء محاولة تسجيل الخروج من الأجهزة' });
+  }
 });
 
 // Current user info
@@ -220,6 +315,7 @@ router.get('/me', authenticate, async (req: AuthenticatedRequest, res: Response)
         username: true,
         role: true,
         supervisorId: true,
+        tenantId: true,
         supervisor: {
           select: {
             id: true,

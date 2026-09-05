@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { prisma } from '../db.js';
 import { authenticate, AuthenticatedRequest } from '../middleware/auth.js';
 import { profileSchema } from '@coop/shared';
+import { logAuditEvent } from '../services/auditService.js';
 import { logger } from '../logger.js';
 
 const router = Router();
@@ -60,6 +61,15 @@ router.put('/', async (req: AuthenticatedRequest, res: Response): Promise<void> 
         ...parseResult.data
       },
       update: parseResult.data
+    });
+
+    await logAuditEvent({
+      userId: req.user!.userId,
+      tenantId: req.user!.tenantId,
+      action: 'REPORT_PROFILE_UPDATED',
+      entityType: 'REPORT_PROFILE',
+      entityId: req.user!.userId,
+      req
     });
 
     res.json({ message: 'تم حفظ بيانات التقرير بنجاح', profile: updated });

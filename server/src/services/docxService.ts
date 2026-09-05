@@ -23,7 +23,7 @@ import {
   PageReference,
   ImageRun
 } from 'docx';
-import { FinalReportData, formatDateArabic, formatDateEnglish } from '@coop/shared';
+import { FinalReportData, formatDateArabic, formatDateEnglish, calculateHoursBetween } from '@coop/shared';
 
 function translateCategory(cat: string, isAr: boolean): string {
   if (isAr) return cat;
@@ -1436,103 +1436,134 @@ export async function generateWeeklyDocx(
     ]
   });
 
-  // 5. Tasks Table
-  const tableHeader = new TableRow({
-    tableHeader: true,
-    children: [
-      new TableCell({
-        width: { size: 18, type: WidthType.PERCENTAGE },
-        borders: cellBorders,
-        shading: { fill: primaryColor },
-        children: [new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: isAr ? 'التاريخ والوقت' : 'Date & Time', bold: true, size: 20, color: 'FFFFFF' })] })]
-      }),
-      new TableCell({
-        width: { size: 18, type: WidthType.PERCENTAGE },
-        borders: cellBorders,
-        shading: { fill: primaryColor },
-        children: [new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: isAr ? 'التصنيف الفني' : 'Category', bold: true, size: 20, color: 'FFFFFF' })] })]
-      }),
-      new TableCell({
-        width: { size: 24, type: WidthType.PERCENTAGE },
-        borders: cellBorders,
-        shading: { fill: primaryColor },
-        children: [new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: isAr ? 'عنوان المهمة' : 'Task Title', bold: true, size: 20, color: 'FFFFFF' })] })]
-      }),
-      new TableCell({
-        width: { size: 40, type: WidthType.PERCENTAGE },
-        borders: cellBorders,
-        shading: { fill: primaryColor },
-        children: [new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: isAr ? 'تفاصيل وسرد الإنجاز الأكاديمي الميداني' : 'Technical Description & Accomplishments', bold: true, size: 20, color: 'FFFFFF' })] })]
-      })
-    ]
-  });
+  // 5. Day-by-Day Written Narrative Sections (سرد كتابي مفصل بدلاً من الجداول المضغوطة)
+  const taskNarrativeElements: (Paragraph | Table)[] = [];
 
-  const taskRows = (weekObj?.entries || []).map((entry, idx) => {
-    const dStr = isAr ? formatDateArabic(entry.entryDate) : formatDateEnglish(entry.entryDate);
-    const timeStr = `${entry.timeFrom} - ${entry.timeTo}`;
-    const fill = idx % 2 === 0 ? 'FFFFFF' : 'F9F8F5';
-
-    return new TableRow({
+  taskNarrativeElements.push(
+    new Paragraph({
+      bidirectional: isAr,
+      spacing: { before: 280, after: 140 },
       children: [
-        new TableCell({
-          width: { size: 18, type: WidthType.PERCENTAGE },
-          borders: cellBorders,
-          shading: { fill },
-          children: [
-            new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: dStr, bold: true, size: 19 })] }),
-            new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: timeStr, size: 17, color: '6E6B62' })] })
-          ]
-        }),
-        new TableCell({
-          width: { size: 18, type: WidthType.PERCENTAGE },
-          borders: cellBorders,
-          shading: { fill },
-          children: [
-            new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: translateCategory(entry.category, isAr), size: 19, bold: true, color: primaryColor })] })
-          ]
-        }),
-        new TableCell({
-          width: { size: 24, type: WidthType.PERCENTAGE },
-          borders: cellBorders,
-          shading: { fill },
-          children: [
-            new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: entry.title, bold: true, size: 19 })] })
-          ]
-        }),
-        new TableCell({
-          width: { size: 40, type: WidthType.PERCENTAGE },
-          borders: cellBorders,
-          shading: { fill },
-          children: [
-            new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: entry.description, size: 19, color: '1B1B18' })] })
-          ]
+        new TextRun({
+          text: isAr ? 'أولاً: السرد والتوثيق اليومي المفصل للمهام الميدانية:' : 'I. Daily Task Log & Narrative Descriptions:',
+          bold: true,
+          size: 24,
+          color: primaryColor
         })
       ]
-    });
-  });
+    })
+  );
 
-  const tasksTable = new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE },
-    rows: [tableHeader, ...(taskRows.length > 0 ? taskRows : [
-      new TableRow({
+  const weeklyEntries = weekObj?.entries || [];
+  if (weeklyEntries.length === 0) {
+    taskNarrativeElements.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        bidirectional: isAr,
+        spacing: { before: 180, after: 180 },
         children: [
-          new TableCell({
-            columnSpan: 4,
-            width: { size: 100, type: WidthType.PERCENTAGE },
-            borders: cellBorders,
+          new TextRun({
+            text: isAr ? 'أسبوع تدريبي مؤجل أو لم تُسجل به مهام ميدانية بعد.' : 'No tasks logged for this week yet.',
+            size: 20,
+            color: '6E6B62',
+            italics: true
+          })
+        ]
+      })
+    );
+  } else {
+    weeklyEntries.forEach((entry, idx) => {
+      const dStr = isAr ? formatDateArabic(entry.entryDate) : formatDateEnglish(entry.entryDate);
+      const hours = calculateHoursBetween(entry.timeFrom, entry.timeTo);
+      const timeStr = `${entry.timeFrom} - ${entry.timeTo} (${hours} ${isAr ? 'ساعات' : 'hrs'})`;
+
+      // Day Header Box with clean styling
+      const dayHeaderTable = new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [
+          new TableRow({
             children: [
-              new Paragraph({
-                alignment: AlignmentType.CENTER,
-                bidirectional: isAr,
-                spacing: { before: 120, after: 120 },
-                children: [new TextRun({ text: isAr ? 'أسبوع تدريبي مؤجل أو لم تُسجل به مهام بعد.' : 'No entries logged for this training week yet.', size: 20, color: '6E6B62' })]
+              new TableCell({
+                width: { size: 100, type: WidthType.PERCENTAGE },
+                shading: { fill: idx % 2 === 0 ? 'F4F1EA' : 'EBE7DF' },
+                borders: cellBorders,
+                children: [
+                  new Paragraph({
+                    bidirectional: isAr,
+                    spacing: { before: 80, after: 80 },
+                    children: [
+                      new TextRun({
+                        text: isAr ? `■ اليوم ${idx + 1}: ${dStr}` : `■ Day ${idx + 1}: ${dStr}`,
+                        bold: true,
+                        size: 21,
+                        color: primaryColor
+                      }),
+                      new TextRun({
+                        text: `  |  ${timeStr}`,
+                        size: 19,
+                        color: '555550'
+                      })
+                    ]
+                  })
+                ]
               })
             ]
           })
         ]
-      })
-    ])]
-  });
+      });
+
+      taskNarrativeElements.push(dayHeaderTable);
+
+      // Task Title & Category
+      taskNarrativeElements.push(
+        new Paragraph({
+          bidirectional: isAr,
+          spacing: { before: 120, after: 60 },
+          children: [
+            new TextRun({
+              text: isAr ? '• عنوان المهمة المنجزة: ' : '• Task Title: ',
+              bold: true,
+              size: 20,
+              color: '1B1B18'
+            }),
+            new TextRun({
+              text: entry.title,
+              bold: true,
+              size: 20,
+              color: primaryColor
+            }),
+            new TextRun({
+              text: `  [${translateCategory(entry.category, isAr)}]`,
+              size: 18,
+              color: '6E6B62'
+            })
+          ]
+        })
+      );
+
+      // Full Written Description
+      taskNarrativeElements.push(
+        new Paragraph({
+          bidirectional: isAr,
+          spacing: { before: 60, after: 180 },
+          indent: isAr ? { right: 280 } : { left: 280 },
+          children: [
+            new TextRun({
+              text: isAr ? 'تفاصيل وسرد الإنجاز الميداني: ' : 'Narrative & Accomplishment Details: ',
+              bold: true,
+              size: 19,
+              color: '444440'
+            }),
+            new TextRun({
+              text: entry.description,
+              size: 19,
+              color: '1B1B18'
+            })
+          ]
+        })
+      );
+    });
+  }
 
   // 6. Evidence Photos
   const evidenceChildren: (Paragraph | Table)[] = [];
@@ -1667,7 +1698,7 @@ export async function generateWeeklyDocx(
           subtitleParagraph,
           metaTable,
           summaryBox,
-          tasksTable,
+          ...taskNarrativeElements,
           ...evidenceChildren,
           new Paragraph({ spacing: { before: 240 } }),
           signoffTable

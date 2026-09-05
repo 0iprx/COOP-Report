@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { api } from '../services/api';
+import { api, setAccessToken, getAccessToken } from '../services/api';
 
 export interface AuthUser {
   id: number;
@@ -7,6 +7,7 @@ export interface AuthUser {
   role: 'trainee' | 'supervisor';
   supervisorId?: number | null;
   supervisor?: { id: number; username: string } | null;
+  tenantId?: string;
 }
 
 interface AuthContextType {
@@ -16,6 +17,7 @@ interface AuthContextType {
   register: (data: any) => Promise<void>;
   demoLogin: () => Promise<void>;
   logout: () => Promise<void>;
+  logoutAll: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
@@ -27,17 +29,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refreshUser = async () => {
     try {
-      const token = localStorage.getItem('coop_auth_token');
-      if (!token) {
-        setUser(null);
+      const token = getAccessToken();
+      if (token) {
+        const res = await api.get('/auth/me');
+        setUser(res.data.user);
         setLoading(false);
         return;
       }
-      const res = await api.get('/auth/me');
-      setUser(res.data.user);
+
+      // If no token in memory, try silent refresh with httpOnly cookie
+      try {
+        const refreshRes = await api.post('/auth/refresh');
+        if (refreshRes.data.token) {
+          setAccessToken(refreshRes.data.token);
+          const meRes = await api.get('/auth/me');
+          setUser(meRes.data.user);
+        } else {
+          setUser(null);
+        }
+      } catch {
+        setUser(null);
+      }
     } catch {
       setUser(null);
-      localStorage.removeItem('coop_auth_token');
+      setAccessToken(null);
     } finally {
       setLoading(false);
     }
@@ -45,12 +60,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     refreshUser();
+
+    const handleExpired = () => {
+      setUser(null);
+    };
+
+    window.addEventListener('auth:expired', handleExpired);
+    return () => window.removeEventListener('auth:expired', handleExpired);
   }, []);
 
   const login = async (credentials: any) => {
     const res = await api.post('/auth/login', credentials);
     if (res.data.token) {
-      localStorage.setItem('coop_auth_token', res.data.token);
+      setAccessToken(res.data.token);
     }
     setUser(res.data.user);
   };
@@ -58,7 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (data: any) => {
     const res = await api.post('/auth/register', data);
     if (res.data.token) {
-      localStorage.setItem('coop_auth_token', res.data.token);
+      setAccessToken(res.data.token);
     }
     setUser(res.data.user);
   };
@@ -66,7 +88,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const demoLogin = async () => {
     const res = await api.post('/auth/demo');
     if (res.data.token) {
-      localStorage.setItem('coop_auth_token', res.data.token);
+      setAccessToken(res.data.token);
     }
     setUser(res.data.user);
   };
@@ -77,12 +99,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch {
       // Ignore
     }
-    localStorage.removeItem('coop_auth_token');
+    setAccessToken(null);
+    setUser(null);
+  };
+
+  const logoutAll = async () => {
+    try {
+      await api.post('/auth/logout-all');
+    } catch {
+      // Ignore
+    }
+    setAccessToken(null);
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, demoLogin, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, login, register, demoLogin, logout, logoutAll, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
-import { FinalReportData, ProfileInput, DiffChunk, formatDateArabic, formatDateEnglish, countWords, calculateHoursBetween, REPORT_TEMPLATES, ReportTemplateId, OrganizationLookupResult } from '@coop/shared';
+import { useAuth } from '../../context/AuthContext';
+import { MOCK_SAMPLE_PREVIEW_PROFILE, MOCK_SAMPLE_PREVIEW_WEEKS } from '../../data/mockPreviewData';
+import { FinalReportData, EntryDTO, ProfileInput, DiffChunk, formatDateArabic, formatDateEnglish, countWords, calculateHoursBetween, REPORT_TEMPLATES, ReportTemplateId, OrganizationLookupResult } from '@coop/shared';
 import {
   FileText,
   Search,
@@ -42,7 +44,9 @@ import {
   Lightbulb,
   Award,
   HelpCircle,
-  ListChecks
+  ListChecks,
+  Send,
+  ExternalLink
 } from 'lucide-react';
 import { DiffModal } from '../common/DiffModal';
 
@@ -209,6 +213,7 @@ export const ACTUAL_PREVIOUS_REPORTS: ReportSample[] = [
 ];
 
 export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) => {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const instLogoInputRef = useRef<HTMLInputElement>(null);
@@ -217,6 +222,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
   const [selectedSample, setSelectedSample] = useState<ReportSample>(ACTUAL_PREVIOUS_REPORTS[0]);
   const [modalSubTab, setModalSubTab] = useState<'guide' | 'samples'>('guide');
   const [guideSection, setGuideSection] = useState<'overview' | 'executive' | 'daily' | 'star' | 'verbs' | 'universities'>('overview');
+  const [isSampleMode, setIsSampleMode] = useState<boolean>(false);
 
   // Preview Language State (Can be toggled in-app or synced with top bar)
   const [previewLang, setPreviewLang] = useState<'ar' | 'en'>(currentLang);
@@ -375,6 +381,12 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
     };
   });
 
+  // Active Preview Profile & Weeks (Switches between Sample Data & Real Trainee Data)
+  const activePreviewProfile = isSampleMode
+    ? { ...MOCK_SAMPLE_PREVIEW_PROFILE, reportTemplate: profileData.reportTemplate }
+    : profileData;
+  const activePreviewWeeks = isSampleMode ? MOCK_SAMPLE_PREVIEW_WEEKS : displayWeeks;
+
   // Record a version snapshot
   const recordVersion = (label: string, newData: ProfileInput) => {
     const textAll = [newData.introText, newData.entityIntroText, newData.skillsText, newData.conclusionText].join(' ');
@@ -479,6 +491,23 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
       localStorage.removeItem(PROFILE_DRAFT_KEY);
       recordVersion('تم الحفظ في قاعدة البيانات', profileData);
       setTimeout(() => setSaveToast(''), 3000);
+    }
+  });
+
+  // Submit Final Report for Supervisor Review
+  const submitReportMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.post('/supervisor/submit-report');
+      return res.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['finalReport'] });
+      setSaveToast(data.message || 'تم إرسال التقرير للمشرف الأكاديمي بنجاح');
+      setTimeout(() => setSaveToast(''), 3500);
+    },
+    onError: (err: any) => {
+      setErrorToast(err.response?.data?.error || 'تعذر إرسال التقرير للمشرف');
+      setTimeout(() => setErrorToast(''), 3500);
     }
   });
 
@@ -949,6 +978,92 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
         className="hidden"
       />
 
+      {/* Supervisor Review & Academic Status Banner */}
+      <div className="bg-card border border-line rounded-2xl p-4 sm:p-5 shadow-sm no-print flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold ${
+            reportData?.profile?.status === 'approved'
+              ? 'bg-ok-bg text-ok'
+              : reportData?.profile?.status === 'changes_requested'
+              ? 'bg-amber-500/10 text-amber-500'
+              : reportData?.profile?.status === 'submitted' || reportData?.profile?.status === 'under_review'
+              ? 'bg-blue-500/10 text-blue-500'
+              : 'bg-accent-dim text-accent'
+          }`}>
+            {reportData?.profile?.status === 'approved' ? (
+              <CheckCircle2 className="w-5 h-5" />
+            ) : reportData?.profile?.status === 'changes_requested' ? (
+              <AlertTriangle className="w-5 h-5" />
+            ) : (
+              <ShieldCheck className="w-5 h-5" />
+            )}
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-xs font-black text-ink">
+                حالة التقرير الأكاديمي:
+              </h3>
+              <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold ${
+                reportData?.profile?.status === 'approved'
+                  ? 'bg-ok text-white'
+                  : reportData?.profile?.status === 'changes_requested'
+                  ? 'bg-amber-500 text-white'
+                  : reportData?.profile?.status === 'submitted' || reportData?.profile?.status === 'under_review'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-line text-sub'
+              }`}>
+                {reportData?.profile?.status === 'approved'
+                  ? 'معتمد رسمياً وموقع رقمياً'
+                  : reportData?.profile?.status === 'changes_requested'
+                  ? 'مطلوب تعديلات وإعادة تقديم'
+                  : reportData?.profile?.status === 'submitted' || reportData?.profile?.status === 'under_review'
+                  ? 'تم الرفع — قيد الفحص والمراجعة الإشرافية'
+                  : 'مسودة — لم يُرفع للاعتماد بعد'}
+              </span>
+            </div>
+            <p className="text-[11px] text-sub mt-0.5">
+              {reportData?.profile?.status === 'approved'
+                ? `تم التوقيع الإلكتروني من المشرف: ${reportData.profile.supervisorName || 'المشرف المعتمد'}`
+                : reportData?.profile?.status === 'changes_requested'
+                ? 'يرجى قراءة ملاحظات المشرف وتعديل الأقسام ثم إعادة الرفع للاعتماد.'
+                : reportData?.profile?.status === 'submitted' || reportData?.profile?.status === 'under_review'
+                ? 'تقريرك الآن معروض في بوابة المشرف الميداني للتدقيق والمصادقة.'
+                : 'عند الانتهاء من استكمال الفصول، ارفع التقرير للمشرف الأكاديمي للاعتماد الرسمي.'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {reportData?.profile?.status === 'approved' && reportData?.profile?.verificationHash ? (
+            <a
+              href={`/verify/${(reportData.profile as any).id || user?.id || 1}/${reportData.profile.verificationHash}`}
+              target="_blank"
+              rel="noreferrer"
+              className="px-4 py-2 bg-ok hover:bg-ok/90 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors shadow-sm"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span>عرض شهادة التحقق الرقمي</span>
+            </a>
+          ) : (
+            <button
+              type="button"
+              disabled={submitReportMutation.isPending || reportData?.profile?.status === 'submitted' || reportData?.profile?.status === 'under_review'}
+              onClick={() => submitReportMutation.mutate()}
+              className="px-4 py-2 bg-accent hover:bg-accent/90 disabled:opacity-50 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors shadow-sm"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span>
+                {submitReportMutation.isPending
+                  ? 'جارٍ الإرسال...'
+                  : reportData?.profile?.status === 'changes_requested'
+                  ? 'إعادة تقديم التقرير للمشرف'
+                  : 'رفع التقرير للمشرف للاعتماد'}
+              </span>
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Top Protection & Version Control Toolbar Card */}
       <div className="bg-card border border-line rounded-2xl p-4 sm:p-5 shadow-sm no-print flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="flex items-center gap-2.5">
@@ -1108,14 +1223,29 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                 <LayoutTemplate className="w-4 h-4 text-accent" />
                 <span className="text-xs font-bold text-ink">اختر قالب التقرير المعتمد لمؤسستك أو جامعتك:</span>
               </div>
-              <button
-                type="button"
-                onClick={() => setSamplesModalOpen(true)}
-                className="px-3 py-1.5 text-xs font-bold text-accent bg-accent-dim hover:bg-accent-dim/80 rounded-xl border border-accent/20 transition-all flex items-center gap-1.5 shadow-xs"
-              >
-                <BookOpen className="w-3.5 h-3.5" />
-                <span>استعراض نماذج وتقارير سابقة معتمدة (Library)</span>
-              </button>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setIsSampleMode(!isSampleMode)}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 shadow-xs ${
+                    isSampleMode
+                      ? 'bg-ok text-white border-ok shadow-sm ring-2 ring-ok/20'
+                      : 'text-ink bg-card hover:bg-line border-line'
+                  }`}
+                  title="معاينة كافة صفحات وأقسام التقرير ببيانات نموذجية متكاملة لرؤية جمال وتنسيق القالب"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>{isSampleMode ? 'إيقاف المعاينة النموذجية' : '👁️ معاينة القالب ببيانات نموذجية تجريبية'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSamplesModalOpen(true)}
+                  className="px-3 py-1.5 text-xs font-bold text-accent bg-accent-dim hover:bg-accent-dim/80 rounded-xl border border-accent/20 transition-all flex items-center gap-1.5 shadow-xs"
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>استعراض نماذج وتقارير سابقة معتمدة (Library)</span>
+                </button>
+              </div>
             </div>
 
             {/* Template Selector Grid */}
@@ -1886,6 +2016,27 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
         </div>
       </div>
 
+      {/* Sample Preview Mode Banner */}
+      {isSampleMode && (
+        <div className="p-3.5 mb-4 bg-accent-dim/60 border border-accent/30 rounded-xl flex items-center justify-between gap-3 text-xs text-ink no-print shadow-xs">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-accent shrink-0" />
+            <span className="font-bold">
+              {isAr
+                ? 'وضع المعاينة بالبيانات النموذجية مفعّل لرؤية تنسيق وفخامة القالب بكافة أقسامه — بياناتك وسجلاتك الحقيقية محفوظة ولن تتأثر إطلاقاً.'
+                : 'Sample preview mode active to showcase template aesthetics & layout — your real logs and data are safely preserved.'}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsSampleMode(false)}
+            className="px-2.5 py-1 bg-card hover:bg-line border border-line rounded-lg text-ink font-bold text-[11px] shrink-0 transition-colors"
+          >
+            {isAr ? 'إيقاف المعاينة' : 'Exit Preview'}
+          </button>
+        </div>
+      )}
+
       {/* Report Paper Preview Container (Printable Document with Dual-Language Rendering) */}
       <div
         id="report-paper-view"
@@ -1898,9 +2049,9 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
           <div className="flex items-center justify-between gap-2 sm:gap-4 pb-4 border-b border-line/60">
             {/* Institution Logo (Right in RTL / Left in LTR) */}
             <div className="w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center shrink-0">
-              {profileData.institutionLogo ? (
+              {activePreviewProfile.institutionLogo ? (
                 <img
-                  src={profileData.institutionLogo}
+                  src={activePreviewProfile.institutionLogo}
                   alt="Institution Logo"
                   className="max-w-full max-h-full object-contain"
                 />
@@ -1918,20 +2069,20 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                 {isAr ? 'المملكة العربية السعودية' : 'Kingdom of Saudi Arabia'}
               </div>
               <div className="text-xs sm:text-sm font-extrabold text-ink">
-                {profileData.trainingUnit || (isAr ? 'الوحدة التدريبية / الكلية' : 'Academic Department / College')}
+                {activePreviewProfile.trainingUnit || (isAr ? 'الوحدة التدريبية / الكلية' : 'Academic Department / College')}
               </div>
-              {profileData.department && (
+              {activePreviewProfile.department && (
                 <div className="text-[11px] sm:text-xs font-semibold text-sub">
-                  {profileData.department}
+                  {activePreviewProfile.department}
                 </div>
               )}
             </div>
 
             {/* Company Logo (Left in RTL / Right in LTR) */}
             <div className="w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center shrink-0">
-              {profileData.companyLogo ? (
+              {activePreviewProfile.companyLogo ? (
                 <img
-                  src={profileData.companyLogo}
+                  src={activePreviewProfile.companyLogo}
                   alt="Company Logo"
                   className="max-w-full max-h-full object-contain"
                 />
@@ -1947,33 +2098,33 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             {isAr ? 'التقرير النهائي للتدريب التعاوني (Co-op Report)' : 'Cooperative Training Final Report (Co-op Report)'}
           </h1>
           <div className="text-base font-bold text-ink">
-            {isAr ? 'جهة التدريب:' : 'Host Organization:'} {profileData.entityAddress || '—'}
+            {isAr ? 'جهة التدريب:' : 'Host Organization:'} {activePreviewProfile.entityAddress || '—'}
           </div>
 
           <div className="mt-8 max-w-xl mx-auto bg-bg border border-line rounded-xl p-5 text-right grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs" dir={isAr ? 'rtl' : 'ltr'}>
             <div>
-              <span className="font-bold text-sub">{isAr ? 'اسم المتدرب:' : 'Trainee Name:'}</span> {profileData.studentName || '—'}
+              <span className="font-bold text-sub">{isAr ? 'اسم المتدرب:' : 'Trainee Name:'}</span> {activePreviewProfile.studentName || '—'}
             </div>
             <div>
-              <span className="font-bold text-sub">{isAr ? 'الرقم التدريبي:' : 'Training ID:'}</span> {profileData.trainingNumber || '—'}
+              <span className="font-bold text-sub">{isAr ? 'الرقم التدريبي:' : 'Training ID:'}</span> {activePreviewProfile.trainingNumber || '—'}
             </div>
             <div>
-              <span className="font-bold text-sub">{isAr ? 'القسم / التخصص:' : 'Department:'}</span> {profileData.department || '—'}
+              <span className="font-bold text-sub">{isAr ? 'القسم / التخصص:' : 'Department:'}</span> {activePreviewProfile.department || '—'}
             </div>
             <div>
-              <span className="font-bold text-sub">{isAr ? 'المشرف الأكاديمي:' : 'Academic Supervisor:'}</span> {profileData.supervisorName || '—'}
+              <span className="font-bold text-sub">{isAr ? 'المشرف الأكاديمي:' : 'Academic Supervisor:'}</span> {activePreviewProfile.supervisorName || '—'}
             </div>
             <div>
-              <span className="font-bold text-sub">{isAr ? 'المشرف الميداني:' : 'Field Supervisor:'}</span> {profileData.responsibleName || '—'}
+              <span className="font-bold text-sub">{isAr ? 'المشرف الميداني:' : 'Field Supervisor:'}</span> {activePreviewProfile.responsibleName || '—'}
             </div>
             <div>
               <span className="font-bold text-sub">{isAr ? 'ساعات المقرر في الخطة:' : 'Course Credit:'}</span> {isAr ? 'ساعتان معتمدتان من المعدل التراكمي' : '2 Credit Hours in GPA'}
             </div>
             <div>
-              <span className="font-bold text-sub">{isAr ? 'المدة التدريبية المعتمدة:' : 'Training Duration:'}</span> {profileData.trainingWeeks || 14} {isAr ? 'أسبوعاً تدريبياً ميدانياً' : 'Weeks'}
+              <span className="font-bold text-sub">{isAr ? 'المدة التدريبية المعتمدة:' : 'Training Duration:'}</span> {activePreviewProfile.trainingWeeks || 14} {isAr ? 'أسبوعاً تدريبياً ميدانياً' : 'Weeks'}
             </div>
             <div>
-              <span className="font-bold text-sub">{isAr ? 'حالة التوثيق الميداني:' : 'Documentation Status:'}</span> {displayWeeks.length} {isAr ? 'أسبوعاً موثقاً بالكامل (100%)' : 'Weeks Documented (100%)'}
+              <span className="font-bold text-sub">{isAr ? 'حالة التوثيق الميداني:' : 'Documentation Status:'}</span> {activePreviewWeeks.length} {isAr ? 'أسبوعاً موثقاً بالكامل (100%)' : 'Weeks Documented (100%)'}
             </div>
           </div>
         </div>
@@ -1984,7 +2135,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             {isAr ? '1. المقدمة وأهداف التدريب' : '1. Introduction & Objectives'}
           </h2>
           <p className="text-sm text-ink leading-loose whitespace-pre-wrap">
-            {profileData.introText || (isAr ? 'لم تُحدد المقدمة بعد.' : 'No introduction provided yet.')}
+            {activePreviewProfile.introText || (isAr ? 'لم تُحدد المقدمة بعد.' : 'No introduction provided yet.')}
           </p>
         </div>
 
@@ -1994,12 +2145,12 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             {isAr ? '2. التعريف بجهة التدريب وطبيعة العمل' : '2. Host Organization Overview'}
           </h2>
           <p className="text-sm text-ink leading-loose whitespace-pre-wrap">
-            {profileData.entityIntroText || (isAr ? 'لم يُحدد التعريف بجهة التدريب بعد.' : 'No organization overview provided yet.')}
+            {activePreviewProfile.entityIntroText || (isAr ? 'لم يُحدد التعريف بجهة التدريب بعد.' : 'No organization overview provided yet.')}
           </p>
           <div className="bg-bg border border-line rounded-lg p-3 text-xs text-sub flex flex-wrap gap-4 font-semibold">
-            <span>{isAr ? 'جهة التدريب:' : 'Organization:'} {profileData.entityAddress || '—'}</span>
-            <span>{isAr ? 'عدد الموظفين تقريباً:' : 'Employees:'} {profileData.employeesCount || '—'}</span>
-            <span>{isAr ? 'المسؤول الميداني:' : 'Supervisor:'} {profileData.responsibleName || '—'}</span>
+            <span>{isAr ? 'جهة التدريب:' : 'Organization:'} {activePreviewProfile.entityAddress || '—'}</span>
+            <span>{isAr ? 'عدد الموظفين تقريباً:' : 'Employees:'} {activePreviewProfile.employeesCount || '—'}</span>
+            <span>{isAr ? 'المسؤول الميداني:' : 'Supervisor:'} {activePreviewProfile.responsibleName || '—'}</span>
           </div>
         </div>
 
@@ -2009,7 +2160,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             {isAr ? '3. تقارير وسجل الأسابيع التدريبية الميدانية (14 أسبوعاً)' : '3. Weekly Technical Training Reports (14 Weeks)'}
           </h2>
 
-          {displayWeeks.map((w) => {
+          {activePreviewWeeks.map((w) => {
             const weekTitle = isAr ? getArabicWeekName(w.weekIndex) : `Week ${w.weekIndex}`;
             const weekTopic = getWeekTopic(w, isAr);
 
@@ -2042,7 +2193,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                         <span className="text-[11px] text-muted font-normal">{w.entries.length} {isAr ? 'مهام موثقة' : 'tasks'}</span>
                       </div>
                       <div className="space-y-3">
-                        {w.entries.map((entry, eIdx) => {
+                        {w.entries.map((entry: EntryDTO, eIdx: number) => {
                           const entryHours = calculateHoursBetween(entry.timeFrom, entry.timeTo);
                           return (
                             <div key={entry.id || eIdx} className="rounded-xl border border-line bg-card overflow-hidden text-xs shadow-2xs">
@@ -2104,7 +2255,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                         {isAr ? 'ثانياً: الأدلة والصور التوثيقية الميدانية للأسبوع:' : 'Field Evidence & Documentation Photos:'}
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                        {w.evidence.map((ev, evIdx) => (
+                        {w.evidence.map((ev: any, evIdx: number) => (
                           <div key={ev.id || evIdx} className="border border-line rounded-xl overflow-hidden bg-surface">
                             <img src={ev.imageData} alt={ev.caption} className="w-full h-44 object-cover" />
                             <div className="p-2.5 text-xs font-bold text-ink leading-snug bg-card border-t border-line">
@@ -2122,7 +2273,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                 <div className="px-5 py-3.5 bg-surface border-t border-line text-xs text-sub flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-2 font-bold text-ink">
                     <span>{isAr ? 'اعتماد المشرف الميداني بالمنشأة:' : 'Field Supervisor Approval:'}</span>
-                    <span className="text-sub font-normal">{profileData.responsibleName || '....................'}</span>
+                    <span className="text-sub font-normal">{activePreviewProfile.responsibleName || '....................'}</span>
                   </div>
                   <div className="flex items-center gap-4 text-[11.5px]">
                     <span>{isAr ? 'التقييم: [  ] ممتاز   [  ] جيد جداً   [  ] جيد' : 'Rating: [  ] Excellent  [  ] Very Good  [  ] Good'}</span>
@@ -2140,7 +2291,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             {isAr ? '4. المعارف والمهارات والتجارب المكتسبة' : '4. Acquired Competencies & Technical Skills'}
           </h2>
           <p className="text-sm text-ink leading-loose whitespace-pre-wrap">
-            {profileData.skillsText || (isAr ? 'لم تُحدد المهارات المكتسبة بعد.' : 'No acquired skills described yet.')}
+            {activePreviewProfile.skillsText || (isAr ? 'لم تُحدد المهارات المكتسبة بعد.' : 'No acquired skills described yet.')}
           </p>
         </div>
 
@@ -2150,7 +2301,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             {isAr ? '5. الخاتمة والتوصيات' : '5. Conclusions & Recommendations'}
           </h2>
           <p className="text-sm text-ink leading-loose whitespace-pre-wrap">
-            {profileData.conclusionText || (isAr ? 'لم تُحدد الخاتمة بعد.' : 'No conclusion provided yet.')}
+            {activePreviewProfile.conclusionText || (isAr ? 'لم تُحدد الخاتمة بعد.' : 'No conclusion provided yet.')}
           </p>
         </div>
 
@@ -2163,14 +2314,14 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
           <div className="border border-line rounded-xl overflow-hidden text-xs">
             <div className="bg-bg p-3 font-bold text-ink border-b border-line flex justify-between">
               <span>{isAr ? 'بيانات الاعتماد والتقييم النهائي الشامل' : 'Final Evaluation & Endorsement'}</span>
-              <span className="text-accent">{profileData.responsibleName || (isAr ? 'المشرف الميداني' : 'Field Supervisor')}</span>
+              <span className="text-accent">{activePreviewProfile.responsibleName || (isAr ? 'المشرف الميداني' : 'Field Supervisor')}</span>
             </div>
             <div className="p-4 space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sub">
-                <div><b>{isAr ? 'اسم المتدرب:' : 'Student Name:'}</b> {profileData.studentName || '—'}</div>
-                <div><b>{isAr ? 'الرقم التدريبي / الجامعي:' : 'ID / Trainee Number:'}</b> {profileData.trainingNumber || '—'}</div>
-                <div><b>{isAr ? 'جهة التدريب:' : 'Host Organization:'}</b> {profileData.entityAddress || '—'}</div>
-                <div><b>{isAr ? 'إجمالي الساعات المعتمدة:' : 'Total Approved Hours:'}</b> {reportData?.totalHours || 0} / {profileData.courseHours || 280} {isAr ? 'ساعة' : 'hrs'}</div>
+                <div><b>{isAr ? 'اسم المتدرب:' : 'Student Name:'}</b> {activePreviewProfile.studentName || '—'}</div>
+                <div><b>{isAr ? 'الرقم التدريبي / الجامعي:' : 'ID / Trainee Number:'}</b> {activePreviewProfile.trainingNumber || '—'}</div>
+                <div><b>{isAr ? 'جهة التدريب:' : 'Host Organization:'}</b> {activePreviewProfile.entityAddress || '—'}</div>
+                <div><b>{isAr ? 'إجمالي الساعات المعتمدة:' : 'Total Approved Hours:'}</b> {isSampleMode ? 280 : (reportData?.totalHours || 0)} / {activePreviewProfile.courseHours || 280} {isAr ? 'ساعة' : 'hrs'}</div>
               </div>
               <div className="border-t border-line pt-3 flex flex-wrap items-center justify-between gap-2">
                 <div>

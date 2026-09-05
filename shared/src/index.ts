@@ -61,7 +61,10 @@ export const profileSchema = z.object({
   introText: z.string().default(''),
   entityIntroText: z.string().default(''),
   skillsText: z.string().default(''),
-  conclusionText: z.string().default('')
+  conclusionText: z.string().default(''),
+  status: z.enum(['draft', 'submitted', 'under_review', 'approved', 'changes_requested']).optional(),
+  verificationHash: z.string().optional(),
+  tenantId: z.string().optional()
 });
 
 export const aiProcessSchema = z.object({
@@ -142,6 +145,79 @@ export interface ReportProfileDTO {
   supervisorRating?: string;
   supervisorApproved?: boolean;
   supervisorApprovedAt?: string | null;
+  status?: ReportStatus;
+  verificationHash?: string | null;
+  tenantId?: string;
+}
+
+export type ReportStatus = 'draft' | 'submitted' | 'under_review' | 'approved' | 'changes_requested';
+
+export interface ReportStatusHistoryDTO {
+  id: number;
+  reportId: number;
+  actorId: number;
+  fromStatus: string;
+  toStatus: string;
+  note?: string | null;
+  createdAt: string;
+  actorName?: string;
+}
+
+export interface ReportSectionCommentDTO {
+  id: number;
+  reportId: number;
+  supervisorId: number;
+  sectionKey: string;
+  comment: string;
+  resolved: boolean;
+  createdAt: string;
+  supervisorName?: string;
+}
+
+export interface AuditLogDTO {
+  id: number;
+  tenantId: string;
+  userId?: number | null;
+  action: string;
+  entityType: string;
+  entityId?: string | null;
+  metadata?: any;
+  ipAddress?: string | null;
+  createdAt: string;
+  username?: string;
+}
+
+export interface AiUsageLogDTO {
+  id: number;
+  tenantId: string;
+  userId: number;
+  provider: string;
+  action: string;
+  tokensIn: number;
+  tokensOut: number;
+  costEstimate: number;
+  createdAt: string;
+}
+
+export interface ReportVerificationDTO {
+  valid: boolean;
+  reportId: number;
+  studentNameMasked: string;
+  trainingUnit: string;
+  entityAddress: string;
+  trainingWeeks: number;
+  courseHours: number;
+  approvedAt: string | null;
+  supervisorName: string;
+  status: string;
+}
+
+export interface ExportJobStatusDTO {
+  jobId: string;
+  status: 'waiting' | 'active' | 'completed' | 'failed';
+  progress: number;
+  downloadUrl?: string;
+  error?: string;
 }
 
 export const REPORT_TEMPLATES = [

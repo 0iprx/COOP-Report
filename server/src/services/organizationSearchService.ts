@@ -105,32 +105,116 @@ const CURATED_INSTITUTIONS: Record<string, {
     overview: 'تقود وزارة التعليم منظومة التعليم المدرسي والجامعي والتدريب والبحث العلمي في المملكة، وتُعد رائدة في تطبيق بيئات التعلم الرقمي المتقدمة عبر منصات وطنية ذكية تخدم ملايين الطلاب والمعلمين وأعضاء الهيئة الأكاديمية.',
     departments: ['وكالة الوزارة للتحول الرقمي والأمن السيبراني', 'إدارة المناهج والخطط الدراسية والمقررات', 'إدارة التعليم الجامعي والتطوير الأكاديمي', 'إدارة الشؤون الهندسية والمباني التعليمية'],
     technologies: ['منصات التعلم الإلكتروني الوطنية (منصة مدرستي، روضتي)', 'أنظمة إدارة التعلم وشؤون الطلاب (نظام نور، نظام فارس)', 'الحوسبة السحابية التعليمية والبث التفاعلي', 'أنظمة الاختبارات المعيارية والتقييم المؤتمت']
+  },
+  'هواوي': {
+    officialName: 'شركة هواوي تك للاستثمار المحدودة (هواوي السعودية - Huawei Tech Investment Saudi Arabia)',
+    sector: 'الاتصالات وتقنية المعلومات، شبكات الجيل الخامس (5G)، الحوسبة السحابية، ومراكز البيانات',
+    vision2030Link: 'بناء البنية التحتية الرقمية فائقة السرعة، تدشين منطقة هواوي السحابية (Huawei Cloud Region) في الرياض، وتأهيل الكفاءات الوطنية عبر برامج أكاديمية هواوي للاتصالات',
+    overview: 'تُعد شركة هواوي (Huawei) إحدى كبرى الشركات العالمية الرائدة في توفير البنية التحتية لتقنية المعلومات والاتصالات والأجهزة الذكية. وتنشط الشركة في المملكة العربية السعودية من خلال مقرها الإقليمي بالرياض ومراكز البيانات السحابية ومختبرات الابتكار والتدريب الميداني، حيث تساهم بدور ريادي في نشر شبكات الألياف الضوئية (FTTH) ومحطات الجيل الخامس وحلول الشبكات المؤسسية.',
+    departments: ['قطاع شبكات الاتصالات ومحطات البث (Carrier Network)', 'قطاع الحوسبة السحابية ومراكز البيانات (Huawei Cloud)', 'قطاع شبكات الأعمال المؤسسية (Enterprise IP & Optical)', 'إدارة العمليات والدعم الفني الميداني ومراقبة الشبكات (NOC & TAC)'],
+    technologies: ['أنظمة شبكات الجيل الخامس (5G Massive MIMO / Core Network)', 'حلول الألياف البصرية المنزلية والمؤسسية (FTTH / GPON)', 'محولات وموجهات الشبكات المؤسسية (Enterprise Routers & Switches)', 'منصات الحوسبة السحابية ومراكز البيانات الذكية (Cloud Data Centers)']
+  },
+  'huawei': {
+    officialName: 'شركة هواوي تك للاستثمار المحدودة (هواوي السعودية - Huawei Tech Investment Saudi Arabia)',
+    sector: 'الاتصالات وتقنية المعلومات، شبكات الجيل الخامس (5G)، الحوسبة السحابية، ومراكز البيانات',
+    vision2030Link: 'بناء البنية التحتية الرقمية فائقة السرعة، تدشين منطقة هواوي السحابية (Huawei Cloud Region) في الرياض، وتأهيل الكفاءات الوطنية عبر برامج أكاديمية هواوي للاتصالات',
+    overview: 'تُعد شركة هواوي (Huawei) إحدى كبرى الشركات العالمية الرائدة في توفير البنية التحتية لتقنية المعلومات والاتصالات والأجهزة الذكية. وتنشط الشركة في المملكة العربية السعودية من خلال مقرها الإقليمي بالرياض ومراكز البيانات السحابية ومختبرات الابتكار والتدريب الميداني، حيث تساهم بدور ريادي في نشر شبكات الألياف الضوئية (FTTH) ومحطات الجيل الخامس وحلول الشبكات المؤسسية.',
+    departments: ['قطاع شبكات الاتصالات ومحطات البث (Carrier Network)', 'قطاع الحوسبة السحابية ومراكز البيانات (Huawei Cloud)', 'قطاع شبكات الأعمال المؤسسية (Enterprise IP & Optical)', 'إدارة العمليات والدعم الفني الميداني ومراقبة الشبكات (NOC & TAC)'],
+    technologies: ['أنظمة شبكات الجيل الخامس (5G Massive MIMO / Core Network)', 'حلول الألياف البصرية المنزلية والمؤسسية (FTTH / GPON)', 'محولات وموجهات الشبكات المؤسسية (Enterprise Routers & Switches)', 'منصات الحوسبة السحابية ومراكز البيانات الذكية (Cloud Data Centers)']
+  },
+  'موبايلي': {
+    officialName: 'شركة اتحاد اتصالات (موبايلي - Mobily)',
+    sector: 'الاتصالات المتنقلة، شبكات البيانات، ومراكز الاستضافة السحابية',
+    vision2030Link: 'توسيع شبكات الاتصالات فائقة السرعة والربط القاري ودعم التحول الرقمي الوطني',
+    overview: 'تُعد شركة موبايلي إحدى كبرى شركات الاتصالات الرائدة في المملكة والمنطقة، وتملك شبكة واسعة من الألياف الضوئية ومراكز البيانات المعتمدة دولياً، وتقدم منظومة خدمات اتصالات متكاملة للأفراد وقطاع الأعمال.',
+    departments: ['قطاع الشبكات وهندسة الاتصالات', 'قطاع الأعمال وحلول تقنية المعلومات', 'إدارة الأمن السيبراني ومراكز البيانات', 'إدارة العمليات وتجربة العملاء'],
+    technologies: ['شبكات الألياف الضوئية (FTTH)', 'شبكات الجيل الخامس (5G)', 'مراكز البيانات المعتمدة Tier-III/IV', 'حلول الحوسبة السحابية والربط المؤسسي']
+  },
+  'زين': {
+    officialName: 'شركة زين السعودية (Zain KSA)',
+    sector: 'الاتصالات وتقنية المعلومات، الجيل الخامس، والخدمات الرقمية المبتكرة',
+    vision2030Link: 'الريادة في نشر شبكات 5G وتطوير البنية التحتية الخضراء المستدامة',
+    overview: 'تُمثّل زين السعودية ركيزة هامة في قطاع الاتصالات، وحققت مراكز ريادية عالمية في سرعات وتغطية شبكات الجيل الخامس، إضافة إلى خدمات الحوسبة السحابية ومنصات التكنولوجيا المالية والمنازل الذكية.',
+    departments: ['إدارة هندسة الشبكات والتشغيل', 'قطاع الابتكار والخدمات الرقمية', 'قطاع أمن المعلومات والأنظمة السحابية', 'إدارة المشاريع الاستراتيجية'],
+    technologies: ['شبكات 5G المتقدمة', 'تقنيات الاتصال وإنترنت الأشياء (IoT)', 'البنية التحتية السحابية (Zain Cloud)', 'حلول التقنية المالية Tamam']
   }
 };
 
 /**
  * Searches Wikipedia Arabic API for organization information
  */
+function extractCoreKeywords(text: string): string[] {
+  const stopWords = new Set([
+    'شركة', 'مؤسسة', 'هيئة', 'وزارة', 'مكتب', 'فرع', 'مجموعة', 'مركز', 'إدارة',
+    'السعودية', 'سعودية', 'العربية', 'بالمملكة', 'المملكة', 'الرياض', 'جدة', 'الدمام', 'الخبر',
+    'المحدودة', 'مساهمة', 'القابضة', 'للاستثمار', 'للتقنية', 'للاتصالات', 'ش.م.م', 'saudi', 'company', 'arabia'
+  ]);
+  return text
+    .split(/[\s,.-]+/)
+    .map((w) => w.trim().toLowerCase())
+    .filter((w) => w.length > 2 && !stopWords.has(w));
+}
+
+function isDisallowedGeoTitle(title: string, userQuery: string): boolean {
+  const queryLower = userQuery.toLowerCase();
+  if (queryLower.includes('محافظة') || queryLower.includes('مدينة') || queryLower.includes('منطقة')) {
+    return false;
+  }
+  return /^(محافظة|مدينة|قرية|هجرة|وادي|شعب|جبل)\s+/i.test(title);
+}
+
+/**
+ * Searches Wikipedia Arabic API for organization information with keyword validation
+ */
 async function searchWikipedia(query: string): Promise<SearchEntityFacts | null> {
   try {
-    const searchUrl = `https://ar.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&utf8=1`;
-    const searchRes = await fetch(searchUrl, {
-      headers: { 'User-Agent': 'CoopReportBot/1.0 (academic training platform)' },
-      signal: AbortSignal.timeout(6000)
-    });
+    const coreKeywords = extractCoreKeywords(query);
 
-    if (!searchRes.ok) return null;
-    const searchData: any = await searchRes.json();
-    const searchResults = searchData?.query?.search;
+    // Try primary search
+    const executeSearch = async (searchTerm: string) => {
+      const searchUrl = `https://ar.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchTerm)}&format=json&utf8=1`;
+      const res = await fetch(searchUrl, {
+        headers: { 'User-Agent': 'CoopReportBot/1.0 (academic training platform)' },
+        signal: AbortSignal.timeout(6000)
+      });
+      if (!res.ok) return null;
+      const json: any = await res.json();
+      return json?.query?.search || [];
+    };
+
+    let searchResults = await executeSearch(query);
+
+    // If no results or results are geo-mismatched, try core keyword
+    if ((!searchResults || searchResults.length === 0 || isDisallowedGeoTitle(searchResults[0]?.title || '', query)) && coreKeywords.length > 0) {
+      const fallbackResults = await executeSearch(coreKeywords.join(' '));
+      if (fallbackResults && fallbackResults.length > 0) {
+        searchResults = fallbackResults;
+      }
+    }
+
     if (!searchResults || searchResults.length === 0) return null;
 
-    let bestMatch = searchResults[0];
-    if (bestMatch.title.includes('(توضيح)') && searchResults.length > 1) {
-      const specificMatch = searchResults.find((s: any) => s.title.includes('(السعودية)') || (!s.title.includes('(توضيح)') && s.wordcount > 200));
+    // Filter out unwanted geographic titles (e.g. محافظة الرس when looking for هواوي)
+    const validMatches = searchResults.filter((s: any) => {
+      if (isDisallowedGeoTitle(s.title, query)) return false;
+      if (coreKeywords.length > 0) {
+        const titleLower = s.title.toLowerCase();
+        const snippetLower = (s.snippet || '').toLowerCase();
+        return coreKeywords.some((k) => titleLower.includes(k) || snippetLower.includes(k));
+      }
+      return true;
+    });
+
+    if (validMatches.length === 0) return null;
+
+    let bestMatch = validMatches[0];
+    if (bestMatch.title.includes('(توضيح)') && validMatches.length > 1) {
+      const specificMatch = validMatches.find((s: any) => s.title.includes('(السعودية)') || (!s.title.includes('(توضيح)') && s.wordcount > 200));
       if (specificMatch) {
         bestMatch = specificMatch;
       }
     }
+
     const pageId = bestMatch.pageid;
     const title = bestMatch.title;
 

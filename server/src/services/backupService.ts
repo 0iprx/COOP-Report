@@ -162,7 +162,7 @@ export async function exportUserReadableArchive(
     throw new Error('المستخدم غير موجود');
   }
 
-  const entries = user.entries as PrismaEntry[];
+  const entries = user.entries as unknown as PrismaEntry[];
   const profile: any = user.profile || {};
 
   // Group entries by Sunday-based week using the same logic as the rest of the app
