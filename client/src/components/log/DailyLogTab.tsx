@@ -358,7 +358,7 @@ export const DailyLogTab: React.FC = () => {
       )}
 
       {/* Input Card */}
-      <div className="bg-card border border-line rounded-2xl p-6 shadow-sm">
+      <div className="bg-card border border-line rounded-2xl p-4 sm:p-6 shadow-sm">
         <div className="flex items-center justify-between pb-4 mb-4 border-b border-line">
           <div className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-accent" />
@@ -631,7 +631,7 @@ export const DailyLogTab: React.FC = () => {
             <button
               type="submit"
               disabled={createMutation.isPending || updateMutation.isPending}
-              className="px-6 py-2.5 bg-accent hover:bg-accent/90 disabled:opacity-50 text-white font-bold rounded-xl transition-all shadow-sm text-sm flex items-center gap-2"
+              className="w-full sm:w-auto px-6 py-2.5 bg-accent hover:bg-accent/90 disabled:opacity-50 text-white font-bold rounded-xl transition-all shadow-sm text-sm flex items-center justify-center gap-2"
             >
               {editingEntryId ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
               <span>
@@ -647,7 +647,7 @@ export const DailyLogTab: React.FC = () => {
       </div>
 
       {/* Entries List */}
-      <div className="bg-card border border-line rounded-2xl p-6 shadow-sm">
+      <div className="bg-card border border-line rounded-2xl p-4 sm:p-6 shadow-sm">
         <div className="flex items-center justify-between pb-4 mb-4 border-b border-line">
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-accent" />
@@ -667,8 +667,8 @@ export const DailyLogTab: React.FC = () => {
         ) : (
           <div className="divide-y divide-line">
             {entriesData.entries.map((entry: any) => (
-              <div key={entry.id} className="py-4 first:pt-0 last:pb-0 flex items-start justify-between gap-4">
-                <div className="space-y-1.5 flex-1">
+              <div key={entry.id} className="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
+                <div className="space-y-1.5 flex-1 w-full">
                   <div className="flex flex-wrap items-center gap-2 text-xs">
                     <span className="font-extrabold text-ink">{entry.entryDate}</span>
                     <span className="text-sub">({entry.timeFrom} - {entry.timeTo})</span>
@@ -685,7 +685,7 @@ export const DailyLogTab: React.FC = () => {
                   <p className="text-xs text-sub leading-relaxed whitespace-pre-wrap">{entry.description}</p>
                 </div>
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 self-end sm:self-start pt-1 sm:pt-0 border-t border-line/40 sm:border-0 w-full sm:w-auto justify-end">
                   {/* Edit button */}
                   <button
                     onClick={() => handleStartEdit(entry)}

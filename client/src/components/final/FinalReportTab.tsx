@@ -33,7 +33,12 @@ import {
   Pin,
   X,
   Eye,
-  ArrowRight
+  ArrowRight,
+  Compass,
+  Lightbulb,
+  Award,
+  HelpCircle,
+  ListChecks
 } from 'lucide-react';
 import { DiffModal } from '../common/DiffModal';
 
@@ -206,6 +211,8 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
   const compLogoInputRef = useRef<HTMLInputElement>(null);
   const [samplesModalOpen, setSamplesModalOpen] = useState<boolean>(false);
   const [selectedSample, setSelectedSample] = useState<ReportSample>(ACTUAL_PREVIOUS_REPORTS[0]);
+  const [modalSubTab, setModalSubTab] = useState<'guide' | 'samples'>('guide');
+  const [guideSection, setGuideSection] = useState<'overview' | 'executive' | 'daily' | 'star' | 'verbs' | 'universities'>('overview');
 
   // Preview Language State (Can be toggled in-app or synced with top bar)
   const [previewLang, setPreviewLang] = useState<'ar' | 'en'>(currentLang);
@@ -900,122 +907,8 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
           </button>
 
           
-      {/* Samples Library Modal (مكتبة تقارير ونماذج سابقة معتمدة) */}
-      {samplesModalOpen && (
-        <div className="fixed inset-0 bg-ink/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in no-print">
-          <div className="bg-card border border-line rounded-2xl p-6 shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between pb-4 border-b border-line">
-              <div className="flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-accent" />
-                <div>
-                  <h3 className="text-base font-extrabold text-ink">مكتبة التقارير والنماذج السابقة الفعلية المعتمدة</h3>
-                  <p className="text-xs text-sub">استعرض صياغة وهيكل تقارير كبرى الجامعات والمؤسسات واستلهم منها لتقريرك</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setSamplesModalOpen(false)}
-                className="p-1 text-sub hover:text-ink rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
 
-            {/* Samples Tabs */}
-            <div className="flex gap-2 p-1 bg-bg border border-line rounded-xl my-3 overflow-x-auto shrink-0">
-              {ACTUAL_PREVIOUS_REPORTS.map((sample) => (
-                <button
-                  key={sample.id}
-                  type="button"
-                  onClick={() => setSelectedSample(sample)}
-                  className={`px-3 py-2 text-xs font-bold rounded-lg transition-all whitespace-nowrap flex items-center gap-1.5 ${
-                    selectedSample.id === sample.id
-                      ? 'bg-accent text-white shadow-xs'
-                      : 'text-sub hover:text-ink hover:bg-card'
-                  }`}
-                >
-                  <span>{sample.name}</span>
-                </button>
-              ))}
-            </div>
-
-            {/* Sample Content Display */}
-            <div className="flex-1 overflow-y-auto space-y-4 pr-1 text-xs leading-relaxed text-ink">
-              <div className="bg-bg/60 p-4 rounded-xl border border-line space-y-2">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line/60 pb-2">
-                  <div>
-                    <span className="font-extrabold text-accent">{selectedSample.institution}</span>
-                    <div className="text-sub font-semibold">{selectedSample.specialty}</div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleAdoptSample(selectedSample)}
-                    className="px-3.5 py-1.5 bg-ok hover:bg-ok/90 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-xs transition-all"
-                  >
-                    <Check className="w-3.5 h-3.5" />
-                    <span>استيراد هذا النموذج كمسودة لتقريري</span>
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-sub">
-                  <div><b>جهة التدريب:</b> {selectedSample.hostCompany}</div>
-                  <div><b>عنوان التقرير:</b> {selectedSample.studentTitle}</div>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div>
-                  <h4 className="font-extrabold text-accent text-xs mb-1">الملخص التنفيذي (Executive Summary):</h4>
-                  <p className="p-3 bg-bg border border-line rounded-xl leading-relaxed whitespace-pre-wrap">{selectedSample.executiveSummary}</p>
-                </div>
-
-                <div>
-                  <h4 className="font-extrabold text-ink text-xs mb-1">المقدمة وأهداف التدريب:</h4>
-                  <p className="p-3 bg-bg border border-line rounded-xl leading-relaxed whitespace-pre-wrap">{selectedSample.introText}</p>
-                </div>
-
-                <div>
-                  <h4 className="font-extrabold text-ink text-xs mb-1">نبذة عن جهة التدريب والبيئة التشغيلية:</h4>
-                  <p className="p-3 bg-bg border border-line rounded-xl leading-relaxed whitespace-pre-wrap">{selectedSample.entityIntroText}</p>
-                </div>
-
-                <div>
-                  <h4 className="font-extrabold text-ink text-xs mb-1">المهارات والخبرات المكتسبة (Competencies):</h4>
-                  <p className="p-3 bg-bg border border-line rounded-xl leading-relaxed whitespace-pre-wrap">{selectedSample.skillsText}</p>
-                </div>
-
-                <div>
-                  <h4 className="font-extrabold text-ink text-xs mb-1">التحديات الفنية ومعالجة الصعوبات (Problem-Solving):</h4>
-                  <p className="p-3 bg-bg border border-line rounded-xl leading-relaxed whitespace-pre-wrap">{selectedSample.challengesText}</p>
-                </div>
-
-                <div>
-                  <h4 className="font-extrabold text-ink text-xs mb-1">الخاتمة والتوصيات:</h4>
-                  <p className="p-3 bg-bg border border-line rounded-xl leading-relaxed whitespace-pre-wrap">{selectedSample.conclusionText}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-line flex justify-end gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => setSamplesModalOpen(false)}
-                className="px-4 py-2 text-xs font-bold text-sub hover:text-ink bg-bg rounded-xl border border-line"
-              >
-                إغلاق
-              </button>
-              <button
-                type="button"
-                onClick={() => handleAdoptSample(selectedSample)}
-                className="px-4 py-2 text-xs font-bold text-white bg-accent hover:bg-accent/90 rounded-xl flex items-center gap-1.5 shadow-sm"
-              >
-                <Check className="w-3.5 h-3.5" />
-                <span>اعتماد وتطبيق هذا النموذج كمسودة</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Version History Modal Trigger */}
+          {/* Version History Modal Trigger */}
           <button
             type="button"
             onClick={() => setVersionsModalOpen(true)}
@@ -1854,14 +1747,14 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
       <div
         id="report-paper-view"
         dir={isAr ? 'rtl' : 'ltr'}
-        className="bg-card border border-line rounded-2xl p-8 sm:p-12 shadow-sm leading-relaxed text-ink space-y-8 print-only-container print-page-wrapper"
+        className="bg-card border border-line rounded-2xl p-4 sm:p-8 md:p-12 shadow-sm leading-relaxed text-ink space-y-8 print-only-container print-page-wrapper overflow-x-auto"
       >
         {/* Cover Page */}
         <div id="sec-cover" className="scroll-mt-24 text-center pb-10 border-b-2 border-line space-y-6">
           {/* Symmetrical Dual-Logo Header */}
-          <div className="flex items-center justify-between gap-4 pb-4 border-b border-line/60">
+          <div className="flex items-center justify-between gap-2 sm:gap-4 pb-4 border-b border-line/60">
             {/* Institution Logo (Right in RTL / Left in LTR) */}
-            <div className="w-24 h-24 flex items-center justify-center shrink-0">
+            <div className="w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center shrink-0">
               {profileData.institutionLogo ? (
                 <img
                   src={profileData.institutionLogo}
@@ -1869,30 +1762,30 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                   className="max-w-full max-h-full object-contain"
                 />
               ) : (
-                <div className="w-20 h-20 border border-dashed border-line rounded-lg flex flex-col items-center justify-center text-[10px] text-sub/50 p-1">
-                  <GraduationCap className="w-6 h-6 mb-1 text-sub/40" />
+                <div className="w-16 h-16 sm:w-20 sm:h-20 border border-dashed border-line rounded-lg flex flex-col items-center justify-center text-[9px] sm:text-[10px] text-sub/50 p-1">
+                  <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6 mb-0.5 sm:mb-1 text-sub/40" />
                   <span>شعار الكلية</span>
                 </div>
               )}
             </div>
 
             {/* Center National & Academic Hierarchy */}
-            <div className="flex-1 text-center space-y-1">
-              <div className="text-xs font-bold text-sub uppercase tracking-wider">
+            <div className="flex-1 text-center space-y-0.5 sm:space-y-1 px-1">
+              <div className="text-[10px] sm:text-xs font-bold text-sub uppercase tracking-wider">
                 {isAr ? 'المملكة العربية السعودية' : 'Kingdom of Saudi Arabia'}
               </div>
-              <div className="text-sm font-extrabold text-ink">
+              <div className="text-xs sm:text-sm font-extrabold text-ink">
                 {profileData.trainingUnit || (isAr ? 'الوحدة التدريبية / الكلية' : 'Academic Department / College')}
               </div>
               {profileData.department && (
-                <div className="text-xs font-semibold text-sub">
+                <div className="text-[11px] sm:text-xs font-semibold text-sub">
                   {profileData.department}
                 </div>
               )}
             </div>
 
             {/* Company Logo (Left in RTL / Right in LTR) */}
-            <div className="w-24 h-24 flex items-center justify-center shrink-0">
+            <div className="w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center shrink-0">
               {profileData.companyLogo ? (
                 <img
                   src={profileData.companyLogo}
@@ -1900,8 +1793,8 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                   className="max-w-full max-h-full object-contain"
                 />
               ) : (
-                <div className="w-20 h-20 border border-dashed border-line rounded-lg flex flex-col items-center justify-center text-[10px] text-sub/50 p-1">
-                  <Building className="w-6 h-6 mb-1 text-sub/40" />
+                <div className="w-16 h-16 sm:w-20 sm:h-20 border border-dashed border-line rounded-lg flex flex-col items-center justify-center text-[9px] sm:text-[10px] text-sub/50 p-1">
+                  <Building className="w-5 h-5 sm:w-6 sm:h-6 mb-0.5 sm:mb-1 text-sub/40" />
                   <span>شعار المنشأة</span>
                 </div>
               )}
@@ -2151,117 +2044,552 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
       </div>
 
       
-      {/* Samples Library Modal (مكتبة تقارير ونماذج سابقة معتمدة) */}
+      {/* Samples & Writing Guide Hub Modal (مركز إرشادات وقوالب التقرير التعاوني) */}
       {samplesModalOpen && (
-        <div className="fixed inset-0 bg-ink/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in no-print">
-          <div className="bg-card border border-line rounded-2xl p-6 shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="fixed inset-0 bg-ink/60 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4 animate-fade-in no-print">
+          <div className="bg-card border border-line rounded-2xl p-4 sm:p-6 shadow-2xl max-w-5xl w-full max-h-[92vh] flex flex-col overflow-hidden">
+            
+            {/* Modal Header */}
             <div className="flex items-center justify-between pb-4 border-b border-line">
-              <div className="flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-accent" />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center text-accent">
+                  <Compass className="w-5 h-5" />
+                </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-ink">مكتبة التقارير والنماذج السابقة الفعلية المعتمدة</h3>
-                  <p className="text-xs text-sub">استعرض صياغة وهيكل تقارير كبرى الجامعات والمؤسسات واستلهم منها لتقريرك</p>
+                  <h3 className="text-base sm:text-lg font-extrabold text-ink flex items-center gap-2">
+                    <span>مركز إرشادات وقوالب التقرير التعاوني المعتمدة</span>
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20">
+                      دليل شامل + نماذج حقيقية
+                    </span>
+                  </h3>
+                  <p className="text-xs text-sub">
+                    تعلم أصول الصياغة الهندسية الأكاديمية واستعرض قوالب وتقارير كبرى الجامعات والشركات السعودية والخليجية
+                  </p>
                 </div>
               </div>
               <button
                 onClick={() => setSamplesModalOpen(false)}
-                className="p-1 text-sub hover:text-ink rounded-lg transition-colors"
+                className="p-1.5 text-sub hover:text-ink rounded-lg transition-colors border border-transparent hover:border-line"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Samples Tabs */}
-            <div className="flex gap-2 p-1 bg-bg border border-line rounded-xl my-3 overflow-x-auto shrink-0">
-              {ACTUAL_PREVIOUS_REPORTS.map((sample) => (
-                <button
-                  key={sample.id}
-                  type="button"
-                  onClick={() => setSelectedSample(sample)}
-                  className={`px-3 py-2 text-xs font-bold rounded-lg transition-all whitespace-nowrap flex items-center gap-1.5 ${
-                    selectedSample.id === sample.id
-                      ? 'bg-accent text-white shadow-xs'
-                      : 'text-sub hover:text-ink hover:bg-card'
-                  }`}
-                >
-                  <span>{sample.name}</span>
-                </button>
-              ))}
+            {/* Main Tabs Toggle (Guide vs Real Samples) */}
+            <div className="grid grid-cols-2 gap-2 p-1.5 bg-bg border border-line rounded-xl my-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => setModalSubTab('guide')}
+                className={`py-2 px-3 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${
+                  modalSubTab === 'guide'
+                    ? 'bg-accent text-white shadow-xs'
+                    : 'text-sub hover:text-ink hover:bg-card'
+                }`}
+              >
+                <BookOpen className="w-4 h-4" />
+                <span>دليل وقواعد كتابة التقرير بالتفصيل (Writing Guide)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setModalSubTab('samples')}
+                className={`py-2 px-3 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${
+                  modalSubTab === 'samples'
+                    ? 'bg-accent text-white shadow-xs'
+                    : 'text-sub hover:text-ink hover:bg-card'
+                }`}
+              >
+                <Layers className="w-4 h-4" />
+                <span>نماذج وتقارير سابقة حقيقية للاستيراد ({ACTUAL_PREVIOUS_REPORTS.length} نماذج)</span>
+              </button>
             </div>
 
-            {/* Sample Content Display */}
+            {/* Content Area */}
             <div className="flex-1 overflow-y-auto space-y-4 pr-1 text-xs leading-relaxed text-ink">
-              <div className="bg-bg/60 p-4 rounded-xl border border-line space-y-2">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line/60 pb-2">
-                  <div>
-                    <span className="font-extrabold text-accent">{selectedSample.institution}</span>
-                    <div className="text-sub font-semibold">{selectedSample.specialty}</div>
+              
+              {/* TAB 1: HOW TO WRITE GUIDE */}
+              {modalSubTab === 'guide' && (
+                <div className="space-y-4">
+                  
+                  {/* Guide Sub-Nav Pills */}
+                  <div className="flex gap-2 overflow-x-auto pb-1 shrink-0">
+                    {[
+                      { id: 'overview', label: 'نظرة عامة وهيكل التقرير', icon: Compass },
+                      { id: 'executive', label: 'صياغة الملخص التنفيذي', icon: Award },
+                      { id: 'daily', label: 'توثيق المهام والسجلات', icon: ListChecks },
+                      { id: 'star', label: 'منهجية STAR لحل التحديات', icon: Lightbulb },
+                      { id: 'verbs', label: 'بنك الأفعال الإجرائية (Verbs)', icon: Sparkles },
+                      { id: 'universities', label: 'معايير الجامعات (KFUPM/KSU/TVTC)', icon: GraduationCap },
+                    ].map((pill) => {
+                      const Icon = pill.icon;
+                      const isActive = guideSection === pill.id;
+                      return (
+                        <button
+                          key={pill.id}
+                          type="button"
+                          onClick={() => setGuideSection(pill.id as any)}
+                          className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                            isActive
+                              ? 'border-accent bg-accent/10 text-accent ring-1 ring-accent'
+                              : 'border-line bg-bg text-sub hover:text-ink hover:bg-card'
+                          }`}
+                        >
+                          <Icon className="w-3.5 h-3.5" />
+                          <span>{pill.label}</span>
+                        </button>
+                      );
+                    })}
                   </div>
+
+                  {/* Section 1: Overview & Structure */}
+                  {guideSection === 'overview' && (
+                    <div className="space-y-3 animate-fade-in">
+                      <div className="p-4 bg-bg border border-line rounded-xl space-y-2">
+                        <h4 className="text-sm font-extrabold text-accent flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-ok" />
+                          <span>الهيكل الأكاديمي القياسي لتقرير التدريب التعاوني (Standard Structure)</span>
+                        </h4>
+                        <p className="text-sub">
+                          يتألف التقرير الاحترافي المعتمد من 6 أقسام جوهرية متسلسلة تحقق معايير التقييم للجان الأكاديمية والشركات:
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="p-3.5 bg-bg/70 border border-line rounded-xl space-y-1.5">
+                          <div className="flex items-center gap-2 font-bold text-ink">
+                            <span className="w-6 h-6 rounded-full bg-accent text-white flex items-center justify-center text-[11px]">1</span>
+                            <span>صفحة الغلاف والشعارات الرسمية</span>
+                          </div>
+                          <p className="text-[11px] text-sub leading-relaxed">
+                            تضم شعار المؤسسة التعليمية وشعار جهة التدريب متقابلين، وعنوان التقرير، واسم الطالب والرقم الأكاديمي، والمشرفين (الأكاديمي والميداني) والفصل التدريبي.
+                          </p>
+                        </div>
+
+                        <div className="p-3.5 bg-bg/70 border border-line rounded-xl space-y-1.5">
+                          <div className="flex items-center gap-2 font-bold text-ink">
+                            <span className="w-6 h-6 rounded-full bg-accent text-white flex items-center justify-center text-[11px]">2</span>
+                            <span>الملخص التنفيذي (Executive Summary)</span>
+                          </div>
+                          <p className="text-[11px] text-sub leading-relaxed">
+                            صفحة مكثفة توجز السياق، والدور الوظيفي، وأبرز الإنجازات الكمية والنوعية، والقيمة المضافة التي قدمها المتدرب للشركة دون إسهاب.
+                          </p>
+                        </div>
+
+                        <div className="p-3.5 bg-bg/70 border border-line rounded-xl space-y-1.5">
+                          <div className="flex items-center gap-2 font-bold text-ink">
+                            <span className="w-6 h-6 rounded-full bg-accent text-white flex items-center justify-center text-[11px]">3</span>
+                            <span>نبذة المنظمة والبيئة التشغيلية</span>
+                          </div>
+                          <p className="text-[11px] text-sub leading-relaxed">
+                            الهيكل التنظيمي، أهداف القسم المشرف، والأنظمة أو الآلات أو البيئات البرمجية التي يعتمد عليها القسم في إدارة أعماله.
+                          </p>
+                        </div>
+
+                        <div className="p-3.5 bg-bg/70 border border-line rounded-xl space-y-1.5">
+                          <div className="flex items-center gap-2 font-bold text-ink">
+                            <span className="w-6 h-6 rounded-full bg-accent text-white flex items-center justify-center text-[11px]">4</span>
+                            <span>سجل المهام والمشاريع التراكمية</span>
+                          </div>
+                          <p className="text-[11px] text-sub leading-relaxed">
+                            توثيق زمني أو بحسب المشاريع يوضح تفاصيل العمل اليومي والأسبوعي مقترناً بالساعات والفئات المعتمدة.
+                          </p>
+                        </div>
+
+                        <div className="p-3.5 bg-bg/70 border border-line rounded-xl space-y-1.5">
+                          <div className="flex items-center gap-2 font-bold text-ink">
+                            <span className="w-6 h-6 rounded-full bg-accent text-white flex items-center justify-center text-[11px]">5</span>
+                            <span>التحديات الفنية ومعالجتها (STAR)</span>
+                          </div>
+                          <p className="text-[11px] text-sub leading-relaxed">
+                            توثيق المشكلات غير المتوقعة وكيف تصرف المتدرب هندسياً وعملياً لحلها وما النتائج المترتبة على ذلك.
+                          </p>
+                        </div>
+
+                        <div className="p-3.5 bg-bg/70 border border-line rounded-xl space-y-1.5">
+                          <div className="flex items-center gap-2 font-bold text-ink">
+                            <span className="w-6 h-6 rounded-full bg-accent text-white flex items-center justify-center text-[11px]">6</span>
+                            <span>الخاتمة والتوصيات المتبادلة</span>
+                          </div>
+                          <p className="text-[11px] text-sub leading-relaxed">
+                            توصيات للجامعة لتطوير المناهج، وتوصيات لجهة التدريب لدعم استمرارية المتدربين، وخاتمة تلخص النضج المهني المكتسب.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Section 2: Executive Summary */}
+                  {guideSection === 'executive' && (
+                    <div className="space-y-3 animate-fade-in">
+                      <div className="p-4 bg-accent/10 border border-accent/20 rounded-xl space-y-2">
+                        <h4 className="text-sm font-extrabold text-accent">
+                          المعادلة الرياضية لكتابة الملخص التنفيذي (The Formula):
+                        </h4>
+                        <div className="p-3 bg-card border border-accent/30 rounded-lg font-mono text-xs text-ink font-bold">
+                          [الجهة + المدة + القسم] + [المشروع الأساسي والتقنيات] + [أبرز 3 مخرجات كمية/نوعية] + [الأثر والقيمة المضافة]
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <h5 className="font-bold text-ink">مثال تطبيقي عملي (صيغة ممتازة):</h5>
+                        <div className="p-3.5 bg-bg border border-line rounded-xl text-sub leading-relaxed">
+                          "تم إنجاز فترة التدريب التعاوني في شركة (اسم الشركة) ضمن فريق (هندسة البرمجيات/التشغيل) على مدار 16 أسبوعاً بواقع 480 ساعة تدريبية. تركز الدور الأساسي على تطوير وتحديث نظام إدارة الطلبات المركزي باستخدام Node.js وPostgreSQL. أسفر التدريب عن ثلاثة مخرجات رئيسية: بناء 14 واجهة برمجية آمنة وفق معيار RESTful، وتقليص زمن استعلامات قواعد البيانات بنسبة 28% عبر الفهرسة وتحسين الاستعلامات، وأتمتة اختبارات الجودة لتغطية 85% من الكود الأساسي. ساهمت هذه المخرجات في رفع كفاءة استجابة النظام وتوفير بيئة تشغيلية متكاملة تتماشى مع معايير الشركة الهندسية."
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                        <div className="p-3 bg-red-500/5 border border-red-500/20 rounded-xl">
+                          <span className="font-bold text-red-500 block mb-1">أخطاء شائعة يجب تجنبها:</span>
+                          <ul className="list-disc list-inside space-y-1 text-[11px] text-sub">
+                            <li>البدء بعبارات عاطفية مثل "لقد كانت تجربة ممتعة جداً وأنا سعيد".</li>
+                            <li>سرد كل يوم بيومه بدلاً من تلخيص الصورة الكلية.</li>
+                            <li>غياب الأرقام والنسب والمخرجات القابلة للقياس.</li>
+                          </ul>
+                        </div>
+                        <div className="p-3 bg-ok/5 border border-ok/20 rounded-xl">
+                          <span className="font-bold text-ok block mb-1">نقاط ترفع درجتك في التقييم:</span>
+                          <ul className="list-disc list-inside space-y-1 text-[11px] text-sub">
+                            <li>ذكر التقنيات والأدوات المحددة بالاسم التجاري أو البرمجي.</li>
+                            <li>توثيق الأثر على بيئة العمل والإنتاجية.</li>
+                            <li>كتابة الملخص باللغتين العربية والإنجليزية لتقرير متكامل.</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Section 3: Daily & Weekly Logs */}
+                  {guideSection === 'daily' && (
+                    <div className="space-y-3 animate-fade-in">
+                      <div className="p-4 bg-bg border border-line rounded-xl space-y-2">
+                        <h4 className="text-sm font-extrabold text-accent">
+                          قاعدة كتابة السجل اليومي والأسبوعي (The 3-Part Log Rule)
+                        </h4>
+                        <div className="p-3 bg-card border border-line rounded-lg font-mono text-xs text-ink font-bold">
+                          [فعل إجرائي محدد] + [الأداة أو البيئة أو النظام المعتمد] + [النتيجة الملموسة والمحققة]
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <h5 className="font-bold text-ink">مقارنة الصياغة (ضعيفة مقابل هندسية احترافية):</h5>
+                        <div className="overflow-x-auto">
+                          <table className="w-full border-collapse border border-line text-right text-xs">
+                            <thead>
+                              <tr className="bg-bg">
+                                <th className="p-2 border border-line text-sub font-bold">الصياغة الضعيفة (تجنبها)</th>
+                                <th className="p-2 border border-line text-accent font-extrabold">الصياغة الهندسية المقبولة أكاديمياً (اعتمدها)</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-line text-[11px]">
+                              <tr>
+                                <td className="p-2.5 text-red-500 bg-red-500/5">"جلست مع التيم وشفت كيف يشتغل السيرفر"</td>
+                                <td className="p-2.5 text-ink bg-card">"حضور جلسة توجيه فني لتحليل معمارية الخوادم السحابية (AWS EC2)، وتوثيق تسلسل معالجة البيانات عبر مخطط انسيابي."</td>
+                              </tr>
+                              <tr>
+                                <td className="p-2.5 text-red-500 bg-red-500/5">"صلحت مشكلة في الكود واشتغل"</td>
+                                <td className="p-2.5 text-ink bg-card">"فحص وتصحيح استثناءات التزامن (Race Condition) في دالة المصادقة، وإعادة اختبار وحدة الشيفرة لضمان استقرار جلسات المستخدمين."</td>
+                              </tr>
+                              <tr>
+                                <td className="p-2.5 text-red-500 bg-red-500/5">"سويت فحص للأجهزة في المعمل"</td>
+                                <td className="p-2.5 text-ink bg-card">"إجراء الفحص الدوري لـ 12 محطة تحكم منطقي مبرمج (PLC) ومعايرة إشارات الحساسات والتأكد من مطابقتها لمعايير السلامة OHS."</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Section 4: STAR Problem Solving */}
+                  {guideSection === 'star' && (
+                    <div className="space-y-3 animate-fade-in">
+                      <div className="p-4 bg-bg border border-line rounded-xl space-y-2">
+                        <h4 className="text-sm font-extrabold text-accent">
+                          منهجية STAR لتوثيق التحديات وحلها (Situation, Task, Action, Result)
+                        </h4>
+                        <p className="text-sub">
+                          هذه المنهجية هي المعيار المعتمد لدى لجان تقييم ABET وشركات مثل أرامكو وسابك لتقييم قدرة المتدرب على حل المشكلات الهندسية:
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="p-3.5 bg-bg border border-line rounded-xl space-y-1">
+                          <span className="font-extrabold text-accent text-xs">S - Situation (الموقف والتحدي):</span>
+                          <p className="text-sub text-[11px]">
+                            صف المشكلة التقنية وسياقها بوضوح (مثلاً: ارتفاع معدل تأخير استجابة واجهة المستخدم أو خلل في معايرة ضغط الهيدروليك).
+                          </p>
+                        </div>
+                        <div className="p-3.5 bg-bg border border-line rounded-xl space-y-1">
+                          <span className="font-extrabold text-accent text-xs">T - Task (المهمة المطلوبة):</span>
+                          <p className="text-sub text-[11px]">
+                            ما كان المطلوب منك تحقيقه بالضبط دون تعطيل العمليات الجارية؟
+                          </p>
+                        </div>
+                        <div className="p-3.5 bg-bg border border-line rounded-xl space-y-1">
+                          <span className="font-extrabold text-accent text-xs">A - Action (الإجراء الهندسي):</span>
+                          <p className="text-sub text-[11px]">
+                            ما الخطوات المنهجية والبحثية والأدوات التي استخدمتها لعزل المشكلة واختبار الحلول البديلة؟
+                          </p>
+                        </div>
+                        <div className="p-3.5 bg-bg border border-line rounded-xl space-y-1">
+                          <span className="font-extrabold text-accent text-xs">R - Result (النتيجة والأثر):</span>
+                          <p className="text-sub text-[11px]">
+                            ما النتيجة الرقمية المحققة بعد الحل؟ وما الدرس المستفاد الذي يمنع تكرار الخطأ مستقبلاً؟
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Section 5: Action Verbs Bank */}
+                  {guideSection === 'verbs' && (
+                    <div className="space-y-3 animate-fade-in">
+                      <div className="p-4 bg-bg border border-line rounded-xl">
+                        <h4 className="text-sm font-extrabold text-accent mb-1">
+                          قاموس الأفعال الإجرائية (Action Verbs Bank) المعتمدة في التقارير
+                        </h4>
+                        <p className="text-sub">
+                          ابدأ كل جملة ومهمة بأحد هذه الأفعال لإضفاء الصبغة الهندسية والأكاديمية الرفيعة:
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="p-3 bg-bg border border-line rounded-xl space-y-2">
+                          <div className="font-bold text-accent border-b border-line pb-1">التحليل والتخطيط</div>
+                          <div className="text-[11px] text-sub space-y-1">
+                            <div>• حلّل (Analyzed)</div>
+                            <div>• قيّم (Assessed)</div>
+                            <div>• استكشف (Explored)</div>
+                            <div>• شخّص (Diagnosed)</div>
+                            <div>• خطّط (Planned)</div>
+                            <div>• قارن (Benchmarked)</div>
+                          </div>
+                        </div>
+
+                        <div className="p-3 bg-bg border border-line rounded-xl space-y-2">
+                          <div className="font-bold text-accent border-b border-line pb-1">التصميم والهندسة</div>
+                          <div className="text-[11px] text-sub space-y-1">
+                            <div>• صمّم (Designed)</div>
+                            <div>• نمذج (Modeled)</div>
+                            <div>• هندس (Engineered)</div>
+                            <div>• صاغ (Formulated)</div>
+                            <div>• رسَم (Drafted)</div>
+                            <div>• هيّأ (Configured)</div>
+                          </div>
+                        </div>
+
+                        <div className="p-3 bg-bg border border-line rounded-xl space-y-2">
+                          <div className="font-bold text-accent border-b border-line pb-1">التنفيذ والبرمجة</div>
+                          <div className="text-[11px] text-sub space-y-1">
+                            <div>• برمج / طوّر (Developed)</div>
+                            <div>• بنى (Constructed)</div>
+                            <div>• دمج (Integrated)</div>
+                            <div>• نشر (Deployed)</div>
+                            <div>• أتمت (Automated)</div>
+                            <div>• ربط (Interfaced)</div>
+                          </div>
+                        </div>
+
+                        <div className="p-3 bg-bg border border-line rounded-xl space-y-2">
+                          <div className="font-bold text-accent border-b border-line pb-1">الفحص والتحسين</div>
+                          <div className="text-[11px] text-sub space-y-1">
+                            <div>• فحص / اختبر (Tested)</div>
+                            <div>• عاير (Calibrated)</div>
+                            <div>• حسّن (Optimized)</div>
+                            <div>• نقّح (Debugged)</div>
+                            <div>• وثّق (Documented)</div>
+                            <div>• راقب (Monitored)</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Section 6: Institutional Standards */}
+                  {guideSection === 'universities' && (
+                    <div className="space-y-3 animate-fade-in">
+                      <div className="p-4 bg-bg border border-line rounded-xl">
+                        <h4 className="text-sm font-extrabold text-accent mb-1">
+                          المعايير المحددة بحسب المؤسسة والجامعة (Institutional Rules)
+                        </h4>
+                        <p className="text-sub">
+                          لكل جهة تعليمية اشتراطات محددة يطلبها مقيمو التقرير، احرص على تضمينها:
+                        </p>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="p-3.5 bg-bg/80 border border-line rounded-xl space-y-1">
+                          <div className="flex items-center gap-2 font-bold text-ink">
+                            <GraduationCap className="w-4 h-4 text-accent" />
+                            <span>جامعة الملك فهد للبترول والمعادن (KFUPM - COOP Guidelines):</span>
+                          </div>
+                          <p className="text-[11px] text-sub leading-relaxed">
+                            يتطلب معيار ENGL 214 كتابة التقرير باللغة الإنجليزية، خط Times New Roman بحجم 12pt وتباعد 1.5، مع هوامش 1 إنش. يمنع منعاً باتاً استخدام ضمائر المتكلم (I, We) واستبدالها بالصيغة الموضوعية (Third-person or passive voice: "The database was optimized", "The system architecture was evaluated").
+                          </p>
+                        </div>
+
+                        <div className="p-3.5 bg-bg/80 border border-line rounded-xl space-y-1">
+                          <div className="flex items-center gap-2 font-bold text-ink">
+                            <GraduationCap className="w-4 h-4 text-accent" />
+                            <span>جامعة الملك سعود (KSU - CCIS ABET Standards):</span>
+                          </div>
+                          <p className="text-[11px] text-sub leading-relaxed">
+                            التركيز على مخرجات الطلاب (Student Outcomes - SOs)، وربط المقررات الدراسية (مثل قواعد البيانات، الشبكات، البرمجة كائنية التوجه) بالمهام الميدانية المنفذة، مع إرفاق ملخص تنفيذي ثنائي اللغة (عربي + إنجليزي).
+                          </p>
+                        </div>
+
+                        <div className="p-3.5 bg-bg/80 border border-line rounded-xl space-y-1">
+                          <div className="flex items-center gap-2 font-bold text-ink">
+                            <Building className="w-4 h-4 text-accent" />
+                            <span>المؤسسة العامة للتدريب التقني والمهني (TVTC Guidelines):</span>
+                          </div>
+                          <p className="text-[11px] text-sub leading-relaxed">
+                            التركيز على التقرير الفني العملي، وتوضيح الفارق بين ما تدرب عليه المتدرب في معامل الكلية والآلات/الأنظمة الحقيقية في الموقع الصناعي، مع تخصيص قسم كامل لإجراءات السلامة المهنية ومعدات الحماية الشخصية (PPE).
+                          </p>
+                        </div>
+
+                        <div className="p-3.5 bg-bg/80 border border-line rounded-xl space-y-1">
+                          <div className="flex items-center gap-2 font-bold text-ink">
+                            <Building className="w-4 h-4 text-accent" />
+                            <span>جهات التدريب الكبرى وجامعات الخليج (Aramco, STC, Kuwait Univ, UAEU):</span>
+                          </div>
+                          <p className="text-[11px] text-sub leading-relaxed">
+                            التركيز على مؤشرات الأداء الرئيسية (KPIs)، والجدوى التشغيلية، ومساهمة المتدرب في المشاريع الحية مع الحفاظ على سرية البيانات غير المصرح بنشرها (Non-Disclosure Agreement).
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                </div>
+              )}
+
+              {/* TAB 2: ACTUAL APPROVED SAMPLES LIBRARY */}
+              {modalSubTab === 'samples' && (
+                <div className="space-y-4">
+                  {/* Samples Selector Pills */}
+                  <div className="flex gap-2 p-1.5 bg-bg border border-line rounded-xl overflow-x-auto shrink-0">
+                    {ACTUAL_PREVIOUS_REPORTS.map((sample) => (
+                      <button
+                        key={sample.id}
+                        type="button"
+                        onClick={() => setSelectedSample(sample)}
+                        className={`px-3 py-2 text-xs font-bold rounded-lg transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                          selectedSample.id === sample.id
+                            ? 'bg-accent text-white shadow-xs'
+                            : 'text-sub hover:text-ink hover:bg-card'
+                        }`}
+                      >
+                        <GraduationCap className="w-3.5 h-3.5" />
+                        <span>{sample.name}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Sample Card Meta */}
+                  <div className="bg-bg/60 p-4 rounded-xl border border-line space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line/60 pb-2">
+                      <div>
+                        <span className="font-extrabold text-accent text-sm">{selectedSample.institution}</span>
+                        <div className="text-sub font-semibold text-xs">{selectedSample.specialty}</div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleAdoptSample(selectedSample)}
+                        className="px-3.5 py-1.5 bg-ok hover:bg-ok/90 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-xs transition-all"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        <span>استيراد هذا النموذج كمسودة لتقريري</span>
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-sub">
+                      <div><b>جهة التدريب:</b> {selectedSample.hostCompany}</div>
+                      <div><b>عنوان التقرير:</b> {selectedSample.studentTitle}</div>
+                    </div>
+                  </div>
+
+                  {/* Sample Sections Breakdown */}
+                  <div className="space-y-3">
+                    <div>
+                      <h4 className="font-extrabold text-accent text-xs mb-1 flex items-center gap-1.5">
+                        <Award className="w-3.5 h-3.5" />
+                        <span>الملخص التنفيذي المعتمد (Executive Summary):</span>
+                      </h4>
+                      <p className="p-3 bg-bg border border-line rounded-xl leading-relaxed whitespace-pre-wrap text-sub">{selectedSample.executiveSummary}</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-extrabold text-ink text-xs mb-1 flex items-center gap-1.5">
+                        <Compass className="w-3.5 h-3.5" />
+                        <span>المقدمة وأهداف التدريب التعاوني:</span>
+                      </h4>
+                      <p className="p-3 bg-bg border border-line rounded-xl leading-relaxed whitespace-pre-wrap text-sub">{selectedSample.introText}</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-extrabold text-ink text-xs mb-1 flex items-center gap-1.5">
+                        <Building className="w-3.5 h-3.5" />
+                        <span>نبذة عن جهة التدريب والبيئة التشغيلية:</span>
+                      </h4>
+                      <p className="p-3 bg-bg border border-line rounded-xl leading-relaxed whitespace-pre-wrap text-sub">{selectedSample.entityIntroText}</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-extrabold text-ink text-xs mb-1 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>المهارات والخبرات المكتسبة والربط الأكاديمي:</span>
+                      </h4>
+                      <p className="p-3 bg-bg border border-line rounded-xl leading-relaxed whitespace-pre-wrap text-sub">{selectedSample.skillsText}</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-extrabold text-ink text-xs mb-1 flex items-center gap-1.5">
+                        <Lightbulb className="w-3.5 h-3.5" />
+                        <span>التحديات الفنية ومعالجة الصعوبات (STAR Problem-Solving):</span>
+                      </h4>
+                      <p className="p-3 bg-bg border border-line rounded-xl leading-relaxed whitespace-pre-wrap text-sub">{selectedSample.challengesText}</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-extrabold text-ink text-xs mb-1 flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-ok" />
+                        <span>الخاتمة والتوصيات:</span>
+                      </h4>
+                      <p className="p-3 bg-bg border border-line rounded-xl leading-relaxed whitespace-pre-wrap text-sub">{selectedSample.conclusionText}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
+
+            {/* Modal Footer */}
+            <div className="pt-3 border-t border-line flex flex-wrap items-center justify-between gap-2 shrink-0">
+              <div className="text-[11px] text-sub">
+                {modalSubTab === 'guide' 
+                  ? 'يمكنك التبديل إلى تبويب "نماذج سابقة" لاستيراد أي نموذج بالكامل بضغطة زر' 
+                  : `معروض حالياً نموذج: ${selectedSample.name}`}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSamplesModalOpen(false)}
+                  className="px-4 py-2 text-xs font-bold text-sub hover:text-ink bg-bg rounded-xl border border-line"
+                >
+                  إغلاق
+                </button>
+                {modalSubTab === 'samples' && (
                   <button
                     type="button"
                     onClick={() => handleAdoptSample(selectedSample)}
-                    className="px-3.5 py-1.5 bg-ok hover:bg-ok/90 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-xs transition-all"
+                    className="px-4 py-2 text-xs font-bold text-white bg-accent hover:bg-accent/90 rounded-xl flex items-center gap-1.5 shadow-sm"
                   >
                     <Check className="w-3.5 h-3.5" />
-                    <span>استيراد هذا النموذج كمسودة لتقريري</span>
+                    <span>اعتماد وتطبيق هذا النموذج كمسودة</span>
                   </button>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-sub">
-                  <div><b>جهة التدريب:</b> {selectedSample.hostCompany}</div>
-                  <div><b>عنوان التقرير:</b> {selectedSample.studentTitle}</div>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div>
-                  <h4 className="font-extrabold text-accent text-xs mb-1">الملخص التنفيذي (Executive Summary):</h4>
-                  <p className="p-3 bg-bg border border-line rounded-xl leading-relaxed whitespace-pre-wrap">{selectedSample.executiveSummary}</p>
-                </div>
-
-                <div>
-                  <h4 className="font-extrabold text-ink text-xs mb-1">المقدمة وأهداف التدريب:</h4>
-                  <p className="p-3 bg-bg border border-line rounded-xl leading-relaxed whitespace-pre-wrap">{selectedSample.introText}</p>
-                </div>
-
-                <div>
-                  <h4 className="font-extrabold text-ink text-xs mb-1">نبذة عن جهة التدريب والبيئة التشغيلية:</h4>
-                  <p className="p-3 bg-bg border border-line rounded-xl leading-relaxed whitespace-pre-wrap">{selectedSample.entityIntroText}</p>
-                </div>
-
-                <div>
-                  <h4 className="font-extrabold text-ink text-xs mb-1">المهارات والخبرات المكتسبة (Competencies):</h4>
-                  <p className="p-3 bg-bg border border-line rounded-xl leading-relaxed whitespace-pre-wrap">{selectedSample.skillsText}</p>
-                </div>
-
-                <div>
-                  <h4 className="font-extrabold text-ink text-xs mb-1">التحديات الفنية ومعالجة الصعوبات (Problem-Solving):</h4>
-                  <p className="p-3 bg-bg border border-line rounded-xl leading-relaxed whitespace-pre-wrap">{selectedSample.challengesText}</p>
-                </div>
-
-                <div>
-                  <h4 className="font-extrabold text-ink text-xs mb-1">الخاتمة والتوصيات:</h4>
-                  <p className="p-3 bg-bg border border-line rounded-xl leading-relaxed whitespace-pre-wrap">{selectedSample.conclusionText}</p>
-                </div>
+                )}
               </div>
             </div>
 
-            <div className="pt-3 border-t border-line flex justify-end gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => setSamplesModalOpen(false)}
-                className="px-4 py-2 text-xs font-bold text-sub hover:text-ink bg-bg rounded-xl border border-line"
-              >
-                إغلاق
-              </button>
-              <button
-                type="button"
-                onClick={() => handleAdoptSample(selectedSample)}
-                className="px-4 py-2 text-xs font-bold text-white bg-accent hover:bg-accent/90 rounded-xl flex items-center gap-1.5 shadow-sm"
-              >
-                <Check className="w-3.5 h-3.5" />
-                <span>اعتماد وتطبيق هذا النموذج كمسودة</span>
-              </button>
-            </div>
           </div>
         </div>
       )}

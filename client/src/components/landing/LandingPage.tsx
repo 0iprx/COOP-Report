@@ -604,11 +604,10 @@ export const LandingPage: React.FC<{ onOpenTestDev?: () => void }> = ({ onOpenTe
           {/* Action CTAs */}
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
             <button
-              onClick={handleFastDemoLogin}
-              disabled={demoLoading}
+              onClick={() => handleOpenAuth('login')}
               className="px-6 py-3 rounded-xl bg-accent text-white font-extrabold text-sm hover:bg-accent/90 transition-all shadow-md hover:shadow-lg flex items-center gap-2 hover:scale-[1.01]"
             >
-              <span>{demoLoading ? t('جارٍ التهيئة...', 'Initializing...') : t('بدء تدوين المهام', 'Start Logging Tasks')}</span>
+              <span>{t('بدء تدوين المهام', 'Start Logging Tasks')}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
 
@@ -1381,11 +1380,10 @@ export const LandingPage: React.FC<{ onOpenTestDev?: () => void }> = ({ onOpenTe
 
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
             <button
-              onClick={handleFastDemoLogin}
-              disabled={demoLoading}
+              onClick={() => handleOpenAuth('login')}
               className="px-6 py-3 rounded-xl bg-accent text-white font-extrabold text-sm hover:bg-accent/90 transition-all shadow-md flex items-center gap-2"
             >
-              <span>{demoLoading ? t('جارٍ التحميل...', 'Launching...') : t('بدء تدوين المهام', 'Start Logging Tasks')}</span>
+              <span>{t('بدء تدوين المهام', 'Start Logging Tasks')}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
             <button

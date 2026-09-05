@@ -84,31 +84,33 @@ export const Navbar: React.FC = () => {
             </button>
           )}
 
-          {/* Explicit Language Switcher: Arabic & English Buttons */}
-          <div className="inline-flex p-0.5 bg-bg border border-line rounded-xl text-xs font-bold shadow-2xs">
+          {/* Explicit Language Switcher: Responsive for mobile */}
+          <div className="inline-flex p-0.5 bg-bg border border-line rounded-xl text-xs font-bold shadow-2xs shrink-0">
             <button
               type="button"
               onClick={() => setLang('ar')}
-              className={`px-3 py-1 rounded-lg transition-all ${
+              className={`px-2 sm:px-3 py-1 rounded-lg transition-all ${
                 lang === 'ar'
                   ? 'bg-accent text-white shadow-xs font-extrabold'
                   : 'text-sub hover:text-ink'
               }`}
               title="تحويل الموقع بالكامل إلى العربية"
             >
-              العربية
+              <span className="hidden sm:inline">العربية</span>
+              <span className="sm:hidden">عربي</span>
             </button>
             <button
               type="button"
               onClick={() => setLang('en')}
-              className={`px-3 py-1 rounded-lg transition-all ${
+              className={`px-2 sm:px-3 py-1 rounded-lg transition-all ${
                 lang === 'en'
                   ? 'bg-accent text-white shadow-xs font-extrabold'
                   : 'text-sub hover:text-ink'
               }`}
               title="Switch entire website to English"
             >
-              English
+              <span className="hidden sm:inline">English</span>
+              <span className="sm:hidden">EN</span>
             </button>
           </div>
 
