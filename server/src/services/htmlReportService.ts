@@ -1,4 +1,4 @@
-import { FinalReportData, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis, formatWeekPeriod, elevateTaskTitle } from '@coop/shared';
+import { FinalReportData, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis, formatWeekPeriod, elevateTaskTitle, normalizeStudentName, polishAcademicNarrative } from '@coop/shared';
 
 function translateCategory(cat: string, isAr: boolean): string {
   if (isAr) return cat;
@@ -25,7 +25,8 @@ function escapeHtml(text: string): string {
 
 function formatProceduralNarrativeHtml(text: string): string {
   if (!text) return '';
-  const clean = text.replace(/^[ \t]*[-_=]{3,}[ \t]*$/gm, '\n');
+  const polished = polishAcademicNarrative(text);
+  const clean = polished.replace(/^[ \t]*[-_=]{3,}[ \t]*$/gm, '\n');
   const lines = clean.split('\n');
   const out: string[] = [];
   let inList = false;
@@ -409,7 +410,7 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
         <div class="subtitle">${entityName}</div>
         
         <div class="meta-grid">
-          <div class="meta-item"><b>${isAr ? 'اسم المتدرب:' : 'Trainee Name:'}</b> ${escapeHtml(profile.studentName) || '—'}</div>
+          <div class="meta-item"><b>${isAr ? 'اسم المتدرب:' : 'Trainee Name:'}</b> ${escapeHtml(normalizeStudentName(profile.studentName)) || '—'}</div>
           <div class="meta-item"><b>${isAr ? 'الرقم التدريبي:' : 'Training ID:'}</b> ${escapeHtml(profile.trainingNumber) || '—'}</div>
           <div class="meta-item"><b>${isAr ? 'القسم / التخصص:' : 'Department:'}</b> ${escapeHtml(profile.department) || '—'}</div>
           <div class="meta-item"><b>${isAr ? 'المشرف الأكاديمي:' : 'Academic Supervisor:'}</b> ${escapeHtml(profile.supervisorName) || '—'}</div>
@@ -534,7 +535,7 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
                           <td style="text-align: center; direction: ltr; font-family: monospace; padding: 6px 8px;">${e.timeFrom || '08:00'} - ${e.timeTo || '16:00'}</td>
                           <td style="text-align: center; font-weight: bold; padding: 6px 8px;">${h} ${isAr ? 'س' : 'h'}</td>
                           <td style="padding: 6px 8px;"><span class="badge">${escapeHtml(translateCategory(e.category, isAr))}</span></td>
-                          <td style="padding: 6px 8px; font-weight: bold; color: var(--ink);">${escapeHtml(e.title)}</td>
+                          <td style="padding: 6px 8px; font-weight: bold; color: var(--ink);">${escapeHtml(elevateTaskTitle(e.title, e.description))}</td>
                         </tr>
                       `;
                     }).join('')}
@@ -549,7 +550,7 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
               ${w.entries.map((e: any, eIdx: number) => `
                 <div style="margin-bottom: 12px; padding: 12px 14px; background: #FAFAF8; border: 1px solid var(--line); border-radius: 8px;">
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                    <span style="font-weight: 800; font-size: 13px; color: var(--ink);">(${eIdx + 1}) ${escapeHtml(e.title)}</span>
+                    <span style="font-weight: 800; font-size: 13px; color: var(--ink);">(${eIdx + 1}) ${escapeHtml(elevateTaskTitle(e.title, e.description))}</span>
                     <span style="font-size: 11px; color: var(--sub);">${e.entryDate ? (isAr ? formatDateArabic(e.entryDate) : formatDateEnglish(e.entryDate)) : ''}</span>
                   </div>
                   <div style="margin-bottom: 6px;">

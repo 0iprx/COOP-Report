@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
-import { FinalReportData, EntryDTO, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis, formatWeekPeriod, ENTRY_CATEGORIES } from '@coop/shared';
+import { FinalReportData, EntryDTO, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis, formatWeekPeriod, ENTRY_CATEGORIES, elevateTaskTitle, normalizeStudentName, polishAcademicNarrative } from '@coop/shared';
 import { WeeklyEvidenceSection } from './WeeklyEvidenceSection';
 import {
   Calendar,
@@ -25,7 +25,10 @@ import {
   CheckCheck,
   Printer,
   RotateCcw,
-  History
+  History,
+  Building,
+  GraduationCap,
+  Award
 } from 'lucide-react';
 import { DiffModal } from '../common/DiffModal';
 
@@ -358,8 +361,9 @@ export const WeeklyTab: React.FC = () => {
   };
 
   // Helper to render procedural narrative with structured bullets and headers
-  const renderProceduralNarrative = (text: string) => {
-    if (!text) return null;
+  const renderProceduralNarrative = (rawText: string) => {
+    if (!rawText) return null;
+    const text = polishAcademicNarrative(rawText);
     const clean = text.replace(/^[ \t]*[-_=]{3,}[ \t]*$/gm, '\n');
     const lines = clean.split('\n');
     const elements: React.ReactNode[] = [];
@@ -371,7 +375,7 @@ export const WeeklyTab: React.FC = () => {
           <ul key={`bullets-${elements.length}`} className="my-2 space-y-1.5 list-none pr-1">
             {currentBullets.map((b, i) => (
               <li key={i} className="flex items-start gap-2 text-xs sm:text-sm leading-relaxed text-ink">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#C0102A] mt-2 shrink-0"></span>
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-700 dark:bg-slate-300 mt-2 shrink-0"></span>
                 <span className="flex-1">{b}</span>
               </li>
             ))}
@@ -396,13 +400,13 @@ export const WeeklyTab: React.FC = () => {
 
       if (
         (trimmed.startsWith('**') && trimmed.endsWith('**')) ||
-        /^(في تمام الساعة|بعد الساعة|الساعة|قسم|فريق|مرحلة|منظومة|موجز)\s*[\d:]*.*:?$/i.test(trimmed)
+        /^(في تمام الساعة|بعد الساعة|الساعة|قسم|فريق|مرحلة|منظومة|موجز|الفترة)\s*[\d:]*.*:?$/i.test(trimmed)
       ) {
         flushBullets();
         const title = trimmed.replace(/^\*\*|\*\*$/g, '').replace(/:$/, '').trim();
         elements.push(
           <h5 key={`heading-${elements.length}`} className="font-extrabold text-xs sm:text-sm text-ink pt-2.5 pb-1 border-b border-line/40 flex items-center gap-1.5">
-            <span className="w-1 h-3.5 bg-accent rounded-full shrink-0"></span>
+            <span className="w-1.5 h-3.5 bg-slate-800 dark:bg-slate-200 rounded-full shrink-0"></span>
             <span>{title}</span>
           </h5>
         );
@@ -637,29 +641,181 @@ export const WeeklyTab: React.FC = () => {
           <div className="text-center py-12 text-sub text-sm">{t('جارٍ تحميل تقرير الأسبوع...', 'Loading weekly log...')}</div>
         ) : (
           <div id="weekly-paper-view" className="printable-a4-sheet space-y-6">
-            {/* Formal Printable Academic Weekly Header (Visible on print) */}
-            <div className="hidden print:block pb-5 mb-5 border-b-2 border-line text-center space-y-3 break-inside-avoid">
-              <div className="flex items-center justify-between text-xs font-bold text-sub">
-                <span>{isAr ? 'المملكة العربية السعودية' : 'Kingdom of Saudi Arabia'}</span>
-                <span>{finalReportData?.profile?.trainingUnit || (isAr ? 'الوحدة التدريبية / الكلية' : 'Academic Institution')}</span>
+            {/* Weekly Academic Cover Page (مطابق للتقرير النهائي - Visible on Screen & Print with Page-Break) */}
+            <div id="weekly-cover-page" className="text-center py-6 sm:py-10 border-b-2 border-line pb-8 sm:pb-12 break-inside-avoid print:page-break">
+              {/* Dual Logos & Academic Identity Header */}
+              <div className="flex items-center justify-between gap-2 sm:gap-4 mb-6 sm:mb-8 border-b border-line/60 pb-4 sm:pb-6">
+                {/* Institution Logo (Right in RTL / Left in LTR) */}
+                <div className="w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center shrink-0">
+                  {finalReportData?.profile?.institutionLogo ? (
+                    <img
+                      src={finalReportData.profile.institutionLogo}
+                      alt="Institution Logo"
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 border border-dashed border-line rounded-lg flex flex-col items-center justify-center text-[9px] sm:text-[10px] text-sub/50 p-1">
+                      <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6 mb-0.5 sm:mb-1 text-sub/40" />
+                      <span>{isAr ? 'شعار الكلية' : 'Institution'}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Central Academic Identity */}
+                <div className="flex-1 text-center space-y-0.5 sm:space-y-1 px-1">
+                  <div className="text-[10px] sm:text-xs font-bold text-sub uppercase tracking-wider">
+                    {isAr ? 'المملكة العربية السعودية' : 'Kingdom of Saudi Arabia'}
+                  </div>
+                  <div className="text-xs sm:text-sm font-extrabold text-ink">
+                    {finalReportData?.profile?.trainingUnit || (isAr ? 'الوحدة التدريبية / الكلية' : 'Academic Department / College')}
+                  </div>
+                  {finalReportData?.profile?.department && (
+                    <div className="text-[11px] sm:text-xs font-semibold text-sub">
+                      {finalReportData.profile.department}
+                    </div>
+                  )}
+                </div>
+
+                {/* Company Logo (Left in RTL / Right in LTR) */}
+                <div className="w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center shrink-0">
+                  {finalReportData?.profile?.companyLogo ? (
+                    <img
+                      src={finalReportData.profile.companyLogo}
+                      alt="Company Logo"
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 border border-dashed border-line rounded-lg flex flex-col items-center justify-center text-[9px] sm:text-[10px] text-sub/50 p-1">
+                      <Building className="w-5 h-5 sm:w-6 sm:h-6 mb-0.5 sm:mb-1 text-sub/40" />
+                      <span>{isAr ? 'شعار المنشأة' : 'Company'}</span>
+                    </div>
+                  )}
+                </div>
               </div>
-              <h1 className="text-xl font-black text-ink">
-                {isAr ? `تقرير المتابعة والتوثيق الأسبوعي — ${currentWeekObj ? `الأسبوع ${currentWeekObj.weekIndex}` : 'الأسبوع التدريبي'}` : `Weekly Training & Log Report — Week ${currentWeekObj?.weekIndex || 1}`}
+
+              {/* Title & Period Badge */}
+              <div className="inline-block px-3.5 py-1 rounded-full text-xs font-extrabold bg-accent/10 text-accent border border-accent/20 mb-2">
+                {isAr ? `الأسبوع التدريبي: الأسبوع ${currentWeekObj?.weekIndex || 1}` : `Training Week: Week ${currentWeekObj?.weekIndex || 1}`}
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-black text-accent mt-2">
+                {isAr ? 'تقرير التدريب التعاوني الأسبوعي (Weekly Co-op Report)' : 'Weekly Cooperative Training Report'}
               </h1>
-              <div className="text-xs text-sub font-semibold">
+              <div className="text-sm sm:text-base font-bold text-sub mt-1">
                 {weekReport
-                  ? `${isAr ? 'الفترة التدريبية المنفذة: ' : 'Executed Training Period: '} ${formatWeekPeriod(weekReport, isAr)}`
+                  ? `${isAr ? 'الفترة التدريبية المنفذة: ' : 'Executed Period: '} ${formatWeekPeriod(weekReport, isAr)}`
                   : '—'}
               </div>
-              <div className="p-4 bg-bg rounded-xl border border-line text-xs grid grid-cols-2 sm:grid-cols-3 gap-3 text-start print-grid-3">
-                <div><span className="font-bold text-sub">{isAr ? 'اسم المتدرب:' : 'Trainee Name:'}</span> <span className="font-extrabold text-ink">{finalReportData?.profile?.studentName || '—'}</span></div>
-                <div><span className="font-bold text-sub">{isAr ? 'الرقم التدريبي:' : 'Training ID:'}</span> <span className="font-extrabold text-ink">{finalReportData?.profile?.trainingNumber || '—'}</span></div>
-                <div><span className="font-bold text-sub">{isAr ? 'جهة التدريب:' : 'Host Org:'}</span> <span className="font-extrabold text-ink">{entityName}</span></div>
-                <div><span className="font-bold text-sub">{isAr ? 'المشرف الميداني:' : 'Field Supervisor:'}</span> <span className="font-extrabold text-ink">{finalReportData?.profile?.responsibleName || '—'}</span></div>
-                <div><span className="font-bold text-sub">{isAr ? 'أيام العمل المنجزة:' : 'Work Days:'}</span> <span className="font-extrabold text-ink">{weekReport?.totalDays || 0} {isAr ? 'أيام' : 'days'}</span></div>
-                <div><span className="font-bold text-sub">{isAr ? 'إجمالي الساعات الفعلية:' : 'Total Hours:'}</span> <span className="font-extrabold text-ink">{weekReport?.totalHours || 0} {isAr ? 'ساعة' : 'hrs'}</span></div>
+              <div className="text-sm sm:text-base font-bold text-ink mt-2">
+                {isAr ? 'جهة التدريب:' : 'Host Organization:'} <span className="text-accent">{entityName}</span>
+              </div>
+
+              {/* Trainee Information Matrix Card */}
+              <div className="mt-6 sm:mt-8 max-w-xl mx-auto bg-bg border border-line rounded-xl p-5 text-start grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs" dir={isAr ? 'rtl' : 'ltr'}>
+                <div>
+                  <span className="font-bold text-sub">{isAr ? 'اسم المتدرب:' : 'Trainee Name:'}</span> <span className="font-extrabold text-ink">{normalizeStudentName(finalReportData?.profile?.studentName) || '—'}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-sub">{isAr ? 'الرقم التدريبي:' : 'Training ID:'}</span> <span className="font-extrabold text-ink">{finalReportData?.profile?.trainingNumber || '—'}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-sub">{isAr ? 'القسم / التخصص:' : 'Department:'}</span> <span className="font-extrabold text-ink">{finalReportData?.profile?.department || '—'}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-sub">{isAr ? 'المشرف الأكاديمي:' : 'Academic Supervisor:'}</span> <span className="font-extrabold text-ink">{finalReportData?.profile?.supervisorName || '—'}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-sub">{isAr ? 'المشرف الميداني:' : 'Field Supervisor:'}</span> <span className="font-extrabold text-ink">{finalReportData?.profile?.responsibleName || '—'}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-sub">{isAr ? 'إجمالي الساعات الفعلية:' : 'Logged Hours:'}</span> <span className="font-extrabold text-accent">{weekReport?.totalHours || 0} {isAr ? 'ساعة معتمدة' : 'hrs'}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-sub">{isAr ? 'أيام العمل المنجزة:' : 'Active Days:'}</span> <span className="font-extrabold text-ink">{weekReport?.totalDays || 0} {isAr ? 'أيام' : 'days'}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-sub">{isAr ? 'حالة التوثيق:' : 'Status:'}</span> <span className="font-extrabold text-ok">{weekReport?.entries?.length ? (isAr ? 'مكتمل ومعتمد ميدانياً' : 'Completed') : (isAr ? 'قيد التوثيق' : 'Pending')}</span>
+                </div>
               </div>
             </div>
+
+            {/* Weekly Executive Synthesis & Competencies Dossier (ملخص الأسبوع الشامل والموجز التنفيذي) */}
+            {weekReport && weekReport.entries && weekReport.entries.length > 0 && (() => {
+              const synthesis = generateAcademicWeeklySynthesis(
+                weekReport.entries || [],
+                currentWeekObj?.weekIndex || 1,
+                weekReport.totalHours || 0,
+                isAr
+              );
+              return (
+                <div className="p-5 sm:p-6 bg-card border border-line rounded-2xl space-y-4 text-start break-inside-avoid shadow-xs print:border-none print:shadow-none print:p-0 print:bg-transparent synthesis-box-print">
+                  <div className="flex items-center justify-between border-b border-line pb-3 print:border-b-2 print:border-slate-800">
+                    <div className="text-sm font-black text-ink flex items-center gap-2">
+                      <Award className="w-5 h-5 text-accent" />
+                      <span>{isAr ? 'الموجز التنفيذي والكفايات المكتسبة للأسبوع (ملخص الأسبوع الشامل)' : 'Weekly Executive Summary & Acquired Competencies'}</span>
+                    </div>
+                    <span className="text-[11px] font-bold text-sub">
+                      {isAr ? 'صياغة أكاديمية استشارية معتمدة' : 'Official Academic Synthesis'}
+                    </span>
+                  </div>
+
+                  {/* Executive Narrative */}
+                  <p className="text-xs sm:text-sm text-ink leading-relaxed font-medium">
+                    {synthesis.executiveSummary}
+                  </p>
+
+                  {/* Core Operational Pillars */}
+                  {synthesis.technicalPillars.length > 0 && (
+                    <div className="pt-2.5 border-t border-line/60 space-y-2 print:border-t print:border-slate-200">
+                      <div className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                        {isAr ? 'المحاور والأنشطة التشغيلية المنفذة:' : 'Core Operational Pillars:'}
+                      </div>
+                      <ul className="space-y-1.5 text-xs text-sub">
+                        {synthesis.technicalPillars.map((pillar, pIdx) => (
+                          <li key={pIdx} className="flex items-start gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-700 dark:bg-slate-300 mt-1.5 shrink-0"></span>
+                            <span className="text-ink font-semibold">{pillar}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Acquired Competencies */}
+                  {synthesis.acquiredCompetencies.length > 0 && (
+                    <div className="pt-2.5 border-t border-line/60 space-y-2 print:border-t print:border-slate-200">
+                      <div className="text-xs font-black text-ok uppercase tracking-wider flex items-center gap-1">
+                        <span>{isAr ? 'الكفايات والمعارف الهندسية المكتسبة:' : 'Acquired Engineering Competencies:'}</span>
+                      </div>
+                      <ul className="space-y-1.5 text-xs text-sub">
+                        {synthesis.acquiredCompetencies.map((comp, cIdx) => (
+                          <li key={cIdx} className="flex items-start gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-ok mt-1.5 shrink-0"></span>
+                            <span>{comp}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Tools & Tech Badges */}
+                  {synthesis.toolsAndTech.length > 0 && (
+                    <div className="pt-2.5 border-t border-line/60 flex flex-wrap items-center gap-1.5 print:border-t print:border-slate-200" dir={isAr ? 'rtl' : 'ltr'}>
+                      <span className="text-xs font-black text-sub ml-1">
+                        {isAr ? 'التقنيات والأدوات الموظفة:' : 'Utilized Tech:'}
+                      </span>
+                      {synthesis.toolsAndTech.map((tool, tIdx) => (
+                        <span
+                          key={tIdx}
+                          className="px-2.5 py-1 rounded-md text-[11px] font-mono font-extrabold bg-slate-100 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 print:bg-white print:border-slate-400 print:text-black shadow-xs tech-pill"
+                        >
+                          {tool}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Executive Weekly Tasks Table Matrix (Visible in both Screen and Print) */}
             {weekReport && weekReport.entries && weekReport.entries.length > 0 && (
@@ -703,7 +859,7 @@ export const WeeklyTab: React.FC = () => {
                             </span>
                           </td>
                           <td className="p-2.5 font-bold text-ink leading-snug">
-                            {entry.title}
+                            {elevateTaskTitle(entry.title, entry.description)}
                           </td>
                         </tr>
                       );
@@ -903,11 +1059,11 @@ export const WeeklyTab: React.FC = () => {
                       {/* Day Card Body: Formal Task Title & Full Procedural Narrative */}
                       <div className="p-4 sm:p-6 space-y-3.5">
                         <div>
-                          <div className="text-xs font-black text-[#C0102A] uppercase tracking-wider mb-1">
+                          <div className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
                             {isAr ? 'النشاط الفني والمهمة التشغيلية الميدانية:' : 'Technical Activity & Operational Scope:'}
                           </div>
                           <h4 className="text-sm sm:text-base font-black text-ink leading-snug">
-                            {entry.title}
+                            {elevateTaskTitle(entry.title, entry.description)}
                           </h4>
                         </div>
 
@@ -924,95 +1080,16 @@ export const WeeklyTab: React.FC = () => {
                   );
                 })}
 
-                {/* Weekly Learning Synthesis & Acquired Competencies (Dynamic Expert Generation) */}
-                {(() => {
-                  const synthesis = generateAcademicWeeklySynthesis(
-                    weekReport.entries || [],
-                    currentWeekObj?.weekIndex || 1,
-                    weekReport.totalHours || 0,
-                    isAr
-                  );
-                  return (
-                    <div className="mt-6 p-5 bg-card border border-line rounded-2xl space-y-3.5 text-start break-inside-avoid shadow-xs print:border-none print:shadow-none print:p-0 print:bg-transparent synthesis-box-print">
-                      <div className="flex items-center justify-between border-b border-line pb-2.5 print:border-b-2 print:border-slate-800">
-                        <div className="text-xs font-black text-ink flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-accent print:hidden" />
-                          <span>{isAr ? 'الموجز التنفيذي والمخرجات والكفايات المكتسبة للأسبوع' : 'Weekly Executive Synthesis & Acquired Competencies'}</span>
-                        </div>
-                        <span className="text-[11px] font-bold text-sub">
-                          {isAr ? 'صياغة أكاديمية استشارية معتمدة' : 'Official Academic Synthesis'}
-                        </span>
-                      </div>
-
-                      {/* Executive Narrative */}
-                      <p className="text-xs sm:text-sm text-ink leading-relaxed font-medium">
-                        {synthesis.executiveSummary}
-                      </p>
-
-                      {/* Core Operational Pillars */}
-                      {synthesis.technicalPillars.length > 0 && (
-                        <div className="pt-2 border-t border-line/60 space-y-1.5 print:border-t print:border-slate-200">
-                          <div className="text-[11px] font-black text-[#C0102A] uppercase tracking-wider">
-                            {isAr ? 'المحاور والأنشطة التشغيلية المنفذة:' : 'Core Operational Pillars:'}
-                          </div>
-                          <ul className="space-y-1 text-xs text-sub">
-                            {synthesis.technicalPillars.map((pillar, pIdx) => (
-                              <li key={pIdx} className="flex items-start gap-2">
-                                <span className="w-1.5 h-1.5 rounded-full bg-[#C0102A] mt-1.5 shrink-0"></span>
-                                <span className="text-ink font-semibold">{pillar}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {/* Acquired Competencies */}
-                      {synthesis.acquiredCompetencies.length > 0 && (
-                        <div className="pt-2 border-t border-line/60 space-y-1.5 print:border-t print:border-slate-200">
-                          <div className="text-[11px] font-black text-ok uppercase tracking-wider flex items-center gap-1">
-                            <span>{isAr ? 'الكفايات والمعارف الهندسية المكتسبة:' : 'Acquired Engineering Competencies:'}</span>
-                          </div>
-                          <ul className="space-y-1 text-xs text-sub">
-                            {synthesis.acquiredCompetencies.map((comp, cIdx) => (
-                              <li key={cIdx} className="flex items-start gap-2">
-                                <span className="w-1.5 h-1.5 rounded-full bg-ok mt-1.5 shrink-0"></span>
-                                <span>{comp}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {/* Tools & Tech Badges */}
-                      {synthesis.toolsAndTech.length > 0 && (
-                        <div className="pt-2 border-t border-line/60 flex flex-wrap items-center gap-1.5 print:border-t print:border-slate-200" dir={isAr ? 'rtl' : 'ltr'}>
-                          <span className="text-[11px] font-black text-sub ml-1">
-                            {isAr ? 'التقنيات والأدوات الموظفة:' : 'Utilized Tech:'}
-                          </span>
-                          {synthesis.toolsAndTech.map((tool, tIdx) => (
-                            <span
-                              key={tIdx}
-                              className="px-2.5 py-0.5 rounded-md text-[10.5px] font-mono font-bold bg-accent-dim/60 text-accent border border-accent/20 print:bg-slate-100 print:text-slate-800 print:border-slate-300 tech-pill"
-                            >
-                              {tool}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
-
                 {/* Formal Supervisory Approval & Stamp Block (For Official Print & Defense) */}
                 <div className="mt-6 border border-line rounded-2xl overflow-hidden bg-card text-start break-inside-avoid print:border-none print:shadow-none print:bg-transparent endorsement-box-print">
                   <div className="bg-bg px-5 py-3 border-b border-line flex items-center justify-between print:bg-transparent print:px-0 print:border-b-2 print:border-slate-800" dir={isAr ? 'rtl' : 'ltr'}>
                     <span className="text-xs font-black text-ink">{t('المصادقة والاعتماد الميداني للأسبوع', 'Field Supervisory Weekly Endorsement')}</span>
-                    <span className="text-[11px] font-bold text-accent shrink-0">{entityName}</span>
+                    <span className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-lg border border-slate-200 dark:border-slate-700 shrink-0">{entityName}</span>
                   </div>
                   <div className="p-5 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs print-grid-3 print:p-0 print:pt-3">
                     <div className="space-y-2 p-3 bg-bg/40 rounded-xl border border-line/60">
                       <div className="font-bold text-sub">{t('توقيع المتدرب:', 'Trainee Signature:')}</div>
-                      <div className="font-extrabold text-ink">{finalReportData?.profile?.studentName || '—'}</div>
+                      <div className="font-extrabold text-ink">{normalizeStudentName(finalReportData?.profile?.studentName) || '—'}</div>
                       <div className="text-[11px] text-muted pt-2 border-t border-line/40">التوقيع: ....................</div>
                     </div>
                     <div className="space-y-2 p-3 bg-bg/40 rounded-xl border border-line/60">

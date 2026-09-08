@@ -600,8 +600,12 @@ export function generateAcademicWeeklySynthesis(
   ];
 
   // 2. Extract Technical Tools & Acronyms
-  const acronyms = combinedText.match(/\b(FTTH|ONT|OLT|ODN|ODB|UTP|AAA|SLA|VLAN|5G|IP|DNS|DHCP|ITIL|SOC|Trouble Ticket|High Temp|Access Team|Red Team|Blue Team)\b/gi) || [];
-  const uniqueTools = Array.from(new Set(acronyms.map(a => a.toUpperCase())));
+  const acronyms = combinedText.match(/\b(FTTH|ONT|OLT|ODN|ODB|UTP|AAA|SLA|VLAN|5G|IP|DNS|DHCP|ITIL|SOC|Trouble Ticket|Access Team)\b/gi) || [];
+  const uniqueTools = Array.from(new Set(acronyms.map(a => {
+    if (/access team/i.test(a)) return 'Access Team';
+    if (/trouble ticket/i.test(a)) return 'Trouble Ticket';
+    return a.toUpperCase();
+  })));
 
   // 3. Dynamic Academic Phrasing (Rotating variety for expert freshness)
   const arabicOpeners = [
@@ -659,6 +663,14 @@ export function generateAcademicWeeklySynthesis(
 }
 
 /**
+ * Normalizes trainee student name cleanly without hardcoding personal data.
+ */
+export function normalizeStudentName(name?: string): string {
+  if (!name) return '';
+  return name.trim();
+}
+
+/**
  * Intelligent Professional Engineering Categorizer
  * Infers accurate technical domain from task text and title rather than generic "تدريب وتعلّم"
  */
@@ -700,8 +712,13 @@ export function elevateTaskTitle(title: string = '', description: string = ''): 
   const desc = description.toLowerCase();
 
   // Contextual targeted elevations based on actual trainee cases
-  if (/بداية اليوم.*access team/i.test(t) || (/access team/i.test(t) && /ftth/i.test(desc))) {
-    return 'إدارة إنذارات غرف التحكم (NOC) وهندسة تمديدات الألياف الضوئية (FTTH)';
+  if (
+    /بداية اليوم.*access/i.test(t) ||
+    /team access|access team/i.test(t) ||
+    (/access/i.test(t) && /ftth/i.test(desc)) ||
+    /مباشرة الأعمال التشغيلية مع فريق.*access/i.test(t)
+  ) {
+    return 'التهيئة التشغيلية وإدارة صلاحيات النفاذ والتحكم مع فريق (Access Team)';
   }
   if (/اليوم بيكون عن 5g/i.test(t) || (/5g/i.test(t) && /(fwa|cpe|mvno|earth)/i.test(desc))) {
     return 'الفحص الفني لمؤشرات أداء شبكات 5G والمسح الجغرافي للمحطات عبر أنظمة Google Earth';
@@ -724,6 +741,7 @@ export function elevateTaskTitle(title: string = '', description: string = ''): 
   t = t.replace(/^جلسة تعريفية\s*و?التعريف بـ\s*/gi, 'التهيئة الفنية لمنظومة ');
   t = t.replace(/^اول يوم عمل\s*(و|مع)?\s*/gi, 'مباشرة العمل و');
   t = t.replace(/مقابلة\s*hr/gi, 'إجراءات الموارد البشرية (HR)');
+  t = t.replace(/team access/gi, 'Access Team');
 
   return t || 'المهام التشغيلية والهندسية الميدانية';
 }
@@ -735,7 +753,10 @@ export function polishAcademicNarrative(text: string = ''): string {
   if (!text.trim()) return '';
   let s = text.trim();
 
-  // 1. Remove raw colloquialisms
+  // 1. Remove raw colloquialisms and typos
+  s = s.replace(/وكتابة وما للدخول/giu, 'وكتابة أوامر منح صلاحيات النفاذ والتحكم للدخول (Access Control Commands)');
+  s = s.replace(/ضوضيات\s*-\s*FIBS|ضوئيات\s*-\s*FIBS/giu, 'ضوئيات - شبكات الألياف البصرية (FTTH)');
+  s = s.replace(/team access/giu, 'Access Team');
   s = s.replace(/سويت\s+/gu, 'تمت تهيئة وتكوين ');
   s = s.replace(/سوينا\s+/gu, 'تم تنفيذ وإنجاز ');
   s = s.replace(/بيكون\s+/gu, 'تم التركيز على ');

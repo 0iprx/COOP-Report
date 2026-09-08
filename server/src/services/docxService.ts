@@ -23,7 +23,7 @@ import {
   PageReference,
   ImageRun
 } from 'docx';
-import { FinalReportData, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis, formatWeekPeriod, elevateTaskTitle } from '@coop/shared';
+import { FinalReportData, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis, formatWeekPeriod, elevateTaskTitle, normalizeStudentName, polishAcademicNarrative } from '@coop/shared';
 
 function translateCategory(cat: string, isAr: boolean): string {
   if (isAr) return cat;
@@ -872,7 +872,7 @@ function createMetaTable(
   const borders = { top: cellBorder, bottom: cellBorder, left: cellBorder, right: cellBorder };
 
   const metaRows = [
-    [isAr ? 'اسم المتدرب' : 'Trainee Name', p.studentName || '—'],
+    [isAr ? 'اسم المتدرب' : 'Trainee Name', normalizeStudentName(p.studentName) || '—'],
     [isAr ? 'الرقم التدريبي / الأكاديمي' : 'Training ID', p.trainingNumber || '—'],
     [isAr ? 'القسم / التخصص' : 'Department', p.department || '—'],
     [isAr ? 'المشرف الأكاديمي' : 'Academic Supervisor', p.supervisorName || '—'],
@@ -1076,7 +1076,7 @@ function createWeekEntriesTable(entries: FinalReportData['weeks'][0]['entries'],
               }),
               new TableCell({
                 children: [
-                  new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: e.title, bold: true, size: 20 })] }),
+                  new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: elevateTaskTitle(e.title, e.description), bold: true, size: 20 })] }),
                   new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: `[${translateCategory(e.category, isAr)}]`, size: 18, color: '8B0000' })] })
                 ]
               }),
@@ -1124,7 +1124,8 @@ function createWeekEntriesTable(entries: FinalReportData['weeks'][0]['entries'],
 
 function formatDocxParagraphs(text: string, isAr: boolean): Paragraph[] {
   if (!text) return [new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: '—', size: 20 })] })];
-  const clean = text.replace(/^[ \t]*[-_=]{3,}[ \t]*$/gm, '\n');
+  const polished = isAr ? polishAcademicNarrative(text) : text;
+  const clean = polished.replace(/^[ \t]*[-_=]{3,}[ \t]*$/gm, '\n');
   const lines = clean.split('\n').map(l => l.trim()).filter(Boolean);
   if (lines.length === 0) return [new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: '—', size: 20 })] })];
 
@@ -1532,7 +1533,7 @@ export async function generateWeeklyDocx(
 
   const metaRows = [
     [
-      { label: isAr ? 'اسم المتدرب:' : 'Trainee Name:', value: profile.studentName || '—' },
+      { label: isAr ? 'اسم المتدرب:' : 'Trainee Name:', value: normalizeStudentName(profile.studentName) || '—' },
       { label: isAr ? 'الرقم الأكاديمي:' : 'Training ID:', value: profile.trainingNumber || '—' }
     ],
     [
@@ -1688,7 +1689,7 @@ export async function generateWeeklyDocx(
               color: '1B1B18'
             }),
             new TextRun({
-              text: entry.title,
+              text: elevateTaskTitle(entry.title, entry.description),
               bold: true,
               size: 20,
               color: primaryColor
@@ -1716,7 +1717,7 @@ export async function generateWeeklyDocx(
               color: '444440'
             }),
             new TextRun({
-              text: entry.description,
+              text: isAr ? polishAcademicNarrative(entry.description) : entry.description,
               size: 19,
               color: '1B1B18'
             })
@@ -1776,7 +1777,7 @@ export async function generateWeeklyDocx(
     }
   }
 
-  // 7. Supervisor Sign-off Table
+  // 7. Supervisor Sign-off Table (Tripartite Endorsement matching WeeklyTab)
   const signoffTable = new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
     rows: [
@@ -1784,48 +1785,60 @@ export async function generateWeeklyDocx(
         children: [
           new TableCell({
             borders: cellBorders,
-            width: { size: 50, type: WidthType.PERCENTAGE },
+            width: { size: 34, type: WidthType.PERCENTAGE },
             shading: { fill: 'F9F8F5' },
             children: [
               new Paragraph({
                 bidirectional: isAr,
-                children: [new TextRun({ text: isAr ? 'اعتماد المشرف الميداني (جهة التدريب):' : 'Field Supervisor Approval:', bold: true, size: 20, color: primaryColor })]
+                children: [new TextRun({ text: isAr ? 'توقيع المتدرب:' : 'Trainee Signature:', bold: true, size: 20, color: primaryColor })]
+              }),
+              new Paragraph({
+                bidirectional: isAr,
+                spacing: { before: 60 },
+                children: [new TextRun({ text: normalizeStudentName(profile.studentName) || '—', bold: true, size: 19 })]
               }),
               new Paragraph({
                 bidirectional: isAr,
                 spacing: { before: 80 },
-                children: [new TextRun({ text: `${isAr ? 'تقييم الأسبوع:' : 'Weekly Rating:'} [   ] ممتاز    [   ] جيد جداً    [   ] جيد`, size: 19 })]
-              }),
-              new Paragraph({
-                bidirectional: isAr,
-                spacing: { before: 80 },
-                children: [new TextRun({ text: isAr ? 'التوقيع: ........................................' : 'Signature: ........................................', size: 19 })]
-              }),
-              new Paragraph({
-                bidirectional: isAr,
-                spacing: { before: 80 },
-                children: [new TextRun({ text: isAr ? 'الختم الرسمي للمنشأة:' : 'Official Stamp:', size: 19 })]
+                children: [new TextRun({ text: isAr ? 'التوقيع: ....................' : 'Signature: ....................', size: 18, color: '6E6B62' })]
               })
             ]
           }),
           new TableCell({
             borders: cellBorders,
-            width: { size: 50, type: WidthType.PERCENTAGE },
+            width: { size: 33, type: WidthType.PERCENTAGE },
             shading: { fill: 'F9F8F5' },
             children: [
               new Paragraph({
                 bidirectional: isAr,
-                children: [new TextRun({ text: isAr ? 'ملاحظات المشرف الأكاديمي (الكلية):' : 'Academic Supervisor Remarks:', bold: true, size: 20, color: primaryColor })]
+                children: [new TextRun({ text: isAr ? 'اعتماد المشرف الميداني:' : 'Field Supervisor Approval:', bold: true, size: 20, color: primaryColor })]
+              }),
+              new Paragraph({
+                bidirectional: isAr,
+                spacing: { before: 60 },
+                children: [new TextRun({ text: profile.responsibleName || '....................', bold: true, size: 19 })]
               }),
               new Paragraph({
                 bidirectional: isAr,
                 spacing: { before: 80 },
-                children: [new TextRun({ text: isAr ? 'الملاحظات: ........................................' : 'Remarks: ........................................', size: 19 })]
+                children: [new TextRun({ text: isAr ? 'التوقيع: ....................' : 'Signature: ....................', size: 18, color: '6E6B62' })]
+              })
+            ]
+          }),
+          new TableCell({
+            borders: cellBorders,
+            width: { size: 33, type: WidthType.PERCENTAGE },
+            shading: { fill: 'F9F8F5' },
+            children: [
+              new Paragraph({
+                bidirectional: isAr,
+                children: [new TextRun({ text: isAr ? 'ختم جهة التدريب الرسمي:' : 'Host Entity Stamp:', bold: true, size: 20, color: primaryColor })]
               }),
               new Paragraph({
                 bidirectional: isAr,
-                spacing: { before: 80 },
-                children: [new TextRun({ text: isAr ? 'التاريخ والاعتماد: ........................................' : 'Date & Approval: ........................................', size: 19 })]
+                alignment: AlignmentType.CENTER,
+                spacing: { before: 100, after: 60 },
+                children: [new TextRun({ text: isAr ? '[ موضع الختم الرسمي ]' : '[ Official Stamp ]', size: 18, color: '888880' })]
               })
             ]
           })
@@ -1834,7 +1847,13 @@ export async function generateWeeklyDocx(
     ]
   });
 
+  const synthesisBlock = weekObj ? createWeekAcademicSynthesisBox(weekObj, isAr) : new Paragraph({ children: [] });
+  const weeklyMatrixTable = createWeekEntriesTable(weeklyEntries, isAr);
+
   const doc = new Document({
+    creator: normalizeStudentName(profile.studentName) || (isAr ? 'المتدرب' : 'Trainee'),
+    title: isAr ? `تقرير الأسبوع التدريبي ${weekIndex}` : `Weekly Training Report Week ${weekIndex}`,
+    description: isAr ? 'تقرير التدريب التعاوني الميداني الأسبوعي' : 'Weekly Field Cooperative Training Report',
     styles: {
       default: {
         document: {
@@ -1854,13 +1873,40 @@ export async function generateWeeklyDocx(
           }
         },
         children: [
+          // 1. Cover Page
           coverLogosTable,
           titleParagraph,
           subtitleParagraph,
           metaTable,
-          summaryBox,
+
+          // 2. Page Break after Cover Page for dedicated presentation
+          new Paragraph({ pageBreakBefore: true }),
+
+          // 3. Weekly Summary & Synthesis Dossier
+          synthesisBlock,
+
+          // 4. Weekly Tasks Matrix Table
+          new Paragraph({
+            bidirectional: isAr,
+            spacing: { before: 240, after: 120 },
+            children: [
+              new TextRun({
+                text: isAr ? 'جدول حصر وتوثيق الأنشطة والمهام الأسبوعية المعتمد:' : 'Official Weekly Tasks Executive Matrix:',
+                bold: true,
+                size: 24,
+                color: primaryColor
+              })
+            ]
+          }),
+          weeklyMatrixTable,
+
+          // 5. Day-by-Day Narrative Cards
           ...taskNarrativeElements,
+
+          // 6. Field Evidence Photos
           ...evidenceChildren,
+
+          // 7. Endorsement & Sign-off Table
           new Paragraph({ spacing: { before: 240 } }),
           signoffTable
         ]

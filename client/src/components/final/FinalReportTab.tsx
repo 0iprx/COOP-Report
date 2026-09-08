@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { MOCK_SAMPLE_PREVIEW_PROFILE, MOCK_SAMPLE_PREVIEW_WEEKS } from '../../data/mockPreviewData';
-import { FinalReportData, EntryDTO, ProfileInput, DiffChunk, formatDateArabic, formatDateEnglish, countWords, calculateHoursBetween, REPORT_TEMPLATES, ReportTemplateId, OrganizationLookupResult, generateAcademicWeeklySynthesis, formatWeekPeriod, elevateTaskTitle } from '@coop/shared';
+import { FinalReportData, EntryDTO, ProfileInput, DiffChunk, formatDateArabic, formatDateEnglish, countWords, calculateHoursBetween, REPORT_TEMPLATES, ReportTemplateId, OrganizationLookupResult, generateAcademicWeeklySynthesis, formatWeekPeriod, elevateTaskTitle, normalizeStudentName } from '@coop/shared';
 import {
   FileText,
   Search,
@@ -2166,7 +2166,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
 
           <div className="mt-8 max-w-xl mx-auto bg-bg border border-line rounded-xl p-5 text-right grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs" dir={isAr ? 'rtl' : 'ltr'}>
             <div>
-              <span className="font-bold text-sub">{isAr ? 'اسم المتدرب:' : 'Trainee Name:'}</span> {activePreviewProfile.studentName || '—'}
+              <span className="font-bold text-sub">{isAr ? 'اسم المتدرب:' : 'Trainee Name:'}</span> {normalizeStudentName(activePreviewProfile.studentName) || '—'}
             </div>
             <div>
               <span className="font-bold text-sub">{isAr ? 'الرقم التدريبي:' : 'Training ID:'}</span> {activePreviewProfile.trainingNumber || '—'}
@@ -2396,7 +2396,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                                     </span>
                                   </td>
                                   <td className="p-2.5 font-bold text-ink leading-snug">
-                                    {entry.title}
+                                    {elevateTaskTitle(entry.title, entry.description)}
                                   </td>
                                 </tr>
                               );
@@ -2445,7 +2445,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                                     {isAr ? 'النشاط الفني والمهمة التشغيلية الميدانية:' : 'Technical Activity & Operational Scope:'}
                                   </div>
                                   <h4 className="text-sm font-black text-ink leading-snug">
-                                    {entry.title}
+                                    {elevateTaskTitle(entry.title, entry.description)}
                                   </h4>
                                 </div>
 
@@ -2553,7 +2553,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                             {synthesis.toolsAndTech.map((tool, tIdx) => (
                               <span
                                 key={tIdx}
-                                className="px-2.5 py-0.5 rounded-md text-[10.5px] font-mono font-bold bg-accent-dim/60 text-accent border border-accent/20 print:bg-slate-100 print:text-slate-800 print:border-slate-300 tech-pill"
+                                className="px-2.5 py-1 rounded-md text-[11px] font-mono font-extrabold bg-slate-100 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 print:bg-white print:border-slate-400 print:text-black shadow-xs tech-pill"
                               >
                                 {tool}
                               </span>
@@ -2688,7 +2688,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             </div>
             <div className="p-4 space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sub">
-                <div><b>{isAr ? 'اسم المتدرب:' : 'Student Name:'}</b> {activePreviewProfile.studentName || '—'}</div>
+                <div><b>{isAr ? 'اسم المتدرب:' : 'Student Name:'}</b> {normalizeStudentName(activePreviewProfile.studentName) || '—'}</div>
                 <div><b>{isAr ? 'الرقم التدريبي / الجامعي:' : 'ID / Trainee Number:'}</b> {activePreviewProfile.trainingNumber || '—'}</div>
                 <div><b>{isAr ? 'جهة التدريب:' : 'Host Organization:'}</b> {activePreviewProfile.entityAddress || '—'}</div>
                 <div><b>{isAr ? 'إجمالي الساعات المعتمدة:' : 'Total Approved Hours:'}</b> {isSampleMode ? 280 : (reportData?.totalHours || 0)} / {activePreviewProfile.courseHours || 280} {isAr ? 'ساعة' : 'hrs'}</div>
