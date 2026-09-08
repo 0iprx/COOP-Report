@@ -23,7 +23,7 @@ import {
   PageReference,
   ImageRun
 } from 'docx';
-import { FinalReportData, formatDateArabic, formatDateEnglish, calculateHoursBetween } from '@coop/shared';
+import { FinalReportData, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis } from '@coop/shared';
 
 function translateCategory(cat: string, isAr: boolean): string {
   if (isAr) return cat;
@@ -555,6 +555,9 @@ export async function generateAcademicDocx(reportData: FinalReportData, lang: 'a
             // Week Detailed Entries Table
             createWeekEntriesTable(w.entries, isAr),
 
+            // Week Executive Academic Synthesis Box
+            createWeekAcademicSynthesisBox(w, isAr),
+
             // Week Evidence Photos
             ...createWeekEvidenceBlocks(w.evidence, isAr),
 
@@ -1077,7 +1080,7 @@ function createWeekEntriesTable(entries: FinalReportData['weeks'][0]['entries'],
                 children: [new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: `${e.timeFrom} - ${e.timeTo}`, size: 20 })] })]
               }),
               new TableCell({
-                children: [new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: e.description, size: 20 })] })]
+                children: formatDocxParagraphs(e.description, isAr)
               })
             ]
           })
@@ -1112,6 +1115,160 @@ function createWeekEntriesTable(entries: FinalReportData['weeks'][0]['entries'],
   return new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
     rows: [headerRow, ...rows]
+  });
+}
+
+function formatDocxParagraphs(text: string, isAr: boolean): Paragraph[] {
+  if (!text) return [new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: '—', size: 20 })] })];
+  const clean = text.replace(/^[ \t]*[-_=]{3,}[ \t]*$/gm, '\n');
+  const lines = clean.split('\n').map(l => l.trim()).filter(Boolean);
+  if (lines.length === 0) return [new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: '—', size: 20 })] })];
+
+  return lines.map(line => {
+    if (line.startsWith('•') || line.startsWith('-') || line.startsWith('*') || /\*\s*$/.test(line)) {
+      const cleanBullet = line.replace(/^[•\-\*]\s*|\s*\*$/g, '').trim();
+      return new Paragraph({
+        bidirectional: isAr,
+        bullet: { level: 0 },
+        spacing: { before: 30, after: 30 },
+        children: [new TextRun({ text: cleanBullet, size: 20 })]
+      });
+    }
+    if ((line.startsWith('**') && line.endsWith('**')) || /^(في تمام الساعة|بعد الساعة|الساعة|قسم|فريق|مرحلة|منظومة|موجز)\s*[\d:]*.*:?$/i.test(line)) {
+      const title = line.replace(/^\*\*|\*\*$/g, '').replace(/:$/, '').trim();
+      return new Paragraph({
+        bidirectional: isAr,
+        spacing: { before: 60, after: 30 },
+        children: [new TextRun({ text: title, bold: true, size: 20, color: '8B0000' })]
+      });
+    }
+    return new Paragraph({
+      bidirectional: isAr,
+      spacing: { before: 30, after: 30 },
+      children: [new TextRun({ text: line, size: 20 })]
+    });
+  });
+}
+
+function createWeekAcademicSynthesisBox(w: FinalReportData['weeks'][0], isAr: boolean): Table | Paragraph {
+  if (!w.entries || w.entries.length === 0) {
+    return new Paragraph({ spacing: { before: 60, after: 60 }, children: [] });
+  }
+
+  const synthesis = generateAcademicWeeklySynthesis(w.entries, w.weekIndex, w.totalHours, isAr);
+  const cellBorder = { style: BorderStyle.SINGLE, size: 6, color: '8B0000' };
+  const lightBorder = { style: BorderStyle.SINGLE, size: 2, color: 'E6E2D8' };
+
+  const paragraphs: Paragraph[] = [
+    new Paragraph({
+      bidirectional: isAr,
+      spacing: { before: 100, after: 60 },
+      children: [
+        new TextRun({
+          text: isAr ? 'الموجز التنفيذي والكفايات المكتسبة للأسبوع:' : 'Weekly Executive Synthesis & Acquired Competencies:',
+          bold: true,
+          size: 22,
+          color: '8B0000'
+        })
+      ]
+    }),
+    new Paragraph({
+      bidirectional: isAr,
+      alignment: AlignmentType.JUSTIFIED,
+      spacing: { before: 40, after: 80 },
+      children: [
+        new TextRun({
+          text: synthesis.executiveSummary,
+          size: 20,
+          color: '1B1B18'
+        })
+      ]
+    })
+  ];
+
+  if (synthesis.technicalPillars.length > 0) {
+    paragraphs.push(
+      new Paragraph({
+        bidirectional: isAr,
+        spacing: { before: 60, after: 30 },
+        children: [
+          new TextRun({
+            text: isAr ? '• المحاور التشغيلية المنفذة:' : '• Core Operational Pillars:',
+            bold: true,
+            size: 20,
+            color: '8B0000'
+          })
+        ]
+      })
+    );
+    for (const pillar of synthesis.technicalPillars) {
+      paragraphs.push(
+        new Paragraph({
+          bidirectional: isAr,
+          bullet: { level: 0 },
+          spacing: { before: 20, after: 20 },
+          children: [new TextRun({ text: pillar, size: 19, color: '2B2B2B' })]
+        })
+      );
+    }
+  }
+
+  if (synthesis.acquiredCompetencies.length > 0) {
+    paragraphs.push(
+      new Paragraph({
+        bidirectional: isAr,
+        spacing: { before: 60, after: 30 },
+        children: [
+          new TextRun({
+            text: isAr ? '• الكفايات والمعارف الهندسية المكتسبة:' : '• Acquired Engineering Competencies:',
+            bold: true,
+            size: 20,
+            color: '2F6B4F'
+          })
+        ]
+      })
+    );
+    for (const comp of synthesis.acquiredCompetencies) {
+      paragraphs.push(
+        new Paragraph({
+          bidirectional: isAr,
+          bullet: { level: 0 },
+          spacing: { before: 20, after: 20 },
+          children: [new TextRun({ text: comp, size: 19, color: '2B2B2B' })]
+        })
+      );
+    }
+  }
+
+  if (synthesis.toolsAndTech.length > 0) {
+    paragraphs.push(
+      new Paragraph({
+        bidirectional: isAr,
+        spacing: { before: 60, after: 60 },
+        children: [
+          new TextRun({
+            text: isAr ? `التقنيات والأنظمة الموظفة: ${synthesis.toolsAndTech.join('، ')}` : `Utilized Technologies: ${synthesis.toolsAndTech.join(', ')}`,
+            bold: true,
+            size: 19,
+            color: '555555'
+          })
+        ]
+      })
+    );
+  }
+
+  return new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    rows: [
+      new TableRow({
+        children: [
+          new TableCell({
+            borders: { top: cellBorder, bottom: lightBorder, left: lightBorder, right: lightBorder },
+            children: paragraphs
+          })
+        ]
+      })
+    ]
   });
 }
 

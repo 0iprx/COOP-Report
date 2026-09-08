@@ -1,4 +1,4 @@
-import { FinalReportData, formatDateArabic, formatDateEnglish } from '@coop/shared';
+import { FinalReportData, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis } from '@coop/shared';
 
 function translateCategory(cat: string, isAr: boolean): string {
   if (isAr) return cat;
@@ -11,6 +11,41 @@ function translateCategory(cat: string, isAr: boolean): string {
     'أخرى': 'Other'
   };
   return map[cat] || cat;
+}
+
+function formatProceduralNarrativeHtml(text: string): string {
+  if (!text) return '';
+  const clean = text.replace(/^[ \t]*[-_=]{3,}[ \t]*$/gm, '\n');
+  const lines = clean.split('\n');
+  const out: string[] = [];
+  let inList = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim();
+    if (!trimmed) {
+      if (inList) { out.push('</ul>'); inList = false; }
+      continue;
+    }
+
+    if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*') || /\*\s*$/.test(trimmed)) {
+      if (!inList) { out.push('<ul style="margin: 8px 0; padding-inline-start: 18px; list-style-type: disc;">'); inList = true; }
+      const item = trimmed.replace(/^[•\-\*]\s*|\s*\*$/g, '').trim();
+      out.push(`<li style="margin-bottom: 4px; line-height: 1.6; color: var(--ink);">${escapeHtml(item)}</li>`);
+      continue;
+    }
+
+    if (inList) { out.push('</ul>'); inList = false; }
+
+    if ((trimmed.startsWith('**') && trimmed.endsWith('**')) || /^(في تمام الساعة|بعد الساعة|الساعة|قسم|فريق|مرحلة|منظومة|موجز)\s*[\d:]*.*:?$/i.test(trimmed)) {
+      const title = trimmed.replace(/^\*\*|\*\*$/g, '').replace(/:$/, '').trim();
+      out.push(`<div style="font-weight: 800; font-size: 12.5px; color: var(--accent); margin-top: 8px; margin-bottom: 4px; border-bottom: 1px dashed var(--line); padding-bottom: 2px;">${escapeHtml(title)}</div>`);
+      continue;
+    }
+
+    out.push(`<p style="margin: 6px 0; line-height: 1.6; color: var(--ink);">${escapeHtml(trimmed)}</p>`);
+  }
+  if (inList) { out.push('</ul>'); }
+  return out.join('');
 }
 
 function getWeekTopicServer(w: any, isAr: boolean = true): string {
@@ -446,7 +481,11 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
 
       <!-- Section 3 -->
       <h2 class="section-title page-break" id="sec-timeline">${isAr ? `3. تقارير وسجل الأسابيع التدريبية الميدانية (${weeks.length} أسبوعاً)` : `3. Weekly Field Training Reports (${weeks.length} Weeks)`}</h2>
-      ${weeks.map((w) => `
+      ${weeks.map((w) => {
+        const weekHours = w.totalHours || (w.entries || []).reduce((sum: number, e: any) => sum + calculateHoursBetween(e.timeFrom || '08:00', e.timeTo || '16:00'), 0);
+        const synthesis = generateAcademicWeeklySynthesis(w.entries || [], w.weekIndex, weekHours, isAr);
+
+        return `
         <div class="week-block page-break" id="week-${w.weekIndex}">
           <div class="week-header">
             <span>${isAr ? `تقرير الأسبوع ${w.weekIndex}: ${escapeHtml(getWeekTopicServer(w, isAr))}` : `Week ${w.weekIndex} Report: ${escapeHtml(getWeekTopicServer(w, false))}`}</span>
@@ -454,22 +493,88 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
           </div>
 
           <div style="padding: 16px; background: #FFFFFF;">
-            <div style="font-size: 13px; font-weight: 800; color: var(--ink); margin-bottom: 12px; border-bottom: 1px solid var(--line); padding-bottom: 6px;">
-              ${isAr ? 'أولاً: البيان التفصيلي للمهام والأعمال الميدانية المنفذة:' : 'Accomplished Technical Tasks:'}
-            </div>
-
-            ${w.entries.length > 0 ? w.entries.map((e: any, eIdx: number) => `
-              <div style="margin-bottom: 12px; padding: 12px 14px; background: #FAFAF8; border: 1px solid var(--line); border-radius: 8px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                  <span style="font-weight: 800; font-size: 13px; color: var(--ink);">(${eIdx + 1}) ${escapeHtml(e.title)}</span>
-                  <span style="font-size: 11px; color: var(--sub);">${e.entryDate ? (isAr ? formatDateArabic(e.entryDate) : formatDateEnglish(e.entryDate)) : ''}</span>
+            ${w.entries && w.entries.length > 0 ? `
+              <!-- Executive Weekly Tasks Matrix Table -->
+              <div style="margin-bottom: 16px; overflow-x: auto;">
+                <div style="font-size: 12px; font-weight: 800; color: var(--accent); margin-bottom: 6px; display: flex; justify-content: space-between;">
+                  <span>${isAr ? 'جدول حصر وتوثيق الأنشطة والمهام الأسبوعية المعتمد' : 'Official Weekly Tasks Executive Matrix'}</span>
+                  <span>${w.totalDays || w.entries.length} ${isAr ? 'أيام عمل' : 'days'} &middot; ${weekHours} ${isAr ? 'ساعة فعلية' : 'hours'}</span>
                 </div>
-                <div style="margin-bottom: 6px;">
-                  <span class="badge">${escapeHtml(translateCategory(e.category, isAr))}</span>
-                </div>
-                <div style="font-size: 12px; color: var(--sub); line-height: 1.6; white-space: pre-wrap;">${escapeHtml(e.description)}</div>
+                <table class="entries-table" style="width: 100%; font-size: 11.5px; border-collapse: collapse;">
+                  <thead>
+                    <tr style="background: #FAFAF8;">
+                      <th style="width: 18%; text-align: start; padding: 6px 8px;">${isAr ? 'اليوم والتاريخ' : 'Day & Date'}</th>
+                      <th style="width: 14%; text-align: center; padding: 6px 8px;">${isAr ? 'التوقيت' : 'Time'}</th>
+                      <th style="width: 10%; text-align: center; padding: 6px 8px;">${isAr ? 'الساعات' : 'Hours'}</th>
+                      <th style="width: 18%; text-align: start; padding: 6px 8px;">${isAr ? 'التصنيف' : 'Category'}</th>
+                      <th style="text-align: start; padding: 6px 8px;">${isAr ? 'المهمة والنشاط الميداني' : 'Operational Scope & Task'}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${w.entries.map((e: any, idx: number) => {
+                      const h = calculateHoursBetween(e.timeFrom || '08:00', e.timeTo || '16:00');
+                      return `
+                        <tr>
+                          <td style="padding: 6px 8px;"><b>${isAr ? `اليوم ${idx + 1}` : `Day ${idx + 1}`}</b><br><small style="color: var(--sub);">${e.entryDate ? (isAr ? formatDateArabic(e.entryDate) : formatDateEnglish(e.entryDate)) : ''}</small></td>
+                          <td style="text-align: center; direction: ltr; font-family: monospace; padding: 6px 8px;">${e.timeFrom || '08:00'} - ${e.timeTo || '16:00'}</td>
+                          <td style="text-align: center; font-weight: bold; padding: 6px 8px;">${h} ${isAr ? 'س' : 'h'}</td>
+                          <td style="padding: 6px 8px;"><span class="badge">${escapeHtml(translateCategory(e.category, isAr))}</span></td>
+                          <td style="padding: 6px 8px; font-weight: bold; color: var(--ink);">${escapeHtml(e.title)}</td>
+                        </tr>
+                      `;
+                    }).join('')}
+                  </tbody>
+                </table>
               </div>
-            `).join('') : `
+
+              <div style="font-size: 13px; font-weight: 800; color: var(--ink); margin-bottom: 12px; border-bottom: 1px solid var(--line); padding-bottom: 6px;">
+                ${isAr ? 'أولاً: البيان التفصيلي للمهام والأعمال الميدانية المنفذة:' : 'Accomplished Technical Tasks:'}
+              </div>
+
+              ${w.entries.map((e: any, eIdx: number) => `
+                <div style="margin-bottom: 12px; padding: 12px 14px; background: #FAFAF8; border: 1px solid var(--line); border-radius: 8px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <span style="font-weight: 800; font-size: 13px; color: var(--ink);">(${eIdx + 1}) ${escapeHtml(e.title)}</span>
+                    <span style="font-size: 11px; color: var(--sub);">${e.entryDate ? (isAr ? formatDateArabic(e.entryDate) : formatDateEnglish(e.entryDate)) : ''}</span>
+                  </div>
+                  <div style="margin-bottom: 6px;">
+                    <span class="badge">${escapeHtml(translateCategory(e.category, isAr))}</span>
+                  </div>
+                  <div style="font-size: 12px; color: var(--sub); line-height: 1.6;">${formatProceduralNarrativeHtml(e.description)}</div>
+                </div>
+              `).join('')}
+
+              <!-- Weekly Academic Synthesis Box -->
+              <div style="margin-top: 16px; padding: 16px; background: #FAF9F6; border: 1px solid var(--line); border-radius: 10px;">
+                <div style="font-weight: 800; font-size: 13px; color: var(--accent); margin-bottom: 8px; border-bottom: 1px solid var(--line); padding-bottom: 4px;">
+                  ${isAr ? 'الموجز التنفيذي والكفايات المكتسبة للأسبوع:' : 'Weekly Executive Synthesis & Acquired Competencies:'}
+                </div>
+                <p style="font-size: 12.5px; line-height: 1.7; color: var(--ink); margin-bottom: 10px;">
+                  ${escapeHtml(synthesis.executiveSummary)}
+                </p>
+                ${synthesis.technicalPillars.length > 0 ? `
+                  <div style="font-size: 11.5px; font-weight: bold; color: var(--accent); margin-top: 8px;">
+                    ${isAr ? '• المحاور التشغيلية المنفذة:' : '• Operational Pillars:'}
+                  </div>
+                  <ul style="margin: 4px 0 8px 18px; font-size: 12px; color: var(--sub); line-height: 1.6;">
+                    ${synthesis.technicalPillars.map(p => `<li>${escapeHtml(p)}</li>`).join('')}
+                  </ul>
+                ` : ''}
+                ${synthesis.acquiredCompetencies.length > 0 ? `
+                  <div style="font-size: 11.5px; font-weight: bold; color: #2F6B4F; margin-top: 8px;">
+                    ${isAr ? '• الكفايات والمعارف الهندسية المكتسبة:' : '• Acquired Competencies:'}
+                  </div>
+                  <ul style="margin: 4px 0 8px 18px; font-size: 12px; color: var(--sub); line-height: 1.6;">
+                    ${synthesis.acquiredCompetencies.map(c => `<li>${escapeHtml(c)}</li>`).join('')}
+                  </ul>
+                ` : ''}
+                ${synthesis.toolsAndTech.length > 0 ? `
+                  <div style="font-size: 11.5px; font-weight: bold; color: #555; margin-top: 8px;">
+                    ${isAr ? `التقنيات والأدوات الموظفة: ${escapeHtml(synthesis.toolsAndTech.join('، '))}` : `Utilized Technologies: ${escapeHtml(synthesis.toolsAndTech.join(', '))}`}
+                  </div>
+                ` : ''}
+              </div>
+            ` : `
               <div style="text-align: center; color: var(--sub); padding: 20px; font-style: italic;">
                 ${isAr ? 'أسبوع تدريبي مؤجل أو لم تسجل به مهام بعد — متاح للتوثيق والاستكمال لاحقاً' : 'Postponed or pending training week'}
               </div>
@@ -482,7 +587,7 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
                 ${isAr ? 'ثانياً: الصور التوثيقية والأدلة الميدانية للأسبوع:' : 'Weekly Documentation & Field Evidence Photos:'}
               </div>
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
-                ${w.evidence.map((ev, evIdx) => `
+                ${w.evidence.map((ev: any, evIdx: number) => `
                   <div style="border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: #FFF;">
                     <img src="${ev.imageData}" alt="${escapeHtml(ev.caption)}" style="width: 100%; height: 140px; object-fit: cover; display: block;" />
                     <div style="padding: 8px; font-size: 11.5px; color: var(--ink); line-height: 1.4;">
@@ -500,15 +605,16 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
             <span>${isAr ? 'التوقيع والختم: ....................' : 'Signature: ....................'}</span>
           </div>
         </div>
-      `).join('')}
+        `;
+      }).join('')}
 
       <!-- Section 4 -->
       <h2 class="section-title page-break" id="sec-skills">${isAr ? '4. المعارف والمهارات والتجارب المكتسبة' : '4. Acquired Knowledge & Skills'}</h2>
-      <p>${escapeHtml(profile.skillsText)}</p>
+      <p style="line-height: 1.8; color: var(--ink);">${escapeHtml(profile.skillsText || (isAr ? 'تم خلال فترة التدريب التعاوني الميداني اكتساب وتطبيق حزمة متكاملة من المعارف التخصصية والمهارات الهندسية والميدانية المتقدمة، وشملت دراسة البنية التحتية، معايرة الأجهزة وخطوط الاتصال، فحص مستويات الإشارة، وتطبيق أفضل الممارسات التشغيلية ومعايير الجودة والسلامة المهنية.' : 'Throughout the cooperative field training period, a comprehensive set of technical and operational engineering competencies were acquired and practiced.'))}</p>
 
       <!-- Section 5 -->
-      <h2 class="section-title page-break" id="sec-conclusion">${isAr ? '5. الخاتمة والتوصيات العامة' : '5. Conclusion'}</h2>
-      <p>${escapeHtml(profile.conclusionText)}</p>
+      <h2 class="section-title page-break" id="sec-conclusion">${isAr ? '5. الخاتمة والتوصيات العامة' : '5. Conclusion & Recommendations'}</h2>
+      <p style="line-height: 1.8; color: var(--ink);">${escapeHtml(profile.conclusionText || (isAr ? `في ختام فترة التدريب التعاوني الميداني، حققت هذه التجربة أهدافها التعليمية والتطبيقية بنجاح من خلال ربط المفاهيم الأكاديمية بالممارسة الهندسية والتشغيلية المباشرة في ${profile.entityAddress || 'المنشأة المستضيفة'}.\n\nأبرز التوصيات المهنية:\n• تعزيز برامج التدريب الميداني التخصصية في هندسة الشبكات والأمن السيبراني وتقنيات الألياف الضوئية.\n• أتمتة الإجراءات والربط الرقمي المباشر بين فرق العمل وأنظمة إدارة البلاغات والتذاكر الفنية (ITIL).\n• استمرار الشراكة الأكاديمية والمهنية الفعالة بين المؤسسات التعليمية وسوق العمل.` : `At the conclusion of the cooperative field training period, this experience successfully achieved its academic and practical goals by bridging theory with direct engineering operations at ${profile.entityAddress || 'the host organization'}.\n\nKey Recommendations:\n• Advancing field training programs in network engineering and cybersecurity.\n• Automating incident management and ticket escalation workflows under ITIL standards.\n• Sustaining strong institutional collaboration between universities and industry.`))}</p>
 
       <!-- Section 6: Approval -->
       <h2 class="section-title page-break" id="sec-approval">${isAr ? '6. استمارة اعتماد وتوقيعات الإشراف' : '6. Supervisory Approval & Final Sign-Off'}</h2>

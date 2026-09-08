@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { MOCK_SAMPLE_PREVIEW_PROFILE, MOCK_SAMPLE_PREVIEW_WEEKS } from '../../data/mockPreviewData';
-import { FinalReportData, EntryDTO, ProfileInput, DiffChunk, formatDateArabic, formatDateEnglish, countWords, calculateHoursBetween, REPORT_TEMPLATES, ReportTemplateId, OrganizationLookupResult } from '@coop/shared';
+import { FinalReportData, EntryDTO, ProfileInput, DiffChunk, formatDateArabic, formatDateEnglish, countWords, calculateHoursBetween, REPORT_TEMPLATES, ReportTemplateId, OrganizationLookupResult, generateAcademicWeeklySynthesis } from '@coop/shared';
 import {
   FileText,
   Search,
@@ -132,6 +132,69 @@ export const getWeekTopic = (w: { weekIndex: number; entries?: { title: string }
     : `Week ${w.weekIndex} Technical Activities`;
 };
 
+// Helper to render procedural narrative with structured bullets and headers
+export const renderProceduralNarrative = (text: string) => {
+  if (!text) return null;
+  const clean = text.replace(/^[ \t]*[-_=]{3,}[ \t]*$/gm, '\n');
+  const lines = clean.split('\n');
+  const elements: React.ReactNode[] = [];
+  let currentBullets: string[] = [];
+
+  const flushBullets = () => {
+    if (currentBullets.length > 0) {
+      elements.push(
+        <ul key={`bullets-${elements.length}`} className="my-2 space-y-1.5 list-none pr-1">
+          {currentBullets.map((b, i) => (
+            <li key={i} className="flex items-start gap-2 text-xs leading-relaxed text-ink">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#C0102A] mt-1.5 shrink-0"></span>
+              <span className="flex-1">{b}</span>
+            </li>
+          ))}
+        </ul>
+      );
+      currentBullets = [];
+    }
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim();
+    if (!trimmed) {
+      flushBullets();
+      continue;
+    }
+
+    if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*') || /\*\s*$/.test(trimmed)) {
+      const cleanItem = trimmed.replace(/^[•\-\*]\s*|\s*\*$/g, '').trim();
+      currentBullets.push(cleanItem);
+      continue;
+    }
+
+    if (
+      (trimmed.startsWith('**') && trimmed.endsWith('**')) ||
+      /^(في تمام الساعة|بعد الساعة|الساعة|قسم|فريق|مرحلة|منظومة|موجز)\s*[\d:]*.*:?$/i.test(trimmed)
+    ) {
+      flushBullets();
+      const title = trimmed.replace(/^\*\*|\*\*$/g, '').replace(/:$/, '').trim();
+      elements.push(
+        <h5 key={`heading-${elements.length}`} className="font-extrabold text-xs text-ink pt-2 pb-0.5 border-b border-line/40 flex items-center gap-1.5">
+          <span className="w-1 h-3.5 bg-accent rounded-full shrink-0"></span>
+          <span>{title}</span>
+        </h5>
+      );
+      continue;
+    }
+
+    flushBullets();
+    elements.push(
+      <p key={`p-${elements.length}`} className="text-xs leading-relaxed text-ink my-1">
+        {trimmed}
+      </p>
+    );
+  }
+  flushBullets();
+
+  return <div className="space-y-1">{elements}</div>;
+};
 
 export interface ReportSample {
   id: string;
@@ -2182,6 +2245,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
           {activePreviewWeeks.map((w) => {
             const weekTitle = isAr ? getArabicWeekName(w.weekIndex) : `Week ${w.weekIndex}`;
             const weekTopic = getWeekTopic(w, isAr);
+            const weekHours = w.totalHours || (w.entries || []).reduce((sum: number, e: EntryDTO) => sum + calculateHoursBetween(e.timeFrom, e.timeTo), 0);
 
             return (
               <div key={w.weekIndex} id={`week-${w.weekIndex}`} className="scroll-mt-24 border border-line rounded-xl overflow-hidden mb-8 page-break bg-card shadow-xs">
@@ -2206,16 +2270,66 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                       <span>{isAr ? 'أسبوع تدريبي مؤجل أو متاح لاستكمال التوثيق والسرد الكتابي' : 'Pending week documentation'}</span>
                     </div>
                   ) : (
-                    <div className="space-y-3">
-                      <div className="text-xs font-bold text-ink border-b border-line pb-1.5 flex items-center justify-between">
-                        <span>{isAr ? 'أولاً: البيان التفصيلي للمهام والأعمال الميدانية المنجزة:' : 'Accomplished Technical Tasks:'}</span>
+                    <div className="space-y-4">
+                      {/* Executive Weekly Tasks Table Matrix */}
+                      <div className="overflow-x-auto border border-line rounded-xl my-2 bg-card print:border-line print:bg-white break-inside-avoid shadow-xs">
+                        <div className="bg-bg px-4 py-2.5 border-b border-line flex items-center justify-between text-xs font-black text-ink">
+                          <span>{isAr ? 'جدول حصر وتوثيق الأنشطة والمهام الأسبوعية المعتمد' : 'Official Weekly Tasks Executive Matrix'}</span>
+                          <span className="text-[11px] font-bold text-accent">
+                            {w.totalDays || w.entries.length} {isAr ? 'أيام عمل' : 'days'} &middot; {weekHours} {isAr ? 'ساعة فعلية' : 'hours'}
+                          </span>
+                        </div>
+                        <table className="w-full text-start text-xs border-collapse">
+                          <thead>
+                            <tr className="bg-bg/60 border-b border-line text-ink font-extrabold text-[11px]">
+                              <th className="p-2.5 text-start w-28">{isAr ? 'اليوم والتاريخ' : 'Day & Date'}</th>
+                              <th className="p-2.5 text-center w-24">{isAr ? 'التوقيت' : 'Time'}</th>
+                              <th className="p-2.5 text-center w-16">{isAr ? 'الساعات' : 'Hours'}</th>
+                              <th className="p-2.5 text-start w-28">{isAr ? 'التصنيف الفني' : 'Domain'}</th>
+                              <th className="p-2.5 text-start">{isAr ? 'النشاط والمهمة التشغيلية الميدانية' : 'Operational Scope & Task'}</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-line/70">
+                            {w.entries.map((entry: EntryDTO, idx: number) => {
+                              const hours = calculateHoursBetween(entry.timeFrom || '08:00', entry.timeTo || '16:00');
+                              return (
+                                <tr key={entry.id || idx} className="hover:bg-bg/30 transition-colors">
+                                  <td className="p-2.5 font-extrabold text-ink whitespace-nowrap">
+                                    <span className="text-accent ml-1 font-black">{isAr ? `اليوم ${idx + 1}` : `D${idx + 1}`}</span>
+                                    <span className="text-sub font-semibold text-[10.5px]">
+                                      ({isAr ? formatDateArabic(entry.entryDate) : formatDateEnglish(entry.entryDate)})
+                                    </span>
+                                  </td>
+                                  <td className="p-2.5 text-center text-sub font-mono text-[11px] whitespace-nowrap" dir="ltr">
+                                    {entry.timeFrom || '08:00'} - {entry.timeTo || '16:00'}
+                                  </td>
+                                  <td className="p-2.5 text-center font-black text-ink whitespace-nowrap">
+                                    {hours} {isAr ? 'س' : 'h'}
+                                  </td>
+                                  <td className="p-2.5">
+                                    <span className="px-2 py-0.5 rounded-md text-[10.5px] font-extrabold bg-[#C0102A]/10 text-[#C0102A] whitespace-nowrap border border-[#C0102A]/20">
+                                      {translateCategory(entry.category, isAr)}
+                                    </span>
+                                  </td>
+                                  <td className="p-2.5 font-bold text-ink leading-snug">
+                                    {entry.title}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <div className="text-xs font-bold text-ink border-b border-line pb-1.5 flex items-center justify-between pt-2">
+                        <span>{isAr ? 'أولاً: البيان والسرد الإجرائي التفصيلي للمهام والأعمال الميدانية:' : 'Detailed Procedural Narrative & Accomplished Tasks:'}</span>
                         <span className="text-[11px] text-muted font-normal">{w.entries.length} {isAr ? 'مهام موثقة' : 'tasks'}</span>
                       </div>
                       <div className="space-y-3">
                         {w.entries.map((entry: EntryDTO, eIdx: number) => {
                           const entryHours = calculateHoursBetween(entry.timeFrom, entry.timeTo);
                           return (
-                            <div key={entry.id || eIdx} className="rounded-xl border border-line bg-card overflow-hidden text-xs shadow-2xs">
+                            <div key={entry.id || eIdx} className="rounded-xl border border-line bg-card overflow-hidden text-xs shadow-2xs day-card-print break-inside-avoid">
                               {/* Entry Header: Day Badge, Date, Time Span, Hours, Category */}
                               <div className="bg-surface/80 px-4 py-2.5 border-b border-line flex flex-wrap items-center justify-between gap-2">
                                 <div className="flex items-center gap-2 flex-wrap">
@@ -2225,7 +2339,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                                   <span className="font-extrabold text-ink text-xs">
                                     {isAr ? formatDateArabic(entry.entryDate) : formatDateEnglish(entry.entryDate)}
                                   </span>
-                                  <span className="text-sub text-[11px] font-medium">
+                                  <span className="text-sub text-[11px] font-medium" dir="ltr">
                                     ({entry.timeFrom || '08:00'} — {entry.timeTo || '16:00'})
                                   </span>
                                 </div>
@@ -2241,7 +2355,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                               </div>
 
                               {/* Entry Body: Formal Task Title & Procedural Narrative */}
-                              <div className="p-4 space-y-2.5">
+                              <div className="p-4 space-y-2.5 text-start">
                                 <div>
                                   <div className="text-[10px] font-black text-accent uppercase tracking-wider mb-0.5">
                                     {isAr ? 'النشاط الفني والمهمة التشغيلية الميدانية:' : 'Technical Activity & Operational Scope:'}
@@ -2255,9 +2369,9 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                                   <div className="text-[10px] font-black text-sub uppercase tracking-wider mb-1">
                                     {isAr ? 'السرد الإجرائي ونتائج التنفيذ الهندسي:' : 'Procedural Narrative & Engineering Results:'}
                                   </div>
-                                  <p className="text-ink/90 leading-relaxed whitespace-pre-wrap text-xs bg-bg/50 p-3 rounded-lg border border-line/60">
-                                    {entry.description}
-                                  </p>
+                                  <div className="procedural-narrative-box bg-bg/40 p-3 rounded-lg border border-line/50">
+                                    {renderProceduralNarrative(entry.description)}
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -2286,6 +2400,85 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                       </div>
                     </div>
                   )}
+
+                  {/* Weekly Learning Synthesis & Acquired Competencies (Dynamic Expert Generation) */}
+                  {w.entries && w.entries.length > 0 && (() => {
+                    const synthesis = generateAcademicWeeklySynthesis(
+                      w.entries,
+                      w.weekIndex,
+                      weekHours,
+                      isAr
+                    );
+                    return (
+                      <div className="mt-5 p-5 bg-card border border-line rounded-2xl space-y-3.5 text-start break-inside-avoid shadow-xs print:bg-white print:border-line">
+                        <div className="flex items-center justify-between border-b border-line pb-2.5">
+                          <div className="text-xs font-black text-ink flex items-center gap-2">
+                            <CheckCircle2 className="w-4 h-4 text-accent" />
+                            <span>{isAr ? 'الموجز التنفيذي والمخرجات والكفايات المكتسبة للأسبوع' : 'Weekly Executive Synthesis & Acquired Competencies'}</span>
+                          </div>
+                          <span className="text-[11px] font-bold text-sub">
+                            {isAr ? 'صياغة أكاديمية استشارية معتمدة' : 'Official Academic Synthesis'}
+                          </span>
+                        </div>
+
+                        {/* Executive Narrative */}
+                        <p className="text-xs sm:text-sm text-ink leading-relaxed font-medium">
+                          {synthesis.executiveSummary}
+                        </p>
+
+                        {/* Core Operational Pillars */}
+                        {synthesis.technicalPillars.length > 0 && (
+                          <div className="pt-2 border-t border-line/60 space-y-1.5">
+                            <div className="text-[11px] font-black text-[#C0102A] uppercase tracking-wider">
+                              {isAr ? 'المحاور والأنشطة التشغيلية المنفذة:' : 'Core Operational Pillars:'}
+                            </div>
+                            <ul className="space-y-1 text-xs text-sub">
+                              {synthesis.technicalPillars.map((pillar, pIdx) => (
+                                <li key={pIdx} className="flex items-start gap-2">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-[#C0102A] mt-1.5 shrink-0"></span>
+                                  <span className="text-ink font-semibold">{pillar}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Acquired Competencies */}
+                        {synthesis.acquiredCompetencies.length > 0 && (
+                          <div className="pt-2 border-t border-line/60 space-y-1.5">
+                            <div className="text-[11px] font-black text-ok uppercase tracking-wider flex items-center gap-1">
+                              <span>{isAr ? 'الكفايات والمعارف الهندسية المكتسبة:' : 'Acquired Engineering Competencies:'}</span>
+                            </div>
+                            <ul className="space-y-1 text-xs text-sub">
+                              {synthesis.acquiredCompetencies.map((comp, cIdx) => (
+                                <li key={cIdx} className="flex items-start gap-2">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-ok mt-1.5 shrink-0"></span>
+                                  <span>{comp}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Tools & Tech Badges */}
+                        {synthesis.toolsAndTech.length > 0 && (
+                          <div className="pt-2 border-t border-line/60 flex flex-wrap items-center gap-1.5">
+                            <span className="text-[11px] font-black text-sub ml-1">
+                              {isAr ? 'التقنيات والأدوات الموظفة:' : 'Utilized Tech:'}
+                            </span>
+                            {synthesis.toolsAndTech.map((tool, tIdx) => (
+                              <span
+                                key={tIdx}
+                                className="px-2.5 py-0.5 rounded-md text-[10.5px] font-mono font-bold bg-accent-dim/60 text-accent border border-accent/20"
+                              >
+                                {tool}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Academic Supervisory Endorsement Box */}
@@ -2305,13 +2498,85 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
         </div>
 
         {/* Section 4: Skills */}
-        <div id="sec-skills" className="scroll-mt-24 space-y-3 pt-4 page-break">
+        <div id="sec-skills" className="scroll-mt-24 space-y-4 pt-4 page-break">
           <h2 className="text-lg font-extrabold text-ink border-b-2 border-accent pb-1.5 inline-block">
             {isAr ? '4. المعارف والمهارات والتجارب المكتسبة' : '4. Acquired Competencies & Technical Skills'}
           </h2>
-          <p className="text-sm text-ink leading-loose whitespace-pre-wrap">
-            {activePreviewProfile.skillsText || (isAr ? 'لم تُحدد المهارات المكتسبة بعد.' : 'No acquired skills described yet.')}
-          </p>
+          {activePreviewProfile.skillsText ? (
+            <p className="text-sm text-ink leading-loose whitespace-pre-wrap">
+              {activePreviewProfile.skillsText}
+            </p>
+          ) : null}
+
+          {/* Synthesized Academic Competency Matrix */}
+          {(() => {
+            const allSyntheses = activePreviewWeeks.map((w, idx) =>
+              generateAcademicWeeklySynthesis(
+                w.entries || [],
+                w.weekIndex || (idx + 1),
+                (w.entries || []).reduce((acc: number, e: EntryDTO) => acc + calculateHoursBetween(e.timeFrom, e.timeTo), 0),
+                isAr
+              )
+            );
+            const compiledCompetencies = Array.from(new Set(allSyntheses.flatMap(s => s.acquiredCompetencies)));
+            const compiledPillars = Array.from(new Set(allSyntheses.flatMap(s => s.technicalPillars)));
+            const compiledTools = Array.from(new Set(allSyntheses.flatMap(s => s.toolsAndTech)));
+
+            return (
+              <div className="p-5 bg-card border border-line rounded-2xl space-y-4 text-start break-inside-avoid shadow-xs">
+                <div className="text-xs font-black text-ink border-b border-line pb-2 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-accent" />
+                  <span>{isAr ? 'مصفوفة الكفايات التخصصية والمهارات التطبيقية المتراكمة' : 'Cumulative Technical Competencies & Skills Matrix'}</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                  <div className="space-y-2">
+                    <span className="font-extrabold text-[#C0102A] block">
+                      {isAr ? '• المجالات الهندسية والتشغيلية الممارسة:' : '• Practiced Operational Domains:'}
+                    </span>
+                    <ul className="space-y-1 text-sub">
+                      {compiledPillars.map((p, pIdx) => (
+                        <li key={pIdx} className="flex items-start gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#C0102A] mt-1.5 shrink-0"></span>
+                          <span className="text-ink font-semibold">{p}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="space-y-2">
+                    <span className="font-extrabold text-ok block">
+                      {isAr ? '• المعارف والكفايات المكتسبة الموثقة:' : '• Documented Acquired Competencies:'}
+                    </span>
+                    <ul className="space-y-1 text-sub">
+                      {compiledCompetencies.slice(0, 8).map((c, cIdx) => (
+                        <li key={cIdx} className="flex items-start gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-ok mt-1.5 shrink-0"></span>
+                          <span>{c}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {compiledTools.length > 0 && (
+                  <div className="pt-2 border-t border-line/60 flex flex-wrap items-center gap-1.5">
+                    <span className="text-[11px] font-black text-sub ml-1">
+                      {isAr ? 'الأنظمة والتقنيات والأدوات المعتمدة في الميدان:' : 'Field Verified Technologies & Systems:'}
+                    </span>
+                    {compiledTools.map((tool, tIdx) => (
+                      <span
+                        key={tIdx}
+                        className="px-2.5 py-0.5 rounded-md text-[10.5px] font-mono font-bold bg-accent-dim/60 text-accent border border-accent/20"
+                      >
+                        {tool}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
 
         {/* Section 5: Conclusion */}
@@ -2320,7 +2585,9 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             {isAr ? '5. الخاتمة والتوصيات' : '5. Conclusions & Recommendations'}
           </h2>
           <p className="text-sm text-ink leading-loose whitespace-pre-wrap">
-            {activePreviewProfile.conclusionText || (isAr ? 'لم تُحدد الخاتمة بعد.' : 'No conclusion provided yet.')}
+            {activePreviewProfile.conclusionText || (isAr
+              ? `في ختام فترة التدريب التعاوني الميداني، حققت هذه التجربة أهدافها التعليمية والتطبيقية بربط المعرفة الأكاديمية بالممارسة التشغيلية المباشرة في ${activePreviewProfile.entityAddress || 'المنشأة المستضيفة'}.\n\nأبرز التوصيات المهنية:\n• تعزيز برامج التأهيل الميداني للطلبة في تقنيات الشبكات المتقدمة والأمن السيبراني.\n• توسيع الاعتماد على أتمتة الإجراءات والربط المباشر مع أنظمة المراقبة وإدارة التذاكر (ITIL).\n• استمرار التنسيق الأكاديمي والمهني المستمر بين الجامعات والمؤسسات الرائدة في سوق العمل.`
+              : `At the conclusion of the cooperative field training period, this experience achieved its primary educational and practical objectives by bridging academic knowledge with direct operational engineering practice at ${activePreviewProfile.entityAddress || 'the host organization'}.\n\nKey Professional Recommendations:\n• Strengthening practical field onboarding in advanced networking and cybersecurity technologies.\n• Expanding automated workflows and integration with enterprise ticketing and monitoring systems (ITIL).\n• Sustaining continuous academic-industry alignment between universities and leading market entities.`)}
           </p>
         </div>
 

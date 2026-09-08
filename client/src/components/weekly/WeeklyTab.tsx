@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
-import { FinalReportData, EntryDTO, formatDateArabic, formatDateEnglish, calculateHoursBetween } from '@coop/shared';
+import { FinalReportData, EntryDTO, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis } from '@coop/shared';
 import { WeeklyEvidenceSection } from './WeeklyEvidenceSection';
 import {
   Calendar,
@@ -894,19 +894,84 @@ export const WeeklyTab: React.FC = () => {
                   );
                 })}
 
-                {/* Weekly Learning Synthesis & Acquired Competencies */}
-                <div className="mt-6 p-4 sm:p-5 bg-bg/60 border border-line rounded-2xl space-y-2 text-start">
-                  <div className="text-xs font-black text-ink flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-ok" />
-                    <span>{t('المخرجات والكفايات المكتسبة خلال الأسبوع:', 'Weekly Learning Outcomes & Acquired Competencies:')}</span>
-                  </div>
-                  <p className="text-xs text-sub leading-relaxed">
-                    {t(
-                      `تم إنجاز ${weekReport.totalTasks || 0} مهام ميدانية متخصصة بمجموع ${weekReport.totalHours || 0} ساعة تدريبية، شملت تطبيق معايير السلامة المهنية ومطابقة الإجراءات الفنية مع توجيهات المشرف الميداني بالمنشأة.`,
-                      `Completed ${weekReport.totalTasks || 0} specialized tasks across ${weekReport.totalHours || 0} training hours, strictly complying with host entity engineering standards and supervisory directions.`
-                    )}
-                  </p>
-                </div>
+                {/* Weekly Learning Synthesis & Acquired Competencies (Dynamic Expert Generation) */}
+                {(() => {
+                  const synthesis = generateAcademicWeeklySynthesis(
+                    weekReport.entries || [],
+                    currentWeekObj?.weekIndex || 1,
+                    weekReport.totalHours || 0,
+                    isAr
+                  );
+                  return (
+                    <div className="mt-6 p-5 bg-card border border-line rounded-2xl space-y-3.5 text-start break-inside-avoid shadow-xs">
+                      <div className="flex items-center justify-between border-b border-line pb-2.5">
+                        <div className="text-xs font-black text-ink flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-accent" />
+                          <span>{isAr ? 'الموجز التنفيذي والمخرجات والكفايات المكتسبة للأسبوع' : 'Weekly Executive Synthesis & Acquired Competencies'}</span>
+                        </div>
+                        <span className="text-[11px] font-bold text-sub">
+                          {isAr ? 'صياغة أكاديمية استشارية معتمدة' : 'Official Academic Synthesis'}
+                        </span>
+                      </div>
+
+                      {/* Executive Narrative */}
+                      <p className="text-xs sm:text-sm text-ink leading-relaxed font-medium">
+                        {synthesis.executiveSummary}
+                      </p>
+
+                      {/* Core Operational Pillars */}
+                      {synthesis.technicalPillars.length > 0 && (
+                        <div className="pt-2 border-t border-line/60 space-y-1.5">
+                          <div className="text-[11px] font-black text-[#C0102A] uppercase tracking-wider">
+                            {isAr ? 'المحاور والأنشطة التشغيلية المنفذة:' : 'Core Operational Pillars:'}
+                          </div>
+                          <ul className="space-y-1 text-xs text-sub">
+                            {synthesis.technicalPillars.map((pillar, pIdx) => (
+                              <li key={pIdx} className="flex items-start gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#C0102A] mt-1.5 shrink-0"></span>
+                                <span className="text-ink font-semibold">{pillar}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Acquired Competencies */}
+                      {synthesis.acquiredCompetencies.length > 0 && (
+                        <div className="pt-2 border-t border-line/60 space-y-1.5">
+                          <div className="text-[11px] font-black text-ok uppercase tracking-wider flex items-center gap-1">
+                            <span>{isAr ? 'الكفايات والمعارف الهندسية المكتسبة:' : 'Acquired Engineering Competencies:'}</span>
+                          </div>
+                          <ul className="space-y-1 text-xs text-sub">
+                            {synthesis.acquiredCompetencies.map((comp, cIdx) => (
+                              <li key={cIdx} className="flex items-start gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-ok mt-1.5 shrink-0"></span>
+                                <span>{comp}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Tools & Tech Badges */}
+                      {synthesis.toolsAndTech.length > 0 && (
+                        <div className="pt-2 border-t border-line/60 flex flex-wrap items-center gap-1.5">
+                          <span className="text-[11px] font-black text-sub ml-1">
+                            {isAr ? 'التقنيات والأدوات الموظفة:' : 'Utilized Tech:'}
+                          </span>
+                          {synthesis.toolsAndTech.map((tool, tIdx) => (
+                            <span
+                              key={tIdx}
+                              className="px-2.5 py-0.5 rounded-md text-[10.5px] font-mono font-bold bg-accent-dim/60 text-accent border border-accent/20"
+                            >
+                              {tool}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* Formal Supervisory Approval & Stamp Block (For Official Print & Defense) */}
                 <div className="mt-6 border border-line rounded-2xl overflow-hidden bg-card text-start break-inside-avoid">
