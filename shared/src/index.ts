@@ -340,13 +340,68 @@ export function formatDateArabic(dateStr: string): string {
   if (!dateStr) return '';
   const [year, month, day] = dateStr.split('-').map(Number);
   const dt = new Date(Date.UTC(year, month - 1, day));
-  return new Intl.DateTimeFormat('ar-SA-u-nu-latn', {
+  const raw = new Intl.DateTimeFormat('ar-SA-u-nu-latn', {
     weekday: 'short',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
     timeZone: 'UTC'
   }).format(dt);
+  return raw.replace(/[\u200E\u200F\u202A-\u202E]/g, '');
+}
+
+export const ARABIC_ORDINAL_DAYS = [
+  'الأول',
+  'الثاني',
+  'الثالث',
+  'الرابع',
+  'الخامس',
+  'السادس',
+  'السابع',
+  'الثامن',
+  'التاسع',
+  'العاشر'
+];
+
+/**
+ * Returns a precise academic training period string based on actual logged entries.
+ * If 3 days are logged, it reports "من اليوم الأول (...) إلى اليوم الثالث (...)".
+ * It never claims or prints that the trainee worked up to Day 7 if only 3 days were done.
+ */
+export function formatWeekPeriod(
+  w: { weekStart?: string; weekEnd?: string; entries?: Array<{ entryDate: string }> },
+  isAr: boolean = true
+): string {
+  const entries = w.entries || [];
+  if (entries.length === 0) {
+    const startFormatted = w.weekStart ? (isAr ? formatDateArabic(w.weekStart) : formatDateEnglish(w.weekStart)) : '';
+    const endFormatted = w.weekEnd ? (isAr ? formatDateArabic(w.weekEnd) : formatDateEnglish(w.weekEnd)) : '';
+    if (startFormatted && endFormatted) {
+      return isAr
+        ? `الفترة المجدولة: من ${startFormatted} إلى ${endFormatted} (أسبوع مؤجل / متاح للتوثيق)`
+        : `Scheduled: From ${startFormatted} to ${endFormatted} (Pending documentation)`;
+    }
+    return isAr ? 'أسبوع مؤجل / متاح للتوثيق' : 'Pending documentation';
+  }
+
+  const sorted = [...entries].sort((a, b) => (a.entryDate || '').localeCompare(b.entryDate || ''));
+  const count = sorted.length;
+  const firstDate = sorted[0].entryDate;
+  const lastDate = sorted[count - 1].entryDate;
+
+  const firstFormatted = isAr ? formatDateArabic(firstDate) : formatDateEnglish(firstDate);
+  const lastFormatted = isAr ? formatDateArabic(lastDate) : formatDateEnglish(lastDate);
+
+  if (count === 1) {
+    return isAr
+      ? `اليوم الأول: ${firstFormatted} (يوم عمل موثق)`
+      : `Day 1: ${firstFormatted} (1 documented day)`;
+  }
+
+  const lastOrdinalAr = ARABIC_ORDINAL_DAYS[count - 1] || `الـ ${count}`;
+  return isAr
+    ? `من اليوم الأول (${firstFormatted}) إلى اليوم ${lastOrdinalAr} (${lastFormatted}) — [${count} أيام عمل منجزة]`
+    : `From Day 1 (${firstFormatted}) to Day ${count} (${lastFormatted}) — [${count} documented days]`;
 }
 
 /**

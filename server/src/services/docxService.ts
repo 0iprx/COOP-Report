@@ -23,7 +23,7 @@ import {
   PageReference,
   ImageRun
 } from 'docx';
-import { FinalReportData, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis } from '@coop/shared';
+import { FinalReportData, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis, formatWeekPeriod } from '@coop/shared';
 
 function translateCategory(cat: string, isAr: boolean): string {
   if (isAr) return cat;
@@ -538,8 +538,8 @@ export async function generateAcademicDocx(reportData: FinalReportData, lang: 'a
                   children: [
                     new TextRun({
                       text: isAr
-                        ? `الأسبوع ${w.weekIndex}: الفترة من ${w.weekStart} إلى ${w.weekEnd}`
-                        : `Week ${w.weekIndex}: From ${w.weekStart} to ${w.weekEnd}`,
+                        ? `الأسبوع ${w.weekIndex}: ${formatWeekPeriod(w, isAr)}`
+                        : `Week ${w.weekIndex}: ${formatWeekPeriod(w, isAr)}`,
                       bold: true,
                       size: 28,
                       color: '2F6B4F'

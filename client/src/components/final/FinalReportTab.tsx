@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { MOCK_SAMPLE_PREVIEW_PROFILE, MOCK_SAMPLE_PREVIEW_WEEKS } from '../../data/mockPreviewData';
-import { FinalReportData, EntryDTO, ProfileInput, DiffChunk, formatDateArabic, formatDateEnglish, countWords, calculateHoursBetween, REPORT_TEMPLATES, ReportTemplateId, OrganizationLookupResult, generateAcademicWeeklySynthesis } from '@coop/shared';
+import { FinalReportData, EntryDTO, ProfileInput, DiffChunk, formatDateArabic, formatDateEnglish, countWords, calculateHoursBetween, REPORT_TEMPLATES, ReportTemplateId, OrganizationLookupResult, generateAcademicWeeklySynthesis, formatWeekPeriod } from '@coop/shared';
 import {
   FileText,
   Search,
@@ -2258,7 +2258,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                     </h3>
                   </div>
                   <div className="text-xs text-sub font-semibold">
-                    <span>{isAr ? 'الفترة التدريبية:' : 'Period:'} من <b>{w.weekStart}</b> إلى <b>{w.weekEnd}</b></span>
+                    <span>{isAr ? 'الفترة التدريبية المنفذة: ' : 'Executed Training Period: '} <b className="text-ink">{formatWeekPeriod(w, isAr)}</b></span>
                   </div>
                 </div>
 

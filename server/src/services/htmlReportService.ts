@@ -1,4 +1,4 @@
-import { FinalReportData, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis } from '@coop/shared';
+import { FinalReportData, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis, formatWeekPeriod } from '@coop/shared';
 
 function translateCategory(cat: string, isAr: boolean): string {
   if (isAr) return cat;
@@ -489,7 +489,7 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
         <div class="week-block page-break" id="week-${w.weekIndex}">
           <div class="week-header">
             <span>${isAr ? `تقرير الأسبوع ${w.weekIndex}: ${escapeHtml(getWeekTopicServer(w, isAr))}` : `Week ${w.weekIndex} Report: ${escapeHtml(getWeekTopicServer(w, false))}`}</span>
-            <span>${isAr ? 'الفترة:' : 'Period:'} ${w.weekStart} — ${w.weekEnd}</span>
+            <span>${isAr ? 'الفترة التدريبية المنفذة:' : 'Executed Period:'} ${escapeHtml(formatWeekPeriod(w, isAr))}</span>
           </div>
 
           <div style="padding: 16px; background: #FFFFFF;">

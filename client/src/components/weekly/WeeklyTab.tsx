@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
-import { FinalReportData, EntryDTO, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis } from '@coop/shared';
+import { FinalReportData, EntryDTO, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis, formatWeekPeriod } from '@coop/shared';
 import { WeeklyEvidenceSection } from './WeeklyEvidenceSection';
 import {
   Calendar,
@@ -612,9 +612,7 @@ export const WeeklyTab: React.FC = () => {
               </h1>
               <div className="text-xs text-sub font-semibold">
                 {weekReport
-                  ? isAr
-                    ? `الفترة التدريبية: من ${formatDateArabic(weekReport.weekStart)} إلى ${formatDateArabic(weekReport.weekEnd)}`
-                    : `Training Period: From ${formatDateEnglish(weekReport.weekStart)} to ${formatDateEnglish(weekReport.weekEnd)}`
+                  ? `${isAr ? 'الفترة التدريبية المنفذة: ' : 'Executed Training Period: '} ${formatWeekPeriod(weekReport, isAr)}`
                   : '—'}
               </div>
               <div className="p-4 bg-bg rounded-xl border border-line text-xs grid grid-cols-2 sm:grid-cols-3 gap-3 text-start print-grid-3">
@@ -684,11 +682,7 @@ export const WeeklyTab: React.FC = () => {
               <div>
                 <span className="text-xs text-sub font-bold block">{t('فترة الأسبوع المحددة:', 'Selected Week Period:')}</span>
                 <span className="text-sm font-extrabold text-ink">
-                  {weekReport
-                    ? isAr
-                      ? `${formatDateArabic(weekReport.weekStart)} إلى ${formatDateArabic(weekReport.weekEnd)}`
-                      : `${formatDateEnglish(weekReport.weekStart)} to ${formatDateEnglish(weekReport.weekEnd)}`
-                    : '—'}
+                  {weekReport ? formatWeekPeriod(weekReport, isAr) : '—'}
                 </span>
               </div>
 
