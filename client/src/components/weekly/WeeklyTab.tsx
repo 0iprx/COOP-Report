@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
-import { FinalReportData, EntryDTO, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis, formatWeekPeriod } from '@coop/shared';
+import { FinalReportData, EntryDTO, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis, formatWeekPeriod, ENTRY_CATEGORIES } from '@coop/shared';
 import { WeeklyEvidenceSection } from './WeeklyEvidenceSection';
 import {
   Calendar,
@@ -29,14 +29,7 @@ import {
 } from 'lucide-react';
 import { DiffModal } from '../common/DiffModal';
 
-const CATEGORIES: Array<EntryDTO['category']> = [
-  'تطوير / برمجة',
-  'اجتماعات',
-  'تدريب وتعلّم',
-  'توثيق',
-  'دعم فني',
-  'أخرى'
-];
+const CATEGORIES = ENTRY_CATEGORIES;
 
 export const WeeklyTab: React.FC = () => {
   const queryClient = useQueryClient();
@@ -45,6 +38,7 @@ export const WeeklyTab: React.FC = () => {
   const [copied, setCopied] = useState<boolean>(false);
   const [downloadingPptx, setDownloadingPptx] = useState<boolean>(false);
   const [downloadingDocx, setDownloadingDocx] = useState<boolean>(false);
+  const [isAuditingWeek, setIsAuditingWeek] = useState<boolean>(false);
 
   // Edit / Add Day Modal State
   const [editingEntry, setEditingEntry] = useState<Partial<EntryDTO> | null>(null);
@@ -188,6 +182,24 @@ export const WeeklyTab: React.FC = () => {
 
   const handlePrintPDF = () => {
     window.print();
+  };
+
+  const handleAuditPolishWeek = async () => {
+    if (!weekReport?.entries?.length) return;
+    try {
+      setIsAuditingWeek(true);
+      const res = await api.post(`/reports/weekly/audit-polish?week=${selectedWeek}`);
+      queryClient.invalidateQueries({ queryKey: ['weekly', selectedWeek] });
+      queryClient.invalidateQueries({ queryKey: ['finalReport'] });
+      queryClient.invalidateQueries({ queryKey: ['entries'] });
+      setSaveToast(res.data.message || t('تم تدقيق وإعادة صياغة الأسبوع وترقية تصنيفاته بنجاح!', 'Weekly tasks polished and classified!'));
+      setTimeout(() => setSaveToast(''), 4000);
+    } catch {
+      setErrorToast(t('تعذر تدقيق وإعادة صياغة مهام الأسبوع، يرجى المحاولة لاحقاً', 'Failed to audit week'));
+      setTimeout(() => setErrorToast(''), 3500);
+    } finally {
+      setIsAuditingWeek(false);
+    }
   };
 
   const handleDownloadPresentation = async () => {
@@ -494,6 +506,16 @@ export const WeeklyTab: React.FC = () => {
             </button>
 
             <button
+              onClick={handleAuditPolishWeek}
+              disabled={isAuditingWeek || !weekReport?.entries?.length}
+              className="px-3.5 py-1.5 text-xs font-black text-white bg-linear-to-r from-accent to-[#C0102A] hover:opacity-90 rounded-xl transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
+              title={t('تدقيق لغوي وهندسي وإعادة صياغة وترقية تصنيفات وعناوين كافة مهام الأسبوع وفق أعلى المعايير بضغطة واحدة', 'Audit, elevate titles, and rephrase entire week')}
+            >
+              <Sparkles className={`w-3.5 h-3.5 ${isAuditingWeek ? 'animate-spin' : ''}`} />
+              <span>{isAuditingWeek ? t('جارٍ التدقيق والترقية...', 'Auditing & Elevating...') : t('✨ التدقيق والترقية الأكاديمية للأسبوع', '✨ AI Polish & Upgrade Week')}</span>
+            </button>
+
+            <button
               onClick={handlePrintPDF}
               className="px-3.5 py-1.5 text-xs font-bold text-white bg-accent hover:bg-accent/90 rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
               title={t('طباعة تقرير الأسبوع مباشرة أو حفظه كـ PDF رسمي متناسق', 'Print weekly report or save as PDF')}
@@ -676,7 +698,7 @@ export const WeeklyTab: React.FC = () => {
                             {hours} {isAr ? 'س' : 'h'}
                           </td>
                           <td className="p-2.5">
-                            <span className="px-2 py-0.5 rounded-md text-[10.5px] font-extrabold bg-[#C0102A]/10 text-[#C0102A] whitespace-nowrap border border-[#C0102A]/20">
+                            <span className="px-2.5 py-1 rounded-md text-[10.5px] font-extrabold bg-slate-100 text-slate-800 whitespace-nowrap border border-slate-300 shadow-xs print:bg-white print:border-slate-400">
                               {entry.category}
                             </span>
                           </td>
@@ -743,8 +765,8 @@ export const WeeklyTab: React.FC = () => {
               </div>
             </div>
 
-            {/* Quick Metrics */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 no-print">
+            {/* Quick Metrics (Hidden in Print to prevent wasting Page 1 space) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 no-print print:hidden">
               <div className="bg-bg border border-line rounded-xl p-4">
                 <div className="flex items-center justify-between text-sub mb-1">
                   <span className="text-xs font-bold">{t('أيام العمل المنجزة', 'Logged Work Days')}</span>
@@ -765,7 +787,7 @@ export const WeeklyTab: React.FC = () => {
             </div>
 
             {/* Section Header with Add New Day/Task Button */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 no-print">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 no-print print:hidden">
               <div>
                 <h3 className="text-sm font-extrabold text-ink flex items-center gap-1.5">
                   <Edit3 className="w-4 h-4 text-accent" />
@@ -823,7 +845,7 @@ export const WeeklyTab: React.FC = () => {
                       <div className="bg-bg px-4 sm:px-5 py-3 border-b border-line flex flex-wrap items-center justify-between gap-2.5">
                         {/* Right: Day badge, Date, and Time window */}
                         <div className="flex items-center gap-2.5 flex-wrap">
-                          <span className="px-3 py-1 rounded-lg text-xs font-black bg-[#C0102A] text-white shadow-xs">
+                          <span className="px-3 py-1 rounded-lg text-xs font-black bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 print:bg-slate-900 print:text-white shadow-xs">
                             {isAr ? `اليوم ${dayIdx + 1}` : `Day ${dayIdx + 1}`}
                           </span>
                           <span className="font-extrabold text-ink text-xs sm:text-sm">
@@ -836,7 +858,7 @@ export const WeeklyTab: React.FC = () => {
 
                         {/* Left: Category Tag, Hours calculation, and Actions */}
                         <div className="flex items-center gap-2.5">
-                          <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-[#C0102A]/10 text-[#C0102A] border border-[#C0102A]/20">
+                          <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-slate-100 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 print:bg-white print:border-slate-400 print:text-black shadow-xs">
                             {entry.category}
                           </span>
                           <span className="text-xs font-bold text-sub">
@@ -844,7 +866,7 @@ export const WeeklyTab: React.FC = () => {
                           </span>
 
                           {/* Screen Actions (hidden when printing) */}
-                          <div className="flex items-center gap-1.5 no-print mr-1">
+                          <div className="flex items-center gap-1.5 no-print print:hidden mr-1">
                             <button
                               type="button"
                               onClick={() => handleOpenRevisions(entry)}
@@ -911,10 +933,10 @@ export const WeeklyTab: React.FC = () => {
                     isAr
                   );
                   return (
-                    <div className="mt-6 p-5 bg-card border border-line rounded-2xl space-y-3.5 text-start break-inside-avoid shadow-xs">
-                      <div className="flex items-center justify-between border-b border-line pb-2.5">
+                    <div className="mt-6 p-5 bg-card border border-line rounded-2xl space-y-3.5 text-start break-inside-avoid shadow-xs print:border-none print:shadow-none print:p-0 print:bg-transparent synthesis-box-print">
+                      <div className="flex items-center justify-between border-b border-line pb-2.5 print:border-b-2 print:border-slate-800">
                         <div className="text-xs font-black text-ink flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-accent" />
+                          <CheckCircle2 className="w-4 h-4 text-accent print:hidden" />
                           <span>{isAr ? 'الموجز التنفيذي والمخرجات والكفايات المكتسبة للأسبوع' : 'Weekly Executive Synthesis & Acquired Competencies'}</span>
                         </div>
                         <span className="text-[11px] font-bold text-sub">
@@ -929,7 +951,7 @@ export const WeeklyTab: React.FC = () => {
 
                       {/* Core Operational Pillars */}
                       {synthesis.technicalPillars.length > 0 && (
-                        <div className="pt-2 border-t border-line/60 space-y-1.5">
+                        <div className="pt-2 border-t border-line/60 space-y-1.5 print:border-t print:border-slate-200">
                           <div className="text-[11px] font-black text-[#C0102A] uppercase tracking-wider">
                             {isAr ? 'المحاور والأنشطة التشغيلية المنفذة:' : 'Core Operational Pillars:'}
                           </div>
@@ -946,7 +968,7 @@ export const WeeklyTab: React.FC = () => {
 
                       {/* Acquired Competencies */}
                       {synthesis.acquiredCompetencies.length > 0 && (
-                        <div className="pt-2 border-t border-line/60 space-y-1.5">
+                        <div className="pt-2 border-t border-line/60 space-y-1.5 print:border-t print:border-slate-200">
                           <div className="text-[11px] font-black text-ok uppercase tracking-wider flex items-center gap-1">
                             <span>{isAr ? 'الكفايات والمعارف الهندسية المكتسبة:' : 'Acquired Engineering Competencies:'}</span>
                           </div>
@@ -963,14 +985,14 @@ export const WeeklyTab: React.FC = () => {
 
                       {/* Tools & Tech Badges */}
                       {synthesis.toolsAndTech.length > 0 && (
-                        <div className="pt-2 border-t border-line/60 flex flex-wrap items-center gap-1.5">
+                        <div className="pt-2 border-t border-line/60 flex flex-wrap items-center gap-1.5 print:border-t print:border-slate-200" dir={isAr ? 'rtl' : 'ltr'}>
                           <span className="text-[11px] font-black text-sub ml-1">
                             {isAr ? 'التقنيات والأدوات الموظفة:' : 'Utilized Tech:'}
                           </span>
                           {synthesis.toolsAndTech.map((tool, tIdx) => (
                             <span
                               key={tIdx}
-                              className="px-2.5 py-0.5 rounded-md text-[10.5px] font-mono font-bold bg-accent-dim/60 text-accent border border-accent/20"
+                              className="px-2.5 py-0.5 rounded-md text-[10.5px] font-mono font-bold bg-accent-dim/60 text-accent border border-accent/20 print:bg-slate-100 print:text-slate-800 print:border-slate-300 tech-pill"
                             >
                               {tool}
                             </span>
@@ -982,12 +1004,12 @@ export const WeeklyTab: React.FC = () => {
                 })()}
 
                 {/* Formal Supervisory Approval & Stamp Block (For Official Print & Defense) */}
-                <div className="mt-6 border border-line rounded-2xl overflow-hidden bg-card text-start break-inside-avoid">
-                  <div className="bg-bg px-5 py-3 border-b border-line flex items-center justify-between">
+                <div className="mt-6 border border-line rounded-2xl overflow-hidden bg-card text-start break-inside-avoid print:border-none print:shadow-none print:bg-transparent endorsement-box-print">
+                  <div className="bg-bg px-5 py-3 border-b border-line flex items-center justify-between print:bg-transparent print:px-0 print:border-b-2 print:border-slate-800" dir={isAr ? 'rtl' : 'ltr'}>
                     <span className="text-xs font-black text-ink">{t('المصادقة والاعتماد الميداني للأسبوع', 'Field Supervisory Weekly Endorsement')}</span>
-                    <span className="text-[11px] font-bold text-accent">{entityName}</span>
+                    <span className="text-[11px] font-bold text-accent shrink-0">{entityName}</span>
                   </div>
-                  <div className="p-5 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs print-grid-3">
+                  <div className="p-5 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs print-grid-3 print:p-0 print:pt-3">
                     <div className="space-y-2 p-3 bg-bg/40 rounded-xl border border-line/60">
                       <div className="font-bold text-sub">{t('توقيع المتدرب:', 'Trainee Signature:')}</div>
                       <div className="font-extrabold text-ink">{finalReportData?.profile?.studentName || '—'}</div>

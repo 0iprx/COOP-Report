@@ -176,8 +176,8 @@ export const WeeklyEvidenceSection: React.FC<Props> = ({ weekIndex, traineeId, r
         )}
       </div>
 
-      {/* Security & Confidentiality Advisory Badge */}
-      <div className="p-3 rounded-xl bg-accent-dim/30 border border-accent/20 text-xs space-y-1">
+      {/* Security & Confidentiality Advisory Badge (Screen Only) */}
+      <div className="p-3 rounded-xl bg-accent-dim/30 border border-accent/20 text-xs space-y-1 no-print print:hidden">
         <div className="flex items-center gap-1.5 font-bold text-ink">
           <ShieldCheck className="w-4 h-4 text-accent shrink-0" />
           <span>ضوابط أمن وسرية المعلومات:</span>
@@ -326,32 +326,33 @@ export const WeeklyEvidenceSection: React.FC<Props> = ({ weekIndex, traineeId, r
           لم يتم إرفاق صور توثيقية لهذا الأسبوع حتى الآن.
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {photos.map((photo) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 print:grid-cols-2 gap-3 print:gap-4">
+          {photos.map((photo, idx) => (
             <div
               key={photo.id}
-              className="group border border-line rounded-xl overflow-hidden bg-bg/50 hover:border-accent/40 transition-all flex flex-col justify-between"
+              className="group border border-line rounded-xl overflow-hidden bg-bg/50 hover:border-accent/40 transition-all flex flex-col justify-between print:border-line print:bg-white print:break-inside-avoid"
             >
               <div
                 onClick={() => setSelectedImageForZoom(photo)}
-                className="cursor-pointer overflow-hidden aspect-video relative bg-ink/5"
+                className="cursor-pointer overflow-hidden aspect-video relative bg-ink/5 print:cursor-default"
               >
                 <img
                   src={photo.imageData}
                   alt={photo.caption}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200 print:transform-none"
                 />
-                <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-ink/70 text-white text-[9px] font-bold">
+                <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-ink/70 text-white text-[9px] font-bold no-print print:hidden">
                   انقر للتكبير
                 </span>
               </div>
 
               <div className="p-2.5 flex-1 flex flex-col justify-between gap-2">
-                <p className="text-ink text-[11px] font-bold leading-snug line-clamp-2">
+                <p className="text-ink text-[11px] font-bold leading-snug line-clamp-2 print:line-clamp-none print:text-xs">
+                  <span className="text-accent font-extrabold ml-1">شكل ({idx + 1}):</span>
                   {photo.caption}
                 </p>
 
-                <div className="flex items-center justify-between pt-1 border-t border-line text-[10px] text-sub">
+                <div className="flex items-center justify-between pt-1 border-t border-line text-[10px] text-sub print:hidden no-print">
                   <span>الأسبوع {photo.weekIndex}</span>
                   {!readOnly && (
                     <button
@@ -362,7 +363,7 @@ export const WeeklyEvidenceSection: React.FC<Props> = ({ weekIndex, traineeId, r
                         }
                       }}
                       disabled={deleteMutation.isPending}
-                      className="p-1 text-sub hover:text-accent rounded transition-colors"
+                      className="p-1 text-sub hover:text-accent rounded transition-colors no-print print:hidden"
                       title="حذف الصورة"
                     >
                       <Trash2 className="w-3.5 h-3.5" />

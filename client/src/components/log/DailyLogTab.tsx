@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { saveOfflineEntry, getPendingEntries, syncPendingEntries } from '../../services/offlineSync';
 import { useLanguage } from '../../context/LanguageContext';
-import { ENTRY_CATEGORIES, EntryDTO, DiffChunk } from '@coop/shared';
+import { ENTRY_CATEGORIES, EntryDTO, DiffChunk, inferProfessionalCategory, elevateTaskTitle } from '@coop/shared';
 import {
   Calendar,
   Clock,
@@ -29,6 +29,16 @@ import { DiffModal } from '../common/DiffModal';
 const DRAFT_KEY = 'coop_entry_draft_v2';
 
 const CATEGORY_TRANSLATIONS: Record<string, string> = {
+  'شبكات النفاذ والألياف الضوئية (FTTH)': 'Access Networks & FTTH',
+  'شبكات الاتصالات اللاسلكية والجيل الخامس (5G)': 'Wireless Networks & 5G/LTE',
+  'أمن المعلومات والأمن السيبراني': 'Information Security & Cybersecurity',
+  'إدارة الخوادم ومراكز البيانات': 'Server & Data Center Administration',
+  'عمليات ومراقبة الشبكة (NOC)': 'Network Operations Center (NOC)',
+  'تطوير البرمجيات والأنظمة': 'Software & Systems Development',
+  'الحوسبة السحابية والبنية التحتية': 'Cloud Computing & Infrastructure',
+  'الذكاء الاصطناعي وتحليل البيانات': 'Artificial Intelligence & Data Analysis',
+  'الدعم الفني والتشغيل الميداني': 'Technical Support & Field Operations',
+  'إدارة المشاريع الهندسية والتوثيق': 'Engineering Project Management & Documentation',
   'تطوير / برمجة': 'Development / Programming',
   'اجتماعات': 'Meetings',
   'تدريب وتعلّم': 'Training & Learning',
@@ -385,6 +395,24 @@ export const DailyLogTab: React.FC = () => {
     }
   };
 
+  // One-click Engineering Elevation & Auto-Categorization
+  const handleAutoElevate = () => {
+    if (!description.trim() && !title.trim()) {
+      showToast(t('يرجى كتابة تفاصيل المهمة أو العنوان أولاً لاقتراح التصنيف الهندسي', 'Please write task details first to suggest classification'), 'error');
+      return;
+    }
+    const suggestedCat = inferProfessionalCategory(description, title);
+    if (suggestedCat) {
+      setIsCustomCategory(false);
+      setCategory(suggestedCat);
+    }
+    if (title.trim()) {
+      const elevatedTitle = elevateTaskTitle(title, description);
+      if (elevatedTitle) setTitle(elevatedTitle);
+    }
+    showToast(t(`تم اقتراح التصنيف الهندسي والترقية: ${suggestedCat}`, `Engineering classification suggested: ${suggestedCat}`), 'success');
+  };
+
   // Submit Handler
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -403,13 +431,25 @@ export const DailyLogTab: React.FC = () => {
 
     setFormError('');
 
-    const finalCategory = isCustomCategory ? customCategory.trim() : category.trim();
+    let finalCategory = isCustomCategory ? customCategory.trim() : category.trim();
+    if ((!finalCategory || finalCategory === 'تدريب وتعلّم' || finalCategory === 'أخرى') && (description || title)) {
+      const suggested = inferProfessionalCategory(description, title);
+      if (suggested && suggested !== 'تدريب وتعلّم') {
+        finalCategory = suggested;
+      }
+    }
+
+    let finalTitle = title.trim();
+    const elevated = elevateTaskTitle(finalTitle, description);
+    if (elevated && finalTitle !== elevated && finalTitle.length < 25) {
+      finalTitle = elevated;
+    }
 
     const payload = {
       entryDate,
       timeFrom,
       timeTo,
-      title: title.trim(),
+      title: finalTitle,
       category: finalCategory,
       description: description.trim()
     };
@@ -586,7 +626,18 @@ export const DailyLogTab: React.FC = () => {
           {/* Title & Category */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="sm:col-span-2 space-y-1">
-              <label className="block text-xs font-bold text-sub">{t('عنوان اليوم (مختصر ودقيق)', 'Task Title (Concise & Accurate)')}</label>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-sub">{t('عنوان اليوم (مختصر ودقيق)', 'Task Title (Concise & Accurate)')}</label>
+                <button
+                  type="button"
+                  onClick={handleAutoElevate}
+                  className="text-[11px] font-bold text-accent hover:underline flex items-center gap-1 bg-accent/10 hover:bg-accent/20 px-2.5 py-0.5 rounded-lg border border-accent/25 transition-all shadow-2xs"
+                  title={t('اقتراح تصنيف وترقية أكاديمية فورية بناءً على محتوى اليوم', 'Auto-infer engineering domain & title')}
+                >
+                  <Sparkles className="w-3 h-3 text-accent" />
+                  <span>{t('✨ التدقيق والترقية الأكاديمية الفورية', '✨ Auto-Elevate & Suggest Category')}</span>
+                </button>
+              </div>
               <input
                 type="text"
                 value={title}

@@ -342,8 +342,174 @@ html, body {
 /* ── Print Styles (Standard Full A4 Sizing & Zero-Mobile-Distortion) ───── */
 
 @media print {
-  /* Hide all interactive UI and non-printable elements */
+  @page {
+    size: A4 portrait;
+    margin: 12mm 12mm 14mm 12mm;
+  }
+
+  *, *::before, *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    box-sizing: border-box !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+  }
+
+  html, body {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 9.5pt !important;
+    line-height: 1.5 !important;
+    overflow: visible !important;
+  }
+
+  #root, .min-h-screen, main {
+    min-height: 0 !important;
+    height: auto !important;
+    background: transparent !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Printable Sheet Containers */
+  .print-page-wrapper,
+  .printable-a4-sheet,
+  #report-paper-view,
+  #weekly-paper-view {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    overflow: visible !important;
+  }
+
+  /* Multi-column grids in print */
+  .grid-cols-1.sm\:grid-cols-2,
+  .grid-cols-2,
+  .sm\:grid-cols-2,
+  .print-grid-2 {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .grid-cols-2.sm\:grid-cols-3,
+  .grid-cols-1.sm\:grid-cols-3,
+  .grid-cols-3,
+  .sm\:grid-cols-3,
+  .print-grid-3 {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .flex-col.sm\:flex-row,
+  .print-flex-row {
+    flex-direction: row !important;
+  }
+
+  /* Page break rules - strictly on day cards and explicit breaks */
+  .day-card-print,
+  .break-inside-avoid,
+  tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Academic clean styling in print - Strip box borders and frames */
+  .day-card-print {
+    border: none !important;
+    border-bottom: 1.5px solid #e2e8f0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    margin-bottom: 16px !important;
+    padding-bottom: 12px !important;
+    overflow: visible !important;
+  }
+
+  .day-card-print .bg-bg {
+    background: transparent !important;
+    border-bottom: 1.5px solid #0f172a !important;
+    padding: 4px 0 !important;
+    margin-bottom: 8px !important;
+  }
+
+  /* Synthesis & Endorsement boxes: Remove outer card frames in print */
+  .synthesis-box-print,
+  .endorsement-box-print,
+  .print-no-border {
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  /* Technology badges: clean neutral academic pills without pink frames */
+  .tech-pill,
+  .day-card-print span[class*="bg-accent-dim"],
+  .synthesis-box-print span[class*="bg-accent-dim"] {
+    background: #f1f5f9 !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #1e293b !important;
+    box-shadow: none !important;
+  }
+
+  .procedural-narrative-box {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin-top: 4px !important;
+    border-radius: 0 !important;
+    font-size: 9.5pt !important;
+    line-height: 1.6 !important;
+  }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    table-layout: auto !important;
+  }
+
+  th, td {
+    border: 1px solid #cbd5e1 !important;
+    padding: 5px 8px !important;
+    font-size: 8.5pt !important;
+  }
+
+  th {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+    font-weight: 800 !important;
+  }
+
+  .page-break {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+
+  a[href]::after {
+    content: '' !important;
+  }
+
+  /* Absolute suppression of all interactive and non-printable UI elements */
   .no-print,
+  *.no-print,
+  [class*="no-print"],
   nav,
   header,
   footer,
@@ -356,143 +522,9 @@ html, body {
   select,
   .fixed {
     display: none !important;
-  }
-
-  @page {
-    size: A4 portrait;
-    margin: 14mm 12mm 15mm 12mm !important;
-  }
-
-  *, *::before, *::after {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    box-sizing: border-box !important;
-  }
-
-  html, body {
-    width: 210mm !important;
-    min-width: 210mm !important;
-    max-width: 210mm !important;
-    margin: 0 auto !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    margin: 0 !important;
     padding: 0 !important;
-    background: #ffffff !important;
-    color: #111827 !important;
-    font-size: 10pt !important;
-    line-height: 1.5 !important;
-    overflow: visible !important;
-  }
-
-  #root, .min-h-screen {
-    min-height: 0 !important;
-    height: auto !important;
-    background: transparent !important;
-    width: 210mm !important;
-    min-width: 210mm !important;
-    max-width: 210mm !important;
-    margin: 0 auto !important;
-    padding: 0 !important;
-  }
-
-  main {
-    max-width: 210mm !important;
-    width: 210mm !important;
-    min-width: 210mm !important;
-    padding: 0 !important;
-    margin: 0 auto !important;
-  }
-
-  /* Printable Sheet Containers */
-  .print-page-wrapper,
-  .printable-a4-sheet,
-  #report-paper-view,
-  #weekly-paper-view {
-    width: 100% !important;
-    max-width: 210mm !important;
-    min-width: 210mm !important;
-    margin: 0 auto !important;
-    padding: 0 !important;
-    border: none !important;
-    box-shadow: none !important;
-    background: #ffffff !important;
-    overflow: visible !important;
-  }
-
-  /* Force multi-column grids to remain multi-column on print (never collapse like mobile screens) */
-  .grid-cols-1.sm\:grid-cols-2,
-  .grid-cols-2,
-  .sm\:grid-cols-2,
-  .print-grid-2 {
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 12px !important;
-  }
-
-  .grid-cols-2.sm\:grid-cols-3,
-  .grid-cols-1.sm\:grid-cols-3,
-  .grid-cols-3,
-  .sm\:grid-cols-3,
-  .print-grid-3 {
-    display: grid !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    gap: 10px !important;
-  }
-
-  .flex-col.sm\:flex-row,
-  .print-flex-row {
-    flex-direction: row !important;
-  }
-
-  /* Page break rules */
-  .day-card-print,
-  .card,
-  .break-inside-avoid,
-  [id^="sec-"],
-  tr,
-  .border.rounded-2xl {
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-  }
-
-  /* Academic clean paper styling in print (replaces mobile card UI with official report typography) */
-  .day-card-print {
-    border: 1px solid #cbd5e1 !important;
-    border-radius: 8px !important;
-    background: #ffffff !important;
-    box-shadow: none !important;
-    margin-bottom: 16px !important;
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-  }
-
-  .day-card-print .bg-bg {
-    background: #f8fafc !important;
-    border-bottom: 1px solid #e2e8f0 !important;
-    padding: 8px 14px !important;
-  }
-
-  .procedural-narrative-box {
-    background: transparent !important;
-    border: none !important;
-    padding: 0 !important;
-    margin-top: 6px !important;
-    border-radius: 0 !important;
-  }
-
-  table {
-    width: 100% !important;
-    border-collapse: collapse !important;
-  }
-
-  th, td {
-    border-color: #cbd5e1 !important;
-  }
-
-  .page-break {
-    page-break-before: always !important;
-    break-before: page !important;
-  }
-
-  a[href]::after {
-    content: '' !important;
   }
 }

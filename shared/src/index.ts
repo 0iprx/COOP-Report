@@ -4,11 +4,21 @@ import { z } from 'zod';
 // 1. Enums and Constants
 // ==========================================
 export const ENTRY_CATEGORIES = [
+  'هندسة الشبكات وتراسل البيانات',
+  'شبكات النفاذ والألياف الضوئية (FTTH)',
+  'شبكات الاتصالات اللاسلكية والجيل الخامس (5G)',
+  'إدارة الأعطال والتشغيل ومراقبة الأنظمة (NOC)',
+  'أمن المعلومات والأمن السيبراني',
+  'الدعم الفني الميداني وصيانة النظم',
+  'تطوير وهندسة البرمجيات والأنظمة',
+  'الحوسبة السحابية وإدارة الخوادم',
+  'الاجتماعات الفنية والتخطيط التشغيلي',
+  'التوثيق الهندسي وضبط الجودة',
   'تطوير / برمجة',
+  'دعم فني',
   'اجتماعات',
   'تدريب وتعلّم',
   'توثيق',
-  'دعم فني',
   'أخرى'
 ] as const;
 
@@ -646,4 +656,98 @@ export function generateAcademicWeeklySynthesis(
     acquiredCompetencies,
     fullNarrative
   };
+}
+
+/**
+ * Intelligent Professional Engineering Categorizer
+ * Infers accurate technical domain from task text and title rather than generic "تدريب وتعلّم"
+ */
+export function inferProfessionalCategory(text: string = '', title: string = ''): string {
+  const combined = `${title} ${text}`.toLowerCase();
+  
+  if (/(5g|cpe|fwa|mvno|جيل خامس|ترددات|محطات|أبراج|b2b|b2c|خلوي|لاسلكي)/i.test(combined)) {
+    return 'شبكات الاتصالات اللاسلكية والجيل الخامس (5G)';
+  }
+  if (/(ftth|ont|olt|odn|odb|utp|ألياف|ضوئيات|بوكسية|نفاذ ضوئي|كوابل|تراسل ضوئي)/i.test(combined)) {
+    return 'شبكات النفاذ والألياف الضوئية (FTTH)';
+  }
+  if (/(cyber|security|red team|blue team|mitre|socket|أمن سيبراني|اختراق|ثغرات|جدار حماية|firewall)/i.test(combined)) {
+    return 'أمن المعلومات والأمن السيبراني';
+  }
+  if (/(alarm|alarms|trouble ticket|noc|انقطاع|حرارة|رطوبة|تذاكر صيانة|بلاغات أعطال|مراقبة)/i.test(combined)) {
+    return 'إدارة الأعطال والتشغيل ومراقبة الأنظمة (NOC)';
+  }
+  if (/(router|switch|vlan|ip|routing|subnet|موجّه|سويتش|توجيه|تراسل)/i.test(combined)) {
+    return 'هندسة الشبكات وتراسل البيانات';
+  }
+  if (/(برمجة|تطوير|كود|api|frontend|backend|database|sql|react|node|python)/i.test(combined)) {
+    return 'تطوير وهندسة البرمجيات والأنظمة';
+  }
+  if (/(سيرفر|خادم|cloud|aws|azure|vmware|docker|active directory)/i.test(combined)) {
+    return 'الحوسبة السحابية وإدارة الخوادم';
+  }
+  if (/(دعم فني|صيانة|طابعة|أجهزة|تهيئة حاسب|فورمات|مستخدمين)/i.test(combined)) {
+    return 'الدعم الفني الميداني وصيانة النظم';
+  }
+  return 'هندسة الشبكات وتراسل البيانات';
+}
+
+/**
+ * Elevates informal or diary-style student task titles into formal executive engineering titles
+ */
+export function elevateTaskTitle(title: string = '', description: string = ''): string {
+  let t = title.trim();
+  const desc = description.toLowerCase();
+
+  // Contextual targeted elevations based on actual trainee cases
+  if (/بداية اليوم.*access team/i.test(t) || (/access team/i.test(t) && /ftth/i.test(desc))) {
+    return 'إدارة إنذارات غرف التحكم (NOC) وهندسة تمديدات الألياف الضوئية (FTTH)';
+  }
+  if (/اليوم بيكون عن 5g/i.test(t) || (/5g/i.test(t) && /(fwa|cpe|mvno|earth)/i.test(desc))) {
+    return 'الفحص الفني لمؤشرات أداء شبكات 5G والمسح الجغرافي للمحطات عبر أنظمة Google Earth';
+  }
+  if (/العمل مع قسم 5g/i.test(t) || (/5g/i.test(t) && /(patching|configuration|cyber)/i.test(desc))) {
+    return 'ضبط تكوينات ومحددات شبكات الجيل الخامس (5G Patching) وإجراءات الاستجابة السيبرانية';
+  }
+
+  // Remove colloquial or raw journal phrasing
+  t = t.replace(/^اليوم بيكون عن\s*/gi, 'دراسة وتطبيق تقنيات ');
+  t = t.replace(/^بداية اليوم\s*(الأول|الثاني|الثالث|الرابع|الخامس)?\s*و?توجهي الى\s*/gi, 'مباشرة الأعمال التشغيلية مع فريق ');
+  t = t.replace(/^العمل مع قسم\s*/gi, 'إنجاز المهام الميدانية في قسم ');
+  t = t.replace(/\s*في اليوم\s*(الأول|الثاني|الثالث|الرابع|الخامس)\s*$/gi, '');
+  t = t.replace(/^سويت\s*/gi, 'تهيئة وبرمجة ');
+  t = t.replace(/^شفت\s*/gi, 'معاينة وفحص ');
+  t = t.replace(/^جلسة تعريفية\s*و?التعريف بـ\s*/gi, 'التهيئة الفنية لمنظومة ');
+
+  return t || 'المهام التشغيلية والهندسية الميدانية';
+}
+
+/**
+ * Converts raw bullet lists or colloquial fragments into structured professional technical prose
+ */
+export function polishAcademicNarrative(text: string = ''): string {
+  if (!text.trim()) return '';
+  let s = text.trim();
+
+  // 1. Remove raw colloquialisms
+  s = s.replace(/سويت\s+/gu, 'تمت تهيئة وتكوين ');
+  s = s.replace(/سوينا\s+/gu, 'تم تنفيذ وإنجاز ');
+  s = s.replace(/بيكون\s+/gu, 'تم التركيز على ');
+  s = s.replace(/بعد الـ\s*break/giu, 'خلال الفترة التشغيلية الثانية');
+  s = s.replace(/الـ\s*break/giu, 'فترة الاستراحة المقررة');
+  s = s.replace(/بعد الـ\s*alarm/giu, 'عقب رصد الإنذار التشغيلي');
+  s = s.replace(/الـ\s*alarm/giu, 'الإنذارات التشغيلية');
+  s = s.replace(/الـ\s*access/giu, 'صلاحيات النفاذ والتحكم');
+
+  // 2. Synthesize consecutive raw acronym blocks into clean professional sentences
+  const fiberRegex = /ONT\s*[\n\r]+\s*الألياف الضوئية\s*[\n\r]+\s*البوكسية\s*[\n\r]+\s*UTP\s*[\n\r]+\s*OLT\s*[\n\r]+\s*ODN\s*[\n\r]+\s*ODB/gi;
+  s = s.replace(fiberRegex, '• الفحص والمعاينة الميدانية لمكونات شبكة النفاذ الضوئي وتشمل: أجهزة المشتركين (ONT)، كبائن التوزيع السكنية (البوكسية)، كوابل النقل النحاسية (UTP)، مقاسم النفاذ الضوئي (OLT)، وشبكات التوزيع الضوئي السلبية (ODN / ODB).');
+
+  const cyberRegex = /Red Team\s*[\n\r]+\s*Blue Team\s*[\n\r]+\s*Socket/gi;
+  s = s.replace(cyberRegex, '• دراسة مهام وتكامل فرق العمليات السيبرانية: فريق الاختراق والاختبار المتقدم (Red Team)، وفريق الدفاع والرصد والاستجابة للحوادث (Blue Team)، ومنافذ الاتصال الشبكي (Sockets).');
+
+  const casesRegex = /Link Down\s*[\n\r]+\s*(\.\.\.)?Equipment Dis\s*[\n\r]+\s*Internet Slowness\s*[\n\r]+\s*No Browsing/gi;
+  s = s.replace(casesRegex, '• تصنيف ومعالجة الحالات الميدانية لبلاغات الأعطال الفنية وتشمل: انقطاع المسارات (Link Down)، أعطال وفصل المعدات (Equipment Disconnect)، بطء النفاذ للخدمة (Internet Slowness)، وحالات توقف التصفح الكامل (No Browsing).');
+
+  return s;
 }

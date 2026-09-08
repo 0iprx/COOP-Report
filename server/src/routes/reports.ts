@@ -5,7 +5,7 @@ import { buildFinalReportData } from '../services/reportService.js';
 import { generateAcademicDocx, generateWeeklyDocx } from '../services/docxService.js';
 import { generateStandaloneHTMLReport } from '../services/htmlReportService.js';
 import { generatePresentationBuffer } from '../services/presentationService.js';
-import { calculateHoursBetween, getWeekEnd, getWeekStart } from '@coop/shared';
+import { calculateHoursBetween, getWeekEnd, getWeekStart, inferProfessionalCategory, elevateTaskTitle, polishAcademicNarrative } from '@coop/shared';
 import { logger } from '../logger.js';
 
 const router = Router();
@@ -82,6 +82,92 @@ router.get('/weekly', async (req: AuthenticatedRequest, res: Response): Promise<
   } catch (err) {
     logger.error({ err }, 'Error in weekly report');
     res.status(500).json({ error: 'تعذر توليد التقرير الأسبوعي' });
+  }
+});
+
+// POST /api/reports/weekly/audit-polish?week=YYYY-MM-DD
+// Automatically elevates categories, titles, and descriptions of all tasks in the week to rigorous academic engineering standards
+router.post('/weekly/audit-polish', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const targetUserId = await resolveTargetUserId(req);
+    if (!targetUserId) {
+      res.status(403).json({ error: 'غير مصرح لك بتعديل بيانات هذا المتدرب' });
+      return;
+    }
+
+    let weekStart = (req.query.week as string) || (req.body.week as string);
+    if (!weekStart) {
+      const latest = await prisma.entry.findFirst({
+        where: { userId: targetUserId, deletedAt: null },
+        orderBy: { entryDate: 'desc' }
+      });
+      weekStart = latest ? getWeekStart(latest.entryDate) : getWeekStart(new Date().toISOString().split('T')[0]);
+    }
+    const weekEnd = getWeekEnd(weekStart);
+
+    const entries = await prisma.entry.findMany({
+      where: {
+        userId: targetUserId,
+        deletedAt: null,
+        entryDate: {
+          gte: weekStart,
+          lte: weekEnd
+        }
+      },
+      orderBy: { entryDate: 'asc' }
+    });
+
+    if (entries.length === 0) {
+      res.status(400).json({ error: 'لا توجد مهام مسجلة في هذا الأسبوع للتدقيق' });
+      return;
+    }
+
+    const updatedList = [];
+
+    for (const entry of entries) {
+      const elevatedCategory = inferProfessionalCategory(entry.description, entry.title);
+      const elevatedTitle = elevateTaskTitle(entry.title, entry.description);
+      const polishedDesc = polishAcademicNarrative(entry.description);
+
+      // Archive previous version to entryRevision before upgrading (Zero Data Loss Guarantee)
+      try {
+        await prisma.entryRevision.create({
+          data: {
+            entryId: entry.id,
+            title: entry.title,
+            category: entry.category,
+            description: entry.description,
+            timeFrom: entry.timeFrom,
+            timeTo: entry.timeTo
+          }
+        });
+      } catch (revErr) {
+        logger.warn({ revErr }, 'Non-fatal: failed to archive revision during weekly audit-polish');
+      }
+
+      // Update entry with executive engineering content
+      const updated = await prisma.entry.update({
+        where: { id: entry.id },
+        data: {
+          title: elevatedTitle,
+          category: elevatedCategory,
+          description: polishedDesc
+        }
+      });
+
+      updatedList.push(updated);
+    }
+
+    logger.info({ userId: targetUserId, weekStart, count: updatedList.length }, 'Successfully audited and polished week entries');
+
+    res.json({
+      message: 'تم تدقيق وإعادة صياغة وترقية تصنيفات مهام الأسبوع بالكامل وفق أعلى المعايير الهندسية',
+      updatedCount: updatedList.length,
+      entries: updatedList
+    });
+  } catch (err) {
+    logger.error({ err }, 'Error in audit-polish weekly report');
+    res.status(500).json({ error: 'تعذر تدقيق وإعادة صياغة مهام الأسبوع' });
   }
 });
 

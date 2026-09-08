@@ -366,9 +366,10 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
         padding: 2cm 1.6cm;
       }
       .container { max-width: 100%; margin: 0; padding: 0; }
-      .report-paper { border: none; box-shadow: none; padding: 0; }
+      .report-paper { border: none !important; box-shadow: none !important; padding: 0 !important; }
       .print-bar { display: none !important; }
-      .week-block { break-inside: avoid; }
+      .week-block { border: none !important; border-bottom: 1.5px solid #0f172a !important; border-radius: 0 !important; margin-bottom: 24px !important; break-inside: avoid; }
+      .meta-grid, .toc, .course-card { border: none !important; box-shadow: none !important; border-radius: 0 !important; }
     }
   </style>
 </head>

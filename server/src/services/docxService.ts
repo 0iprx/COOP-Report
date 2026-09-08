@@ -923,14 +923,15 @@ function createCourseHoursBox(
   startDate: string,
   isAr: boolean
 ): Table {
-  const cellBorder = { style: BorderStyle.SINGLE, size: 6, color: '8B0000' };
+  const borderNone = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
+  const borderBottom = { style: BorderStyle.SINGLE, size: 4, color: 'E6E2D8' };
   return new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
     rows: [
       new TableRow({
         children: [
           new TableCell({
-            borders: { top: cellBorder, bottom: cellBorder, left: cellBorder, right: cellBorder },
+            borders: { top: borderNone, bottom: borderBottom, left: borderNone, right: borderNone },
             children: [
               new Paragraph({
                 bidirectional: isAr,
@@ -1156,8 +1157,7 @@ function createWeekAcademicSynthesisBox(w: FinalReportData['weeks'][0], isAr: bo
   }
 
   const synthesis = generateAcademicWeeklySynthesis(w.entries, w.weekIndex, w.totalHours, isAr);
-  const cellBorder = { style: BorderStyle.SINGLE, size: 6, color: '8B0000' };
-  const lightBorder = { style: BorderStyle.SINGLE, size: 2, color: 'E6E2D8' };
+  const borderNone = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
 
   const paragraphs: Paragraph[] = [
     new Paragraph({
@@ -1263,7 +1263,7 @@ function createWeekAcademicSynthesisBox(w: FinalReportData['weeks'][0], isAr: bo
       new TableRow({
         children: [
           new TableCell({
-            borders: { top: cellBorder, bottom: lightBorder, left: lightBorder, right: lightBorder },
+            borders: { top: borderNone, bottom: borderNone, left: borderNone, right: borderNone },
             children: paragraphs
           })
         ]
@@ -1333,8 +1333,9 @@ function createWeekEvidenceBlocks(evidence: any[] | undefined, isAr: boolean): P
 }
 
 function createSupervisorWeekSignoff(supervisorName: string, isAr: boolean): Table {
-  const cellBorder = { style: BorderStyle.DOTTED, size: 4, color: 'C8C4BA' };
-  const borders = { top: cellBorder, bottom: cellBorder, left: cellBorder, right: cellBorder };
+  const borderNone = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
+  const borderTop = { style: BorderStyle.DASHED, size: 2, color: 'C8C4BA' };
+  const borders = { top: borderTop, bottom: borderNone, left: borderNone, right: borderNone };
 
   return new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },

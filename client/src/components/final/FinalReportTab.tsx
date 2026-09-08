@@ -2410,10 +2410,10 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                       isAr
                     );
                     return (
-                      <div className="mt-5 p-5 bg-card border border-line rounded-2xl space-y-3.5 text-start break-inside-avoid shadow-xs print:bg-white print:border-line">
-                        <div className="flex items-center justify-between border-b border-line pb-2.5">
+                      <div className="mt-5 p-5 bg-card border border-line rounded-2xl space-y-3.5 text-start break-inside-avoid shadow-xs print:border-none print:shadow-none print:p-0 print:bg-transparent synthesis-box-print">
+                        <div className="flex items-center justify-between border-b border-line pb-2.5 print:border-b-2 print:border-slate-800">
                           <div className="text-xs font-black text-ink flex items-center gap-2">
-                            <CheckCircle2 className="w-4 h-4 text-accent" />
+                            <CheckCircle2 className="w-4 h-4 text-accent print:hidden" />
                             <span>{isAr ? 'الموجز التنفيذي والمخرجات والكفايات المكتسبة للأسبوع' : 'Weekly Executive Synthesis & Acquired Competencies'}</span>
                           </div>
                           <span className="text-[11px] font-bold text-sub">
@@ -2428,7 +2428,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
 
                         {/* Core Operational Pillars */}
                         {synthesis.technicalPillars.length > 0 && (
-                          <div className="pt-2 border-t border-line/60 space-y-1.5">
+                          <div className="pt-2 border-t border-line/60 space-y-1.5 print:border-t print:border-slate-200">
                             <div className="text-[11px] font-black text-[#C0102A] uppercase tracking-wider">
                               {isAr ? 'المحاور والأنشطة التشغيلية المنفذة:' : 'Core Operational Pillars:'}
                             </div>
@@ -2445,7 +2445,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
 
                         {/* Acquired Competencies */}
                         {synthesis.acquiredCompetencies.length > 0 && (
-                          <div className="pt-2 border-t border-line/60 space-y-1.5">
+                          <div className="pt-2 border-t border-line/60 space-y-1.5 print:border-t print:border-slate-200">
                             <div className="text-[11px] font-black text-ok uppercase tracking-wider flex items-center gap-1">
                               <span>{isAr ? 'الكفايات والمعارف الهندسية المكتسبة:' : 'Acquired Engineering Competencies:'}</span>
                             </div>
@@ -2462,14 +2462,14 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
 
                         {/* Tools & Tech Badges */}
                         {synthesis.toolsAndTech.length > 0 && (
-                          <div className="pt-2 border-t border-line/60 flex flex-wrap items-center gap-1.5">
+                          <div className="pt-2 border-t border-line/60 flex flex-wrap items-center gap-1.5 print:border-t print:border-slate-200" dir={isAr ? 'rtl' : 'ltr'}>
                             <span className="text-[11px] font-black text-sub ml-1">
                               {isAr ? 'التقنيات والأدوات الموظفة:' : 'Utilized Tech:'}
                             </span>
                             {synthesis.toolsAndTech.map((tool, tIdx) => (
                               <span
                                 key={tIdx}
-                                className="px-2.5 py-0.5 rounded-md text-[10.5px] font-mono font-bold bg-accent-dim/60 text-accent border border-accent/20"
+                                className="px-2.5 py-0.5 rounded-md text-[10.5px] font-mono font-bold bg-accent-dim/60 text-accent border border-accent/20 print:bg-slate-100 print:text-slate-800 print:border-slate-300 tech-pill"
                               >
                                 {tool}
                               </span>
