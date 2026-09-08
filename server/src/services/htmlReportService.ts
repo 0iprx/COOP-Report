@@ -1,4 +1,4 @@
-import { FinalReportData, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis, formatWeekPeriod } from '@coop/shared';
+import { FinalReportData, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis, formatWeekPeriod, elevateTaskTitle } from '@coop/shared';
 
 function translateCategory(cat: string, isAr: boolean): string {
   if (isAr) return cat;
@@ -13,45 +13,59 @@ function translateCategory(cat: string, isAr: boolean): string {
   return map[cat] || cat;
 }
 
+function escapeHtml(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function formatProceduralNarrativeHtml(text: string): string {
   if (!text) return '';
   const clean = text.replace(/^[ \t]*[-_=]{3,}[ \t]*$/gm, '\n');
   const lines = clean.split('\n');
   const out: string[] = [];
   let inList = false;
-
-  for (let i = 0; i < lines.length; i++) {
-    const trimmed = lines[i].trim();
+  for (const rawLine of lines) {
+    const trimmed = rawLine.trim();
     if (!trimmed) {
       if (inList) { out.push('</ul>'); inList = false; }
       continue;
     }
-
-    if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*') || /\*\s*$/.test(trimmed)) {
-      if (!inList) { out.push('<ul style="margin: 8px 0; padding-inline-start: 18px; list-style-type: disc;">'); inList = true; }
-      const item = trimmed.replace(/^[•\-\*]\s*|\s*\*$/g, '').trim();
-      out.push(`<li style="margin-bottom: 4px; line-height: 1.6; color: var(--ink);">${escapeHtml(item)}</li>`);
+    const bulletMatch = trimmed.match(/^[-*•]\s*(.*)$/);
+    if (bulletMatch) {
+      if (!inList) { out.push('<ul style="margin: 6px 0; padding-right: 20px; list-style-type: disc;">'); inList = true; }
+      out.push(`<li style="margin: 4px 0; line-height: 1.6; color: var(--ink);">${escapeHtml(bulletMatch[1])}</li>`);
       continue;
     }
-
+    const numberedMatch = trimmed.match(/^(\d+)[\.\)]\s*(.*)$/);
+    if (numberedMatch) {
+      if (!inList) { out.push('<ul style="margin: 6px 0; padding-right: 20px; list-style-type: disc;">'); inList = true; }
+      out.push(`<li style="margin: 4px 0; line-height: 1.6; color: var(--ink);"><b>${numberedMatch[1]}.</b> ${escapeHtml(numberedMatch[2])}</li>`);
+      continue;
+    }
+    if (trimmed.endsWith(':') || trimmed.length < 55) {
+      if (inList) { out.push('</ul>'); inList = false; }
+      out.push(`<div style="font-weight: 700; color: var(--accent); margin-top: 10px; margin-bottom: 3px;">${escapeHtml(trimmed)}</div>`);
+      continue;
+    }
     if (inList) { out.push('</ul>'); inList = false; }
-
-    if ((trimmed.startsWith('**') && trimmed.endsWith('**')) || /^(في تمام الساعة|بعد الساعة|الساعة|قسم|فريق|مرحلة|منظومة|موجز)\s*[\d:]*.*:?$/i.test(trimmed)) {
-      const title = trimmed.replace(/^\*\*|\*\*$/g, '').replace(/:$/, '').trim();
-      out.push(`<div style="font-weight: 800; font-size: 12.5px; color: var(--accent); margin-top: 8px; margin-bottom: 4px; border-bottom: 1px dashed var(--line); padding-bottom: 2px;">${escapeHtml(title)}</div>`);
-      continue;
-    }
-
     out.push(`<p style="margin: 6px 0; line-height: 1.6; color: var(--ink);">${escapeHtml(trimmed)}</p>`);
   }
-  if (inList) { out.push('</ul>'); }
+  if (inList) { out.push('</ul>'); inList = false; }
   return out.join('');
 }
 
 function getWeekTopicServer(w: any, isAr: boolean = true): string {
   if (w.entries && w.entries.length > 0) {
     const firstTitle = (w.entries[0].title || '').replace(/\s*[-—–]\s*(اليوم|Day)\s*\d+.*$/i, '').trim();
-    if (firstTitle && firstTitle.length > 3) return firstTitle;
+    if (firstTitle && firstTitle.length > 3) {
+      const elevated = elevateTaskTitle(firstTitle, w.entries[0].description || '');
+      return elevated || firstTitle;
+    }
   }
   const defaultTopicsAr = [
     'التهيئة والتعريف بأنظمة المنشأة وسياسات أمن المعلومات',
@@ -639,14 +653,4 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
   </div>
 </body>
 </html>`;
-}
-
-function escapeHtml(s: string): string {
-  if (!s) return '';
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
 }

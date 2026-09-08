@@ -23,7 +23,7 @@ import {
   PageReference,
   ImageRun
 } from 'docx';
-import { FinalReportData, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis, formatWeekPeriod } from '@coop/shared';
+import { FinalReportData, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis, formatWeekPeriod, elevateTaskTitle } from '@coop/shared';
 
 function translateCategory(cat: string, isAr: boolean): string {
   if (isAr) return cat;
@@ -41,7 +41,10 @@ function translateCategory(cat: string, isAr: boolean): string {
 function getWeekTopicServer(w: any, isAr: boolean = true): string {
   if (w.entries && w.entries.length > 0) {
     const firstTitle = (w.entries[0].title || '').replace(/\s*[-—–]\s*(اليوم|Day)\s*\d+.*$/i, '').trim();
-    if (firstTitle && firstTitle.length > 3) return firstTitle;
+    if (firstTitle && firstTitle.length > 3) {
+      const elevated = elevateTaskTitle(firstTitle, w.entries[0].description || '');
+      return elevated || firstTitle;
+    }
   }
   const defaultTopicsAr = [
     'التهيئة والتعريف بأنظمة المنشأة وسياسات أمن المعلومات',

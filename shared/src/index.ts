@@ -710,6 +710,10 @@ export function elevateTaskTitle(title: string = '', description: string = ''): 
     return 'ضبط تكوينات ومحددات شبكات الجيل الخامس (5G Patching) وإجراءات الاستجابة السيبرانية';
   }
 
+  if (/اول يوم عمل.*(hr|مقابلة|موارد)/i.test(t) || /مقابلة hr/i.test(t) || /اول يوم عمل/i.test(t)) {
+    return 'التهيئة المؤسسية ومقابلة الموارد البشرية (HR) والتعريف ببيئة العمل والأنظمة';
+  }
+
   // Remove colloquial or raw journal phrasing
   t = t.replace(/^اليوم بيكون عن\s*/gi, 'دراسة وتطبيق تقنيات ');
   t = t.replace(/^بداية اليوم\s*(الأول|الثاني|الثالث|الرابع|الخامس)?\s*و?توجهي الى\s*/gi, 'مباشرة الأعمال التشغيلية مع فريق ');
@@ -718,6 +722,8 @@ export function elevateTaskTitle(title: string = '', description: string = ''): 
   t = t.replace(/^سويت\s*/gi, 'تهيئة وبرمجة ');
   t = t.replace(/^شفت\s*/gi, 'معاينة وفحص ');
   t = t.replace(/^جلسة تعريفية\s*و?التعريف بـ\s*/gi, 'التهيئة الفنية لمنظومة ');
+  t = t.replace(/^اول يوم عمل\s*(و|مع)?\s*/gi, 'مباشرة العمل و');
+  t = t.replace(/مقابلة\s*hr/gi, 'إجراءات الموارد البشرية (HR)');
 
   return t || 'المهام التشغيلية والهندسية الميدانية';
 }

@@ -235,6 +235,14 @@ router.get('/export/docx', async (req: AuthenticatedRequest, res: Response): Pro
     const lang = (req.query.lang as 'ar' | 'en') || 'ar';
     const reportData = await buildFinalReportData(targetUserId);
 
+    const onlyActual = req.query.onlyActual !== 'false';
+    if (onlyActual) {
+      const activeWeeks = reportData.weeks.filter((w) => (w.entries && w.entries.length > 0) || w.totalHours > 0);
+      if (activeWeeks.length > 0) {
+        reportData.weeks = activeWeeks;
+      }
+    }
+
     const buffer = await generateAcademicDocx(reportData, lang);
 
     const rawEntity = reportData.profile.entityAddress || (lang === 'en' ? 'COOP' : 'التدريب_التعاوني');
@@ -264,6 +272,14 @@ router.get('/export/html', async (req: AuthenticatedRequest, res: Response): Pro
 
     const lang = (req.query.lang as 'ar' | 'en') || 'ar';
     const reportData = await buildFinalReportData(targetUserId);
+
+    const onlyActual = req.query.onlyActual !== 'false';
+    if (onlyActual) {
+      const activeWeeks = reportData.weeks.filter((w) => (w.entries && w.entries.length > 0) || w.totalHours > 0);
+      if (activeWeeks.length > 0) {
+        reportData.weeks = activeWeeks;
+      }
+    }
 
     const html = generateStandaloneHTMLReport(reportData, lang);
 

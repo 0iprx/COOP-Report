@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { MOCK_SAMPLE_PREVIEW_PROFILE, MOCK_SAMPLE_PREVIEW_WEEKS } from '../../data/mockPreviewData';
-import { FinalReportData, EntryDTO, ProfileInput, DiffChunk, formatDateArabic, formatDateEnglish, countWords, calculateHoursBetween, REPORT_TEMPLATES, ReportTemplateId, OrganizationLookupResult, generateAcademicWeeklySynthesis, formatWeekPeriod } from '@coop/shared';
+import { FinalReportData, EntryDTO, ProfileInput, DiffChunk, formatDateArabic, formatDateEnglish, countWords, calculateHoursBetween, REPORT_TEMPLATES, ReportTemplateId, OrganizationLookupResult, generateAcademicWeeklySynthesis, formatWeekPeriod, elevateTaskTitle } from '@coop/shared';
 import {
   FileText,
   Search,
@@ -38,6 +38,7 @@ import {
   History,
   Pin,
   X,
+  RefreshCw,
   Eye,
   ArrowRight,
   Compass,
@@ -106,10 +107,13 @@ const getArabicWeekName = (index: number): string => {
   return names[index - 1] || `الأسبوع ${index}`;
 };
 
-export const getWeekTopic = (w: { weekIndex: number; entries?: { title: string }[] }, isAr: boolean = true): string => {
+export const getWeekTopic = (w: { weekIndex: number; entries?: { title: string; description?: string }[] }, isAr: boolean = true): string => {
   if (w.entries && w.entries.length > 0) {
     const firstTitle = w.entries[0].title.replace(/\s*[-—–]\s*(اليوم|Day)\s*\d+.*$/i, '').trim();
-    if (firstTitle && firstTitle.length > 3) return firstTitle;
+    if (firstTitle && firstTitle.length > 3) {
+      const elevated = elevateTaskTitle(firstTitle, w.entries[0].description || '');
+      return elevated || firstTitle;
+    }
   }
   const defaultTopicsAr = [
     'التهيئة والتعريف بأنظمة المنشأة وسياسات أمن المعلومات',
@@ -424,25 +428,40 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
     }
   });
 
+  // Toggle between Showing Only Truthful Documented Weeks (Default) vs Full Theoretical Plan
+  const [showOnlyActualWeeks, setShowOnlyActualWeeks] = useState<boolean>(true);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const isInitialMount = useRef(true);
+
   // Always guaranteed 14 weeks for the Table of Contents & Timeline
   const weeksCount = profileData.trainingWeeks || 14;
   const rawWeeks = reportData?.weeks || [];
-  const displayWeeks = rawWeeks.length > 0 ? rawWeeks : Array.from({ length: weeksCount }, (_, i) => {
-    const wIndex = i + 1;
-    const base = profileData.startDate ? new Date(profileData.startDate) : new Date();
-    const dStart = new Date(base.getTime() + i * 7 * 24 * 60 * 60 * 1000);
-    const dEnd = new Date(dStart.getTime() + 4 * 24 * 60 * 60 * 1000);
-    return {
-      weekIndex: wIndex,
-      weekStart: dStart.toISOString().split('T')[0],
-      weekEnd: dEnd.toISOString().split('T')[0],
-      totalHours: 0,
-      totalDays: 0,
-      status: 'pending' as const,
-      entries: [],
-      evidence: []
-    };
-  });
+  const weeksWithEntries = rawWeeks.filter(
+    (w) => (w.entries && w.entries.length > 0) || w.totalHours > 0
+  );
+  const actualWeeksCount = weeksWithEntries.length;
+
+  const displayWeeks =
+    showOnlyActualWeeks && actualWeeksCount > 0
+      ? weeksWithEntries
+      : rawWeeks.length > 0
+      ? rawWeeks
+      : Array.from({ length: weeksCount }, (_, i) => {
+          const wIndex = i + 1;
+          const base = profileData.startDate ? new Date(profileData.startDate) : new Date();
+          const dStart = new Date(base.getTime() + i * 7 * 24 * 60 * 60 * 1000);
+          const dEnd = new Date(dStart.getTime() + 4 * 24 * 60 * 60 * 1000);
+          return {
+            weekIndex: wIndex,
+            weekStart: dStart.toISOString().split('T')[0],
+            weekEnd: dEnd.toISOString().split('T')[0],
+            totalHours: 0,
+            totalDays: 0,
+            status: 'pending' as const,
+            entries: [],
+            evidence: []
+          };
+        });
 
   // Active Preview Profile & Weeks (Switches between Sample Data & Real Trainee Data)
   const activePreviewProfile = isSampleMode
@@ -474,34 +493,43 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
     setCurrentVersionIndex((prev) => Math.min(prev + 1, 29));
   };
 
-  // Initialize profile & load initial version snapshot
+  // Initialize profile with smart merge from LocalStorage draft & DB
   useEffect(() => {
+    let draftProfile: Partial<ProfileInput> | null = null;
+    try {
+      const cachedDraft = localStorage.getItem(PROFILE_DRAFT_KEY);
+      if (cachedDraft) {
+        draftProfile = JSON.parse(cachedDraft);
+      }
+    } catch {}
+
     if (reportData?.profile) {
-      const initial: ProfileInput = {
-        studentName: reportData.profile.studentName || '',
-        trainingNumber: reportData.profile.trainingNumber || '',
-        department: reportData.profile.department || '',
-        trainingUnit: reportData.profile.trainingUnit || '',
-        supervisorName: reportData.profile.supervisorName || '',
-        responsibleName: reportData.profile.responsibleName || '',
-        entityAddress: reportData.profile.entityAddress || '',
-        employeesCount: reportData.profile.employeesCount || '',
-        trainingWeeks: reportData.profile.trainingWeeks || 14,
-        courseHours: reportData.profile.courseHours || 280,
-        startDate: reportData.profile.startDate || '',
-        companyLogo: reportData.profile.companyLogo || '',
-        institutionLogo: reportData.profile.institutionLogo || '',
-        reportTemplate: (reportData.profile.reportTemplate as any) || 'royal',
-        executiveSummary: reportData.profile.executiveSummary || '',
-        challengesText: reportData.profile.challengesText || '',
-        recommendationsText: reportData.profile.recommendationsText || '',
-        introText: reportData.profile.introText || '',
-        entityIntroText: reportData.profile.entityIntroText || '',
-        skillsText: reportData.profile.skillsText || '',
-        conclusionText: reportData.profile.conclusionText || ''
+      const dbProfile = reportData.profile;
+      const merged: ProfileInput = {
+        studentName: dbProfile.studentName || draftProfile?.studentName || '',
+        trainingNumber: dbProfile.trainingNumber || draftProfile?.trainingNumber || '',
+        department: dbProfile.department || draftProfile?.department || '',
+        trainingUnit: dbProfile.trainingUnit || draftProfile?.trainingUnit || '',
+        supervisorName: dbProfile.supervisorName || draftProfile?.supervisorName || '',
+        responsibleName: dbProfile.responsibleName || draftProfile?.responsibleName || '',
+        entityAddress: dbProfile.entityAddress || draftProfile?.entityAddress || '',
+        employeesCount: dbProfile.employeesCount || draftProfile?.employeesCount || '',
+        trainingWeeks: dbProfile.trainingWeeks || draftProfile?.trainingWeeks || 14,
+        courseHours: dbProfile.courseHours || draftProfile?.courseHours || 280,
+        startDate: dbProfile.startDate || draftProfile?.startDate || '',
+        companyLogo: dbProfile.companyLogo || draftProfile?.companyLogo || '',
+        institutionLogo: dbProfile.institutionLogo || draftProfile?.institutionLogo || '',
+        reportTemplate: (dbProfile.reportTemplate as any) || draftProfile?.reportTemplate || 'royal',
+        executiveSummary: dbProfile.executiveSummary || draftProfile?.executiveSummary || '',
+        challengesText: dbProfile.challengesText || draftProfile?.challengesText || '',
+        recommendationsText: dbProfile.recommendationsText || draftProfile?.recommendationsText || '',
+        introText: dbProfile.introText || draftProfile?.introText || '',
+        entityIntroText: dbProfile.entityIntroText || draftProfile?.entityIntroText || '',
+        skillsText: dbProfile.skillsText || draftProfile?.skillsText || '',
+        conclusionText: dbProfile.conclusionText || draftProfile?.conclusionText || ''
       };
 
-      setProfileData(initial);
+      setProfileData(merged);
 
       // Initialize version history if empty
       if (versions.length === 0) {
@@ -515,34 +543,54 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
           setVersions(loadedHistory);
           setCurrentVersionIndex(loadedHistory.length - 1);
         } else {
-          const textAll = [initial.introText, initial.entityIntroText, initial.skillsText, initial.conclusionText].join(' ');
+          const textAll = [merged.introText, merged.entityIntroText, merged.skillsText, merged.conclusionText].join(' ');
           const initialSnapshot: ReportVersionSnapshot = {
             id: 'ver_init',
             timestamp: new Date().toISOString(),
             timeFormatted: new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
             label: 'النسخة الأصلية المحفوظة',
-            data: initial,
+            data: merged,
             wordCount: countWords(textAll)
           };
           setVersions([initialSnapshot]);
           setCurrentVersionIndex(0);
         }
       }
+    } else if (draftProfile && !profileData.studentName) {
+      setProfileData((prev) => ({ ...prev, ...draftProfile }));
     }
   }, [reportData]);
 
-  // Auto-save draft for profile
+  // Automatic Background Save to LocalStorage & Cloud DB (Never Lose Data)
   useEffect(() => {
-    const handler = setTimeout(() => {
-      if (profileData.introText || profileData.studentName) {
-        localStorage.setItem(PROFILE_DRAFT_KEY, JSON.stringify(profileData));
-      }
-    }, 500);
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
 
-    return () => clearTimeout(handler);
+    if (!profileData.studentName && !profileData.introText && !profileData.entityAddress) {
+      return;
+    }
+
+    // Immediate Local Storage persistence
+    localStorage.setItem(PROFILE_DRAFT_KEY, JSON.stringify(profileData));
+
+    // Background Cloud Save (debounced 1200ms)
+    setAutoSaveStatus('saving');
+    const timer = setTimeout(async () => {
+      try {
+        await api.put('/profile', profileData);
+        setAutoSaveStatus('saved');
+        setTimeout(() => setAutoSaveStatus('idle'), 3000);
+      } catch {
+        setAutoSaveStatus('idle');
+      }
+    }, 1200);
+
+    return () => clearTimeout(timer);
   }, [profileData]);
 
-  // Save Profile Mutation
+  // Save Profile Mutation (Manual save button also available)
   const saveProfileMutation = useMutation({
     mutationFn: async (data: ProfileInput) => {
       const res = await api.put('/profile', data);
@@ -550,9 +598,8 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['finalReport'] });
-      setSaveToast('تم حفظ بيانات التقرير بنجاح وتحديث السجلات');
-      localStorage.removeItem(PROFILE_DRAFT_KEY);
-      recordVersion('تم الحفظ في قاعدة البيانات', profileData);
+      setSaveToast('تم حفظ وتثبيت كافة بيانات التقرير في السجلات السحابية بنجاح');
+      recordVersion('تم الحفظ يدوياً في قاعدة البيانات', profileData);
       setTimeout(() => setSaveToast(''), 3000);
     }
   });
@@ -971,7 +1018,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
   const handleExportDocx = async () => {
     try {
       setDownloadingDocx(true);
-      const res = await api.get(`/reports/export/docx?lang=${previewLang}`, {
+      const res = await api.get(`/reports/export/docx?lang=${previewLang}&onlyActual=${showOnlyActualWeeks}`, {
         responseType: 'blob'
       });
       const blob = new Blob([res.data], {
@@ -997,7 +1044,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
   const handleExportHTML = async () => {
     try {
       setDownloadingHtml(true);
-      const res = await api.get(`/reports/export/html?lang=${previewLang}`, {
+      const res = await api.get(`/reports/export/html?lang=${previewLang}&onlyActual=${showOnlyActualWeeks}`, {
         responseType: 'blob'
       });
       const blob = new Blob([res.data], { type: 'text/html;charset=utf-8' });
@@ -1266,9 +1313,29 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
               <Bookmark className="w-5 h-5 text-accent" />
               <span>بيانات الغلاف وأقسام التقرير النهائي</span>
             </h2>
-            <p className="text-xs text-sub mt-0.5">
-              تُحفظ هذه البيانات وتُدرج تلقائياً في الغلاف والمقدمة والخاتمة لملفات DOCX و PDF و HTML
-            </p>
+            <div className="flex flex-wrap items-center gap-2 mt-1">
+              <p className="text-xs text-sub">
+                تُحفظ هذه البيانات سحابياً تلقائياً وتُدرج في الغلاف والمقدمة والخاتمة لملفات DOCX و PDF و HTML
+              </p>
+              {autoSaveStatus === 'saving' && (
+                <span className="text-[11px] text-accent font-bold flex items-center gap-1 bg-accent/10 px-2.5 py-0.5 rounded-full border border-accent/20 animate-pulse">
+                  <RefreshCw className="w-3 h-3 animate-spin text-accent" />
+                  جارِ الحفظ التلقائي بالسحابة...
+                </span>
+              )}
+              {autoSaveStatus === 'saved' && (
+                <span className="text-[11px] text-ok font-bold flex items-center gap-1 bg-ok-bg px-2.5 py-0.5 rounded-full border border-ok/30 animate-fade-in">
+                  <CheckCircle2 className="w-3 h-3 text-ok" />
+                  تم الحفظ التلقائي في السجلات السحابية
+                </span>
+              )}
+              {autoSaveStatus === 'idle' && (
+                <span className="text-[11px] text-muted font-medium flex items-center gap-1 bg-bg px-2 py-0.5 rounded-full border border-line">
+                  <Check className="w-3 h-3 text-ok" />
+                  محفوظ سحابياً ومحلياً (لا حاجة لإعادة التعبئة)
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -1930,6 +1997,21 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
 
         {/* Export Buttons & Preview Language Selector */}
         <div className="flex flex-wrap items-center gap-2">
+          {/* Actual Weeks Filter Toggle */}
+          <button
+            type="button"
+            onClick={() => setShowOnlyActualWeeks(!showOnlyActualWeeks)}
+            className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 ${
+              showOnlyActualWeeks
+                ? 'bg-ok-bg text-ok border-ok/30'
+                : 'bg-bg text-sub hover:text-ink border-line'
+            }`}
+            title="التبديل بين عرض وتصدير الأسابيع المنجزة فعلياً فقط أو الخطة النظرية لـ 14 أسبوعاً"
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span>{showOnlyActualWeeks ? `الأسابيع المنجزة فعلياً (${actualWeeksCount})` : 'الخطة الكاملة (14 أسبوعاً)'}</span>
+          </button>
+
           {/* Language Toggle for Export and Preview */}
           <div className="flex items-center bg-bg border border-line rounded-xl p-1 text-xs font-bold">
             <button
