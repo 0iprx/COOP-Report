@@ -2077,108 +2077,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
         </div>
       </div>
 
-      {/* Interactive Table of Contents (مطابق تماماً لمرجع الصورة بالأسطر المنقطة وروابط التنقل) */}
-      <div className="bg-card border border-line rounded-2xl p-6 shadow-sm no-print" dir={isAr ? 'rtl' : 'ltr'}>
-        <h3 className="text-base font-black text-[#8B0000] text-center pb-3 mb-5 border-b-2 border-[#8B0000] flex items-center justify-center gap-2">
-          <Bookmark className="w-5 h-5" />
-          <span>{isAr ? 'فهرس المحتويات وموضوعات الأسابيع' : 'Table of Contents & Weekly Topics'}</span>
-        </h3>
 
-        <div className="space-y-2.5 max-w-2xl mx-auto text-xs font-bold">
-          <a href="#sec-cover" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
-            <span className="group-hover:translate-x-[-2px] transition-transform">
-              {isAr ? 'فهرس المحتويات وصفحة الغلاف' : 'Cover Page & Student Credentials'}
-            </span>
-            <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
-            <span className="text-[#8B0000] font-black">{isAr ? '١' : '1'}</span>
-          </a>
-
-          <a href="#sec-intro" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
-            <span className="group-hover:translate-x-[-2px] transition-transform">
-              {isAr
-                ? '١. المقدمة وأهداف التدريب وبيانات المقرر (ساعتان معتمدتان من المعدل)'
-                : '1. Introduction & Course Credit (2 Credit Hours in GPA)'}
-            </span>
-            <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
-            <span className="text-[#8B0000] font-black">{isAr ? '٢' : '2'}</span>
-          </a>
-
-          <a href="#sec-entity" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
-            <span className="group-hover:translate-x-[-2px] transition-transform">
-              {isAr
-                ? `٢. التعريف بجهة التدريب وطبيعة العمل ${profileData.entityAddress ? `(${profileData.entityAddress})` : ''}`
-                : `2. Host Organization Overview ${profileData.entityAddress ? `(${profileData.entityAddress})` : ''}`}
-            </span>
-            <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
-            <span className="text-[#8B0000] font-black">{isAr ? '٣' : '3'}</span>
-          </a>
-
-          <a href="#sec-timeline" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
-            <span className="group-hover:translate-x-[-2px] transition-transform">
-              {isAr
-                ? `٣. الباب التدريبي: سجل وتقارير الأسابيع الميدانية الـ (${displayWeeks.length} أسبوعاً)`
-                : `3. Training Reports & Weekly Field Records (${displayWeeks.length} Weeks)`}
-            </span>
-            <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
-            <span className="text-[#8B0000] font-black">{isAr ? toArabicIndic(4) : '4'}</span>
-          </a>
-
-          {/* Child Weeks Narrative Topic Indexing - Guaranteed for all 14 Weeks */}
-          <div className="space-y-1.5 pr-2 sm:pr-4 py-1">
-            {displayWeeks.map((w, idx) => {
-              const isLast = idx === displayWeeks.length - 1;
-              const treeSymbol = isLast ? '└──' : '├──';
-              const pageNum = 5 + idx;
-
-              return (
-                <a
-                  key={w.weekIndex}
-                  href={`#week-${w.weekIndex}`}
-                  className="flex items-baseline justify-between text-sub hover:text-accent pr-3 pl-2 py-1 rounded-lg hover:bg-bg/60 transition-colors group text-[11.5px]"
-                >
-                  <div className="flex items-baseline gap-2 flex-1 min-w-0 pr-1">
-                    <span className="text-muted/60 font-mono text-[11px] select-none shrink-0">{treeSymbol}</span>
-                    <span className="font-bold text-ink group-hover:text-accent transition-colors shrink-0">
-                      {isAr ? `تقرير ${getArabicWeekName(w.weekIndex)}:` : `Week ${w.weekIndex} Report:`}
-                    </span>
-                    <span className="text-sub group-hover:text-ink transition-colors truncate">
-                      {getWeekTopic(w, isAr)}
-                    </span>
-                  </div>
-                  <span className="flex-grow mx-3 border-b border-dotted border-line relative top-[-4px]"></span>
-                  <span className="text-ok font-bold shrink-0">
-                    {isAr ? toArabicIndic(pageNum) : pageNum}
-                  </span>
-                </a>
-              );
-            })}
-          </div>
-
-          <a href="#sec-skills" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
-            <span className="group-hover:translate-x-[-2px] transition-transform">
-              {isAr ? '٤. المعارف والمهارات والتجارب المكتسبة' : '4. Acquired Competencies & Technical Skills'}
-            </span>
-            <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
-            <span className="text-[#8B0000] font-black">{isAr ? toArabicIndic(5 + displayWeeks.length) : 5 + displayWeeks.length}</span>
-          </a>
-
-          <a href="#sec-conclusion" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
-            <span className="group-hover:translate-x-[-2px] transition-transform">
-              {isAr ? '٥. الخاتمة والتوصيات العامة' : '5. Conclusion & Recommendations'}
-            </span>
-            <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
-            <span className="text-[#8B0000] font-black">{isAr ? toArabicIndic(6 + displayWeeks.length) : 6 + displayWeeks.length}</span>
-          </a>
-
-          <a href="#sec-approval" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
-            <span className="group-hover:translate-x-[-2px] transition-transform">
-              {isAr ? '٦. استمارة تقييم واعتماد المشرفين والملاحق' : '6. Supervisory Approval Form & Appendices'}
-            </span>
-            <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
-            <span className="text-[#8B0000] font-black">{isAr ? toArabicIndic(7 + displayWeeks.length) : 7 + displayWeeks.length}</span>
-          </a>
-        </div>
-      </div>
 
       {/* Sample Preview Mode Banner */}
       {isSampleMode && (
@@ -2293,8 +2192,111 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
           </div>
         </div>
 
+        {/* Academic Table of Contents (Page 2 in Print & Master Academic Dossier) */}
+        <div id="sec-toc" className="scroll-mt-24 py-6 page-break space-y-4" dir={isAr ? 'rtl' : 'ltr'}>
+          <h2 className="text-base font-black text-[#8B0000] text-center pb-3 mb-5 border-b-2 border-[#8B0000] flex items-center justify-center gap-2">
+            <Bookmark className="w-5 h-5" />
+            <span>{isAr ? 'فهرس المحتويات وموضوعات الأسابيع' : 'Table of Contents & Weekly Topics'}</span>
+          </h2>
+
+          <div className="space-y-2.5 max-w-2xl mx-auto text-xs font-bold">
+            <a href="#sec-cover" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
+              <span className="group-hover:translate-x-[-2px] transition-transform">
+                {isAr ? 'فهرس المحتويات وصفحة الغلاف' : 'Cover Page & Student Credentials'}
+              </span>
+              <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
+              <span className="text-[#8B0000] font-black">{isAr ? '١' : '1'}</span>
+            </a>
+
+            <a href="#sec-intro" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
+              <span className="group-hover:translate-x-[-2px] transition-transform">
+                {isAr
+                  ? '١. المقدمة وأهداف التدريب وبيانات المقرر (ساعتان معتمدتان من المعدل)'
+                  : '1. Introduction & Course Credit (2 Credit Hours in GPA)'}
+              </span>
+              <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
+              <span className="text-[#8B0000] font-black">{isAr ? '٢' : '2'}</span>
+            </a>
+
+            <a href="#sec-entity" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
+              <span className="group-hover:translate-x-[-2px] transition-transform">
+                {isAr
+                  ? `٢. التعريف بجهة التدريب وطبيعة العمل ${activePreviewProfile.entityAddress ? `(${activePreviewProfile.entityAddress})` : ''}`
+                  : `2. Host Organization Overview ${activePreviewProfile.entityAddress ? `(${activePreviewProfile.entityAddress})` : ''}`}
+              </span>
+              <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
+              <span className="text-[#8B0000] font-black">{isAr ? '٣' : '3'}</span>
+            </a>
+
+            <a href="#sec-timeline" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
+              <span className="group-hover:translate-x-[-2px] transition-transform">
+                {isAr
+                  ? `٣. الباب التدريبي: سجل وتقارير الأسابيع الميدانية الـ (${displayWeeks.length} أسبوعاً)`
+                  : `3. Training Reports & Weekly Field Records (${displayWeeks.length} Weeks)`}
+              </span>
+              <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
+              <span className="text-[#8B0000] font-black">{isAr ? toArabicIndic(4) : '4'}</span>
+            </a>
+
+            {/* Child Weeks Narrative Topic Indexing - Guaranteed for all actual weeks */}
+            <div className="space-y-1.5 pr-2 sm:pr-4 py-1">
+              {displayWeeks.map((w, idx) => {
+                const isLast = idx === displayWeeks.length - 1;
+                const treeSymbol = isLast ? '└──' : '├──';
+                const pageNum = 5 + idx;
+
+                return (
+                  <a
+                    key={w.weekIndex}
+                    href={`#week-${w.weekIndex}`}
+                    className="flex items-baseline justify-between text-sub hover:text-accent pr-3 pl-2 py-1 rounded-lg hover:bg-bg/60 transition-colors group text-[11.5px]"
+                  >
+                    <div className="flex items-baseline gap-2 flex-1 min-w-0 pr-1">
+                      <span className="text-muted/60 font-mono text-[11px] select-none shrink-0">{treeSymbol}</span>
+                      <span className="font-bold text-ink group-hover:text-accent transition-colors shrink-0">
+                        {isAr ? `تقرير ${getArabicWeekName(w.weekIndex)}:` : `Week ${w.weekIndex} Report:`}
+                      </span>
+                      <span className="text-sub group-hover:text-ink transition-colors truncate">
+                        {getWeekTopic(w, isAr)}
+                      </span>
+                    </div>
+                    <span className="flex-grow mx-3 border-b border-dotted border-line relative top-[-4px]"></span>
+                    <span className="text-ok font-bold shrink-0">
+                      {isAr ? toArabicIndic(pageNum) : pageNum}
+                    </span>
+                  </a>
+                );
+              })}
+            </div>
+
+            <a href="#sec-skills" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
+              <span className="group-hover:translate-x-[-2px] transition-transform">
+                {isAr ? '٤. المعارف والمهارات والتجارب المكتسبة' : '4. Acquired Competencies & Technical Skills'}
+              </span>
+              <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
+              <span className="text-[#8B0000] font-black">{isAr ? toArabicIndic(5 + displayWeeks.length) : 5 + displayWeeks.length}</span>
+            </a>
+
+            <a href="#sec-conclusion" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
+              <span className="group-hover:translate-x-[-2px] transition-transform">
+                {isAr ? '٥. الخاتمة والتوصيات العامة' : '5. Conclusion & Recommendations'}
+              </span>
+              <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
+              <span className="text-[#8B0000] font-black">{isAr ? toArabicIndic(6 + displayWeeks.length) : 6 + displayWeeks.length}</span>
+            </a>
+
+            <a href="#sec-approval" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
+              <span className="group-hover:translate-x-[-2px] transition-transform">
+                {isAr ? '٦. استمارة تقييم واعتماد المشرفين والملاحق' : '6. Supervisory Approval Form & Appendices'}
+              </span>
+              <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
+              <span className="text-[#8B0000] font-black">{isAr ? toArabicIndic(7 + displayWeeks.length) : 7 + displayWeeks.length}</span>
+            </a>
+          </div>
+        </div>
+
         {/* Section 1: Intro */}
-        <div id="sec-intro" className="scroll-mt-24 space-y-3 pt-4">
+        <div id="sec-intro" className="scroll-mt-24 space-y-3 pt-4 page-break">
           <h2 className="text-lg font-extrabold text-ink border-b-2 border-accent pb-1.5 inline-block">
             {isAr ? '1. المقدمة وأهداف التدريب' : '1. Introduction & Objectives'}
           </h2>

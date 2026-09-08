@@ -450,13 +450,43 @@ html, body {
   /* Synthesis & Endorsement boxes: Remove outer card frames in print */
   .synthesis-box-print,
   .endorsement-box-print,
-  .print-no-border {
+  .print-no-border,
+  div[id^="week-"],
+  div[id^="sec-"] {
     border: none !important;
     border-radius: 0 !important;
-    background: transparent !important;
     box-shadow: none !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
+  }
+
+  div[id^="week-"] {
+    background: transparent !important;
+    margin-bottom: 20px !important;
+    padding-bottom: 12px !important;
+    border-bottom: 1.5px solid #cbd5e1 !important;
+  }
+
+  div[id^="week-"] > .bg-bg {
+    background: transparent !important;
+    border-bottom: 2px solid #0f172a !important;
+    padding: 6px 0 !important;
+    border-radius: 0 !important;
+  }
+
+  /* Executive Table Matrix clean borders */
+  div[id^="week-"] .overflow-x-auto {
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Table of Contents in Print */
+  #sec-toc {
+    page-break-before: always !important;
+    break-before: page !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    background: transparent !important;
   }
 
   /* Technology badges: clean neutral academic pills without pink frames */
