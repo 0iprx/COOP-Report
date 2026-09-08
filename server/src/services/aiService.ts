@@ -303,114 +303,198 @@ async function fetchSingleChunkTranslation(chunk: string, targetLang: 'ar' | 'en
 }
 
 /**
- * Advanced Academic Elevation for Arabic field logs and reports
+ * Advanced Multi-Stage Academic Engineering Transformer for Arabic Field Logs
+ * Upgrades raw student diaries into publication-grade institutional engineering reports.
  */
 function polishArabicText(input: string): string {
+  if (!input || !input.trim()) return '';
+
   let s = applyArabicSpellCorrections(input);
 
-  // 1. Structural casual phrase replacements
-  const phraseReplacements: Array<[RegExp, string]> = [
-    [/(?<![\u0600-\u06FF])اليوم قمت بالعمل على(?![\u0600-\u06FF])/gu, 'إنجاز وتنفيذ المهام التشغيلية الخاصة بـ'],
-    [/(?<![\u0600-\u06FF])اليوم قمت بـ(?![\u0600-\u06FF])/gu, 'تنفيذ وإنجاز'],
-    [/(?<![\u0600-\u06FF])قمت بالعمل على(?![\u0600-\u06FF])/gu, 'تنفيذ المهام التقنية المتعلقة بـ'],
-    [/(?<![\u0600-\u06FF])قمت بعمل(?![\u0600-\u06FF])/gu, 'تنفيذ وإنجاز'],
-    [/(?<![\u0600-\u06FF])سويت(?![\u0600-\u06FF])/gu, 'تم تنفيذ وتكوين'],
-    [/(?<![\u0600-\u06FF])سوينا(?![\u0600-\u06FF])/gu, 'تم تنفيذ وإنجاز'],
-    [/(?<![\u0600-\u06FF])عملت على(?![\u0600-\u06FF])/gu, 'تنفيذ ومتابعة'],
-    [/(?<![\u0600-\u06FF])اشتغلت على(?![\u0600-\u06FF])/gu, 'مباشرة وإدارة أعمال'],
-    [/(?<![\u0600-\u06FF])حضرت اجتماع(?![\u0600-\u06FF])/gu, 'المشاركة الفعالة في جلسة العمل والتنسيق الفني'],
-    [/(?<![\u0600-\u06FF])رحت اجتماع(?![\u0600-\u06FF])/gu, 'حضور الاجتماع التنسيقي الميداني'],
-    [/(?<![\u0600-\u06FF])فهمت(?![\u0600-\u06FF])/gu, 'استيعاب وتطبيق المعارف الخاصة بـ'],
-    [/(?<![\u0600-\u06FF])تعلمت كيف(?![\u0600-\u06FF])/gu, 'اكتساب وتطبيق المهارة العملية في'],
-    [/(?<![\u0600-\u06FF])تعلمت(?![\u0600-\u06FF])/gu, 'اكتساب وتطبيق المهارات الميدانية في'],
-    [/(?<![\u0600-\u06FF])صلحت المشكلة(?![\u0600-\u06FF])/gu, 'استكشاف الخلل التقني وتحليله ومعالجته بنجاح'],
-    [/(?<![\u0600-\u06FF])صلحت(?![\u0600-\u06FF])/gu, 'معالجة وتصحيح الخلل في'],
-    [/(?<![\u0600-\u06FF])حليت المشكلة(?![\u0600-\u06FF])/gu, 'تشخيص الخلل الفني وتطبيق الحل الهندسي الملائم'],
-    [/(?<![\u0600-\u06FF])شفت(?![\u0600-\u06FF])/gu, 'معاينة ومتابعة العمليات التشغيلية لـ'],
-    [/(?<![\u0600-\u06FF])شيكت على(?![\u0600-\u06FF])/gu, 'فحص وتدقيق الجاهزية التشغيلية لـ'],
-    [/(?<![\u0600-\u06FF])شيكت(?![\u0600-\u06FF])/gu, 'فحص وتدقيق'],
-    [/(?<![\u0600-\u06FF])راقبت(?![\u0600-\u06FF])/gu, 'رصد وتحليل مؤشرات الأداء الخاصة بـ'],
-    [/(?<![\u0600-\u06FF])جربت(?![\u0600-\u06FF])/gu, 'إجراء الاختبارات والتحقق العملي من كفاءة'],
-    [/(?<![\u0600-\u06FF])بشكل كويس|بشكل ممتاز|كويس مره(?![\u0600-\u06FF])/gu, 'وفق المعايير والممارسات المهنية المعتمدة'],
-    [/(?<![\u0600-\u06FF])كلمت المشرف(?![\u0600-\u06FF])/gu, 'التنسيق والمراجعة المباشرة مع المشرف الميداني'],
-    [/(?<![\u0600-\u06FF])تأكدت من(?![\u0600-\u06FF])/gu, 'التحقق البرمجي والتشغيلي من سلامة'],
-    [/(?<![\u0600-\u06FF])نزلت البرنامج(?![\u0600-\u06FF])/gu, 'تثبيت وتهيئة الحزمة البرمجية'],
-    [/(?<![\u0600-\u06FF])فرمت الجهاز(?![\u0600-\u06FF])/gu, 'إعادة تهيئة النظام وتثبيت بيئة التشغيل المعيارية'],
-    [/(?<![\u0600-\u06FF])ربطت السيرفر(?![\u0600-\u06FF])/gu, 'توصيل وضبط إعدادات الخادم وتأمين مسار الاتصال الشبكي']
+  // 1. Structural cleanup: Remove raw dashes/separators
+  s = s.replace(/^[ \t]*[-_=]{3,}[ \t]*$/gm, '\n');
+
+  // 2. Fix inverted RTL bullet points (e.g., "ONT *", "UTP *", "OLT *")
+  s = s.replace(/([A-Za-z0-9\u0600-\u06FF\s]+)\s*\*\s*$/gm, '• $1');
+  s = s.replace(/^\s*[\*\-]\s+/gm, '• ');
+
+  // 3. Technical Acronyms & Terminology Dictionary with official Arabic expansions
+  const techMap: Array<[RegExp, string]> = [
+    [/(?<![\u0600-\u06FF])FTTH(?![\u0600-\u06FF])/gi, 'شبكات الألياف الضوئية للمنازل (FTTH)'],
+    [/(?<![\u0600-\u06FF])ONT(?![\u0600-\u06FF])/gi, 'أجهزة الطرفيات الضوئية للمشتركين (ONT)'],
+    [/(?<![\u0600-\u06FF])OLT(?![\u0600-\u06FF])/gi, 'مقاسم النفاذ الضوئي الرئيسية (OLT)'],
+    [/(?<![\u0600-\u06FF])ODN(?![\u0600-\u06FF])/gi, 'شبكة التوزيع الضوئي (ODN)'],
+    [/(?<![\u0600-\u06FF])ODB(?![\u0600-\u06FF])/gi, 'صناديق التوزيع الضوئي الفرعية (ODB)'],
+    [/(?<![\u0600-\u06FF])UTP(?![\u0600-\u06FF])/gi, 'كوابل الشبكة النحاسية المزدوجة (UTP)'],
+    [/(?<![\u0600-\u06FF])Trouble Ticket(s)?(?![\u0600-\u06FF])/gi, 'تذاكر الصيانة وبلاغات الأعطال الفنية (Trouble Tickets)'],
+    [/(?<![\u0600-\u06FF])High Temp(?![\u0600-\u06FF])/gi, 'إنذارات ارتفاع درجات الحرارة (High Temperature)'],
+    [/(?<![\u0600-\u06FF])Alarms(?![\u0600-\u06FF])/gi, 'إنذارات ومؤشرات الشبكة (Network Alarms)'],
+    [/(?<![\u0600-\u06FF])Access Team(?![\u0600-\u06FF])/gi, 'فريق شبكات النفاذ (Access Team)'],
+    [/(?<![\u0600-\u06FF])team access(?![\u0600-\u06FF])/gi, 'فريق شبكات النفاذ (Access Team)'],
+    [/(?<![\u0600-\u06FF])AAA(?![\u0600-\u06FF])/gi, 'منظومة التوثيق والتحكم بالنفاذ (AAA)'],
+    [/(?<![\u0600-\u06FF])Authentication(?![\u0600-\u06FF])/gi, 'المصادقة والتوثيق الأمني (Authentication)'],
+    [/(?<![\u0600-\u06FF])Configurations?(?![\u0600-\u06FF])/gi, 'الإعدادات وضبط التكوين (Configurations)'],
+    [/(?<![\u0600-\u06FF])Patching(?![\u0600-\u06FF])/gi, 'الربط التبادلي وتثبيت التحديثات (Patching)'],
+    [/(?<![\u0600-\u06FF])Red Team(?![\u0600-\u06FF])/gi, 'فريق الهجوم السيبراني والاختراق الأخلاقي (Red Team)'],
+    [/(?<![\u0600-\u06FF])Blue Team(?![\u0600-\u06FF])/gi, 'فريق الدفاع السيبراني والاستجابة للتهديدات (Blue Team)'],
+    [/(?<![\u0600-\u06FF])Cyber Security(?![\u0600-\u06FF])/gi, 'الأمن السيبراني (Cyber Security)'],
+    [/(?<![\u0600-\u06FF])5G(?![\u0600-\u06FF])/gi, 'شبكات الجيل الخامس (5G)']
   ];
 
-  for (const [re, rep] of phraseReplacements) {
-    s = s.replace(re, rep);
-  }
-
-  // 2. Expand short fragments into complete formal academic engineering descriptions
-  const trimmed = s.trim();
-  const wordCount = trimmed.split(/\s+/).length;
-
-  if (wordCount <= 6) {
-    if (/شبك|فيلان|راوتر|سويتش|كيبل|vlan|switch|router/i.test(trimmed)) {
-      if (!/تحقق|استقرار|معايير|كفاءة/.test(trimmed)) {
-        s = `${trimmed}، وضبط منافذ الاتصال والتحقق من كفاءة الربط واستقرار حركة البيانات وفق المعايير الهندسية.`;
-      }
-    } else if (/سيرفر|خادم|لينكس|ويندوز|ubuntu|linux|server|vmware/i.test(trimmed)) {
-      if (!/جاهزية|استقرار|أداء|حماية/.test(trimmed)) {
-        s = `${trimmed}، وضبط صلاحيات الوصول والتحقق من استقرار الخدمات التشغيلية ومؤشرات استهلاك الموارد.`;
-      }
-    } else if (/دوكر|حاوي|docker|compose|container/i.test(trimmed)) {
-      if (!/عزل|استقرار|تشغيل/.test(trimmed)) {
-        s = `${trimmed}، وبناء بيئة الحاويات المعزولة واختبار استقرار الخدمات المشتركة وسجلات التشغيل.`;
-      }
-    } else if (/قواعد بيانات|قاعدة بيانات|داتابيز|postgres|mysql|database/i.test(trimmed)) {
-      if (!/سلامة|نسخ|استعلام/.test(trimmed)) {
-        s = `${trimmed}، ومراجعة العلاقات والتحقق من سلامة البيانات وخطة النسخ الاحتياطي الدوري.`;
-      }
-    } else if (/أمن|حماي|ثغر|جدار ناري|firewall|security/i.test(trimmed)) {
-      if (!/سياسات|ضوابط|حماية/.test(trimmed)) {
-        s = `${trimmed}، وتطبيق الضوابط الأمنية المعتمدة لتقليل المخاطر السيبرانية وحماية الأنظمة.`;
-      }
-    } else if (/دعم|تذاكر|itil|مستخدم|ticket|support/i.test(trimmed)) {
-      if (!/معالجة|مستوى الخدمة/.test(trimmed)) {
-        s = `${trimmed}، وتصنيف البلاغات التقنية ومعالجة الأعطال الطارئة وفق اتفاقيات مستوى الخدمة (SLA).`;
-      }
-    } else if (/توثيق|تقرير|دليل|sop|documentation/i.test(trimmed)) {
-      if (!/اعتماد|معايير/.test(trimmed)) {
-        s = `${trimmed}، وإعداد أدلة التشغيل القياسية وحفظ الوثائق في قاعدة المعرفة الداخلية للقسم.`;
-      }
+  for (const [re, rep] of techMap) {
+    // Only replace if the expansion isn't already there
+    if (!s.includes(rep)) {
+      s = s.replace(re, rep);
     }
   }
 
-  s = s.trim();
-  if (s && !/[.!?؟]$/.test(s)) {
-    s += '.';
+  // 4. Transform informal diary phrases into formal institutional engineering actions
+  const engineeringTransitions: Array<[RegExp, string]> = [
+    [/(?<![\u0600-\u06FF])بدأت فترة التدريب في الساعة ([\d:]+)\s*(صباحاً|مساءً)?\s*بالتعرف على المهندس ([^\n،.]+)/gu, 'مباشرة المهام الميدانية في تمام الساعة $1 $2 برفقة المهندس $3، والبدء في تنفيذ الأنشطة التالية:'],
+    [/(?<![\u0600-\u06FF])بدأت فترة التدريب بالتعرف على(?![\u0600-\u06FF])/gu, 'انطلاق الأعمال التشغيلية الميدانية والبدء في تنفيذ'],
+    [/(?<![\u0600-\u06FF])تم خلال الفترة التعرف على(?![\u0600-\u06FF])/gu, 'دراسة وتحليل'],
+    [/(?<![\u0600-\u06FF])تم الانتقال إلى ([^\n،.]+)\s*مع المهندس ([^\n،.]+)/gu, 'الانضمام الميداني إلى $1 تحت إشراف المهندس $2 لمباشرة الأعمال الفنية'],
+    [/(?<![\u0600-\u06FF])تم أيضاً توضيح موقع ([^\n،.]+)\s*ودوره/gu, 'فحص وتحليل منظومة $1 وبيان دورها التشغيلي'],
+    [/(?<![\u0600-\u06FF])تم التعرف على ارتباطه بعملية(?![\u0600-\u06FF])/gu, 'التحقق من التكامل الفني مع إجراءات'],
+    [/(?<![\u0600-\u06FF])التعرف بشكل أكبر على(?![\u0600-\u06FF])/gu, 'المشاركة العملية والميدانية في أعمال'],
+    [/(?<![\u0600-\u06FF])تم التعامل مع إحدى التذاكر(?![\u0600-\u06FF])/gu, 'معالجة وتصنيف بلاغات الأعطال الفنية وتطبيق إجراءات الحل'],
+    [/(?<![\u0600-\u06FF])تم التعرف على بعض الأدوات والمكونات المستخدمة في ([^\n،.]+)\s*ومن أمثلتها:?/gu, 'المعاينة والتحقق العملي من المكونات والأدوات المستخدمة في $1، والتي شملت:'],
+    [/(?<![\u0600-\u06FF])اليوم قمت بالعمل على(?![\u0600-\u06FF])/gu, 'إنجاز وتنفيذ المهام التشغيلية لـ'],
+    [/(?<![\u0600-\u06FF])اليوم قمت بـ(?![\u0600-\u06FF])/gu, 'تنفيذ وإنجاز'],
+    [/(?<![\u0600-\u06FF])قمت بالعمل على(?![\u0600-\u06FF])/gu, 'تنفيذ المهام التقنية لـ'],
+    [/(?<![\u0600-\u06FF])قمت بعمل(?![\u0600-\u06FF])/gu, 'تنفيذ وتطبيق'],
+    [/(?<![\u0600-\u06FF])سويت(?![\u0600-\u06FF])/gu, 'تم تنفيذ وتكوين'],
+    [/(?<![\u0600-\u06FF])سوينا(?![\u0600-\u06FF])/gu, 'تم تنفيذ وإنجاز'],
+    [/(?<![\u0600-\u06FF])عملت على(?![\u0600-\u06FF])/gu, 'مباشرة ومتابعة'],
+    [/(?<![\u0600-\u06FF])اشتغلت على(?![\u0600-\u06FF])/gu, 'إدارة وتنفيذ مهام'],
+    [/(?<![\u0600-\u06FF])حضرت اجتماع(?![\u0600-\u06FF])/gu, 'المشاركة الفعالة في جلسة التنسيق والعمل الفني'],
+    [/(?<![\u0600-\u06FF])فهمت(?![\u0600-\u06FF])/gu, 'استيعاب وتطبيق المعايير الخاصة بـ'],
+    [/(?<![\u0600-\u06FF])تعلمت كيف(?![\u0600-\u06FF])/gu, 'اكتساب المهارة الإجرائية في'],
+    [/(?<![\u0600-\u06FF])صلحت المشكلة(?![\u0600-\u06FF])/gu, 'استكشاف الخلل الفني وتشخيصه ومعالجته بنجاح'],
+    [/(?<![\u0600-\u06FF])حليت المشكلة(?![\u0600-\u06FF])/gu, 'تطبيق الحل الهندسي الملائم واستعادة الخدمة'],
+    [/(?<![\u0600-\u06FF])شفت(?![\u0600-\u06FF])/gu, 'معاينة وفحص'],
+    [/(?<![\u0600-\u06FF])شيكت على(?![\u0600-\u06FF])/gu, 'التدقيق والتحقق من كفاءة'],
+    [/(?<![\u0600-\u06FF])راقبت(?![\u0600-\u06FF])/gu, 'رصد وتحليل مؤشرات الأداء الخاصة بـ'],
+    [/(?<![\u0600-\u06FF])جربت(?![\u0600-\u06FF])/gu, 'إجراء الاختبارات والتحقق التشغيلي من']
+  ];
+
+  for (const [re, rep] of engineeringTransitions) {
+    s = s.replace(re, rep);
   }
 
-  return s;
+  // 5. Structure into elegant procedural sections
+  const lines = s.split('\n').map(l => l.trim()).filter(Boolean);
+  const formattedSections: string[] = [];
+  let inBulletList = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Check if line is a bullet item
+    if (line.startsWith('•') || line.startsWith('-')) {
+      const cleanBullet = line.replace(/^[•\-]\s*/, '').trim();
+      formattedSections.push(`• ${cleanBullet}`);
+      inBulletList = true;
+      continue;
+    }
+
+    // Check if line is a subsection header (e.g., "بعد الساعة 02:00 ظهراً : قسم ...")
+    if (/^(في تمام الساعة|بعد الساعة|الساعة|قسم|فريق|مرحلة|محور|منظومة)\s*[\d:]*.*:?$/i.test(line) && line.length < 80) {
+      if (inBulletList) {
+        formattedSections.push('');
+        inBulletList = false;
+      }
+      const title = line.replace(/:$/, '').trim();
+      formattedSections.push(`\n**${title}:**`);
+      continue;
+    }
+
+    // Normal narrative line
+    if (inBulletList) {
+      formattedSections.push('');
+      inBulletList = false;
+    }
+
+    formattedSections.push(line);
+  }
+
+  let result = formattedSections.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+
+  // Ensure trailing punctuation
+  if (result && !/[.!?؟•]$/.test(result)) {
+    result += '.';
+  }
+
+  return result;
 }
 
 /**
- * Executive Academic Summarizer
+ * Intelligent Academic Executive Summarizer
+ * Extracts operational scope, key milestones, and tools without repetitive clichés.
  */
 function summarizeText(text: string): string {
-  const sentences = text
-    .split(/(?<=[.!?؟\n])\s+/)
-    .map(s => s.trim())
-    .filter(s => s.length > 0);
+  if (!text || !text.trim()) return '';
 
-  if (sentences.length <= 1) {
-    const s = sentences[0] || text;
-    const cleaned = s
-      .replace(/^(اليوم|في هذا اليوم|خلال اليوم)\s*/gu, '')
-      .replace(/^(قمت بالعمل على|قمت بعمل|قمت بـ|عملت على|اشتغلت على|سويت)\s*/gu, '')
-      .replace(/[.!?؟]$/, '');
-    return `موجز الإنجاز: إتمام وتنفيذ ${cleaned}، والتحقق العملي من استقرار الأنظمة وجودة الأداء التشغيلي.`;
+  const clean = text.replace(/^[ \t]*[-_=]{3,}[ \t]*$/gm, '').trim();
+
+  // 1. Extract technical domains
+  const domains: string[] = [];
+  if (/FTTH|ألياف|fiber|ONT|OLT|ODN|ODB/i.test(clean)) domains.push('شبكات الألياف الضوئية (FTTH)');
+  if (/Access|نفاذ|VLAN|سويتش|switch|راوتر|router/i.test(clean)) domains.push('هندسة شبكات النفاذ (Access Networks)');
+  if (/Alarm|إنذار|حرارة|رطوبة|تذكرة|Trouble|SLA/i.test(clean)) domains.push('إدارة إنذارات الشبكة وبلاغات الأعطال');
+  if (/AAA|Authentication|توثيق|مشترك|رسوم/i.test(clean)) domains.push('خوادم التوثيق وإدارة المشتركين (AAA)');
+  if (/5G|جيل خامس|لاسلكي|تغطية/i.test(clean)) domains.push('شبكات الجيل الخامس (5G)');
+  if (/أمن|security|Red Team|Blue Team|ثغر|firewall/i.test(clean)) domains.push('الأمن السيبراني وتقييم المخاطر');
+  if (/سيرفر|خادم|لينكس|linux|windows|vmware|docker/i.test(clean)) domains.push('إدارة البنية التحتية والأنظمة');
+
+  // 2. Extract actionable engineering procedures
+  const procedures: string[] = [];
+  if (/Alarms?|إنذار|حرارة|رطوبة/i.test(clean)) {
+    procedures.push('رصد مؤشرات الإنذارات الحرارية والبيئية وتطبيق معايير تصعيد تذاكر الصيانة (Trouble Tickets)');
+  }
+  if (/Access|صلاحيات|أبواب/i.test(clean)) {
+    procedures.push('متابعة إجراءات التصريح والدخول للمواقع الفنية والتحقق من الجاهزية التشغيلية');
+  }
+  if (/FTTH|ONT|OLT|ODN/i.test(clean)) {
+    procedures.push('المعاينة الميدانية لمكونات التراسل الضوئي (ONT, OLT, ODN) وتمديدات كوابل الألياف');
+  }
+  if (/AAA|Authentication|خدمة/i.test(clean)) {
+    procedures.push('تدقيق ارتباط خوادم AAA بعمليات مصادقة المستخدمين ومطابقة صلاحيات الخدمة');
+  }
+  if (/5G|Configurations|Patching/i.test(clean)) {
+    procedures.push('فحص أوضاع تغطية 5G وإجراء ضبط التكوينات وأعمال الربط التبادلي (Patching)');
+  }
+  if (/Red Team|Blue Team/i.test(clean)) {
+    procedures.push('التعرف على المفاهيم الأساسية لفرق الدفاع والهجوم السيبراني وتأمين الأنظمة');
   }
 
-  const keySentences = sentences.filter(s =>
-    /\d+|تنفيذ|تطوير|إنجاز|شبكة|نظام|تحليل|مشروع|اجتماع|تدريب|حل|إعداد|اختبار|أمن|خادم/gu.test(s)
-  );
+  // 3. Extract tool acronyms
+  const tools: string[] = [];
+  const matches = clean.match(/\b(ONT|OLT|ODN|ODB|UTP|AAA|FTTH|5G|SLA|VLAN|Trouble Ticket)\b/gi) || [];
+  const uniqueTools = Array.from(new Set(matches.map(m => m.toUpperCase())));
 
-  const selected = keySentences.length > 0 ? keySentences.slice(0, 3) : sentences.slice(0, 2);
-  return `موجز الإنجاز التنفيذي:\n• ` + selected.map(s => s.replace(/[.!?؟]$/, '')).join('.\n• ') + '.';
+  // Build authentic multi-dimensional summary
+  const summaryLines: string[] = ['موجز النشاط والإنجاز الميداني:'];
+
+  if (domains.length > 0) {
+    summaryLines.push(`• النطاق التشغيلي: ${domains.slice(0, 3).join('، ')}.`);
+  }
+
+  if (procedures.length > 0) {
+    summaryLines.push(`• أبرز المهام المنفذة:\n  - ${procedures.join('\n  - ')}.`);
+  } else {
+    // Fallback if no specific pattern matched: pick first 2 meaningful sentences
+    const sentences = clean.split(/[.\n]/).map(s => s.trim()).filter(s => s.length > 20);
+    if (sentences.length > 0) {
+      summaryLines.push(`• المهام المنفذة: ${sentences.slice(0, 2).join('، ')}.`);
+    }
+  }
+
+  if (uniqueTools.length > 0) {
+    summaryLines.push(`• التقنيات والأدوات الموظفة: ${uniqueTools.join(', ')}.`);
+  }
+
+  return summaryLines.join('\n');
 }
 
 /**

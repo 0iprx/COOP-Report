@@ -57,6 +57,11 @@ router.get('/weekly', async (req: AuthenticatedRequest, res: Response): Promise<
           lte: weekEnd
         }
       },
+      include: {
+        _count: {
+          select: { revisions: true }
+        }
+      },
       orderBy: { entryDate: 'asc' }
     });
 

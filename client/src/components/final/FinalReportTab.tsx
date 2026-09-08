@@ -520,6 +520,19 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
     saveProfileMutation.mutate(profileData);
   };
 
+  // Auto-snapshot when user finishes typing a section (>2.5s of typing inactivity)
+  useEffect(() => {
+    if (!profileData.studentName && !profileData.introText) return;
+    const snapHandler = setTimeout(() => {
+      const currentSnap = versions[currentVersionIndex];
+      if (currentSnap && JSON.stringify(currentSnap.data) !== JSON.stringify(profileData)) {
+        recordVersion('حفظ تلقائي أثناء التحرير', profileData);
+      }
+    }, 2500);
+
+    return () => clearTimeout(snapHandler);
+  }, [profileData, currentVersionIndex, versions]);
+
   // Time Travel: Undo to previous snapshot
   const handleUndo = () => {
     if (currentVersionIndex > 0) {
@@ -527,7 +540,9 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
       const target = versions[prevIdx];
       setCurrentVersionIndex(prevIdx);
       setProfileData({ ...target.data });
-      setSaveToast(`تم التراجع إلى النسخة السابقة: (${target.label})`);
+      localStorage.setItem(PROFILE_DRAFT_KEY, JSON.stringify(target.data));
+      saveProfileMutation.mutate(target.data);
+      setSaveToast(`تم التراجع إلى النسخة السابقة: (${target.label}) وحفظها بنجاح`);
       setTimeout(() => setSaveToast(''), 3000);
     }
   };
@@ -539,7 +554,9 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
       const target = versions[nextIdx];
       setCurrentVersionIndex(nextIdx);
       setProfileData({ ...target.data });
-      setSaveToast(`تم التقدم إلى النسخة اللاحقة: (${target.label})`);
+      localStorage.setItem(PROFILE_DRAFT_KEY, JSON.stringify(target.data));
+      saveProfileMutation.mutate(target.data);
+      setSaveToast(`تم التقدم إلى النسخة اللاحقة: (${target.label}) وحفظها بنجاح`);
       setTimeout(() => setSaveToast(''), 3000);
     }
   };
@@ -548,8 +565,10 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
   const handleRestoreVersion = (ver: ReportVersionSnapshot, idx: number) => {
     setCurrentVersionIndex(idx);
     setProfileData({ ...ver.data });
+    localStorage.setItem(PROFILE_DRAFT_KEY, JSON.stringify(ver.data));
+    saveProfileMutation.mutate(ver.data);
     setVersionsModalOpen(false);
-    setSaveToast(`تم استعادة النسخة: (${ver.label})`);
+    setSaveToast(`تم استعادة النسخة: (${ver.label}) وحفظها في قاعدة البيانات بنجاح`);
     setTimeout(() => setSaveToast(''), 3500);
   };
 

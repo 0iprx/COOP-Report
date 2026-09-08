@@ -136,4 +136,78 @@ router.delete('/:id', async (req: AuthenticatedRequest, res: Response): Promise<
   }
 });
 
+// GET /api/entries/:id/revisions (Fetch previous versions for this entry)
+router.get('/:id/revisions', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const id = Number(req.params.id);
+    const existing = await prisma.entry.findUnique({ where: { id } });
+    if (!existing || existing.userId !== req.user!.userId) {
+      res.status(404).json({ error: 'الإدخال غير موجود أو لا تملك صلاحية الوصول إليه' });
+      return;
+    }
+
+    const revisions = await prisma.entryRevision.findMany({
+      where: { entryId: id },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.json({ revisions });
+  } catch (err) {
+    logger.error({ err }, 'Error fetching entry revisions');
+    res.status(500).json({ error: 'تعذر جلب سجل التعديلات' });
+  }
+});
+
+// POST /api/entries/:id/revisions/:revId/rollback (Rollback to a specific past version)
+router.post('/:id/revisions/:revId/rollback', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const id = Number(req.params.id);
+    const revId = Number(req.params.revId);
+
+    const existing = await prisma.entry.findUnique({ where: { id } });
+    if (!existing || existing.userId !== req.user!.userId) {
+      res.status(404).json({ error: 'الإدخال غير موجود أو لا تملك صلاحية تعديله' });
+      return;
+    }
+
+    const targetRevision = await prisma.entryRevision.findFirst({
+      where: { id: revId, entryId: id }
+    });
+
+    if (!targetRevision) {
+      res.status(404).json({ error: 'النسخة التاريخية المطلوبة غير موجودة' });
+      return;
+    }
+
+    // Save current entry state as a new revision before rolling back (so rollback itself can be undone)
+    await prisma.entryRevision.create({
+      data: {
+        entryId: existing.id,
+        title: existing.title,
+        category: existing.category,
+        description: existing.description,
+        timeFrom: existing.timeFrom,
+        timeTo: existing.timeTo
+      }
+    });
+
+    // Update entry with target revision content
+    const updated = await prisma.entry.update({
+      where: { id },
+      data: {
+        title: targetRevision.title,
+        category: targetRevision.category,
+        description: targetRevision.description,
+        timeFrom: targetRevision.timeFrom,
+        timeTo: targetRevision.timeTo
+      }
+    });
+
+    res.json({ message: 'تم التراجع واستعادة النسخة السابقة بنجاح', entry: updated });
+  } catch (err) {
+    logger.error({ err }, 'Error rolling back entry revision');
+    res.status(500).json({ error: 'تعذر التراجع عن التعديل واستعادة النسخة' });
+  }
+});
+
 export default router;

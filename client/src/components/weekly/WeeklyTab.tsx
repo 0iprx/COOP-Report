@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
 import { FinalReportData, EntryDTO, formatDateArabic, formatDateEnglish, calculateHoursBetween } from '@coop/shared';
@@ -23,7 +23,9 @@ import {
   Languages,
   FileText,
   CheckCheck,
-  Printer
+  Printer,
+  RotateCcw,
+  History
 } from 'lucide-react';
 import { DiffModal } from '../common/DiffModal';
 
@@ -52,6 +54,9 @@ export const WeeklyTab: React.FC = () => {
   const [aiPolishing, setAiPolishing] = useState<boolean>(false);
   const [saveToast, setSaveToast] = useState<string>('');
   const [errorToast, setErrorToast] = useState<string>('');
+  const [revisionsModalOpen, setRevisionsModalOpen] = useState<boolean>(false);
+  const [activeEntryForRevisions, setActiveEntryForRevisions] = useState<any>(null);
+  const [entryRevisionsList, setEntryRevisionsList] = useState<any[]>([]);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -294,6 +299,102 @@ export const WeeklyTab: React.FC = () => {
     }
   };
 
+  // Rollback revision mutation
+  const rollbackMutation = useMutation({
+    mutationFn: async ({ entryId, revId }: { entryId: number; revId: number }) => {
+      const res = await api.post(`/entries/${entryId}/revisions/${revId}/rollback`);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['weekly', selectedWeek] });
+      queryClient.invalidateQueries({ queryKey: ['finalReport'] });
+      queryClient.invalidateQueries({ queryKey: ['entries'] });
+      setRevisionsModalOpen(false);
+      setSaveToast(t('تم التراجع عن التعديل واستعادة النسخة السابقة بنجاح!', 'Rolled back to previous revision!'));
+      setTimeout(() => setSaveToast(''), 3000);
+    },
+    onError: () => {
+      setErrorToast(t('تعذر التراجع عن التعديل واستعادة النسخة', 'Failed to roll back'));
+      setTimeout(() => setErrorToast(''), 3000);
+    }
+  });
+
+  const handleOpenRevisions = async (entry: any) => {
+    setActiveEntryForRevisions(entry);
+    setRevisionsModalOpen(true);
+    try {
+      const res = await api.get(`/entries/${entry.id}/revisions`);
+      setEntryRevisionsList(res.data.revisions || []);
+    } catch {
+      setErrorToast(t('تعذر تحميل سجل التعديلات', 'Failed to load revisions'));
+      setTimeout(() => setErrorToast(''), 3000);
+    }
+  };
+
+  // Helper to render procedural narrative with structured bullets and headers
+  const renderProceduralNarrative = (text: string) => {
+    if (!text) return null;
+    const clean = text.replace(/^[ \t]*[-_=]{3,}[ \t]*$/gm, '\n');
+    const lines = clean.split('\n');
+    const elements: React.ReactNode[] = [];
+    let currentBullets: string[] = [];
+
+    const flushBullets = () => {
+      if (currentBullets.length > 0) {
+        elements.push(
+          <ul key={`bullets-${elements.length}`} className="my-2 space-y-1.5 list-none pr-1">
+            {currentBullets.map((b, i) => (
+              <li key={i} className="flex items-start gap-2 text-xs sm:text-sm leading-relaxed text-ink">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#C0102A] mt-2 shrink-0"></span>
+                <span className="flex-1">{b}</span>
+              </li>
+            ))}
+          </ul>
+        );
+        currentBullets = [];
+      }
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const trimmed = lines[i].trim();
+      if (!trimmed) {
+        flushBullets();
+        continue;
+      }
+
+      if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*') || /\*\s*$/.test(trimmed)) {
+        const cleanItem = trimmed.replace(/^[•\-\*]\s*|\s*\*$/g, '').trim();
+        currentBullets.push(cleanItem);
+        continue;
+      }
+
+      if (
+        (trimmed.startsWith('**') && trimmed.endsWith('**')) ||
+        /^(في تمام الساعة|بعد الساعة|الساعة|قسم|فريق|مرحلة|منظومة|موجز)\s*[\d:]*.*:?$/i.test(trimmed)
+      ) {
+        flushBullets();
+        const title = trimmed.replace(/^\*\*|\*\*$/g, '').replace(/:$/, '').trim();
+        elements.push(
+          <h5 key={`heading-${elements.length}`} className="font-extrabold text-xs sm:text-sm text-ink pt-2.5 pb-1 border-b border-line/40 flex items-center gap-1.5">
+            <span className="w-1 h-3.5 bg-accent rounded-full shrink-0"></span>
+            <span>{title}</span>
+          </h5>
+        );
+        continue;
+      }
+
+      flushBullets();
+      elements.push(
+        <p key={`p-${elements.length}`} className="text-xs sm:text-sm leading-relaxed text-ink my-1">
+          {trimmed}
+        </p>
+      );
+    }
+
+    flushBullets();
+    return <div className="space-y-0.5 text-start">{elements}</div>;
+  };
+
   // AI Enhancement State for Day Editing Modal
   const [diffModalOpen, setDiffModalOpen] = useState<boolean>(false);
   const [diffTitle, setDiffTitle] = useState<string>('');
@@ -499,9 +600,9 @@ export const WeeklyTab: React.FC = () => {
         {isLoading ? (
           <div className="text-center py-12 text-sub text-sm">{t('جارٍ تحميل تقرير الأسبوع...', 'Loading weekly log...')}</div>
         ) : (
-          <div className="space-y-6">
+          <div id="weekly-paper-view" className="printable-a4-sheet space-y-6">
             {/* Formal Printable Academic Weekly Header (Visible on print) */}
-            <div className="hidden print:block pb-5 mb-5 border-b-2 border-line text-center space-y-3">
+            <div className="hidden print:block pb-5 mb-5 border-b-2 border-line text-center space-y-3 break-inside-avoid">
               <div className="flex items-center justify-between text-xs font-bold text-sub">
                 <span>{isAr ? 'المملكة العربية السعودية' : 'Kingdom of Saudi Arabia'}</span>
                 <span>{finalReportData?.profile?.trainingUnit || (isAr ? 'الوحدة التدريبية / الكلية' : 'Academic Institution')}</span>
@@ -516,7 +617,7 @@ export const WeeklyTab: React.FC = () => {
                     : `Training Period: From ${formatDateEnglish(weekReport.weekStart)} to ${formatDateEnglish(weekReport.weekEnd)}`
                   : '—'}
               </div>
-              <div className="p-4 bg-bg rounded-xl border border-line text-xs grid grid-cols-2 sm:grid-cols-3 gap-3 text-start">
+              <div className="p-4 bg-bg rounded-xl border border-line text-xs grid grid-cols-2 sm:grid-cols-3 gap-3 text-start print-grid-3">
                 <div><span className="font-bold text-sub">{isAr ? 'اسم المتدرب:' : 'Trainee Name:'}</span> <span className="font-extrabold text-ink">{finalReportData?.profile?.studentName || '—'}</span></div>
                 <div><span className="font-bold text-sub">{isAr ? 'الرقم التدريبي:' : 'Training ID:'}</span> <span className="font-extrabold text-ink">{finalReportData?.profile?.trainingNumber || '—'}</span></div>
                 <div><span className="font-bold text-sub">{isAr ? 'جهة التدريب:' : 'Host Org:'}</span> <span className="font-extrabold text-ink">{entityName}</span></div>
@@ -525,6 +626,58 @@ export const WeeklyTab: React.FC = () => {
                 <div><span className="font-bold text-sub">{isAr ? 'إجمالي الساعات الفعلية:' : 'Total Hours:'}</span> <span className="font-extrabold text-ink">{weekReport?.totalHours || 0} {isAr ? 'ساعة' : 'hrs'}</span></div>
               </div>
             </div>
+
+            {/* Executive Weekly Tasks Table Matrix (Visible in both Screen and Print) */}
+            {weekReport && weekReport.entries && weekReport.entries.length > 0 && (
+              <div className="overflow-x-auto border border-line rounded-xl my-4 bg-card print:border-line print:bg-white break-inside-avoid shadow-xs">
+                <div className="bg-bg px-4 py-2.5 border-b border-line flex items-center justify-between text-xs font-black text-ink">
+                  <span>{isAr ? 'جدول حصر وتوثيق الأنشطة والمهام الأسبوعية المعتمد' : 'Official Weekly Tasks Executive Matrix'}</span>
+                  <span className="text-[11px] font-bold text-accent">
+                    {weekReport.totalDays} {isAr ? 'أيام عمل' : 'days'} &middot; {weekReport.totalHours} {isAr ? 'ساعة فعلية' : 'hours'}
+                  </span>
+                </div>
+                <table className="w-full text-start text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-bg/60 border-b border-line text-ink font-extrabold text-[11px]">
+                      <th className="p-2.5 text-start w-28">{isAr ? 'اليوم والتاريخ' : 'Day & Date'}</th>
+                      <th className="p-2.5 text-center w-24">{isAr ? 'التوقيت' : 'Time'}</th>
+                      <th className="p-2.5 text-center w-16">{isAr ? 'الساعات' : 'Hours'}</th>
+                      <th className="p-2.5 text-start w-28">{isAr ? 'التصنيف الفني' : 'Domain'}</th>
+                      <th className="p-2.5 text-start">{isAr ? 'النشاط والمهمة التشغيلية الميدانية' : 'Operational Scope & Task'}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-line/70">
+                    {weekReport.entries.map((entry: EntryDTO, idx: number) => {
+                      const hours = calculateHoursBetween(entry.timeFrom || '08:00', entry.timeTo || '16:00');
+                      return (
+                        <tr key={entry.id} className="hover:bg-bg/30 transition-colors">
+                          <td className="p-2.5 font-extrabold text-ink whitespace-nowrap">
+                            <span className="text-accent ml-1 font-black">{isAr ? `اليوم ${idx + 1}` : `D${idx + 1}`}</span>
+                            <span className="text-sub font-semibold text-[10.5px]">
+                              ({isAr ? formatDateArabic(entry.entryDate) : formatDateEnglish(entry.entryDate)})
+                            </span>
+                          </td>
+                          <td className="p-2.5 text-center text-sub font-mono text-[11px] whitespace-nowrap" dir="ltr">
+                            {entry.timeFrom || '08:00'} - {entry.timeTo || '16:00'}
+                          </td>
+                          <td className="p-2.5 text-center font-black text-ink whitespace-nowrap">
+                            {hours} {isAr ? 'س' : 'h'}
+                          </td>
+                          <td className="p-2.5">
+                            <span className="px-2 py-0.5 rounded-md text-[10.5px] font-extrabold bg-[#C0102A]/10 text-[#C0102A] whitespace-nowrap border border-[#C0102A]/20">
+                              {entry.category}
+                            </span>
+                          </td>
+                          <td className="p-2.5 font-bold text-ink leading-snug">
+                            {entry.title}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
             {/* Header info with Next / Previous Week Jumpers */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-bg rounded-xl border border-line no-print">
@@ -656,7 +809,7 @@ export const WeeklyTab: React.FC = () => {
                   return (
                     <div
                       key={entry.id}
-                      className="border border-line rounded-2xl overflow-hidden bg-card shadow-xs hover:shadow-sm transition-all text-start"
+                      className="border border-line rounded-2xl overflow-hidden bg-card shadow-xs hover:shadow-sm transition-all text-start day-card-print break-inside-avoid"
                     >
                       {/* Day Card Header matching the user's uploaded image exactly */}
                       <div className="bg-bg px-4 sm:px-5 py-3 border-b border-line flex flex-wrap items-center justify-between gap-2.5">
@@ -673,7 +826,7 @@ export const WeeklyTab: React.FC = () => {
                           </span>
                         </div>
 
-                        {/* Left: Category Tag, Hours calculation, and Edit/Delete Actions */}
+                        {/* Left: Category Tag, Hours calculation, and Actions */}
                         <div className="flex items-center gap-2.5">
                           <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-[#C0102A]/10 text-[#C0102A] border border-[#C0102A]/20">
                             {entry.category}
@@ -684,6 +837,19 @@ export const WeeklyTab: React.FC = () => {
 
                           {/* Screen Actions (hidden when printing) */}
                           <div className="flex items-center gap-1.5 no-print mr-1">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenRevisions(entry)}
+                              className="p-1.5 rounded-lg bg-card hover:bg-line text-sub hover:text-accent border border-line transition-all shadow-xs relative"
+                              title={t('سجل التعديلات واسترجاع النسخ السابقة', 'Revision History & Rollback')}
+                            >
+                              <RotateCcw className="w-3.5 h-3.5" />
+                              {((entry as any)._count?.revisions ?? 0) > 0 && (
+                                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-accent text-white rounded-full text-[9px] font-extrabold flex items-center justify-center">
+                                  {(entry as any)._count.revisions}
+                                </span>
+                              )}
+                            </button>
                             <button
                               type="button"
                               onClick={() => handleOpenEdit(entry)}
@@ -719,8 +885,8 @@ export const WeeklyTab: React.FC = () => {
                           <div className="text-xs font-black text-sub uppercase tracking-wider mb-1.5">
                             {isAr ? 'السرد الإجرائي ونتائج التنفيذ الهندسي والميداني:' : 'Procedural Narrative & Engineering Results:'}
                           </div>
-                          <div className="text-ink text-xs sm:text-sm leading-loose whitespace-pre-wrap bg-bg/50 p-4 rounded-xl border border-line/60">
-                            {entry.description}
+                          <div className="text-ink text-xs sm:text-sm leading-loose bg-bg/50 p-4 rounded-xl border border-line/60 procedural-narrative-box">
+                            {renderProceduralNarrative(entry.description)}
                           </div>
                         </div>
                       </div>
@@ -743,12 +909,12 @@ export const WeeklyTab: React.FC = () => {
                 </div>
 
                 {/* Formal Supervisory Approval & Stamp Block (For Official Print & Defense) */}
-                <div className="mt-6 border border-line rounded-2xl overflow-hidden bg-card text-start">
+                <div className="mt-6 border border-line rounded-2xl overflow-hidden bg-card text-start break-inside-avoid">
                   <div className="bg-bg px-5 py-3 border-b border-line flex items-center justify-between">
                     <span className="text-xs font-black text-ink">{t('المصادقة والاعتماد الميداني للأسبوع', 'Field Supervisory Weekly Endorsement')}</span>
                     <span className="text-[11px] font-bold text-accent">{entityName}</span>
                   </div>
-                  <div className="p-5 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                  <div className="p-5 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs print-grid-3">
                     <div className="space-y-2 p-3 bg-bg/40 rounded-xl border border-line/60">
                       <div className="font-bold text-sub">{t('توقيع المتدرب:', 'Trainee Signature:')}</div>
                       <div className="font-extrabold text-ink">{finalReportData?.profile?.studentName || '—'}</div>
@@ -981,6 +1147,70 @@ export const WeeklyTab: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Revisions History Modal for Day Cards */}
+      {revisionsModalOpen && activeEntryForRevisions && (
+        <div className="fixed inset-0 bg-ink/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 no-print">
+          <div className="bg-card border border-line rounded-2xl p-6 shadow-2xl max-w-xl w-full max-h-[80vh] flex flex-col overflow-hidden text-start">
+            <div className="flex items-center justify-between pb-4 border-b border-line">
+              <h3 className="text-base font-extrabold text-ink flex items-center gap-2">
+                <History className="w-5 h-5 text-accent" />
+                <span>{t('سجل النسخ والتعديلات المحفوظة لهذا اليوم', 'Revision History for this Day')}</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setRevisionsModalOpen(false)}
+                className="p-1 rounded-lg text-sub hover:text-ink hover:bg-line transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto py-4 flex-1 space-y-3">
+              {!entryRevisionsList?.length ? (
+                <div className="text-center py-8 text-sub text-xs">
+                  {t('لا توجد نسخ سابقة محفوظة لهذا الإدخال. أي تعديل تجريه لاحقاً سيحفظ نسخته السابقة تلقائياً هنا.', 'No past revisions found for this entry. Any new edits will be archived here.')}
+                </div>
+              ) : (
+                entryRevisionsList.map((rev) => (
+                  <div key={rev.id} className="p-3 rounded-xl border border-line bg-bg space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <div>
+                        <span className="font-extrabold text-ink">{rev.title}</span>
+                        <span className="text-[10px] text-muted mr-2">
+                          ({new Date(rev.createdAt).toLocaleDateString(isAr ? 'ar-SA' : 'en-US')} - {new Date(rev.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => rollbackMutation.mutate({ entryId: activeEntryForRevisions.id, revId: rev.id })}
+                        disabled={rollbackMutation.isPending}
+                        className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-accent text-white hover:bg-accent/90 transition-colors flex items-center gap-1 shadow-xs disabled:opacity-50"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        <span>{rollbackMutation.isPending ? t('جارٍ الاسترجاع...', 'Rolling back...') : t('العودة لهذه النسخة', 'Rollback to this version')}</span>
+                      </button>
+                    </div>
+                    <div className="text-[11px] text-sub leading-relaxed bg-card p-2.5 rounded-lg border border-line/50 whitespace-pre-wrap">
+                      {rev.description}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="pt-4 border-t border-line flex justify-end">
+              <button
+                type="button"
+                onClick={() => setRevisionsModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-bg hover:bg-line text-xs font-bold text-ink transition-colors"
+              >
+                {t('إغلاق', 'Close')}
+              </button>
+            </div>
           </div>
         </div>
       )}
