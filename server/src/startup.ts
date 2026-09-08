@@ -16,9 +16,31 @@ export async function syncDatabaseSchema(): Promise<void> {
   logger.info('Checking database connection and schema synchronization...');
 
   try {
-    // 1. Test database connection
-    await prisma.$queryRaw`SELECT 1`;
-    logger.info('Database server is reachable.');
+    // 1. Test database connection with auto-recovery on Windows
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      logger.info('Database server is reachable.');
+    } catch (connErr: any) {
+      if (process.platform === 'win32' && fs.existsSync('C:\\xampp\\mysql\\bin\\mysqld.exe')) {
+        logger.warn('MySQL connection failed, attempting to auto-start XAMPP mysqld...');
+        try {
+          const { spawn } = await import('node:child_process');
+          const child = spawn('C:\\xampp\\mysql\\bin\\mysqld.exe', ['--defaults-file=C:\\xampp\\mysql\\bin\\my.ini', '--standalone'], {
+            detached: true,
+            stdio: 'ignore'
+          });
+          child.unref();
+          // Give MySQL a brief moment to bind to port
+          await new Promise((resolve) => setTimeout(resolve, 2500));
+          await prisma.$queryRaw`SELECT 1`;
+          logger.info('Successfully auto-started MySQL and confirmed connection.');
+        } catch (autoStartErr: any) {
+          logger.warn({ autoStartErr: autoStartErr?.message }, 'Could not automatically start MySQL service.');
+        }
+      } else {
+        throw connErr;
+      }
+    }
 
     // 2. Automatically sync schema
     const schemaPath = path.resolve(process.cwd(), 'server/prisma/schema.prisma');

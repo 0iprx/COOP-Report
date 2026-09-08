@@ -67,6 +67,22 @@ router.post('/', async (req: AuthenticatedRequest, res: Response): Promise<void>
       }
     });
 
+    // Auto-archive baseline creation revision so it's always retrievable
+    try {
+      await prisma.entryRevision.create({
+        data: {
+          entryId: entry.id,
+          title: entry.title,
+          category: entry.category,
+          description: entry.description,
+          timeFrom: entry.timeFrom,
+          timeTo: entry.timeTo
+        }
+      });
+    } catch (revErr) {
+      logger.warn({ revErr }, 'Non-fatal: failed to write initial baseline revision');
+    }
+
     res.status(201).json({ message: 'تم حفظ الإدخال بنجاح', entry });
   } catch (err) {
     logger.error({ err }, 'Error creating entry');
@@ -146,12 +162,55 @@ router.get('/:id/revisions', async (req: AuthenticatedRequest, res: Response): P
       return;
     }
 
-    const revisions = await prisma.entryRevision.findMany({
+    let revisions = await prisma.entryRevision.findMany({
       where: { entryId: id },
       orderBy: { createdAt: 'desc' }
     });
 
-    res.json({ revisions });
+    // If no revisions exist yet (e.g. entry created prior to revision tracking),
+    // archive current state as the initial baseline version so the user NEVER loses any data!
+    if (revisions.length === 0) {
+      try {
+        const baseline = await prisma.entryRevision.create({
+          data: {
+            entryId: existing.id,
+            title: existing.title,
+            category: existing.category,
+            description: existing.description,
+            timeFrom: existing.timeFrom,
+            timeTo: existing.timeTo,
+            createdAt: existing.createdAt
+          }
+        });
+        revisions = [baseline];
+      } catch {
+        // Fallback in-memory baseline representation
+        revisions = [{
+          id: 0,
+          entryId: existing.id,
+          title: existing.title,
+          category: existing.category,
+          description: existing.description,
+          timeFrom: existing.timeFrom,
+          timeTo: existing.timeTo,
+          createdAt: existing.createdAt
+        } as any];
+      }
+    }
+
+    res.json({
+      current: {
+        id: existing.id,
+        title: existing.title,
+        category: existing.category,
+        description: existing.description,
+        timeFrom: existing.timeFrom,
+        timeTo: existing.timeTo,
+        entryDate: existing.entryDate,
+        createdAt: existing.createdAt
+      },
+      revisions
+    });
   } catch (err) {
     logger.error({ err }, 'Error fetching entry revisions');
     res.status(500).json({ error: 'تعذر جلب سجل التعديلات' });

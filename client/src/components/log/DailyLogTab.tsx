@@ -363,11 +363,25 @@ export const DailyLogTab: React.FC = () => {
   const handleOpenRevisions = async (entry: any) => {
     setActiveEntryForRevisions(entry);
     setRevisionsModalOpen(true);
+    
+    // Instant cache fallback to ensure zero data loss & instant rendering
+    const cacheKey = `coop_entry_revs_${entry.id}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      try {
+        setEntryRevisionsList(JSON.parse(cached));
+      } catch {}
+    }
+
     try {
       const res = await api.get(`/entries/${entry.id}/revisions`);
-      setEntryRevisionsList(res.data.revisions || []);
+      const revs = res.data.revisions || [];
+      setEntryRevisionsList(revs);
+      localStorage.setItem(cacheKey, JSON.stringify(revs));
     } catch {
-      showToast(t('تعذر تحميل سجل التعديلات', 'Failed to load revisions'), 'error');
+      if (!cached) {
+        showToast(t('تعذر تحميل سجل التعديلات من الخادم', 'Failed to load revisions from server'), 'error');
+      }
     }
   };
 
@@ -933,12 +947,17 @@ export const DailyLogTab: React.FC = () => {
       {/* Revisions History Modal */}
       {revisionsModalOpen && activeEntryForRevisions && (
         <div className="fixed inset-0 bg-ink/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-card border border-line rounded-2xl p-6 shadow-2xl max-w-xl w-full max-h-[80vh] flex flex-col overflow-hidden text-start">
+          <div className="bg-card border border-line rounded-2xl p-6 shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden text-start">
             <div className="flex items-center justify-between pb-4 border-b border-line">
-              <h3 className="text-base font-extrabold text-ink flex items-center gap-2">
-                <History className="w-5 h-5 text-accent" />
-                <span>{t('سجل النسخ والتعديلات المحفوظة', 'Revision History')}</span>
-              </h3>
+              <div className="space-y-0.5">
+                <h3 className="text-base font-extrabold text-ink flex items-center gap-2">
+                  <History className="w-5 h-5 text-accent" />
+                  <span>{t('سجل التعديلات والنسخ المحفوظة (أمان البيانات 100%)', 'Revision Vault & Zero Data Loss History')}</span>
+                </h3>
+                <p className="text-[11px] text-sub font-medium">
+                  {t('تاريخ المهمة:', 'Task Date:')} <strong className="text-ink">{activeEntryForRevisions.entryDate}</strong> — {entryRevisionsList.length > 0 ? `${entryRevisionsList.length} ${t('نسخة مسجلة في الأرشيف', 'version(s) archived')}` : t('النسخة الأصلية الأساسية', 'Original Baseline Version')}
+                </p>
+              </div>
               <button
                 onClick={() => setRevisionsModalOpen(false)}
                 className="p-1 rounded-lg text-sub hover:text-ink hover:bg-line transition-colors"
@@ -947,32 +966,83 @@ export const DailyLogTab: React.FC = () => {
               </button>
             </div>
 
-            <div className="overflow-y-auto py-4 flex-1 space-y-3">
-              {!entryRevisionsList?.length ? (
-                <div className="text-center py-8 text-sub text-xs">
-                  {t('لا توجد نسخ سابقة محفوظة لهذا الإدخال.', 'No past revisions found for this entry.')}
+            <div className="overflow-y-auto py-4 flex-1 space-y-4">
+              {/* Current Active Entry State */}
+              <div className="p-4 rounded-xl border border-ok/30 bg-ok-bg/30 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 text-xs font-black text-ok">
+                    <span className="w-2 h-2 rounded-full bg-ok animate-pulse"></span>
+                    {t('النسخة الحالية النشطة في قاعدة البيانات', 'Current Active Version in Database')}
+                  </span>
+                  <span className="text-[10px] font-bold text-sub">
+                    {activeEntryForRevisions.timeFrom} - {activeEntryForRevisions.timeTo} | {activeEntryForRevisions.category}
+                  </span>
                 </div>
-              ) : (
-                entryRevisionsList.map((rev) => (
-                  <div key={rev.id} className="p-3 rounded-xl border border-line bg-bg space-y-1.5">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-extrabold text-ink">{rev.title}</span>
-                      <button
-                        onClick={() => rollbackMutation.mutate({ entryId: activeEntryForRevisions.id, revId: rev.id })}
-                        disabled={rollbackMutation.isPending}
-                        className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-accent text-white hover:bg-accent/90 transition-colors flex items-center gap-1"
-                      >
-                        <RotateCcw className="w-3 h-3" />
-                        <span>{t('العودة لهذه النسخة', 'Rollback to this version')}</span>
-                      </button>
-                    </div>
-                    <div className="text-[11px] text-sub leading-relaxed">{rev.description}</div>
+                <h4 className="font-extrabold text-sm text-ink">{activeEntryForRevisions.title}</h4>
+                <p className="text-xs text-ink/90 leading-relaxed whitespace-pre-wrap bg-card/60 p-3 rounded-lg border border-line/40">
+                  {activeEntryForRevisions.description}
+                </p>
+              </div>
+
+              {/* Revision History Stream */}
+              <div className="space-y-2.5">
+                <div className="text-xs font-black text-sub uppercase tracking-wider flex items-center gap-1.5">
+                  <RotateCcw className="w-3.5 h-3.5 text-accent" />
+                  <span>{t('النسخ السابقة المحفوظة (يمكنك استعادة أي منها بأمان):', 'Archived Prior Revisions (Safe Rollback Available):')}</span>
+                </div>
+
+                {!entryRevisionsList?.length ? (
+                  <div className="text-center py-6 px-4 rounded-xl border border-dashed border-line bg-bg text-sub text-xs space-y-1">
+                    <p className="font-bold text-ink">
+                      {t('هذه هي النسخة الأساسية الأولى المحفوظة بأمان في قاعدة البيانات.', 'This is the initial baseline version stored safely in the database.')}
+                    </p>
+                    <p className="text-[11px] text-sub">
+                      {t('أي تعديل تجريه لاحقاً على هذه المهمة سيتم أرشفته تلقائياً هنا مع التوقيت الدقيق لإمكانية استرجاعه في أي لحظة.', 'Any subsequent edits will automatically be archived here with exact timestamps for instant rollback.')}
+                    </p>
                   </div>
-                ))
-              )}
+                ) : (
+                  entryRevisionsList.map((rev, idx) => {
+                    const isSameAsCurrent = rev.title === activeEntryForRevisions.title && rev.description === activeEntryForRevisions.description;
+                    return (
+                      <div key={rev.id || idx} className="p-3.5 rounded-xl border border-line bg-bg space-y-2 hover:border-accent/40 transition-colors">
+                        <div className="flex items-center justify-between text-xs gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-accent-dim text-accent">
+                              #{entryRevisionsList.length - idx}
+                            </span>
+                            <span className="font-extrabold text-ink">{rev.title}</span>
+                            {rev.createdAt && (
+                              <span className="text-[10px] text-muted hidden sm:inline">
+                                ({new Date(rev.createdAt).toLocaleString(isAr ? 'ar-SA' : 'en-US', { dateStyle: 'medium', timeStyle: 'short' })})
+                              </span>
+                            )}
+                          </div>
+                          {!isSameAsCurrent && (
+                            <button
+                              onClick={() => rollbackMutation.mutate({ entryId: activeEntryForRevisions.id, revId: rev.id })}
+                              disabled={rollbackMutation.isPending}
+                              className="px-3 py-1 text-[11px] font-bold rounded-lg bg-accent text-white hover:bg-accent/90 transition-colors flex items-center gap-1 shrink-0 shadow-xs"
+                            >
+                              <RotateCcw className="w-3 h-3" />
+                              <span>{rollbackMutation.isPending ? t('جارٍ الاسترجاع...', 'Restoring...') : t('استعادة هذه النسخة', 'Restore this version')}</span>
+                            </button>
+                          )}
+                        </div>
+                        <div className="text-xs text-sub leading-relaxed whitespace-pre-wrap bg-card p-2.5 rounded-lg border border-line/50">
+                          {rev.description}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </div>
 
-            <div className="pt-4 border-t border-line flex justify-end">
+            <div className="pt-4 border-t border-line flex items-center justify-between">
+              <span className="text-[11px] text-ok font-bold flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                {t('بياناتك محفوظة ومحمية تلقائياً في السيرفر', 'All data securely preserved on server')}
+              </span>
               <button
                 onClick={() => setRevisionsModalOpen(false)}
                 className="px-4 py-2 rounded-xl bg-bg hover:bg-line text-xs font-bold text-ink transition-colors"

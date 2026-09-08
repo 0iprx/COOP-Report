@@ -21,7 +21,10 @@ export function resolveDatabaseUrl(): string {
   }
 
   // Fallback to DATABASE_URL
-  const rawUrl = (process.env.DATABASE_URL || '').trim().replace(/^["']|["']$/g, '');
+  let rawUrl = (process.env.DATABASE_URL || '').trim().replace(/^["']|["']$/g, '');
+  if (rawUrl.includes('@localhost:3306')) {
+    rawUrl = rawUrl.replace('@localhost:3306', '@127.0.0.1:3306');
+  }
   return rawUrl;
 }
 
