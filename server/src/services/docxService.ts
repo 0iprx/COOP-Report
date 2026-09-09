@@ -216,9 +216,9 @@ export async function generateAcademicDocx(reportData: FinalReportData, lang: 'a
           },
           paragraph: {
             spacing: {
-              line: 360, // 1.5 line spacing
-              before: 120,
-              after: 120
+              line: 300, // 1.25 line spacing — more compact, less blank pages
+              before: 80,
+              after: 80
             }
           }
         }
@@ -524,45 +524,54 @@ export async function generateAcademicDocx(reportData: FinalReportData, lang: 'a
             ]
           }),
 
-          // Each week on its own distinct page with individual bookmarks and supervisor sign-off!
-          ...weeks.flatMap((w) => [
-            new Paragraph({
-              pageBreakBefore: true,
-              heading: HeadingLevel.HEADING_2,
-              bidirectional: isAr,
-              spacing: { before: 300, after: 150 },
-              children: [
-                new Bookmark({
-                  id: `week_${w.weekIndex}`,
-                  children: [
-                    new TextRun({
-                      text: isAr
-                        ? `الأسبوع ${w.weekIndex}: ${formatWeekPeriod(w, isAr)}`
-                        : `Week ${w.weekIndex}: ${formatWeekPeriod(w, isAr)}`,
-                      bold: true,
-                      size: 28,
-                      color: '2F6B4F'
-                    })
-                  ]
-                })
-              ]
-            }),
+          // Each week: full-page break only for weeks with actual content.
+          // Empty weeks are grouped consecutively without page breaks.
+          ...weeks.flatMap((w, idx) => {
+            const hasContent = w.entries && w.entries.length > 0;
+            const prevEmpty = idx > 0 && (!weeks[idx - 1].entries || weeks[idx - 1].entries.length === 0);
+            // Only break page when: first week, or previous week had content, or current has content
+            const shouldPageBreak = idx === 0 || hasContent || !prevEmpty;
 
-            // Week Summary Stat Card
-            createWeekStatBanner(w, courseHours, isAr),
+            return [
+              new Paragraph({
+                pageBreakBefore: shouldPageBreak,
+                heading: HeadingLevel.HEADING_2,
+                bidirectional: isAr,
+                spacing: { before: shouldPageBreak ? 300 : 600, after: 100 },
+                keepNext: true,
+                children: [
+                  new Bookmark({
+                    id: `week_${w.weekIndex}`,
+                    children: [
+                      new TextRun({
+                        text: isAr
+                          ? `الأسبوع ${w.weekIndex}: ${formatWeekPeriod(w, isAr)}`
+                          : `Week ${w.weekIndex}: ${formatWeekPeriod(w, isAr)}`,
+                        bold: true,
+                        size: 28,
+                        color: hasContent ? '2F6B4F' : '888888'
+                      })
+                    ]
+                  })
+                ]
+              }),
 
-            // Week Detailed Entries Table
-            createWeekEntriesTable(w.entries, isAr),
+              // Week Summary Stat Card
+              createWeekStatBanner(w, courseHours, isAr),
 
-            // Week Executive Academic Synthesis Box
-            createWeekAcademicSynthesisBox(w, isAr),
+              // Week Detailed Entries Table
+              createWeekEntriesTable(w.entries, isAr),
 
-            // Week Evidence Photos
-            ...createWeekEvidenceBlocks(w.evidence, isAr),
+              // Week Executive Academic Synthesis Box
+              createWeekAcademicSynthesisBox(w, isAr),
 
-            // Week Supervisor Review & Sign-Off Box
-            createSupervisorWeekSignoff(profile.responsibleName, isAr)
-          ]),
+              // Week Evidence Photos
+              ...createWeekEvidenceBlocks(w.evidence, isAr),
+
+              // Week Supervisor Review & Sign-Off Box (only for weeks with content)
+              ...(hasContent ? [createSupervisorWeekSignoff(profile.responsibleName, isAr)] : [])
+            ];
+          }),
 
           // ==========================================
           // CHAPTER 4: ACQUIRED KNOWLEDGE & SKILLS
@@ -1040,68 +1049,91 @@ function createWeekStatBanner(
 }
 
 function createWeekEntriesTable(entries: FinalReportData['weeks'][0]['entries'], isAr: boolean): Table {
+  const cellBorder = { style: BorderStyle.SINGLE, size: 3, color: 'E6E2D8' };
+  const borders = { top: cellBorder, bottom: cellBorder, left: cellBorder, right: cellBorder };
+
   const headerRow = new TableRow({
     tableHeader: true,
     children: [
       new TableCell({
-        width: { size: 18, type: WidthType.PERCENTAGE },
-        children: [new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: isAr ? 'التاريخ' : 'Date', bold: true, size: 22 })] })]
+        width: { size: 16, type: WidthType.PERCENTAGE },
+        borders,
+        shading: { fill: 'F4F1EC' },
+        children: [new Paragraph({ bidirectional: isAr, spacing: { before: 60, after: 60 }, children: [new TextRun({ text: isAr ? 'التاريخ' : 'Date', bold: true, size: 20, color: '8B0000' })] })]
       }),
       new TableCell({
-        width: { size: 24, type: WidthType.PERCENTAGE },
-        children: [new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: isAr ? 'المهمة / التصنيف' : 'Task / Category', bold: true, size: 22 })] })]
+        width: { size: 22, type: WidthType.PERCENTAGE },
+        borders,
+        shading: { fill: 'F4F1EC' },
+        children: [new Paragraph({ bidirectional: isAr, spacing: { before: 60, after: 60 }, children: [new TextRun({ text: isAr ? 'المهمة / التصنيف' : 'Task / Category', bold: true, size: 20, color: '8B0000' })] })]
       }),
       new TableCell({
-        width: { size: 14, type: WidthType.PERCENTAGE },
-        children: [new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: isAr ? 'الفترة' : 'Time', bold: true, size: 22 })] })]
+        width: { size: 12, type: WidthType.PERCENTAGE },
+        borders,
+        shading: { fill: 'F4F1EC' },
+        children: [new Paragraph({ bidirectional: isAr, spacing: { before: 60, after: 60 }, children: [new TextRun({ text: isAr ? 'الفترة' : 'Time', bold: true, size: 20, color: '8B0000' })] })]
       }),
       new TableCell({
-        width: { size: 44, type: WidthType.PERCENTAGE },
-        children: [new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: isAr ? 'التفاصيل والتوثيق الأكاديمي' : 'Details & Description', bold: true, size: 22 })] })]
+        width: { size: 50, type: WidthType.PERCENTAGE },
+        borders,
+        shading: { fill: 'F4F1EC' },
+        children: [new Paragraph({ bidirectional: isAr, spacing: { before: 60, after: 60 }, children: [new TextRun({ text: isAr ? 'التفاصيل والتوثيق' : 'Details & Documentation', bold: true, size: 20, color: '8B0000' })] })]
       })
     ]
   });
 
   const rows = entries.length > 0
     ? entries.map(
-        (e) =>
-          new TableRow({
+        (e) => {
+          // Smart truncation: if description very long, keep first 500 chars + ellipsis for table view
+          const rawDesc = e.description || '';
+          const displayDesc = rawDesc.length > 550
+            ? rawDesc.slice(0, 547).trimEnd() + '...'
+            : rawDesc;
+
+          return new TableRow({
             children: [
               new TableCell({
-                children: [new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: isAr ? formatDateArabic(e.entryDate) : formatDateEnglish(e.entryDate), size: 20 })] })]
+                borders,
+                children: [new Paragraph({ bidirectional: isAr, spacing: { before: 40, after: 40 }, children: [new TextRun({ text: isAr ? formatDateArabic(e.entryDate) : formatDateEnglish(e.entryDate), size: 19 })] })]
               }),
               new TableCell({
+                borders,
                 children: [
-                  new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: elevateTaskTitle(e.title, e.description, isAr), bold: true, size: 20 })] }),
-                  new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: `[${translateCategory(e.category, isAr)}]`, size: 18, color: '8B0000' })] })
+                  new Paragraph({ bidirectional: isAr, spacing: { before: 40, after: 20 }, children: [new TextRun({ text: elevateTaskTitle(e.title, e.description, isAr), bold: true, size: 19 })] }),
+                  new Paragraph({ bidirectional: isAr, spacing: { before: 0, after: 40 }, children: [new TextRun({ text: `[${translateCategory(e.category, isAr)}]`, size: 17, color: '8B0000' })] })
                 ]
               }),
               new TableCell({
-                children: [new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: `${e.timeFrom} - ${e.timeTo}`, size: 20 })] })]
+                borders,
+                children: [new Paragraph({ bidirectional: isAr, spacing: { before: 40, after: 40 }, children: [new TextRun({ text: `${e.timeFrom}–${e.timeTo}`, size: 19 })] })]
               }),
               new TableCell({
-                children: formatDocxParagraphs(e.description, isAr)
+                borders,
+                children: formatDocxParagraphs(displayDesc, isAr)
               })
             ]
-          })
+          });
+        }
       )
     : [
         new TableRow({
           children: [
             new TableCell({
               columnSpan: 4,
+              borders,
               children: [
                 new Paragraph({
                   bidirectional: isAr,
                   alignment: AlignmentType.CENTER,
-                  spacing: { before: 180, after: 180 },
+                  spacing: { before: 120, after: 120 },
                   children: [
                     new TextRun({
                       text: isAr
-                        ? 'أسبوع تدريبي مؤجل أو لم تسجل به مهام بعد — متاح للتوثيق والاستكمال في أي وقت لاحق'
-                        : 'Postponed or pending training week — available for updates and logging anytime',
+                        ? 'أسبوع تدريبي مؤجل — متاح للتوثيق لاحقاً'
+                        : 'Postponed training week — available for updates',
                       italics: true,
-                      size: 22,
+                      size: 20,
                       color: '888888'
                     })
                   ]
@@ -1145,8 +1177,8 @@ function formatDocxParagraphs(text: string, isAr: boolean): Paragraph[] {
     return new Paragraph({
       bidirectional: isAr,
       alignment: isAr ? AlignmentType.JUSTIFIED : AlignmentType.LEFT,
-      spacing: { before: 40, after: 40 },
-      children: [new TextRun({ text: cleanLine, size: 20 })]
+      spacing: { before: 30, after: 30 },
+      children: [new TextRun({ text: cleanLine, size: 19 })]
     });
   });
 }
