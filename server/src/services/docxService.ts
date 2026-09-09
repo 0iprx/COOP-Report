@@ -33,7 +33,17 @@ function translateCategory(cat: string, isAr: boolean): string {
     'تدريب وتعلّم': 'Training & Learning',
     'توثيق': 'Documentation',
     'دعم فني': 'Technical Support',
-    'أخرى': 'Other'
+    'أخرى': 'Other',
+    'شبكات الاتصالات اللاسلكية والجيل الخامس (5G)': 'Wireless Networks & 5G Telecom',
+    'شبكات النفاذ والألياف الضوئية (FTTH)': 'Access Networks & Optical Fiber (FTTH)',
+    'أمن المعلومات والأمن السيبراني': 'Cybersecurity & Information Protection',
+    'إدارة الأعطال والتشغيل ومراقبة الأنظمة (NOC)': 'Incident Management, Operations & NOC Monitoring',
+    'هندسة الشبكات وتراسل البيانات': 'Network Engineering & Data Transmission',
+    'تطوير وهندسة البرمجيات والأنظمة': 'Software & Systems Engineering',
+    'إدارة الأنظمة والخوادم المؤسسية': 'Enterprise Systems & Server Administration',
+    'الحوسبة السحابية والبنية الرقمية': 'Cloud Computing & Digital Infrastructure',
+    'إدارة قواعد البيانات والنسخ الاحتياطي': 'Database Administration & Disaster Recovery',
+    'إدارة المشاريع والجودة والامتثال': 'Project Management, QA & Compliance'
   };
   return map[cat] || cat;
 }
@@ -1061,7 +1071,7 @@ function createWeekEntriesTable(entries: FinalReportData['weeks'][0]['entries'],
               }),
               new TableCell({
                 children: [
-                  new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: elevateTaskTitle(e.title, e.description), bold: true, size: 20 })] }),
+                  new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: elevateTaskTitle(e.title, e.description, isAr), bold: true, size: 20 })] }),
                   new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: `[${translateCategory(e.category, isAr)}]`, size: 18, color: '8B0000' })] })
                 ]
               }),
@@ -1674,7 +1684,7 @@ export async function generateWeeklyDocx(
               color: '1B1B18'
             }),
             new TextRun({
-              text: elevateTaskTitle(entry.title, entry.description),
+              text: elevateTaskTitle(entry.title, entry.description, isAr),
               bold: true,
               size: 20,
               color: primaryColor

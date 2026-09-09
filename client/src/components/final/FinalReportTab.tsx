@@ -75,7 +75,17 @@ function translateCategory(cat: string, isAr: boolean): string {
     'تدريب وتعلّم': 'Training & Learning',
     'توثيق': 'Documentation',
     'دعم فني': 'Technical Support',
-    'أخرى': 'Other'
+    'أخرى': 'Other',
+    'شبكات الاتصالات اللاسلكية والجيل الخامس (5G)': 'Wireless Networks & 5G Telecom',
+    'شبكات النفاذ والألياف الضوئية (FTTH)': 'Access Networks & Optical Fiber (FTTH)',
+    'أمن المعلومات والأمن السيبراني': 'Cybersecurity & Information Protection',
+    'إدارة الأعطال والتشغيل ومراقبة الأنظمة (NOC)': 'Incident Management, Operations & NOC Monitoring',
+    'هندسة الشبكات وتراسل البيانات': 'Network Engineering & Data Transmission',
+    'تطوير وهندسة البرمجيات والأنظمة': 'Software & Systems Engineering',
+    'إدارة الأنظمة والخوادم المؤسسية': 'Enterprise Systems & Server Administration',
+    'الحوسبة السحابية والبنية الرقمية': 'Cloud Computing & Digital Infrastructure',
+    'إدارة قواعد البيانات والنسخ الاحتياطي': 'Database Administration & Disaster Recovery',
+    'إدارة المشاريع والجودة والامتثال': 'Project Management, QA & Compliance'
   };
   return map[cat] || cat;
 }
@@ -742,13 +752,16 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
     }
   };
 
-  type TextProfileField = 'introText' | 'entityIntroText' | 'skillsText' | 'conclusionText';
+  type TextProfileField = 'introText' | 'entityIntroText' | 'skillsText' | 'conclusionText' | 'executiveSummary' | 'challengesText' | 'recommendationsText';
 
   const fieldLabels: Record<TextProfileField, string> = {
     introText: 'المقدمة وأهداف التدريب',
     entityIntroText: 'التعريف بجهة التدريب',
     skillsText: 'المعارف والمهارات المكتسبة',
-    conclusionText: 'الخاتمة والتوصيات'
+    conclusionText: 'الخاتمة والتوصيات',
+    executiveSummary: 'الملخص التنفيذي للتقرير',
+    challengesText: 'التحديات التشغيلية والحلول',
+    recommendationsText: 'التوصيات المهنية والأكاديمية'
   };
 
   // AI Field Actions (Polish, Summarize, Spellcheck, Translate)
@@ -895,7 +908,15 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
 
   // Auto-Translate Entire Report
   const handleAutoTranslateReport = async () => {
-    const fields: TextProfileField[] = ['introText', 'entityIntroText', 'skillsText', 'conclusionText'];
+    const fields: TextProfileField[] = [
+      'introText',
+      'entityIntroText',
+      'skillsText',
+      'conclusionText',
+      'executiveSummary',
+      'challengesText',
+      'recommendationsText'
+    ];
     const targetLang = previewLang === 'ar' ? 'en' : 'ar';
     setAiLoading(true);
 
@@ -1268,7 +1289,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
 
           <button
             type="button"
-            onClick={() => handleDownloadBackupMarkdown('ar')}
+            onClick={() => handleDownloadBackupMarkdown(previewLang)}
             disabled={!!downloadingArchive}
             className="px-3 py-1.5 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-colors flex items-center gap-1.5"
             title="تصدير التقرير النصي بملف Markdown"
@@ -2169,30 +2190,46 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             {isAr ? 'جهة التدريب:' : 'Host Organization:'} {activePreviewProfile.entityAddress || '—'}
           </div>
 
-          <div className="mt-8 max-w-xl mx-auto bg-bg border border-line rounded-xl p-5 text-right grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs" dir={isAr ? 'rtl' : 'ltr'}>
+          <div className="mt-8 max-w-xl mx-auto bg-bg border border-line rounded-xl p-5 text-start grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs shadow-xs" dir={isAr ? 'rtl' : 'ltr'}>
             <div>
-              <span className="font-bold text-sub">{isAr ? 'اسم المتدرب:' : 'Trainee Name:'}</span> {normalizeStudentName(activePreviewProfile.studentName) || '—'}
+              <span className="font-bold text-sub">{isAr ? 'اسم المتدرب:' : 'Trainee Name:'}</span>{' '}
+              <span className="font-extrabold text-ink">{normalizeStudentName(activePreviewProfile.studentName) || '—'}</span>
             </div>
             <div>
-              <span className="font-bold text-sub">{isAr ? 'الرقم التدريبي:' : 'Training ID:'}</span> {activePreviewProfile.trainingNumber || '—'}
+              <span className="font-bold text-sub">{isAr ? 'الرقم التدريبي:' : 'Training ID:'}</span>{' '}
+              <span className="font-mono font-bold text-ink">{activePreviewProfile.trainingNumber || '—'}</span>
             </div>
             <div>
-              <span className="font-bold text-sub">{isAr ? 'القسم / التخصص:' : 'Department:'}</span> {activePreviewProfile.department || '—'}
+              <span className="font-bold text-sub">{isAr ? 'القسم / التخصص:' : 'Department / Major:'}</span>{' '}
+              <span className="font-bold text-ink">{activePreviewProfile.department || '—'}</span>
             </div>
             <div>
-              <span className="font-bold text-sub">{isAr ? 'المشرف الأكاديمي:' : 'Academic Supervisor:'}</span> {activePreviewProfile.supervisorName || '—'}
+              <span className="font-bold text-sub">{isAr ? 'المشرف الأكاديمي:' : 'Academic Supervisor:'}</span>{' '}
+              <span className="font-bold text-ink">{activePreviewProfile.supervisorName || '—'}</span>
             </div>
             <div>
-              <span className="font-bold text-sub">{isAr ? 'المشرف الميداني:' : 'Field Supervisor:'}</span> {activePreviewProfile.responsibleName || '—'}
+              <span className="font-bold text-sub">{isAr ? 'المشرف الميداني:' : 'Field Supervisor:'}</span>{' '}
+              <span className="font-bold text-ink">{activePreviewProfile.responsibleName || '—'}</span>
             </div>
             <div>
-              <span className="font-bold text-sub">{isAr ? 'ساعات المقرر في الخطة:' : 'Course Credit:'}</span> {activePreviewProfile.courseHours ? `${activePreviewProfile.courseHours} ${isAr ? 'ساعة تدريبية معتمدة' : 'Accredited Hours'}` : (isAr ? 'معتمد في الخطة الدراسية' : 'Accredited Course')}
+              <span className="font-bold text-sub">{isAr ? 'ساعات المقرر في الخطة:' : 'Course Credit:'}</span>{' '}
+              <span className="font-extrabold text-ok">
+                {activePreviewProfile.courseHours
+                  ? `${activePreviewProfile.courseHours} ${isAr ? 'ساعة تدريبية معتمدة' : 'Accredited Hours'}`
+                  : (isAr ? 'معتمد في الخطة الدراسية' : 'Accredited Course')}
+              </span>
             </div>
             <div>
-              <span className="font-bold text-sub">{isAr ? 'المدة التدريبية المعتمدة:' : 'Training Duration:'}</span> {activePreviewProfile.trainingWeeks || 14} {isAr ? 'أسبوعاً تدريبياً ميدانياً' : 'Weeks'}
+              <span className="font-bold text-sub">{isAr ? 'المدة التدريبية المعتمدة:' : 'Training Duration:'}</span>{' '}
+              <span className="font-bold text-ink">
+                {activePreviewProfile.trainingWeeks || 14} {isAr ? 'أسبوعاً تدريبياً ميدانياً' : 'Weeks Field Training'}
+              </span>
             </div>
             <div>
-              <span className="font-bold text-sub">{isAr ? 'حالة التوثيق الميداني:' : 'Documentation Status:'}</span> {activePreviewWeeks.length} {isAr ? 'أسبوعاً موثقاً بالكامل (100%)' : 'Weeks Documented (100%)'}
+              <span className="font-bold text-sub">{isAr ? 'حالة التوثيق الميداني:' : 'Documentation Status:'}</span>{' '}
+              <span className="font-bold text-accent">
+                {activePreviewWeeks.length} {isAr ? 'أسبوعاً موثقاً بالكامل (100%)' : 'Weeks Documented (100%)'}
+              </span>
             </div>
           </div>
         </div>
@@ -2401,7 +2438,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                                     </span>
                                   </td>
                                   <td className="p-2.5 font-bold text-ink leading-snug">
-                                    {elevateTaskTitle(entry.title, entry.description)}
+                                    {elevateTaskTitle(entry.title, entry.description, isAr)}
                                   </td>
                                 </tr>
                               );
@@ -2450,7 +2487,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                                     {isAr ? 'النشاط الفني والمهمة التشغيلية الميدانية:' : 'Technical Activity & Operational Scope:'}
                                   </div>
                                   <h4 className="text-sm font-black text-ink leading-snug">
-                                    {elevateTaskTitle(entry.title, entry.description)}
+                                    {elevateTaskTitle(entry.title, entry.description, isAr)}
                                   </h4>
                                 </div>
 

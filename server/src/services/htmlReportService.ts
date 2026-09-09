@@ -8,7 +8,17 @@ function translateCategory(cat: string, isAr: boolean): string {
     'تدريب وتعلّم': 'Training & Learning',
     'توثيق': 'Documentation',
     'دعم فني': 'Technical Support',
-    'أخرى': 'Other'
+    'أخرى': 'Other',
+    'شبكات الاتصالات اللاسلكية والجيل الخامس (5G)': 'Wireless Networks & 5G Telecom',
+    'شبكات النفاذ والألياف الضوئية (FTTH)': 'Access Networks & Optical Fiber (FTTH)',
+    'أمن المعلومات والأمن السيبراني': 'Cybersecurity & Information Protection',
+    'إدارة الأعطال والتشغيل ومراقبة الأنظمة (NOC)': 'Incident Management, Operations & NOC Monitoring',
+    'هندسة الشبكات وتراسل البيانات': 'Network Engineering & Data Transmission',
+    'تطوير وهندسة البرمجيات والأنظمة': 'Software & Systems Engineering',
+    'إدارة الأنظمة والخوادم المؤسسية': 'Enterprise Systems & Server Administration',
+    'الحوسبة السحابية والبنية الرقمية': 'Cloud Computing & Digital Infrastructure',
+    'إدارة قواعد البيانات والنسخ الاحتياطي': 'Database Administration & Disaster Recovery',
+    'إدارة المشاريع والجودة والامتثال': 'Project Management, QA & Compliance'
   };
   return map[cat] || cat;
 }
@@ -520,7 +530,7 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
                           <td style="text-align: center; direction: ltr; font-family: monospace; padding: 6px 8px;">${e.timeFrom || '08:00'} - ${e.timeTo || '16:00'}</td>
                           <td style="text-align: center; font-weight: bold; padding: 6px 8px;">${h} ${isAr ? 'س' : 'h'}</td>
                           <td style="padding: 6px 8px;"><span class="badge">${escapeHtml(translateCategory(e.category, isAr))}</span></td>
-                          <td style="padding: 6px 8px; font-weight: bold; color: var(--ink);">${escapeHtml(elevateTaskTitle(e.title, e.description))}</td>
+                          <td style="padding: 6px 8px; font-weight: bold; color: var(--ink);">${escapeHtml(elevateTaskTitle(e.title, e.description, isAr))}</td>
                         </tr>
                       `;
                     }).join('')}
@@ -535,7 +545,7 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
               ${w.entries.map((e: any, eIdx: number) => `
                 <div style="margin-bottom: 12px; padding: 12px 14px; background: #FAFAF8; border: 1px solid var(--line); border-radius: 8px;">
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                    <span style="font-weight: 800; font-size: 13px; color: var(--ink);">(${eIdx + 1}) ${escapeHtml(elevateTaskTitle(e.title, e.description))}</span>
+                    <span style="font-weight: 800; font-size: 13px; color: var(--ink);">(${eIdx + 1}) ${escapeHtml(elevateTaskTitle(e.title, e.description, isAr))}</span>
                     <span style="font-size: 11px; color: var(--sub);">${e.entryDate ? (isAr ? formatDateArabic(e.entryDate) : formatDateEnglish(e.entryDate)) : ''}</span>
                   </div>
                   <div style="margin-bottom: 6px;">

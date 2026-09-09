@@ -544,7 +544,7 @@ export function generateAcademicWeeklySynthesis(
   }
 
   // 1. Build Truthful Pillars Directly from Actual Elevated Task Titles (NO hallucinated domains!)
-  const rawPillars = entries.map(e => elevateTaskTitle(e.title, e.description));
+  const rawPillars = entries.map(e => elevateTaskTitle(e.title, e.description, isAr));
   const technicalPillars = Array.from(new Set(rawPillars)).slice(0, 5);
 
   // 2. Extract Specific Acquired Competencies Strictly Matching the Real Entries
@@ -688,9 +688,9 @@ export function inferProfessionalCategory(text: string = '', title: string = '')
 }
 
 /**
- * Elevates informal or diary-style student task titles into formal executive engineering titles
+ * Elevates informal or diary-style student task titles into formal executive engineering titles (bilingual AR/EN)
  */
-export function elevateTaskTitle(title: string = '', description: string = ''): string {
+export function elevateTaskTitle(title: string = '', description: string = '', isAr: boolean = true): string {
   let t = title.trim();
   const desc = description.toLowerCase();
 
@@ -701,20 +701,49 @@ export function elevateTaskTitle(title: string = '', description: string = ''): 
     (/access/i.test(t) && /ftth/i.test(desc)) ||
     /مباشرة الأعمال التشغيلية مع فريق.*access/i.test(t)
   ) {
-    return 'التهيئة التشغيلية وإدارة صلاحيات النفاذ والتحكم مع فريق (Access Team)';
+    return isAr
+      ? 'التهيئة التشغيلية وإدارة صلاحيات النفاذ والتحكم مع فريق (Access Team)'
+      : 'Operational Onboarding & Network Access Control Administration with Access Team';
   }
   if (/اليوم بيكون عن 5g/i.test(t) || (/5g/i.test(t) && /(fwa|cpe|mvno|earth)/i.test(desc))) {
-    return 'الفحص الفني لمؤشرات أداء شبكات 5G والمسح الجغرافي للمحطات عبر أنظمة Google Earth';
+    return isAr
+      ? 'الفحص الفني لمؤشرات أداء شبكات 5G والمسح الجغرافي للمحطات عبر أنظمة Google Earth'
+      : 'Technical 5G KPI Verification & Geographic Site Survey via Google Earth Systems';
   }
   if (/العمل مع قسم 5g/i.test(t) || (/5g/i.test(t) && /(patching|configuration|cyber)/i.test(desc))) {
-    return 'ضبط تكوينات ومحددات شبكات الجيل الخامس (5G Patching) وإجراءات الاستجابة السيبرانية';
+    return isAr
+      ? 'ضبط تكوينات ومحددات شبكات الجيل الخامس (5G Patching) وإجراءات الاستجابة السيبرانية'
+      : '5G Network Parameter Configurations (5G Patching) & Cyber Incident Response Workflows';
   }
-
+  if (/ftth|ألياف|ont|olt|odn|odb|fiber|بوكسية|لحام|splice/i.test(t) || /ftth/i.test(desc)) {
+    return isAr
+      ? 'الفحص والمعاينة الميدانية لمكونات شبكات النفاذ الضوئي (FTTH) ومسارات التوزيع'
+      : 'Optical Access Network (FTTH) Field Inspection & Distribution Path Verification';
+  }
+  if (/trouble ticket|إنذار|alarm|صيانة|عطل|link down|تذاكر/i.test(t) || /alarm/i.test(desc)) {
+    return isAr
+      ? 'تصنيف ومعالجة بلاغات الأعطال ومتابعة الإنذارات التشغيلية (Trouble Tickets)'
+      : 'Trouble Ticket Classification & Operational Network Alarm Remediation';
+  }
   if (/اول يوم عمل.*(hr|مقابلة|موارد)/i.test(t) || /مقابلة hr/i.test(t) || /اول يوم عمل/i.test(t)) {
-    return 'التهيئة المؤسسية ومقابلة الموارد البشرية (HR) والتعريف ببيئة العمل والأنظمة';
+    return isAr
+      ? 'التهيئة المؤسسية ومقابلة الموارد البشرية (HR) والتعريف ببيئة العمل والأنظمة'
+      : 'Enterprise Onboarding, HR Orientation & Workplace Systems Familiarization';
   }
 
-  // Remove colloquial or raw journal phrasing
+  if (!isAr) {
+    if (/^[A-Za-z0-9\s\-_\.,:\(\)]+$/.test(t)) {
+      return t;
+    }
+    if (/شبك|راوتر|سويتش|vlan/i.test(t)) return 'Network Infrastructure Configuration & Switch Port Administration';
+    if (/سيرفر|خادم|نظام/i.test(t)) return 'Enterprise Server Administration & System Maintenance';
+    if (/أمن|حماية|أمان|ثغرة/i.test(t)) return 'Cybersecurity Analysis, Threat Mitigation & Access Governance';
+    if (/دعم|صيانة|طابعة|مستخدم/i.test(t)) return 'Field Technical Support & End-User Workplace Troubleshooting';
+    if (/برمج|تطوير|كود|قاعدة/i.test(t)) return 'Software Engineering, Code Optimization & Database Operations';
+    return 'Field Technical Engineering Operations & Core Activities';
+  }
+
+  // Remove colloquial or raw journal phrasing in Arabic
   t = t.replace(/^اليوم بيكون عن\s*/gi, 'دراسة وتطبيق تقنيات ');
   t = t.replace(/^بداية اليوم\s*(الأول|الثاني|الثالث|الرابع|الخامس)?\s*و?توجهي الى\s*/gi, 'مباشرة الأعمال التشغيلية مع فريق ');
   t = t.replace(/^العمل مع قسم\s*/gi, 'إنجاز المهام الميدانية في قسم ');
