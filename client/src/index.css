@@ -428,26 +428,35 @@ html, body {
     break-inside: avoid !important;
   }
 
-  /* Academic clean styling in print - Strip box borders and frames */
+  /* Academic clean styling in print - Strip box borders, backgrounds, and frames */
   .day-card-print {
     border: none !important;
-    border-bottom: 1.5px solid #e2e8f0 !important;
     border-radius: 0 !important;
     background: transparent !important;
     box-shadow: none !important;
-    margin-bottom: 16px !important;
-    padding-bottom: 12px !important;
+    margin: 0 !important;
+    padding: 12px 0 !important;
     overflow: visible !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
+  .day-card-print:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
   }
 
   .day-card-print .bg-bg {
     background: transparent !important;
-    border-bottom: 1.5px solid #0f172a !important;
-    padding: 4px 0 !important;
+    border-bottom: 2px solid #0f172a !important;
+    padding: 6px 0 !important;
     margin-bottom: 8px !important;
   }
 
-  /* Synthesis & Endorsement boxes: Remove outer card frames in print */
+  /* Trainee matrix, Synthesis & Endorsement boxes: Remove outer card frames in print */
+  .trainee-matrix-print,
   .synthesis-box-print,
   .endorsement-box-print,
   .print-no-border,
@@ -456,6 +465,16 @@ html, body {
     border: none !important;
     border-radius: 0 !important;
     box-shadow: none !important;
+    background: transparent !important;
+  }
+
+  .trainee-matrix-print {
+    padding: 0 !important;
+  }
+
+  .trainee-matrix-print > div {
+    border-bottom: 1px solid #e2e8f0 !important;
+    padding: 4px 0 !important;
   }
 
   div[id^="week-"] {

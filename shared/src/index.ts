@@ -529,128 +529,111 @@ export interface WeeklySynthesisResult {
  */
 export function generateAcademicWeeklySynthesis(
   entries: EntryDTO[] = [],
-  weekIndex: number = 1,
+  weekIndexOrTitle: number | string = 1,
   totalHours: number = 0,
   isAr: boolean = true
 ): WeeklySynthesisResult {
+  if (!entries || entries.length === 0) {
+    return {
+      executiveSummary: isAr ? 'لم تُسجل مهام ميدانية لهذه الفترة بعد.' : 'No field tasks recorded for this period yet.',
+      technicalPillars: [],
+      toolsAndTech: [],
+      acquiredCompetencies: [],
+      fullNarrative: ''
+    };
+  }
+
+  // 1. Build Truthful Pillars Directly from Actual Elevated Task Titles (NO hallucinated domains!)
+  const rawPillars = entries.map(e => elevateTaskTitle(e.title, e.description));
+  const technicalPillars = Array.from(new Set(rawPillars)).slice(0, 5);
+
+  // 2. Extract Specific Acquired Competencies Strictly Matching the Real Entries
   const combinedText = entries.map(e => `${e.title} ${e.category} ${e.description}`).join(' ');
+  const dynamicCompetencies: string[] = [];
 
-  // 1. Detect Core Engineering Domains
-  const domainCandidates: Array<{ pattern: RegExp; titleAr: string; titleEn: string; competencyAr: string; competencyEn: string }> = [
-    {
-      pattern: /FTTH|ألياف|fiber|ONT|OLT|ODN|ODB|splice/i,
-      titleAr: 'هندسة شبكات الألياف الضوئية (FTTH) ومكونات التراسل',
-      titleEn: 'Fiber to the Home (FTTH) & Optical Transmission Infrastructure',
-      competencyAr: 'إتقان الفحص العيني والتقني لمكونات شبكات التراسل الضوئي وتمديدات الألياف (ONT/OLT/ODN)',
-      competencyEn: 'Mastering physical and logical inspection of optical transmission components (ONT/OLT/ODN)'
-    },
-    {
-      pattern: /Alarm|إنذار|حرارة|رطوبة|تذكرة|Trouble|SLA|صيانة/i,
-      titleAr: 'إدارة إنذارات الشبكة ومصفوفة تصعيد بلاغات الصيانة',
-      titleEn: 'Network Alarms Management & Trouble Ticket Escalation',
-      competencyAr: 'تطبيق معايير تصنيف الإنذارات التشغيلية وآليات الاستجابة السريعة وتصعيد التذاكر الفنية وفق اتفاقيات مستوى الخدمة (SLA)',
-      competencyEn: 'Applying operational alarm classification and fast-response escalation workflows under SLAs'
-    },
-    {
-      pattern: /Access|نفاذ|VLAN|سويتش|switch|راوتر|router|شبك/i,
-      titleAr: 'هندسة شبكات النفاذ وضبط تكوينات الربط الميداني',
-      titleEn: 'Access Networks Engineering & Field Interconnection Configurations',
-      competencyAr: 'المشاركة الميدانية في اختبار كفاءة الربط الشبكي وإدارة تصاريح النفاذ للمواقع الحيوية',
-      competencyEn: 'Hands-on participation in validating network connectivity and critical site access permissions'
-    },
-    {
-      pattern: /AAA|Authentication|توثيق|مشترك|رسوم/i,
-      titleAr: 'منظومات التوثيق والتحكم بنفاذ المشتركين (AAA)',
-      titleEn: 'Subscriber Management & Authentication Architectures (AAA)',
-      competencyAr: 'استيعاب البنية التشغيلية لخوادم التوثيق وضوابط التحقق من استحقاق وجودة الخدمة للمشتركين',
-      competencyEn: 'Understanding authentication server workflows and subscriber service entitlement verification'
-    },
-    {
-      pattern: /5G|جيل خامس|لاسلكي|تغطية|أبراج/i,
-      titleAr: 'شبكات الاتصالات اللاسلكية والجيل الخامس (5G)',
-      titleEn: '5G Mobile & Wireless Telecommunication Infrastructure',
-      competencyAr: 'تحليل مؤشرات تغطية شبكات 5G ومتابعة إجراءات الترقيع والضبط الفني للمحطات',
-      competencyEn: 'Analyzing 5G coverage metrics and participating in station configuration patching'
-    },
-    {
-      pattern: /أمن|security|Red Team|Blue Team|ثغر|firewall/i,
-      titleAr: 'ضوابط الأمن السيبراني وتقييم الجاهزية الدفاعية',
-      titleEn: 'Cybersecurity Controls & Defense Readiness Assessment',
-      competencyAr: 'فهم مصفوفة التهديدات السيبرانية وتطبيق الضوابط الوقائية لحماية الأنظمة والبنى التحتية',
-      competencyEn: 'Understanding threat matrices and applying protective controls across enterprise assets'
-    },
-    {
-      pattern: /سيرفر|خادم|لينكس|linux|windows|vmware|docker|قاعدة بيانات|database/i,
-      titleAr: 'إدارة الخوادم الافتراضية والبيئات التشغيلية',
-      titleEn: 'Virtual Server Administration & Infrastructure Platforms',
-      competencyAr: 'التحقق من استقرار البيئات التشغيلية وإدارة الموارد والنسخ الاحتياطي الدوري',
-      competencyEn: 'Verifying platform stability, resource utilization, and automated backup routines'
-    }
-  ];
+  if (/hr|موارد بشرية|مقابلة|بيئة العمل|أنظمة|تهيئة/i.test(combinedText)) {
+    dynamicCompetencies.push(
+      isAr
+        ? 'استيعاب الهيكل التنظيمي واللوائح الإدارية وسياسات الأمن والسلامة المهنية المعتمدة لدى المنشأة.'
+        : 'Understanding enterprise organization, operational policies, and occupational safety guidelines.'
+    );
+  }
 
-  const matchedDomains = domainCandidates.filter(d => d.pattern.test(combinedText));
-  const activeDomains = matchedDomains.length > 0 ? matchedDomains : [
-    {
-      pattern: /.*/,
-      titleAr: 'العمليات الميدانية والدعم الفني التخصصي',
-      titleEn: 'Field Operations & Technical Specialized Support',
-      competencyAr: 'تنفيذ وتوثيق المهام الميدانية وفق الأدلة الإجرائية المعتمدة لدى المنشأة',
-      competencyEn: 'Executing and documenting operational tasks compliant with standard host entity procedures'
-    }
-  ];
+  if (/خطة|مشرف|فريق|مهندس|اجتماع|تعرف|أهداف/i.test(combinedText)) {
+    dynamicCompetencies.push(
+      isAr
+        ? 'مواءمة أهداف الخطة التدريبية الميدانية مع مهام فرق العمل التشغيلية وتحديد مؤشرات الإنجاز الدورية.'
+        : 'Aligning co-op training plan milestones with operational team objectives and supervisor criteria.'
+    );
+  }
 
-  // 2. Extract Technical Tools & Acronyms
-  const acronyms = combinedText.match(/\b(FTTH|ONT|OLT|ODN|ODB|UTP|AAA|SLA|VLAN|5G|IP|DNS|DHCP|ITIL|SOC|Trouble Ticket|Access Team)\b/gi) || [];
+  if (/ftth|ألياف|ont|olt|odn|odb|fiber|بوكسية|لحام|splice/i.test(combinedText)) {
+    dynamicCompetencies.push(
+      isAr
+        ? 'الفحص والمعاينة الميدانية لمكونات شبكات النفاذ الضوئي (FTTH) ومسارات كوابل الألياف الضوئية.'
+        : 'Inspecting physical optical access infrastructure (FTTH) and fiber distribution points.'
+    );
+  }
+
+  if (/trouble ticket|إنذار|alarm|صيانة|عطل|link down|تذاكر/i.test(combinedText)) {
+    dynamicCompetencies.push(
+      isAr
+        ? 'تطبيق آليات تصنيف بلاغات الأعطال ومتابعة مؤشرات الاستجابة ومعالجة الإنذارات التشغيلية وفق المعايير.'
+        : 'Applying trouble ticket classification, alarm handling, and service escalation workflows.'
+    );
+  }
+
+  if (/access team|صلاحيات|نفاذ|تحكم|vlan|switch|router/i.test(combinedText)) {
+    dynamicCompetencies.push(
+      isAr
+        ? 'إدارة وضبط صلاحيات النفاذ والتحكم الشبكي والتحقق من سلامة الربط البيني للأجهزة والمواقع.'
+        : 'Configuring network access permissions and validating site interconnection parameters.'
+    );
+  }
+
+  if (/5g|جيل خامس|fwa|cpe|أبراج|google earth/i.test(combinedText)) {
+    dynamicCompetencies.push(
+      isAr
+        ? 'تحليل مؤشرات تغطية شبكات الجيل الخامس (5G) وإجراءات المسح الميداني عبر الخرائط الجغرافية.'
+        : 'Analyzing 5G network performance indicators and GIS-based field site verification.'
+    );
+  }
+
+  // Always include foundational baseline competency
+  dynamicCompetencies.push(
+    isAr
+      ? 'الالتزام الصارم بمعايير الانضباط المهني ومطابقة التوجيهات الفنية والإجرائية للمشرف الميداني.'
+      : 'Strict adherence to professional standards and field supervisor operational guidelines.'
+  );
+
+  const acquiredCompetencies = Array.from(new Set(dynamicCompetencies));
+
+  // 3. Extract Technical Tools & Acronyms ONLY If Explicitly Mentioned
+  const acronyms = combinedText.match(/\b(FTTH|ONT|OLT|ODN|ODB|UTP|AAA|SLA|VLAN|5G|IP|DNS|DHCP|ITIL|SOC|Trouble Ticket|Access Team|Google Earth)\b/gi) || [];
   const uniqueTools = Array.from(new Set(acronyms.map(a => {
     if (/access team/i.test(a)) return 'Access Team';
     if (/trouble ticket/i.test(a)) return 'Trouble Ticket';
+    if (/google earth/i.test(a)) return 'Google Earth';
     return a.toUpperCase();
   })));
 
-  // 3. Dynamic Academic Phrasing (Rotating variety for expert freshness)
-  const arabicOpeners = [
-    `تمحورت الأنشطة التشغيلية والهندسية لهذا الأسبوع حول مباشرة المهام التخصصية ومتابعة جودة الأداء الميداني`,
-    `تركّزت الأعمال الميدانية خلال هذه الفترة التدريبية على التنفيذ الفعلي لحزمة من الإجراءات التقنية المتقدمة`,
-    `شهد الأسبوع التدريبي إنجاز سلسلة من المهام التشغيلية النوعية شملت المعاينة والفحص وتطبيق المعايير المعتمدة`,
-    `تنوّعت مجالات العمل الميداني لتغطي محاور تقنية حيوية بالغة الأهمية في استقرار واستدامة المنظومة`,
-    `انصبت الجهود الهندسية خلال هذه الفترة على المتابعة الدقيقة للأنظمة الميدانية وتطبيق أفضل الممارسات التشغيلية`
-  ];
-
-  const englishOpeners = [
-    `Operational and engineering activities this week centered on specialized field execution and quality monitoring`,
-    `Field tasks during this training timeframe focused on hands-on deployment of advanced technical workflows`,
-    `This training week encompassed a comprehensive set of mission-critical tasks including inspection, testing, and standards verification`,
-    `Operational efforts spanned strategic technical pillars vital to systems resilience and service continuity`,
-    `Engineering activities were directed toward precision monitoring of field infrastructure and adherence to industry best practices`
-  ];
-
-  const seed = (weekIndex * 7 + entries.length * 13) % 5;
-  const chosenOpener = isAr ? arabicOpeners[seed] : englishOpeners[seed];
-
-  // 4. Build Pillars & Competencies Lists
-  const technicalPillars = activeDomains.map(d => isAr ? d.titleAr : d.titleEn);
-  const acquiredCompetencies = [
-    ...activeDomains.map(d => isAr ? d.competencyAr : d.competencyEn),
-    isAr
-      ? `الالتزام الصارم بمعايير السلامة المهنية ومطابقة التوجيهات الفنية للمشرف الميداني بالمنشأة.`
-      : `Strict compliance with occupational safety protocols and direct field supervisory guidelines.`
-  ];
-
-  // 5. Build Executive Summary
+  // 4. Build Dynamic Executive Narrative Reflecting Exactly What Was Done
   const hoursText = totalHours > 0 ? (isAr ? `${totalHours} ساعة تدريبية` : `${totalHours} training hours`) : '';
   const tasksCountText = entries.length > 0 ? (isAr ? `${entries.length} مهام ميدانية نوعية` : `${entries.length} specialized field tasks`) : '';
 
-  const executiveSummary = isAr
-    ? `${chosenOpener}؛ حيث تم إنجاز ${tasksCountText} عبر ${hoursText}، مع التركيز على (${technicalPillars.slice(0, 2).join(' و')}).`
-    : `${chosenOpener}, successfully accomplishing ${tasksCountText} over ${hoursText}, with a core focus on (${technicalPillars.slice(0, 2).join(' and ')}).`;
+  const mainFocus = technicalPillars.slice(0, 2).join(isAr ? ' و ' : ' and ');
 
-  // 6. Build Full Synthesis Narrative
+  const executiveSummary = isAr
+    ? `تم خلال هذه الفترة التدريبية إنجاز ${tasksCountText}${hoursText ? ` عبر ${hoursText}` : ''}، حيث تركّز العمل الميداني على (${mainFocus})، مع الالتزام التام بإجراءات المنشأة وضوابط الجودة المعتمدة.`
+    : `During this training timeframe, ${tasksCountText} were successfully accomplished${hoursText ? ` over ${hoursText}` : ''}, focusing primarily on (${mainFocus}), ensuring strict adherence to host entity quality workflows.`;
+
+  // 5. Build Full Synthesis Narrative
   const toolsFormatted = uniqueTools.length > 0
     ? (isAr ? `التقنيات والأدوات الموظفة: ${uniqueTools.join(', ')}.` : `Utilized Tools & Technologies: ${uniqueTools.join(', ')}.`)
     : '';
 
   const fullNarrative = isAr
-    ? `${executiveSummary}\n\n• أبرز المحاور التشغيلية:\n  - ${technicalPillars.join('\n  - ')}\n\n• الكفايات والمخرجات المكتسبة:\n  - ${acquiredCompetencies.join('\n  - ')}\n\n${toolsFormatted}`.trim()
+    ? `${executiveSummary}\n\n• أبرز المحاور التشغيلية المنفذة:\n  - ${technicalPillars.join('\n  - ')}\n\n• الكفايات والمخرجات المكتسبة:\n  - ${acquiredCompetencies.join('\n  - ')}\n\n${toolsFormatted}`.trim()
     : `${executiveSummary}\n\n• Core Operational Pillars:\n  - ${technicalPillars.join('\n  - ')}\n\n• Acquired Competencies & Outcomes:\n  - ${acquiredCompetencies.join('\n  - ')}\n\n${toolsFormatted}`.trim();
 
   return {
