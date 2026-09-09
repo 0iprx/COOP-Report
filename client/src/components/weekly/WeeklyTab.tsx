@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
-import { FinalReportData, EntryDTO, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis, formatWeekPeriod, ENTRY_CATEGORIES, elevateTaskTitle, normalizeStudentName, polishAcademicNarrative } from '@coop/shared';
+import { FinalReportData, EntryDTO, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis, formatWeekPeriod, ENTRY_CATEGORIES, elevateTaskTitle, normalizeStudentName, polishAcademicNarrative, convertBulletsToCohesiveParagraphs } from '@coop/shared';
 import { WeeklyEvidenceSection } from './WeeklyEvidenceSection';
 import {
   Calendar,
@@ -236,7 +236,7 @@ export const WeeklyTab: React.FC = () => {
     let md = `# ${isAr ? 'تقرير التدريب الميداني' : 'Field Training Report'} (${periodStr})\n\n`;
     md += `**${isAr ? 'الجهة:' : 'Organization:'}** ${entityName}  \n`;
     md += `**${isAr ? 'أيام العمل:' : 'Work Days:'}** ${activeTotalDays}  \n`;
-    md += `**${isAr ? 'الساعات المعتمدة:' : 'Total Hours:'}** ${activeTotalHours}  \n`;
+    md += `**${isAr ? 'إجمالي الساعات:' : 'Total Hours:'}** ${activeTotalHours}  \n`;
     md += `**${isAr ? 'المهام المنجزة:' : 'Completed Tasks:'}** ${activeEntries.length}  \n\n`;
     md += `## ${isAr ? 'جدول المهام والإنجازات الميدانية' : 'Field Technical Tasks'}\n\n`;
     md += `| ${isAr ? 'التاريخ' : 'Date'} | ${isAr ? 'العنوان' : 'Title'} | ${isAr ? 'التصنيف' : 'Category'} | ${isAr ? 'الساعات' : 'Hours'} | ${isAr ? 'تفاصيل الإنجاز والسرد الأكاديمي' : 'Details'} |\n`;
@@ -462,69 +462,46 @@ export const WeeklyTab: React.FC = () => {
     }
   };
 
-  // Helper to render procedural narrative with structured bullets and headers
+  // Helper to render procedural narrative as cohesive informative paragraphs (zero bullets)
   const renderProceduralNarrative = (rawText: string) => {
     if (!rawText) return null;
-    const text = polishAcademicNarrative(rawText);
-    const clean = text.replace(/^[ \t]*[-_=]{3,}[ \t]*$/gm, '\n');
-    const lines = clean.split('\n');
+    const cohesiveText = convertBulletsToCohesiveParagraphs(rawText);
+    const lines = cohesiveText.split('\n');
     const elements: React.ReactNode[] = [];
-    let currentBullets: string[] = [];
 
-    const flushBullets = () => {
-      if (currentBullets.length > 0) {
-        elements.push(
-          <ul key={`bullets-${elements.length}`} className="my-2 space-y-1.5 list-none pr-1">
-            {currentBullets.map((b, i) => (
-              <li key={i} className="flex items-start gap-2 text-xs sm:text-sm leading-relaxed text-ink">
-                <span className="w-1.5 h-1.5 rounded-full bg-slate-700 dark:bg-slate-300 mt-2 shrink-0"></span>
-                <span className="flex-1">{b}</span>
-              </li>
-            ))}
-          </ul>
-        );
-        currentBullets = [];
-      }
-    };
+    const sectionHeaderRegex = /^(الهدف التشغيلي|نطاق التكليف والمهمة الميدانية|نطاق التكليف|الجدارة والمهارة المستهدفة|الإجراءات والخطوات الميدانية|الإجراءات والحلول الفنية|الممارسة والتطبيق الميداني|الأنظمة والأدوات المستخدمة|الأنظمة والتقنيات المستخدمة|الأدوات والمفاهيم التقنية المطبقة|المخرجات والنتائج الفنية|الأثر والقيمة المضافة|مخرجات التعلم والتقييم الذاتي|ملخص الإنجاز الميداني|موجز الإنجاز|فريق|قسم|مرحلة)\s*[:：]?$/i;
 
     for (let i = 0; i < lines.length; i++) {
       const trimmed = lines[i].trim();
-      if (!trimmed) {
-        flushBullets();
-        continue;
-      }
+      if (!trimmed) continue;
 
-      if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*') || /\*\s*$/.test(trimmed)) {
-        const cleanItem = trimmed.replace(/^[•\-\*]\s*|\s*\*$/g, '').trim();
-        currentBullets.push(cleanItem);
-        continue;
-      }
+      const isHeader = (trimmed.startsWith('**') && trimmed.endsWith('**')) ||
+        sectionHeaderRegex.test(trimmed) ||
+        (/^(في تمام الساعة|بعد الساعة|الساعة|قسم|فريق|مرحلة|منظومة|موجز|الفترة)\s*[\d:]*.*:?$/i.test(trimmed) && trimmed.length < 80);
 
-      if (
-        (trimmed.startsWith('**') && trimmed.endsWith('**')) ||
-        /^(في تمام الساعة|بعد الساعة|الساعة|قسم|فريق|مرحلة|منظومة|موجز|الفترة)\s*[\d:]*.*:?$/i.test(trimmed)
-      ) {
-        flushBullets();
-        const title = trimmed.replace(/^\*\*|\*\*$/g, '').replace(/:$/, '').trim();
+      if (isHeader) {
+        const title = trimmed.replace(/^\*\*|\*\*$/g, '').replace(/[:：]$/, '').trim();
         elements.push(
-          <h5 key={`heading-${elements.length}`} className="font-extrabold text-xs sm:text-sm text-ink pt-2.5 pb-1 border-b border-line/40 flex items-center gap-1.5">
-            <span className="w-1.5 h-3.5 bg-slate-800 dark:bg-slate-200 rounded-full shrink-0"></span>
-            <span>{title}</span>
-          </h5>
+          <div key={`heading-${elements.length}`} className="font-black text-xs sm:text-sm text-accent pt-3 pb-1 border-b border-line/40 flex items-center gap-1.5 first:pt-0">
+            <span className="w-1.5 h-3.5 bg-accent rounded-full shrink-0"></span>
+            <span>{title}:</span>
+          </div>
         );
         continue;
       }
 
-      flushBullets();
+      // Clean any accidental bullet remnants
+      const cleanPara = trimmed.replace(/^[•\-\*]\s*|\s*\*$/g, '').trim();
+      if (!cleanPara) continue;
+
       elements.push(
-        <p key={`p-${elements.length}`} className="text-xs sm:text-sm leading-relaxed text-ink my-1">
-          {trimmed}
+        <p key={`p-${elements.length}`} className="text-xs sm:text-sm leading-relaxed sm:leading-loose text-ink my-1.5 text-justify font-normal">
+          {cleanPara}
         </p>
       );
     }
 
-    flushBullets();
-    return <div className="space-y-0.5 text-start">{elements}</div>;
+    return <div className="space-y-1 text-start">{elements}</div>;
   };
 
   // AI Enhancement State for Day Editing Modal
@@ -605,7 +582,7 @@ export const WeeklyTab: React.FC = () => {
               onClick={handleDownloadDocx}
               disabled={downloadingDocx}
               className="px-3.5 py-1.5 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
-              title={t('تنزيل تقرير الأسبوع كمستند Word رسمي معتمد (.docx) متضمناً جدول المهام والأختام', 'Download weekly Word report (.docx)')}
+              title={t('تنزيل تقرير الأسبوع كمستند Word رسمي (.docx) متضمناً جدول المهام وخانات التوقيع', 'Download weekly Word report (.docx)')}
             >
               <FileText className={`w-3.5 h-3.5 text-accent ${downloadingDocx ? 'animate-bounce' : ''}`} />
               <span>{downloadingDocx ? t('جارٍ تصدير Word...', 'Exporting Word...') : t('تقرير Word (.docx)', 'Word (.docx)')}</span>
@@ -957,7 +934,7 @@ export const WeeklyTab: React.FC = () => {
                 <Clock className="w-4 h-4 text-ok" />
               </div>
               <div className="text-2xl font-black text-ok">{activeTotalHours} {isAr ? 'س' : 'h'}</div>
-              <div className="text-[11px] text-sub mt-0.5">{t('ساعة معتمدة ميدانياً', 'Field certified hours')}</div>
+              <div className="text-[11px] text-sub mt-0.5">{t('ساعة تدريبية منجزة', 'Completed training hours')}</div>
             </div>
           </div>
 
@@ -1120,13 +1097,13 @@ export const WeeklyTab: React.FC = () => {
                   <span className="font-bold text-sub">{isAr ? 'المشرف الميداني:' : 'Field Supervisor:'}</span> <span className="font-extrabold text-ink">{finalReportData?.profile?.responsibleName || '—'}</span>
                 </div>
                 <div>
-                  <span className="font-bold text-sub">{isAr ? 'إجمالي الساعات الفعلية:' : 'Logged Hours:'}</span> <span className="font-extrabold text-accent print:text-black">{activeTotalHours} {isAr ? 'ساعة معتمدة' : 'hrs'}</span>
+                  <span className="font-bold text-sub">{isAr ? 'إجمالي الساعات الفعلية:' : 'Logged Hours:'}</span> <span className="font-extrabold text-accent print:text-black">{activeTotalHours} {isAr ? 'ساعة تدريبية' : 'hrs'}</span>
                 </div>
                 <div>
                   <span className="font-bold text-sub">{isAr ? 'أيام العمل المنجزة:' : 'Active Days:'}</span> <span className="font-extrabold text-ink">{activeTotalDays} {isAr ? 'أيام' : 'days'}</span>
                 </div>
                 <div>
-                  <span className="font-bold text-sub">{isAr ? 'حالة التوثيق:' : 'Status:'}</span> <span className="font-extrabold text-ok print:text-black">{activeEntries.length ? (isAr ? 'مكتمل ومعتمد ميدانياً' : 'Completed') : (isAr ? 'قيد التوثيق' : 'Pending')}</span>
+                  <span className="font-bold text-sub">{isAr ? 'حالة التوثيق:' : 'Status:'}</span> <span className="font-extrabold text-ok print:text-black">{activeEntries.length ? (isAr ? 'مكتمل التوثيق' : 'Completed') : (isAr ? 'قيد التوثيق' : 'Pending')}</span>
                 </div>
               </div>
             </div>
@@ -1153,7 +1130,7 @@ export const WeeklyTab: React.FC = () => {
                         <span>{reportMode === 'weekly' ? (isAr ? 'الموجز التنفيذي والكفايات المكتسبة للأسبوع (ملخص الأسبوع الشامل)' : 'Weekly Executive Summary & Acquired Competencies') : (isAr ? 'الموجز التنفيذي والكفايات المكتسبة للفترة المحددة' : 'Executive Summary & Acquired Competencies for Period')}</span>
                       </div>
                       <span className="text-[11px] font-bold text-sub">
-                        {isAr ? 'صياغة أكاديمية استشارية معتمدة' : 'Official Academic Synthesis'}
+                        {isAr ? 'صياغة أكاديمية استشارية رفيعة' : 'Official Academic Synthesis'}
                       </span>
                     </div>
 
@@ -1217,7 +1194,7 @@ export const WeeklyTab: React.FC = () => {
                   {/* Executive Weekly Tasks Table Matrix */}
                   <div className="overflow-x-auto border border-line rounded-xl my-4 bg-card print:border-line print:bg-white break-inside-avoid shadow-xs">
                     <div className="bg-bg px-4 py-2.5 border-b border-line flex items-center justify-between text-xs font-black text-ink print:bg-slate-100">
-                      <span>{reportMode === 'weekly' ? (isAr ? 'جدول حصر وتوثيق الأنشطة والمهام الأسبوعية المعتمد' : 'Official Weekly Tasks Executive Matrix') : (isAr ? 'جدول حصر وتوثيق أنشطة ومهام الفترة المعتمد' : 'Official Tasks Executive Matrix')}</span>
+                      <span>{reportMode === 'weekly' ? (isAr ? 'جدول حصر وتوثيق الأنشطة والمهام الأسبوعية' : 'Weekly Tasks Executive Matrix') : (isAr ? 'جدول حصر وتوثيق أنشطة ومهام الفترة' : 'Tasks Executive Matrix')}</span>
                       <span className="text-[11px] font-bold text-accent print:text-black">
                         {activeTotalDays} {isAr ? 'أيام عمل' : 'days'} &middot; {activeTotalHours} {isAr ? 'ساعة فعلية' : 'hours'}
                       </span>
@@ -1720,7 +1697,7 @@ export const WeeklyTab: React.FC = () => {
                 {!entryRevisionsList?.length ? (
                   <div className="text-center py-6 px-4 rounded-xl border border-dashed border-line bg-bg text-sub text-xs space-y-1">
                     <p className="font-bold text-ink">
-                      {t('هذه هي النسخة الأصلية المعتمدة حالياً في قاعدة البيانات.', 'This is the active baseline version stored safely in the database.')}
+                      {t('هذه هي النسخة الأصلية المحفوظة حالياً في قاعدة البيانات.', 'This is the active baseline version stored safely in the database.')}
                     </p>
                     <p className="text-[11px] text-sub">
                       {t('أي تعديل جديد تجريه على هذا اليوم سيتم حفظه مع الاحتفاظ بنسخته السابقة هنا تلقائياً لضمان عدم فقدان أي بيانات.', 'Any subsequent edits will automatically be archived here with exact timestamps for instant rollback.')}

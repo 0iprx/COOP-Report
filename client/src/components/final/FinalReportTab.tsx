@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { MOCK_SAMPLE_PREVIEW_PROFILE, MOCK_SAMPLE_PREVIEW_WEEKS } from '../../data/mockPreviewData';
-import { FinalReportData, EntryDTO, ProfileInput, DiffChunk, formatDateArabic, formatDateEnglish, countWords, calculateHoursBetween, REPORT_TEMPLATES, ReportTemplateId, OrganizationLookupResult, generateAcademicWeeklySynthesis, formatWeekPeriod, elevateTaskTitle, normalizeStudentName } from '@coop/shared';
+import { FinalReportData, EntryDTO, ProfileInput, DiffChunk, formatDateArabic, formatDateEnglish, countWords, calculateHoursBetween, REPORT_TEMPLATES, ReportTemplateId, OrganizationLookupResult, generateAcademicWeeklySynthesis, formatWeekPeriod, elevateTaskTitle, normalizeStudentName, convertBulletsToCohesiveParagraphs } from '@coop/shared';
 import {
   FileText,
   Search,
@@ -132,67 +132,45 @@ export const getWeekTopic = (w: { weekIndex: number; entries?: { title: string; 
 };
 
 // Helper to render procedural narrative with structured bullets and headers
-export const renderProceduralNarrative = (text: string) => {
-  if (!text) return null;
-  const clean = text.replace(/^[ \t]*[-_=]{3,}[ \t]*$/gm, '\n');
-  const lines = clean.split('\n');
+export const renderProceduralNarrative = (rawText: string) => {
+  if (!rawText) return null;
+  const cohesiveText = convertBulletsToCohesiveParagraphs(rawText);
+  const lines = cohesiveText.split('\n');
   const elements: React.ReactNode[] = [];
-  let currentBullets: string[] = [];
 
-  const flushBullets = () => {
-    if (currentBullets.length > 0) {
-      elements.push(
-        <ul key={`bullets-${elements.length}`} className="my-2 space-y-1.5 list-none pr-1">
-          {currentBullets.map((b, i) => (
-            <li key={i} className="flex items-start gap-2 text-xs leading-relaxed text-ink">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#C0102A] mt-1.5 shrink-0"></span>
-              <span className="flex-1">{b}</span>
-            </li>
-          ))}
-        </ul>
-      );
-      currentBullets = [];
-    }
-  };
+  const sectionHeaderRegex = /^(الهدف التشغيلي|نطاق التكليف والمهمة الميدانية|نطاق التكليف|الجدارة والمهارة المستهدفة|الإجراءات والخطوات الميدانية|الإجراءات والحلول الفنية|الممارسة والتطبيق الميداني|الأنظمة والأدوات المستخدمة|الأنظمة والتقنيات المستخدمة|الأدوات والمفاهيم التقنية المطبقة|المخرجات والنتائج الفنية|الأثر والقيمة المضافة|مخرجات التعلم والتقييم الذاتي|ملخص الإنجاز الميداني|موجز الإنجاز|فريق|قسم|مرحلة)\s*[:：]?$/i;
 
   for (let i = 0; i < lines.length; i++) {
     const trimmed = lines[i].trim();
-    if (!trimmed) {
-      flushBullets();
-      continue;
-    }
+    if (!trimmed) continue;
 
-    if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*') || /\*\s*$/.test(trimmed)) {
-      const cleanItem = trimmed.replace(/^[•\-\*]\s*|\s*\*$/g, '').trim();
-      currentBullets.push(cleanItem);
-      continue;
-    }
+    const isHeader = (trimmed.startsWith('**') && trimmed.endsWith('**')) ||
+      sectionHeaderRegex.test(trimmed) ||
+      (/^(في تمام الساعة|بعد الساعة|الساعة|قسم|فريق|مرحلة|منظومة|موجز|الفترة)\s*[\d:]*.*:?$/i.test(trimmed) && trimmed.length < 80);
 
-    if (
-      (trimmed.startsWith('**') && trimmed.endsWith('**')) ||
-      /^(في تمام الساعة|بعد الساعة|الساعة|قسم|فريق|مرحلة|منظومة|موجز)\s*[\d:]*.*:?$/i.test(trimmed)
-    ) {
-      flushBullets();
-      const title = trimmed.replace(/^\*\*|\*\*$/g, '').replace(/:$/, '').trim();
+    if (isHeader) {
+      const title = trimmed.replace(/^\*\*|\*\*$/g, '').replace(/[:：]$/, '').trim();
       elements.push(
-        <h5 key={`heading-${elements.length}`} className="font-extrabold text-xs text-ink pt-2 pb-0.5 border-b border-line/40 flex items-center gap-1.5">
-          <span className="w-1 h-3.5 bg-accent rounded-full shrink-0"></span>
-          <span>{title}</span>
-        </h5>
+        <div key={`heading-${elements.length}`} className="font-black text-xs sm:text-sm text-accent pt-3 pb-1 border-b border-line/40 flex items-center gap-1.5 first:pt-0">
+          <span className="w-1.5 h-3.5 bg-accent rounded-full shrink-0"></span>
+          <span>{title}:</span>
+        </div>
       );
       continue;
     }
 
-    flushBullets();
+    // Clean any accidental bullet remnants
+    const cleanPara = trimmed.replace(/^[•\-\*]\s*|\s*\*$/g, '').trim();
+    if (!cleanPara) continue;
+
     elements.push(
-      <p key={`p-${elements.length}`} className="text-xs leading-relaxed text-ink my-1">
-        {trimmed}
+      <p key={`p-${elements.length}`} className="text-xs sm:text-sm leading-relaxed sm:leading-loose text-ink my-1.5 text-justify font-normal">
+        {cleanPara}
       </p>
     );
   }
-  flushBullets();
 
-  return <div className="space-y-1">{elements}</div>;
+  return <div className="space-y-1 text-start">{elements}</div>;
 };
 
 export interface ReportSample {

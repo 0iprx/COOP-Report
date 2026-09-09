@@ -166,8 +166,8 @@ export const BatchRewriteModal: React.FC<BatchRewriteModalProps> = ({
                       <Wrench className="w-4 h-4" />
                     </div>
                     <div>
-                      <div className="font-extrabold text-xs text-ink">{t('الهندسي الإجرائي المعتمد', 'Standard Procedural Engineering')}</div>
-                      <div className="text-[10.5px] text-sub pt-0.5 leading-snug">{t('الهدف، الخطوات الميدانية، الأدوات، والمخرجات (الأكثر اعتماداً في الجامعات)', 'Objective, steps, tools, outputs')}</div>
+                      <div className="font-extrabold text-xs text-ink">{t('الهندسي الإجرائي الاحترافي', 'Standard Procedural Engineering')}</div>
+                      <div className="text-[10.5px] text-sub pt-0.5 leading-snug">{t('الهدف، الخطوات الميدانية، الأدوات، والمخرجات التشغيلية', 'Objective, steps, tools, outputs')}</div>
                     </div>
                   </button>
 
@@ -291,7 +291,7 @@ export const BatchRewriteModal: React.FC<BatchRewriteModalProps> = ({
                     <div className="p-2 bg-card border border-line rounded-lg">
                       <span className="font-bold text-accent flex items-center gap-1.5">
                         <Wrench className="w-3.5 h-3.5 shrink-0" />
-                        <span>{t('الأنظمة والتقنيات المعتمدة', 'Applied Systems')}</span>
+                        <span>{t('الأنظمة والتقنيات المستخدمة', 'Applied Systems')}</span>
                       </span>
                       <p className="text-[10.5px] text-sub pt-0.5">{t('البيئات والأجهزة المستخدمة فعلياً', 'Production tools & systems')}</p>
                     </div>

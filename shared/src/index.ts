@@ -811,13 +811,123 @@ export function polishAcademicNarrative(text: string = ''): string {
 
   // 2. Synthesize consecutive raw acronym blocks into clean professional sentences
   const fiberRegex = /ONT\s*[\n\r]+\s*الألياف الضوئية\s*[\n\r]+\s*البوكسية\s*[\n\r]+\s*UTP\s*[\n\r]+\s*OLT\s*[\n\r]+\s*ODN\s*[\n\r]+\s*ODB/gi;
-  s = s.replace(fiberRegex, '• الفحص والمعاينة الميدانية لمكونات شبكة النفاذ الضوئي وتشمل: أجهزة المشتركين (ONT)، كبائن التوزيع السكنية (البوكسية)، كوابل النقل النحاسية (UTP)، مقاسم النفاذ الضوئي (OLT)، وشبكات التوزيع الضوئي السلبية (ODN / ODB).');
+  s = s.replace(fiberRegex, 'الفحص والمعاينة الميدانية لمكونات شبكة النفاذ الضوئي وتشمل: أجهزة المشتركين (ONT)، كبائن التوزيع السكنية (البوكسية)، كوابل النقل النحاسية (UTP)، مقاسم النفاذ الضوئي (OLT)، وشبكات التوزيع الضوئي السلبية (ODN / ODB).');
 
   const cyberRegex = /Red Team\s*[\n\r]+\s*Blue Team\s*[\n\r]+\s*Socket/gi;
-  s = s.replace(cyberRegex, '• دراسة مهام وتكامل فرق العمليات السيبرانية: فريق الاختراق والاختبار المتقدم (Red Team)، وفريق الدفاع والرصد والاستجابة للحوادث (Blue Team)، ومنافذ الاتصال الشبكي (Sockets).');
+  s = s.replace(cyberRegex, 'دراسة مهام وتكامل فرق العمليات السيبرانية: فريق الاختراق والاختبار المتقدم (Red Team)، وفريق الدفاع والرصد والاستجابة للحوادث (Blue Team)، ومنافذ الاتصال الشبكي (Sockets).');
 
   const casesRegex = /Link Down\s*[\n\r]+\s*(\.\.\.)?Equipment Dis\s*[\n\r]+\s*Internet Slowness\s*[\n\r]+\s*No Browsing/gi;
-  s = s.replace(casesRegex, '• تصنيف ومعالجة الحالات الميدانية لبلاغات الأعطال الفنية وتشمل: انقطاع المسارات (Link Down)، أعطال وفصل المعدات (Equipment Disconnect)، بطء النفاذ للخدمة (Internet Slowness)، وحالات توقف التصفح الكامل (No Browsing).');
+  s = s.replace(casesRegex, 'تصنيف ومعالجة الحالات الميدانية لبلاغات الأعطال الفنية وتشمل: انقطاع المسارات (Link Down)، أعطال وفصل المعدات (Equipment Disconnect)، بطء النفاذ للخدمة (Internet Slowness)، وحالات توقف التصفح الكامل (No Browsing).');
 
   return s;
+}
+
+/**
+ * Transforms raw bullet points, disjointed lists, or fragmented lines
+ * into rich, cohesive academic paragraphs without any bullet symbols.
+ */
+export function convertBulletsToCohesiveParagraphs(rawText: string = ''): string {
+  if (!rawText || !rawText.trim()) return '';
+  const polished = polishAcademicNarrative(rawText);
+  const clean = polished.replace(/^[ \t]*[-_=]{3,}[ \t]*$/gm, '\n');
+  const lines = clean.split('\n').map(l => l.trim()).filter(Boolean);
+
+  const sectionHeaderRegex = /^(الهدف التشغيلي|نطاق التكليف والمهمة الميدانية|نطاق التكليف|الجدارة والمهارة المستهدفة|الإجراءات والخطوات الميدانية|الإجراءات والحلول الفنية|الممارسة والتطبيق الميداني|الأنظمة والأدوات المستخدمة|الأنظمة والتقنيات المستخدمة|الأدوات والمفاهيم التقنية المطبقة|المخرجات والنتائج الفنية|الأثر والقيمة المضافة|مخرجات التعلم والتقييم الذاتي|ملخص الإنجاز الميداني|موجز الإنجاز|فريق|قسم|مرحلة)\s*[:：]?$/i;
+
+  const sections: Array<{ header?: string; lines: string[] }> = [];
+  let currentSection: { header?: string; lines: string[] } = { lines: [] };
+
+  for (const line of lines) {
+    const isBoldHeader = line.startsWith('**') && line.endsWith('**') && line.length < 80;
+    const isNamedHeader = sectionHeaderRegex.test(line);
+
+    if (isBoldHeader || isNamedHeader) {
+      if (currentSection.header || currentSection.lines.length > 0) {
+        sections.push(currentSection);
+      }
+      const title = line.replace(/^\*\*|\*\*$/g, '').replace(/[:：]$/, '').trim();
+      currentSection = { header: title, lines: [] };
+      continue;
+    }
+
+    // Clean leading bullet symbols, asterisks, and numbering
+    const cleanLine = line.replace(/^[•\-\*]\s*|\s*\*$/g, '').replace(/^\d+[\.\)]\s*/, '').trim();
+    if (cleanLine) {
+      currentSection.lines.push(cleanLine);
+    }
+  }
+
+  if (currentSection.header || currentSection.lines.length > 0) {
+    sections.push(currentSection);
+  }
+
+  const outputParts: string[] = [];
+
+  for (const sec of sections) {
+    if (sec.header) {
+      outputParts.push(`${sec.header}:`);
+    }
+
+    if (sec.lines.length === 0) continue;
+
+    // Build cohesive paragraphs from lines
+    const paragraphs: string[] = [];
+    let currentParaSentences: string[] = [];
+
+    for (let i = 0; i < sec.lines.length; i++) {
+      const line = sec.lines[i];
+
+      // If line ends with a colon (e.g. "مثل:" or "من قبل المهندسين:"), merge subsequent short items
+      if (/[:：]$/.test(line) && i + 1 < sec.lines.length) {
+        const subItems: string[] = [];
+        let j = i + 1;
+        while (j < sec.lines.length && sec.lines[j].length < 60 && !sec.lines[j].endsWith('.') && !sectionHeaderRegex.test(sec.lines[j])) {
+          subItems.push(sec.lines[j].replace(/[.،,]+$/, ''));
+          j++;
+        }
+        if (subItems.length > 0) {
+          const merged = `${line.replace(/[:：]$/, '')}: ${subItems.join('، ')}.`;
+          currentParaSentences.push(merged);
+          i = j - 1;
+          continue;
+        }
+      }
+
+      // Check if this line is an isolated short name or fragment
+      if (line.length < 35 && !/[.!?؟]$/.test(line) && i + 1 < sec.lines.length && sec.lines[i + 1].length < 35 && !/[.!?؟]$/.test(sec.lines[i + 1])) {
+        const groupItems: string[] = [line];
+        let j = i + 1;
+        while (j < sec.lines.length && sec.lines[j].length < 35 && !/[.!?؟]$/.test(sec.lines[j])) {
+          groupItems.push(sec.lines[j]);
+          j++;
+        }
+        if (groupItems.length >= 2) {
+          currentParaSentences.push(groupItems.join('، ') + '.');
+          i = j - 1;
+          continue;
+        }
+      }
+
+      // Normal informative line
+      let sentence = line;
+      if (!/[.!?؟؛:]$/.test(sentence)) {
+        sentence += '.';
+      }
+      currentParaSentences.push(sentence);
+
+      // Break into paragraphs every 2-3 substantial sentences for readability
+      if (currentParaSentences.length >= 3 || sentence.length > 250) {
+        paragraphs.push(currentParaSentences.join(' '));
+        currentParaSentences = [];
+      }
+    }
+
+    if (currentParaSentences.length > 0) {
+      paragraphs.push(currentParaSentences.join(' '));
+    }
+
+    outputParts.push(paragraphs.join('\n\n'));
+  }
+
+  return outputParts.join('\n\n');
 }

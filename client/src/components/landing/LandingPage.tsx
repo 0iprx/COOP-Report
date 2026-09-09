@@ -165,7 +165,7 @@ const Creative3DStepPipeline: React.FC<{
         'التقط صوراً لبيئة عملك وخوادمك وشاشات الإعداد واربطها بأسبوعها التدريبي مع تسميات أكاديمية موثقة.',
         'Capture photos of server racks, network topologies, and configs, linked by week with academic figure numbering.'
       ),
-      badge: t('شواهد مرئية معتمدة', 'Verified Field Proofs'),
+      badge: t('شواهد وتوثيق مرئي', 'Verified Field Proofs'),
       icon: <ImagePlus className="w-5 h-5 text-white" />,
       chips: [t('ترقيم رسمي للأشكال', 'Figure Numbering'), t('ضغط وحفظ تلقائي', 'Optimized Artifacts'), t('توثيق أسبوعي', 'Weekly Linked')]
     },
@@ -808,7 +808,7 @@ export const LandingPage: React.FC<{ onOpenTestDev?: () => void }> = ({ onOpenTe
                   </div>
                   <p className="text-sub leading-relaxed">
                     {t(
-                      'بيانات المتدرب، جهة التدريب، التخصص، فترة التدريب، وتدوين الساعتين المعتمدتين من المعدل.',
+                      'بيانات المتدرب، جهة التدريب، التخصص، فترة التدريب، وتدوين ساعات التدريب التعاوني المقررة.',
                       'Student name, major, host company profile, training period, and 2-credit-hour GPA notation.'
                     )}
                   </p>

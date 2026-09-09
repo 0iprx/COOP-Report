@@ -1,4 +1,4 @@
-import { FinalReportData, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis, formatWeekPeriod, elevateTaskTitle, normalizeStudentName, polishAcademicNarrative } from '@coop/shared';
+import { FinalReportData, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis, formatWeekPeriod, elevateTaskTitle, normalizeStudentName, polishAcademicNarrative, convertBulletsToCohesiveParagraphs } from '@coop/shared';
 
 function translateCategory(cat: string, isAr: boolean): string {
   if (isAr) return cat;
@@ -35,38 +35,32 @@ function escapeHtml(text: string): string {
 
 function formatProceduralNarrativeHtml(text: string): string {
   if (!text) return '';
-  const polished = polishAcademicNarrative(text);
-  const clean = polished.replace(/^[ \t]*[-_=]{3,}[ \t]*$/gm, '\n');
-  const lines = clean.split('\n');
+  const cohesiveText = convertBulletsToCohesiveParagraphs(text);
+  const lines = cohesiveText.split('\n');
   const out: string[] = [];
-  let inList = false;
+
+  const sectionHeaderRegex = /^(الهدف التشغيلي|نطاق التكليف والمهمة الميدانية|نطاق التكليف|الجدارة والمهارة المستهدفة|الإجراءات والخطوات الميدانية|الإجراءات والحلول الفنية|الممارسة والتطبيق الميداني|الأنظمة والأدوات المستخدمة|الأنظمة والتقنيات المستخدمة|الأدوات والمفاهيم التقنية المطبقة|المخرجات والنتائج الفنية|الأثر والقيمة المضافة|مخرجات التعلم والتقييم الذاتي|ملخص الإنجاز الميداني|موجز الإنجاز|فريق|قسم|مرحلة)\s*[:：]?$/i;
+
   for (const rawLine of lines) {
     const trimmed = rawLine.trim();
-    if (!trimmed) {
-      if (inList) { out.push('</ul>'); inList = false; }
+    if (!trimmed) continue;
+
+    const isHeader = (trimmed.startsWith('**') && trimmed.endsWith('**')) ||
+      sectionHeaderRegex.test(trimmed) ||
+      (/^(في تمام الساعة|بعد الساعة|الساعة|قسم|فريق|مرحلة|منظومة|موجز|الفترة)\s*[\d:]*.*:?$/i.test(trimmed) && trimmed.length < 80);
+
+    if (isHeader) {
+      const title = trimmed.replace(/^\*\*|\*\*$/g, '').replace(/[:：]$/, '').trim();
+      out.push(`<div style="font-weight: 800; font-size: 13px; color: var(--accent); margin-top: 10px; margin-bottom: 4px; border-bottom: 1px solid rgba(0,0,0,0.08); padding-bottom: 2px;">${escapeHtml(title)}:</div>`);
       continue;
     }
-    const bulletMatch = trimmed.match(/^[-*•]\s*(.*)$/);
-    if (bulletMatch) {
-      if (!inList) { out.push('<ul style="margin: 6px 0; padding-right: 20px; list-style-type: disc;">'); inList = true; }
-      out.push(`<li style="margin: 4px 0; line-height: 1.6; color: var(--ink);">${escapeHtml(bulletMatch[1])}</li>`);
-      continue;
-    }
-    const numberedMatch = trimmed.match(/^(\d+)[\.\)]\s*(.*)$/);
-    if (numberedMatch) {
-      if (!inList) { out.push('<ul style="margin: 6px 0; padding-right: 20px; list-style-type: disc;">'); inList = true; }
-      out.push(`<li style="margin: 4px 0; line-height: 1.6; color: var(--ink);"><b>${numberedMatch[1]}.</b> ${escapeHtml(numberedMatch[2])}</li>`);
-      continue;
-    }
-    if (trimmed.endsWith(':') || trimmed.length < 55) {
-      if (inList) { out.push('</ul>'); inList = false; }
-      out.push(`<div style="font-weight: 700; color: var(--accent); margin-top: 10px; margin-bottom: 3px;">${escapeHtml(trimmed)}</div>`);
-      continue;
-    }
-    if (inList) { out.push('</ul>'); inList = false; }
-    out.push(`<p style="margin: 6px 0; line-height: 1.6; color: var(--ink);">${escapeHtml(trimmed)}</p>`);
+
+    const cleanPara = trimmed.replace(/^[•\-\*]\s*|\s*\*$/g, '').trim();
+    if (!cleanPara) continue;
+
+    out.push(`<p style="margin: 6px 0; line-height: 1.8; color: var(--ink); text-align: justify; font-size: 12.5px;">${escapeHtml(cleanPara)}</p>`);
   }
-  if (inList) { out.push('</ul>'); inList = false; }
+
   return out.join('');
 }
 

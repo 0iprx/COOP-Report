@@ -151,7 +151,7 @@ export const SupervisorTab: React.FC = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `تقرير_${studentName.replace(/\s+/g, '_')}_المعتمد.docx`;
+      a.download = `تقرير_${studentName.replace(/\s+/g, '_')}.docx`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -174,7 +174,7 @@ export const SupervisorTab: React.FC = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `تقرير_${studentName.replace(/\s+/g, '_')}_المعتمد.html`;
+      a.download = `تقرير_${studentName.replace(/\s+/g, '_')}.html`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -216,10 +216,10 @@ export const SupervisorTab: React.FC = () => {
           <div className="p-4 bg-ok-bg border border-ok/30 rounded-xl text-xs space-y-1.5 animate-fade-in">
             <div className="font-bold text-ok flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4" />
-              <span>حسابك مرتبط بمشرف معتمد</span>
+              <span>حسابك مرتبط بمشرف التدريب</span>
             </div>
             <div className="text-ink">
-              اسم المشرف المعتمد: <span className="font-extrabold text-accent">{user.supervisor.username}</span>
+              اسم المشرف: <span className="font-extrabold text-accent">{user.supervisor.username}</span>
             </div>
           </div>
         ) : (

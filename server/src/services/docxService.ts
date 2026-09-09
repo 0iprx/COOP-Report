@@ -23,7 +23,7 @@ import {
   PageReference,
   ImageRun
 } from 'docx';
-import { FinalReportData, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis, formatWeekPeriod, elevateTaskTitle, normalizeStudentName, polishAcademicNarrative } from '@coop/shared';
+import { FinalReportData, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis, formatWeekPeriod, elevateTaskTitle, normalizeStudentName, polishAcademicNarrative, convertBulletsToCohesiveParagraphs } from '@coop/shared';
 
 function translateCategory(cat: string, isAr: boolean): string {
   if (isAr) return cat;
@@ -1120,33 +1120,33 @@ function createWeekEntriesTable(entries: FinalReportData['weeks'][0]['entries'],
 
 function formatDocxParagraphs(text: string, isAr: boolean): Paragraph[] {
   if (!text) return [new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: '—', size: 20 })] })];
-  const polished = isAr ? polishAcademicNarrative(text) : text;
-  const clean = polished.replace(/^[ \t]*[-_=]{3,}[ \t]*$/gm, '\n');
+  const cohesive = isAr ? convertBulletsToCohesiveParagraphs(text) : text;
+  const clean = cohesive.replace(/^[ \t]*[-_=]{3,}[ \t]*$/gm, '\n');
   const lines = clean.split('\n').map(l => l.trim()).filter(Boolean);
   if (lines.length === 0) return [new Paragraph({ bidirectional: isAr, children: [new TextRun({ text: '—', size: 20 })] })];
 
+  const sectionHeaderRegex = /^(الهدف التشغيلي|نطاق التكليف والمهمة الميدانية|نطاق التكليف|الجدارة والمهارة المستهدفة|الإجراءات والخطوات الميدانية|الإجراءات والحلول الفنية|الممارسة والتطبيق الميداني|الأنظمة والأدوات المستخدمة|الأنظمة والتقنيات المستخدمة|الأدوات والمفاهيم التقنية المطبقة|المخرجات والنتائج الفنية|الأثر والقيمة المضافة|مخرجات التعلم والتقييم الذاتي|ملخص الإنجاز الميداني|موجز الإنجاز|فريق|قسم|مرحلة)\s*[:：]?$/i;
+
   return lines.map(line => {
-    if (line.startsWith('•') || line.startsWith('-') || line.startsWith('*') || /\*\s*$/.test(line)) {
-      const cleanBullet = line.replace(/^[•\-\*]\s*|\s*\*$/g, '').trim();
+    const isHeader = (line.startsWith('**') && line.endsWith('**')) ||
+      sectionHeaderRegex.test(line) ||
+      (/^(في تمام الساعة|بعد الساعة|الساعة|قسم|فريق|مرحلة|منظومة|موجز)\s*[\d:]*.*:?$/i.test(line) && line.length < 80);
+
+    if (isHeader) {
+      const title = line.replace(/^\*\*|\*\*$/g, '').replace(/[:：]$/, '').trim();
       return new Paragraph({
         bidirectional: isAr,
-        bullet: { level: 0 },
-        spacing: { before: 30, after: 30 },
-        children: [new TextRun({ text: cleanBullet, size: 20 })]
+        spacing: { before: 80, after: 40 },
+        children: [new TextRun({ text: `${title}:`, bold: true, size: 20, color: '8B0000' })]
       });
     }
-    if ((line.startsWith('**') && line.endsWith('**')) || /^(في تمام الساعة|بعد الساعة|الساعة|قسم|فريق|مرحلة|منظومة|موجز)\s*[\d:]*.*:?$/i.test(line)) {
-      const title = line.replace(/^\*\*|\*\*$/g, '').replace(/:$/, '').trim();
-      return new Paragraph({
-        bidirectional: isAr,
-        spacing: { before: 60, after: 30 },
-        children: [new TextRun({ text: title, bold: true, size: 20, color: '8B0000' })]
-      });
-    }
+
+    const cleanLine = line.replace(/^[•\-\*]\s*|\s*\*$/g, '').trim();
     return new Paragraph({
       bidirectional: isAr,
-      spacing: { before: 30, after: 30 },
-      children: [new TextRun({ text: line, size: 20 })]
+      alignment: isAr ? AlignmentType.JUSTIFIED : AlignmentType.LEFT,
+      spacing: { before: 40, after: 40 },
+      children: [new TextRun({ text: cleanLine, size: 20 })]
     });
   });
 }
