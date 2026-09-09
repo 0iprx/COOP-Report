@@ -1526,11 +1526,20 @@ export const WeeklyTab: React.FC = () => {
                       }}
                       className="w-full px-3 py-2 bg-bg border border-line rounded-xl focus:outline-none focus:border-accent text-ink font-bold"
                     >
-                      {CATEGORIES.map((cat) => (
-                        <option key={cat} value={cat}>
-                          {cat}
-                        </option>
-                      ))}
+                      <optgroup label={isAr ? '🏢 مجالات هندسية وتخصصية' : '🏢 Engineering & Specialized'}>
+                        {CATEGORIES.slice(0, 10).map((cat) => (
+                          <option key={cat} value={cat}>
+                            {cat}
+                          </option>
+                        ))}
+                      </optgroup>
+                      <optgroup label={isAr ? '📌 تصنيفات عامة' : '📌 General Categories'}>
+                        {CATEGORIES.slice(10).map((cat) => (
+                          <option key={cat} value={cat}>
+                            {cat}
+                          </option>
+                        ))}
+                      </optgroup>
                       <option value="__custom__">✨ {t('+ كتابة تصنيف مخصص...', '+ Custom category...')}</option>
                     </select>
                   )}

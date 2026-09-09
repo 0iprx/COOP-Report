@@ -703,51 +703,24 @@ export const DailyLogTab: React.FC = () => {
                     className="w-full px-3 py-2 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent text-ink font-bold"
                     required
                   >
-                    {ENTRY_CATEGORIES.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {isAr ? cat : (CATEGORY_TRANSLATIONS[cat] || cat)}
-                      </option>
-                    ))}
+                    <optgroup label={isAr ? '🏢 مجالات هندسية وتخصصية' : '🏢 Engineering & Specialized'}>
+                      {ENTRY_CATEGORIES.slice(0, 10).map((cat) => (
+                        <option key={cat} value={cat}>
+                          {isAr ? cat : (CATEGORY_TRANSLATIONS[cat] || cat)}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label={isAr ? '📌 تصنيفات عامة' : '📌 General Categories'}>
+                      {ENTRY_CATEGORIES.slice(10).map((cat) => (
+                        <option key={cat} value={cat}>
+                          {isAr ? cat : (CATEGORY_TRANSLATIONS[cat] || cat)}
+                        </option>
+                      ))}
+                    </optgroup>
                     <option value="__custom__">✨ {t('+ كتابة تصنيف مخصص...', '+ Custom category...')}</option>
                   </select>
                 </div>
               )}
-
-              {/* Quick Preset Tags */}
-              <div className="flex flex-wrap gap-1.5 pt-0.5">
-                {ENTRY_CATEGORIES.map((cat) => (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => {
-                      setIsCustomCategory(false);
-                      setCategory(cat);
-                    }}
-                    className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all ${
-                      !isCustomCategory && category === cat
-                        ? 'bg-accent text-white shadow-sm'
-                        : 'bg-bg hover:bg-line text-sub border border-line'
-                    }`}
-                  >
-                    {isAr ? cat : (CATEGORY_TRANSLATIONS[cat] || cat)}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsCustomCategory(true);
-                    if (!customCategory) setCustomCategory('');
-                  }}
-                  className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 ${
-                    isCustomCategory
-                      ? 'bg-accent text-white shadow-sm'
-                      : 'bg-accent/10 hover:bg-accent/20 text-accent border border-accent/30'
-                  }`}
-                >
-                  <Plus className="w-2.5 h-2.5" />
-                  <span>{t('مخصص', 'Custom')}</span>
-                </button>
-              </div>
             </div>
           </div>
 
