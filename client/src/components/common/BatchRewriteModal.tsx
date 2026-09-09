@@ -4,7 +4,6 @@ import {
   Check,
   X,
   ShieldCheck,
-  Key,
   Cpu,
   AlertCircle,
   Loader2,
@@ -12,7 +11,6 @@ import {
   Cog,
   Wrench,
   BarChart3,
-  ExternalLink,
   Award,
   GraduationCap,
   FileText,
@@ -37,7 +35,6 @@ export const BatchRewriteModal: React.FC<BatchRewriteModalProps> = ({
   onSuccess
 }) => {
   const { t, isAr } = useLanguage();
-  const [apiKey, setApiKey] = useState<string>(() => localStorage.getItem('coop_gemini_api_key') || '');
   const [model, setModel] = useState<string>('gemini-2.5-flash');
   const [style, setStyle] = useState<'procedural' | 'star_impact' | 'academic_competency' | 'concise_executive'>('procedural');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
@@ -52,13 +49,8 @@ export const BatchRewriteModal: React.FC<BatchRewriteModalProps> = ({
     setSuccessResult(null);
 
     try {
-      if (apiKey.trim()) {
-        localStorage.setItem('coop_gemini_api_key', apiKey.trim());
-      }
-
       const res = await api.post('/entries/batch-academic-rewrite', {
         weekNumber,
-        apiKey: apiKey.trim() || undefined,
         model,
         style
       });
@@ -69,7 +61,7 @@ export const BatchRewriteModal: React.FC<BatchRewriteModalProps> = ({
       setErrorMessage(
         err?.response?.data?.error ||
         err?.message ||
-        t('حدث خطأ أثناء معالجة السجلات. تأكد من صحة الاتصال أو المفتاح.', 'Error occurred during batch rewrite.')
+        t('حدث خطأ أثناء معالجة السجلات. يرجى المحاولة مرة أخرى.', 'Error occurred during batch rewrite.')
       );
     } finally {
       setIsProcessing(false);
@@ -359,39 +351,9 @@ export const BatchRewriteModal: React.FC<BatchRewriteModalProps> = ({
                 )}
               </div>
 
-              {/* API Configuration & Gemini Flash settings */}
+              {/* AI Engine & Scientific Integrity settings */}
               <div className="space-y-3 pt-1">
-                <div className="flex items-center justify-between">
-                  <label className="block text-xs font-bold text-sub flex items-center gap-1.5">
-                    <Key className="w-3.5 h-3.5 text-accent" />
-                    <span>{t('مفتاح Google Gemini API Key (اختياري / موصى به):', 'Google Gemini API Key (Optional / Recommended):')}</span>
-                  </label>
-                  <a
-                    href="https://aistudio.google.com/app/apikey"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-[11px] font-bold text-accent hover:underline flex items-center gap-1"
-                  >
-                    <span>{t('احصل على مفتاح مجاني وفوري', 'Get Free API Key')}</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                </div>
-                <input
-                  type="password"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder={t('الصق مفتاح AIzaSy... (إذا لم تضعه في ملف .env السيرفر)', 'Paste AIzaSy... key (or use server .env)')}
-                  className="w-full px-3 py-2 text-xs bg-bg border border-line rounded-xl focus:outline-none focus:border-accent text-ink font-mono"
-                  disabled={isProcessing}
-                />
-                <p className="text-[11px] text-sub leading-normal">
-                  {t(
-                    'إذا كان المفتاح مضافاً مسبقاً في سيرفر النظام أو كنت ترغب بالاعتماد على المحرك الأكاديمي الداخلي، يمكنك ترك الحقل فارغاً.',
-                    'If already configured in server .env or using internal engine, you can leave this empty.'
-                  )}
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <label className="block text-xs font-bold text-sub flex items-center gap-1.5">
                       <Cpu className="w-3.5 h-3.5 text-accent" />

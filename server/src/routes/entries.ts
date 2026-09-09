@@ -45,6 +45,24 @@ router.get('/', async (req: AuthenticatedRequest, res: Response): Promise<void> 
   }
 });
 
+// GET /api/entries/trash (fetch soft-deleted entries)
+router.get('/trash', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const entries = await prisma.entry.findMany({
+      where: {
+        userId: req.user!.userId,
+        deletedAt: { not: null }
+      },
+      orderBy: { entryDate: 'desc' }
+    });
+
+    res.json({ entries });
+  } catch (err) {
+    logger.error({ err }, 'Error fetching trash entries');
+    res.status(500).json({ error: 'تعذر جلب سلة المحذوفات' });
+  }
+});
+
 // POST /api/entries
 router.post('/', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
@@ -150,6 +168,29 @@ router.delete('/:id', async (req: AuthenticatedRequest, res: Response): Promise<
     res.json({ message: 'تم نقل الإدخال إلى سلة المحذوفات بأمان ويمكنك استعادته في أي وقت' });
   } catch (err) {
     res.status(500).json({ error: 'تعذر حذف الإدخال' });
+  }
+});
+
+// POST /api/entries/:id/restore (Restore soft-deleted entry)
+router.post('/:id/restore', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const id = Number(req.params.id);
+
+    const existing = await prisma.entry.findUnique({ where: { id } });
+    if (!existing || existing.userId !== req.user!.userId) {
+      res.status(404).json({ error: 'الإدخال غير موجود أو لا تملك صلاحية استعادته' });
+      return;
+    }
+
+    const restored = await prisma.entry.update({
+      where: { id },
+      data: { deletedAt: null }
+    });
+
+    res.json({ message: 'تمت استعادة الإدخال بنجاح', entry: restored });
+  } catch (err) {
+    logger.error({ err }, 'Error restoring entry');
+    res.status(500).json({ error: 'تعذر استعادة الإدخال' });
   }
 });
 
