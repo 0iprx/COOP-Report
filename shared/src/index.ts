@@ -672,7 +672,7 @@ export function inferProfessionalCategory(text: string = '', title: string = '')
   if (/(5g|cpe|fwa|mvno|جيل خامس|ترددات|محطات|أبراج|b2b|b2c|خلوي|لاسلكي)/i.test(combined)) {
     return 'شبكات الاتصالات اللاسلكية والجيل الخامس (5G)';
   }
-  if (/(ftth|ont|olt|odn|odb|utp|ألياف|ضوئيات|بوكسية|نفاذ ضوئي|كوابل|تراسل ضوئي)/i.test(combined)) {
+  if (/(ftth|ont|olt|odn|odb|utp|ألياف|ضوئيات|بوكسية|نفاذ ضوئي|كوابل|تراسل ضوئي|fiber|فايبر|otdr|سبلايسر|splice|لحام)/i.test(combined)) {
     return 'شبكات النفاذ والألياف الضوئية (FTTH)';
   }
   if (/(cyber|security|red team|blue team|mitre|socket|أمن سيبراني|اختراق|ثغرات|جدار حماية|firewall)/i.test(combined)) {
@@ -724,7 +724,7 @@ export function elevateTaskTitle(title: string = '', description: string = '', i
       ? 'ضبط تكوينات ومحددات شبكات الجيل الخامس (5G Patching) وإجراءات الاستجابة السيبرانية'
       : '5G Network Parameter Configurations (5G Patching) & Cyber Incident Response Workflows';
   }
-  if (/ftth|ألياف|ont|olt|odn|odb|fiber|بوكسية|لحام|splice/i.test(t) || /ftth/i.test(desc)) {
+  if (/ftth|ألياف|فايبر|ont|olt|odn|odb|fiber|بوكسية|لحام|splice|otdr/i.test(t) || /(ftth|fiber|فايبر|otdr|سبلايسر|splice|لحام)/i.test(desc)) {
     return isAr
       ? 'الفحص والمعاينة الميدانية لمكونات شبكات النفاذ الضوئي (FTTH) ومسارات التوزيع'
       : 'Optical Access Network (FTTH) Field Inspection & Distribution Path Verification';
