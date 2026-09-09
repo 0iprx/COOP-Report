@@ -60,33 +60,18 @@ function formatProceduralNarrativeHtml(text: string): string {
   return out.join('');
 }
 
-function getWeekTopicServer(w: any, isAr: boolean = true): string {
+function getWeekTopicServer(w: { weekIndex: number; entries?: { title: string; description?: string }[] }, isAr: boolean = true): string {
   if (w.entries && w.entries.length > 0) {
-    const firstTitle = (w.entries[0].title || '').replace(/\s*[-—–]\s*(اليوم|Day)\s*\d+.*$/i, '').trim();
-    if (firstTitle && firstTitle.length > 3) {
-      const elevated = elevateTaskTitle(firstTitle, w.entries[0].description || '');
-      return elevated || firstTitle;
+    const titles = w.entries
+      .map(e => (e.title || '').replace(/\s*[-—–]\s*(اليوم|Day)\s*\d+.*$/i, '').trim())
+      .filter(t => t.length > 2);
+    const uniqueTitles = Array.from(new Set(titles));
+    if (uniqueTitles.length > 0) {
+      const elevated = uniqueTitles.slice(0, 2).map(t => elevateTaskTitle(t, '')).join(isAr ? ' و ' : ' & ');
+      return elevated || uniqueTitles[0];
     }
   }
-  const defaultTopicsAr = [
-    'التهيئة والتعريف بأنظمة المنشأة وسياسات أمن المعلومات',
-    'استكشاف البنية التحتية والبيئة التشغيلية للخوادم',
-    'إدارة وصيانة شبكات الاتصال وتوصيلات الألياف الضوئية',
-    'تكوين وإدارة خوادم قواعد البيانات والنسخ الاحتياطي',
-    'مراقبة أداء الشبكات وإعداد جدران الحماية السيبرانية',
-    'مراجعة مؤشرات الأداء والتقييم النصفي مع المشرف الميداني',
-    'أتمتة العمليات التشغيلية وإدارة الخدمات السحابية',
-    'صيانة الخوادم وإدارة وحدات تزويد الطاقة الاحتياطية',
-    'تحليل سجلات الأمان وإجراءات الاستجابة للحوادث الرقمية',
-    'تحديث البنية التحتية واختبار خطة التعافي من الكوارث',
-    'ورش العمل الهندسية وتطوير الحلول البرمجية المؤسسية',
-    'توثيق إجراءات التشغيل القياسية وتحديث الأدلة الفنية',
-    'اختبار تكامل الأنظمة وضمان الجودة والمطابقة الفنية',
-    'مناقشة التقرير الفني الختامي واعتماد مخرجات التدريب'
-  ];
-  return isAr
-    ? (defaultTopicsAr[w.weekIndex - 1] || `المهام والأعمال الفنية للأسبوع ${w.weekIndex}`)
-    : `Week ${w.weekIndex} Technical Activities`;
+  return isAr ? 'أسبوع تدريبي مجدول (قيد التوثيق)' : 'Scheduled Training Week (Pending)';
 }
 
 export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 'ar' | 'en' = 'ar'): string {
@@ -415,7 +400,7 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
           <div class="meta-item"><b>${isAr ? 'القسم / التخصص:' : 'Department:'}</b> ${escapeHtml(profile.department) || '—'}</div>
           <div class="meta-item"><b>${isAr ? 'المشرف الأكاديمي:' : 'Academic Supervisor:'}</b> ${escapeHtml(profile.supervisorName) || '—'}</div>
           <div class="meta-item"><b>${isAr ? 'المشرف الميداني:' : 'Field Supervisor:'}</b> ${escapeHtml(profile.responsibleName) || '—'}</div>
-          <div class="meta-item"><b>${isAr ? 'ساعات المقرر في الخطة:' : 'Course Credit:'}</b> ${isAr ? 'ساعتان معتمدتان من المعدل التراكمي' : '2 Credit Hours in GPA'}</div>
+          <div class="meta-item"><b>${isAr ? 'ساعات المقرر في الخطة:' : 'Course Credit:'}</b> ${courseHours ? `${courseHours} ${isAr ? 'ساعة تدريبية معتمدة' : 'Accredited Hours'}` : (isAr ? 'معتمد في الخطة الدراسية' : 'Accredited Course')}</div>
           <div class="meta-item"><b>${isAr ? 'المدة التدريبية:' : 'Training Duration:'}</b> ${profile.trainingWeeks || 14} ${isAr ? 'أسبوعاً تدريبياً ميدانياً' : 'Weeks'}</div>
           <div class="meta-item"><b>${isAr ? 'حالة التوثيق الميداني:' : 'Documentation Status:'}</b> ${weeks.length} ${isAr ? 'أسبوعاً موثقاً بالكامل (100%)' : 'Weeks Completed (100%)'}</div>
         </div>
@@ -432,7 +417,7 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
         </a>
 
         <a class="toc-row" href="#sec-intro">
-          <span>${isAr ? '• 1. المقدمة وأهداف التدريب وبيانات المقرر (ساعتان معتمدتان)' : '• 1. Introduction & Course Credit (2 Credit Hours in GPA)'}</span>
+          <span>${isAr ? '• 1. المقدمة وأهداف التدريب وبيانات الخطة المعتمدة' : '• 1. Introduction, Objectives & Academic Training Plan'}</span>
           <span class="toc-dots"></span>
           <span class="toc-page">${isAr ? '٢' : '2'}</span>
         </a>

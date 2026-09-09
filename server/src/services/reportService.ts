@@ -136,11 +136,30 @@ export async function buildFinalReportData(userId: number): Promise<FinalReportD
     });
   }
 
-  // Construct all training weeks (e.g. 1 to 14)
-  const weeks: WeekGroup[] = [];
+  // Construct all training weeks dynamically (e.g. 1 to 14, or higher if more weeks are logged)
   const baseDate = new Date(`${baseWeekStart}T00:00:00Z`);
+  const baseTime = baseDate.getTime();
 
-  for (let i = 0; i < totalConfiguredWeeks; i++) {
+  let maxWeekFromData = totalConfiguredWeeks;
+  for (const e of entries) {
+    const entryTime = new Date(`${e.entryDate}T00:00:00Z`).getTime();
+    if (entryTime >= baseTime) {
+      const weekDiff = Math.floor((entryTime - baseTime) / (7 * 24 * 60 * 60 * 1000)) + 1;
+      if (weekDiff > maxWeekFromData) {
+        maxWeekFromData = weekDiff;
+      }
+    }
+  }
+  for (const ev of evidenceRaw) {
+    if (ev.weekIndex > maxWeekFromData) {
+      maxWeekFromData = ev.weekIndex;
+    }
+  }
+
+  const effectiveTotalWeeks = Math.max(totalConfiguredWeeks, maxWeekFromData);
+  const weeks: WeekGroup[] = [];
+
+  for (let i = 0; i < effectiveTotalWeeks; i++) {
     const wDate = new Date(baseDate.getTime() + i * 7 * 24 * 60 * 60 * 1000);
     const ws = wDate.toISOString().split('T')[0];
     const weekEntries = weekMap.get(ws) || [];

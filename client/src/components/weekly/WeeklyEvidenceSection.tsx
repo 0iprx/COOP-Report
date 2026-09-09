@@ -334,12 +334,12 @@ export const WeeklyEvidenceSection: React.FC<Props> = ({ weekIndex, traineeId, r
             >
               <div
                 onClick={() => setSelectedImageForZoom(photo)}
-                className="cursor-pointer overflow-hidden aspect-video relative bg-ink/5 print:cursor-default"
+                className="cursor-pointer overflow-hidden min-h-[160px] max-h-[360px] relative bg-slate-50 dark:bg-slate-900/40 p-1.5 flex items-center justify-center print:cursor-default"
               >
                 <img
                   src={photo.imageData}
                   alt={photo.caption}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200 print:transform-none"
+                  className="max-h-[340px] w-auto max-w-full object-contain group-hover:scale-105 transition-transform duration-200 print:transform-none rounded"
                 />
                 <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-ink/70 text-white text-[9px] font-bold no-print print:hidden">
                   انقر للتكبير

@@ -129,6 +129,28 @@ export const WeeklyTab: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
+  // Dynamic Week Increment Handler
+  const [addingWeek, setAddingWeek] = useState<boolean>(false);
+  const handleAddWeek = async () => {
+    try {
+      setAddingWeek(true);
+      const currentWeeks = finalReportData?.profile?.trainingWeeks || weeksList.length || 14;
+      const nextWeeks = currentWeeks + 1;
+      await api.put('/profile', {
+        ...(finalReportData?.profile || {}),
+        trainingWeeks: nextWeeks
+      });
+      await queryClient.invalidateQueries({ queryKey: ['finalReport'] });
+      setSaveToast(t(`تمت إضافة الأسبوع التدريبي ${nextWeeks} بنجاح!`, `Week ${nextWeeks} added successfully!`));
+      setTimeout(() => setSaveToast(''), 3500);
+    } catch {
+      setErrorToast(t('تعذر إضافة أسبوع تدريبي جديد', 'Failed to add week'));
+      setTimeout(() => setErrorToast(''), 3000);
+    } finally {
+      setAddingWeek(false);
+    }
+  };
+
   // Aggregated entries for Custom Date Range mode vs Scheduled Weekly mode
   const allDocumentedEntries: EntryDTO[] = (finalReportData?.weeks || []).flatMap((w) => w.entries || []);
 
@@ -746,20 +768,33 @@ export const WeeklyTab: React.FC = () => {
                 <span>{t('اختر الأسبوع للمعاينة والتعديل وإرفاق الصور:', 'Select week to review, edit, or attach photos:')}</span>
               </div>
 
-              {/* Quick Dropdown Picker */}
-              <div className="flex items-center gap-1.5">
-                <span className="text-[11px] text-sub">{t('انتقال سريع:', 'Quick Jump:')}</span>
-                <select
-                  value={selectedWeek}
-                  onChange={(e) => setSelectedWeek(e.target.value)}
-                  className="px-2.5 py-1 text-xs bg-bg border border-line rounded-lg text-ink font-bold focus:outline-none focus:border-accent"
+              {/* Add Week Button & Quick Dropdown Picker */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={handleAddWeek}
+                  disabled={addingWeek}
+                  className="px-2.5 py-1 text-xs font-bold rounded-lg bg-accent/10 hover:bg-accent/20 border border-accent/30 text-accent transition-all flex items-center gap-1 shadow-xs disabled:opacity-50"
+                  title={t('إضافة أسبوع تدريبي إضافي للجدول', 'Add additional training week')}
                 >
-                  {weeksList.map((w) => (
-                    <option key={w.weekIndex} value={w.weekStart}>
-                      {t(`الأسبوع ${w.weekIndex} (${w.entries?.length || 0} مهام)`, `Week ${w.weekIndex} (${w.entries?.length || 0} tasks)`)}
-                    </option>
-                  ))}
-                </select>
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>{addingWeek ? t('جارٍ الإضافة...', 'Adding...') : t('+ إضافة أسبوع', '+ Add Week')}</span>
+                </button>
+
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] text-sub">{t('انتقال سريع:', 'Quick Jump:')}</span>
+                  <select
+                    value={selectedWeek}
+                    onChange={(e) => setSelectedWeek(e.target.value)}
+                    className="px-2.5 py-1 text-xs bg-bg border border-line rounded-lg text-ink font-bold focus:outline-none focus:border-accent"
+                  >
+                    {weeksList.map((w) => (
+                      <option key={w.weekIndex} value={w.weekStart}>
+                        {t(`الأسبوع ${w.weekIndex} (${w.entries?.length || 0} مهام)`, `Week ${w.weekIndex} (${w.entries?.length || 0} tasks)`)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -806,6 +841,18 @@ export const WeeklyTab: React.FC = () => {
                     </button>
                   );
                 })}
+
+                {/* Additional Week Increment Pill Button */}
+                <button
+                  type="button"
+                  onClick={handleAddWeek}
+                  disabled={addingWeek}
+                  className="px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex flex-col items-center justify-center gap-0.5 border border-dashed border-accent/40 bg-accent/5 hover:bg-accent/10 text-accent shrink-0"
+                  title={t('إضافة أسبوع تدريبي إضافي', 'Add training week')}
+                >
+                  <Plus className="w-4 h-4" />
+                  <span className="text-[10px]">{t('أسبوع إضافي', 'Add Week')}</span>
+                </button>
               </div>
 
               <button
@@ -1361,9 +1408,9 @@ export const WeeklyTab: React.FC = () => {
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 print:grid-cols-2">
                       {customEvidenceList.map((photo, pIdx) => (
-                        <div key={photo.id || pIdx} className="border border-line rounded-xl overflow-hidden bg-bg p-2 space-y-1.5 print:border-slate-300">
-                          <div className="aspect-video w-full overflow-hidden rounded-lg bg-black/5 flex items-center justify-center">
-                            <img src={photo.imageData} alt={photo.caption || ''} className="w-full h-full object-cover" />
+                        <div key={photo.id || pIdx} className="border border-line rounded-xl overflow-hidden bg-bg p-2 space-y-1.5 print:border-slate-300 flex flex-col">
+                          <div className="w-full min-h-[160px] max-h-[320px] overflow-hidden rounded-lg bg-slate-50 dark:bg-slate-900/40 p-1 flex items-center justify-center">
+                            <img src={photo.imageData} alt={photo.caption || ''} className="max-h-[300px] w-auto max-w-full object-contain rounded" />
                           </div>
                           {photo.caption && (
                             <p className="text-[11px] font-bold text-ink truncate">{photo.caption}</p>

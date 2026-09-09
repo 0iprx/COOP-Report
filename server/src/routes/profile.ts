@@ -54,13 +54,28 @@ router.put('/', async (req: AuthenticatedRequest, res: Response): Promise<void> 
       return;
     }
 
+    const existing = await prisma.reportProfile.findUnique({
+      where: { userId: req.user!.userId }
+    });
+
+    const dataToSave = { ...parseResult.data };
+
+    // Permanent logos safeguard:
+    // If incoming request has empty string or undefined for logos, preserve existing database logos
+    if (!dataToSave.companyLogo && existing?.companyLogo) {
+      dataToSave.companyLogo = existing.companyLogo;
+    }
+    if (!dataToSave.institutionLogo && existing?.institutionLogo) {
+      dataToSave.institutionLogo = existing.institutionLogo;
+    }
+
     const updated = await prisma.reportProfile.upsert({
       where: { userId: req.user!.userId },
       create: {
         userId: req.user!.userId,
-        ...parseResult.data
+        ...dataToSave
       },
-      update: parseResult.data
+      update: dataToSave
     });
 
     await logAuditEvent({

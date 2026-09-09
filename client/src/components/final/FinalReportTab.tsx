@@ -109,31 +109,16 @@ const getArabicWeekName = (index: number): string => {
 
 export const getWeekTopic = (w: { weekIndex: number; entries?: { title: string; description?: string }[] }, isAr: boolean = true): string => {
   if (w.entries && w.entries.length > 0) {
-    const firstTitle = w.entries[0].title.replace(/\s*[-—–]\s*(اليوم|Day)\s*\d+.*$/i, '').trim();
-    if (firstTitle && firstTitle.length > 3) {
-      const elevated = elevateTaskTitle(firstTitle, w.entries[0].description || '');
-      return elevated || firstTitle;
+    const titles = w.entries
+      .map(e => e.title.replace(/\s*[-—–]\s*(اليوم|Day)\s*\d+.*$/i, '').trim())
+      .filter(t => t.length > 2);
+    const uniqueTitles = Array.from(new Set(titles));
+    if (uniqueTitles.length > 0) {
+      const elevated = uniqueTitles.slice(0, 2).map(t => elevateTaskTitle(t, '')).join(isAr ? ' و ' : ' & ');
+      return elevated || uniqueTitles[0];
     }
   }
-  const defaultTopicsAr = [
-    'التهيئة والتعريف بأنظمة المنشأة وسياسات أمن المعلومات',
-    'استكشاف البنية التحتية والبيئة التشغيلية للخوادم',
-    'إدارة وصيانة شبكات الاتصال وتوصيلات الألياف الضوئية',
-    'تكوين وإدارة خوادم قواعد البيانات والنسخ الاحتياطي',
-    'مراقبة أداء الشبكات وإعداد جدران الحماية السيبرانية',
-    'مراجعة مؤشرات الأداء والتقييم النصفي مع المشرف الميداني',
-    'أتمتة العمليات التشغيلية وإدارة الخدمات السحابية',
-    'صيانة الخوادم وإدارة وحدات تزويد الطاقة الاحتياطية',
-    'تحليل سجلات الأمان وإجراءات الاستجابة للحوادث الرقمية',
-    'تحديث البنية التحتية واختبار خطة التعافي من الكوارث',
-    'ورش العمل الهندسية وتطوير الحلول البرمجية المؤسسية',
-    'توثيق إجراءات التشغيل القياسية وتحديث الأدلة الفنية',
-    'اختبار تكامل الأنظمة وضمان الجودة والمطابقة الفنية',
-    'مناقشة التقرير الفني الختامي واعتماد مخرجات التدريب'
-  ];
-  return isAr
-    ? (defaultTopicsAr[w.weekIndex - 1] || `المهام والأعمال الفنية للأسبوع ${w.weekIndex}`)
-    : `Week ${w.weekIndex} Technical Activities`;
+  return isAr ? 'أسبوع تدريبي مجدول (قيد التوثيق)' : 'Scheduled Training Week (Pending)';
 };
 
 // Helper to render procedural narrative with structured bullets and headers
@@ -1667,7 +1652,27 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             </div>
 
             <div className="space-y-1">
-              <label className="block text-xs font-bold text-sub">عدد أسابيع التدريب المعتمدة</label>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-sub">عدد أسابيع التدريب المعتمدة</label>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => handleProfileChange('trainingWeeks', Math.max(1, (profileData.trainingWeeks || 14) - 1))}
+                    className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-bg hover:bg-line border border-line text-sub hover:text-ink"
+                    title="إنقاص أسبوع"
+                  >
+                    - أسبوع
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleProfileChange('trainingWeeks', Math.min(30, (profileData.trainingWeeks || 14) + 1))}
+                    className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-accent/10 hover:bg-accent/20 border border-accent/30 text-accent"
+                    title="إضافة أسبوع جديد"
+                  >
+                    + أسبوع
+                  </button>
+                </div>
+              </div>
               <input
                 type="number"
                 min="1"
@@ -2181,7 +2186,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
               <span className="font-bold text-sub">{isAr ? 'المشرف الميداني:' : 'Field Supervisor:'}</span> {activePreviewProfile.responsibleName || '—'}
             </div>
             <div>
-              <span className="font-bold text-sub">{isAr ? 'ساعات المقرر في الخطة:' : 'Course Credit:'}</span> {isAr ? 'ساعتان معتمدتان من المعدل التراكمي' : '2 Credit Hours in GPA'}
+              <span className="font-bold text-sub">{isAr ? 'ساعات المقرر في الخطة:' : 'Course Credit:'}</span> {activePreviewProfile.courseHours ? `${activePreviewProfile.courseHours} ${isAr ? 'ساعة تدريبية معتمدة' : 'Accredited Hours'}` : (isAr ? 'معتمد في الخطة الدراسية' : 'Accredited Course')}
             </div>
             <div>
               <span className="font-bold text-sub">{isAr ? 'المدة التدريبية المعتمدة:' : 'Training Duration:'}</span> {activePreviewProfile.trainingWeeks || 14} {isAr ? 'أسبوعاً تدريبياً ميدانياً' : 'Weeks'}
@@ -2211,8 +2216,8 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             <a href="#sec-intro" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
               <span className="group-hover:translate-x-[-2px] transition-transform">
                 {isAr
-                  ? '١. المقدمة وأهداف التدريب وبيانات المقرر (ساعتان معتمدتان من المعدل)'
-                  : '1. Introduction & Course Credit (2 Credit Hours in GPA)'}
+                  ? '١. المقدمة وأهداف التدريب وبيانات الخطة المعتمدة'
+                  : '1. Introduction, Objectives & Academic Training Plan'}
               </span>
               <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
               <span className="text-[#8B0000] font-black">{isAr ? '٢' : '2'}</span>
@@ -2473,10 +2478,17 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                         {w.evidence.map((ev: any, evIdx: number) => (
-                          <div key={ev.id || evIdx} className="border border-line rounded-xl overflow-hidden bg-surface">
-                            <img src={ev.imageData} alt={ev.caption} className="w-full h-44 object-cover" />
+                          <div key={ev.id || evIdx} className="border border-line rounded-xl overflow-hidden bg-surface flex flex-col break-inside-avoid shadow-xs">
+                            <div className="w-full bg-slate-50 dark:bg-slate-900/40 p-2 flex items-center justify-center min-h-[180px] max-h-[480px] overflow-hidden">
+                              <img
+                                src={ev.imageData}
+                                alt={ev.caption || ''}
+                                className="max-h-[450px] w-auto max-w-full object-contain rounded-md shadow-xs transition-transform hover:scale-[1.01]"
+                                loading="lazy"
+                              />
+                            </div>
                             <div className="p-2.5 text-xs font-bold text-ink leading-snug bg-card border-t border-line">
-                              {isAr ? `شكل توثيقي (${evIdx + 1}): ` : `Figure (${evIdx + 1}): `}
+                              <span className="text-accent font-extrabold ml-1">{isAr ? `شكل توثيقي (${evIdx + 1}):` : `Figure (${evIdx + 1}):`}</span>
                               <span className="font-normal text-sub">{ev.caption}</span>
                             </div>
                           </div>
@@ -2563,18 +2575,6 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                       </div>
                     );
                   })()}
-                </div>
-
-                {/* Academic Supervisory Endorsement Box */}
-                <div className="px-5 py-3.5 bg-surface border-t border-line text-xs text-sub flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 font-bold text-ink">
-                    <span>{isAr ? 'اعتماد المشرف الميداني بالمنشأة:' : 'Field Supervisor Approval:'}</span>
-                    <span className="text-sub font-normal">{activePreviewProfile.responsibleName || '....................'}</span>
-                  </div>
-                  <div className="flex items-center gap-4 text-[11.5px]">
-                    <span>{isAr ? 'التقييم: [  ] ممتاز   [  ] جيد جداً   [  ] جيد' : 'Rating: [  ] Excellent  [  ] Very Good  [  ] Good'}</span>
-                    <span>{isAr ? 'التوقيع والختم: ....................' : 'Signature: ....................'}</span>
-                  </div>
                 </div>
               </div>
             );
@@ -2675,31 +2675,135 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
           </p>
         </div>
 
-        {/* Section 6: Official Approval & Appendices */}
-        <div id="sec-approval" className="scroll-mt-24 space-y-4 pt-4 page-break">
+        {/* Section 6: Official Comprehensive Supervisory Endorsement & Institutional Sign-Off */}
+        <div id="sec-approval" className="scroll-mt-24 space-y-5 pt-4 page-break">
           <h2 className="text-lg font-extrabold text-ink border-b-2 border-accent pb-1.5 inline-block">
-            {isAr ? '6. استمارة تقييم واعتماد المشرفين والملاحق الأكاديمية' : '6. Supervisory Approval Form & Appendices'}
+            {isAr ? '6. استمارة التقييم والاعتماد والمصادقة الرسمية الشاملة' : '6. Official Supervisory Endorsement & Final Sign-Off'}
           </h2>
 
-          <div className="border border-line rounded-xl overflow-hidden text-xs">
-            <div className="bg-bg p-3 font-bold text-ink border-b border-line flex justify-between">
-              <span>{isAr ? 'بيانات الاعتماد والتقييم النهائي الشامل' : 'Final Evaluation & Endorsement'}</span>
-              <span className="text-accent">{activePreviewProfile.responsibleName || (isAr ? 'المشرف الميداني' : 'Field Supervisor')}</span>
+          {/* Academic Dossier Summary Card */}
+          <div className="border border-line rounded-2xl overflow-hidden text-xs bg-card shadow-xs">
+            <div className="bg-bg px-4 py-3 font-bold text-ink border-b border-line flex flex-wrap items-center justify-between gap-2">
+              <span className="flex items-center gap-1.5">
+                <FileText className="w-4 h-4 text-accent" />
+                <span>{isAr ? 'ملخص مخرجات التدريب وبيانات الاعتماد النهائي' : 'Final COOP Verification & Academic Summary'}</span>
+              </span>
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-accent/10 text-accent border border-accent/20">
+                {activePreviewWeeks.length} {isAr ? 'أسابيع ميدانية موثقة' : 'Documented Weeks'}
+              </span>
             </div>
-            <div className="p-4 space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sub">
-                <div><b>{isAr ? 'اسم المتدرب:' : 'Student Name:'}</b> {normalizeStudentName(activePreviewProfile.studentName) || '—'}</div>
-                <div><b>{isAr ? 'الرقم التدريبي / الجامعي:' : 'ID / Trainee Number:'}</b> {activePreviewProfile.trainingNumber || '—'}</div>
-                <div><b>{isAr ? 'جهة التدريب:' : 'Host Organization:'}</b> {activePreviewProfile.entityAddress || '—'}</div>
-                <div><b>{isAr ? 'إجمالي الساعات المعتمدة:' : 'Total Approved Hours:'}</b> {isSampleMode ? 280 : (reportData?.totalHours || 0)} / {activePreviewProfile.courseHours || 280} {isAr ? 'ساعة' : 'hrs'}</div>
-              </div>
-              <div className="border-t border-line pt-3 flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <span className="font-bold text-ink">{isAr ? 'التقييم العام للمتدرب: ' : 'Overall Rating: '}</span>
-                  <span className="text-ok font-bold">{reportData?.profile?.supervisorRating || (isAr ? 'ممتاز (معتمد)' : 'Excellent')}</span>
+
+            <div className="p-4 sm:p-5 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-sub">
+                <div className="p-2.5 rounded-xl bg-bg/50 border border-line/60">
+                  <span className="block text-[11px] text-muted">{isAr ? 'اسم المتدرب:' : 'Trainee Name:'}</span>
+                  <span className="font-extrabold text-ink">{normalizeStudentName(activePreviewProfile.studentName) || '—'}</span>
                 </div>
-                <div className="text-muted">
-                  {isAr ? 'التوقيع والختم الرسمي: .......................................' : 'Official Signature & Stamp: .......................................'}
+                <div className="p-2.5 rounded-xl bg-bg/50 border border-line/60">
+                  <span className="block text-[11px] text-muted">{isAr ? 'الرقم التدريبي / الأكاديمي:' : 'Training / Student ID:'}</span>
+                  <span className="font-extrabold text-ink">{activePreviewProfile.trainingNumber || '—'}</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-bg/50 border border-line/60">
+                  <span className="block text-[11px] text-muted">{isAr ? 'القسم / التخصص:' : 'Department / Specialty:'}</span>
+                  <span className="font-extrabold text-ink">{activePreviewProfile.department || '—'}</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-bg/50 border border-line/60">
+                  <span className="block text-[11px] text-muted">{isAr ? 'جهة التدريب الميداني:' : 'Host Organization:'}</span>
+                  <span className="font-extrabold text-ink">{activePreviewProfile.entityAddress || '—'}</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-bg/50 border border-line/60">
+                  <span className="block text-[11px] text-muted">{isAr ? 'المؤسسة التعليمية / الكلية:' : 'Academic Institution:'}</span>
+                  <span className="font-extrabold text-ink">{activePreviewProfile.trainingUnit || '—'}</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-bg/50 border border-line/60">
+                  <span className="block text-[11px] text-muted">{isAr ? 'إجمالي الساعات المنجزة:' : 'Total Hours Completed:'}</span>
+                  <span className="font-extrabold text-ok">
+                    {isSampleMode ? (activePreviewProfile.courseHours || 280) : (reportData?.totalHours || 0)} / {activePreviewProfile.courseHours || 280} {isAr ? 'ساعة معتمدة' : 'Hours'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Trainee Declaration */}
+              <div className="p-3.5 rounded-xl bg-surface border border-line text-[11.5px] leading-relaxed text-sub space-y-2">
+                <div className="font-bold text-ink flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-accent" />
+                  <span>{isAr ? 'إقرار وتعهد المتدرب بصحة البيانات:' : 'Trainee Declaration:'}</span>
+                </div>
+                <p>
+                  {isAr
+                    ? 'أقر أنا المتدرب الموقع أدناه بأن كافة المهام والأنشطة والتقارير والأدلة التوثيقية الواردة في هذا التقرير تمثل عملي الميداني الفعلي المنجز تحت إشراف وتوجيه المختصين في جهة التدريب ووفق الخطة المعتمدة.'
+                    : 'I, the undersigned trainee, declare that all tasks, field activities, and evidence documented in this report represent my genuine operational work completed under the direct supervision of the host organization.'}
+                </p>
+                <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-line text-xs">
+                  <div><b>{isAr ? 'اسم المتدرب:' : 'Trainee Name:'}</b> {normalizeStudentName(activePreviewProfile.studentName) || '....................'}</div>
+                  <div><b>{isAr ? 'التوقيع:' : 'Signature:'}</b> ....................................</div>
+                  <div><b>{isAr ? 'التاريخ:' : 'Date:'}</b> ..... / ..... / 202... م</div>
+                </div>
+              </div>
+
+              {/* Grid: Field Supervisor Endorsement vs Academic Supervisor Endorsement */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                {/* 1. Field Supervisor Approval (Host Entity) */}
+                <div className="border border-line rounded-xl p-4 bg-surface space-y-3 flex flex-col justify-between">
+                  <div className="space-y-2">
+                    <div className="font-extrabold text-xs text-ink pb-1.5 border-b border-line flex items-center justify-between">
+                      <span>{isAr ? 'اعتماد المشرف الميداني (جهة التدريب)' : 'Field Supervisor Endorsement (Host)'}</span>
+                      <span className="text-[10px] text-accent font-bold">{activePreviewProfile.entityAddress || 'جهة التدريب'}</span>
+                    </div>
+                    <div className="space-y-1 text-[11.5px] text-sub">
+                      <div><b>{isAr ? 'اسم المشرف الميداني:' : 'Supervisor Name:'}</b> {activePreviewProfile.responsibleName || '................................'}</div>
+                      <div><b>{isAr ? 'المنصب / الصفة:' : 'Title / Role:'}</b> {isAr ? 'المشرف الميداني المعتمد' : 'Authorized Field Mentor'}</div>
+                      <div className="pt-1">
+                        <b>{isAr ? 'التقييم العام للمتدرب:' : 'Overall Performance Rating:'}</b>
+                        <div className="flex items-center gap-3 pt-1 text-[11px] font-bold text-ink">
+                          <span>[  ] {isAr ? 'ممتاز' : 'Excellent'}</span>
+                          <span>[  ] {isAr ? 'جيد جداً' : 'Very Good'}</span>
+                          <span>[  ] {isAr ? 'جيد' : 'Good'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-line space-y-2 text-[11px]">
+                    <div className="flex justify-between items-center text-muted">
+                      <span>{isAr ? 'التوقيع:' : 'Signature:'} ........................</span>
+                      <span>{isAr ? 'التاريخ:' : 'Date:'} .... / .... / 202...</span>
+                    </div>
+                    <div className="h-16 border-2 border-dashed border-line/80 rounded-lg flex items-center justify-center text-muted text-[10px]">
+                      {isAr ? 'موضع الختم الرسمي لجهة التدريب' : 'Official Host Organization Stamp'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Academic Supervisor Approval (College / University) */}
+                <div className="border border-line rounded-xl p-4 bg-surface space-y-3 flex flex-col justify-between">
+                  <div className="space-y-2">
+                    <div className="font-extrabold text-xs text-ink pb-1.5 border-b border-line flex items-center justify-between">
+                      <span>{isAr ? 'اعتماد المشرف الأكاديمي (الجامعة / الكلية)' : 'Academic Supervisor Endorsement (Institution)'}</span>
+                      <span className="text-[10px] text-accent font-bold">{activePreviewProfile.trainingUnit || 'المؤسسة التعليمية'}</span>
+                    </div>
+                    <div className="space-y-1 text-[11.5px] text-sub">
+                      <div><b>{isAr ? 'اسم المشرف الأكاديمي:' : 'Supervisor Name:'}</b> {activePreviewProfile.supervisorName || '................................'}</div>
+                      <div><b>{isAr ? 'القسم العلمي:' : 'Academic Department:'}</b> {activePreviewProfile.department || '................................'}</div>
+                      <div className="pt-1">
+                        <b>{isAr ? 'حالة الاعتماد النهائي:' : 'Final Approval Status:'}</b>
+                        <div className="flex items-center gap-3 pt-1 text-[11px] font-bold text-ink">
+                          <span>[  ] {isAr ? 'مقبول ومعتمد' : 'Approved'}</span>
+                          <span>[  ] {isAr ? 'تعديلات مطلوبة' : 'Revisions'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-line space-y-2 text-[11px]">
+                    <div className="flex justify-between items-center text-muted">
+                      <span>{isAr ? 'التوقيع:' : 'Signature:'} ........................</span>
+                      <span>{isAr ? 'التاريخ:' : 'Date:'} .... / .... / 202...</span>
+                    </div>
+                    <div className="h-16 border-2 border-dashed border-line/80 rounded-lg flex items-center justify-center text-muted text-[10px]">
+                      {isAr ? 'موضع ختم الكلية / إدارة التدريب التعاوني' : 'Official Academic Unit Stamp'}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

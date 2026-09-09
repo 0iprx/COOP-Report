@@ -40,31 +40,16 @@ function translateCategory(cat: string, isAr: boolean): string {
 
 function getWeekTopicServer(w: any, isAr: boolean = true): string {
   if (w.entries && w.entries.length > 0) {
-    const firstTitle = (w.entries[0].title || '').replace(/\s*[-—–]\s*(اليوم|Day)\s*\d+.*$/i, '').trim();
-    if (firstTitle && firstTitle.length > 3) {
-      const elevated = elevateTaskTitle(firstTitle, w.entries[0].description || '');
-      return elevated || firstTitle;
+    const titles = (w.entries as any[])
+      .map(e => (e.title || '').replace(/\s*[-—–]\s*(اليوم|Day)\s*\d+.*$/i, '').trim())
+      .filter(t => t.length > 2);
+    const uniqueTitles = Array.from(new Set(titles));
+    if (uniqueTitles.length > 0) {
+      const elevated = uniqueTitles.slice(0, 2).map(t => elevateTaskTitle(t, '')).join(isAr ? ' و ' : ' & ');
+      return elevated || uniqueTitles[0];
     }
   }
-  const defaultTopicsAr = [
-    'التهيئة والتعريف بأنظمة المنشأة وسياسات أمن المعلومات',
-    'استكشاف البنية التحتية والبيئة التشغيلية للخوادم',
-    'إدارة وصيانة شبكات الاتصال وتوصيلات الألياف الضوئية',
-    'تكوين وإدارة خوادم قواعد البيانات والنسخ الاحتياطي',
-    'مراقبة أداء الشبكات وإعداد جدران الحماية السيبرانية',
-    'مراجعة مؤشرات الأداء والتقييم النصفي مع المشرف الميداني',
-    'أتمتة العمليات التشغيلية وإدارة الخدمات السحابية',
-    'صيانة الخوادم وإدارة وحدات تزويد الطاقة الاحتياطية',
-    'تحليل سجلات الأمان وإجراءات الاستجابة للحوادث الرقمية',
-    'تحديث البنية التحتية واختبار خطة التعافي من الكوارث',
-    'ورش العمل الهندسية وتطوير الحلول البرمجية المؤسسية',
-    'توثيق إجراءات التشغيل القياسية وتحديث الأدلة الفنية',
-    'اختبار تكامل الأنظمة وضمان الجودة والمطابقة الفنية',
-    'مناقشة التقرير الفني الختامي واعتماد مخرجات التدريب'
-  ];
-  return isAr
-    ? (defaultTopicsAr[w.weekIndex - 1] || `المهام والأعمال الفنية للأسبوع ${w.weekIndex}`)
-    : `Week ${w.weekIndex} Technical Activities`;
+  return isAr ? 'أسبوع تدريبي مجدول (قيد التوثيق)' : 'Scheduled Training Week (Pending)';
 }
 
 
@@ -375,7 +360,7 @@ export async function generateAcademicDocx(reportData: FinalReportData, lang: 'a
           // Chapter 1: Introduction
           createTOCChapterItem('chap_intro', isAr ? 'الفصل الأول: المقدمة وأهداف التدريب وبيانات المقرر' : 'CHAPTER 1: INTRODUCTION & OBJECTIVES', isAr),
           createTOCSubItem('sec_intro_obj', isAr ? '1.1 أهداف التدريب التعاوني ودوافعه الأكاديمية' : '1.1 Objectives & Academic Motivations', isAr),
-          createTOCSubItem('sec_intro_req', isAr ? '1.2 متطلبات المقرر في الخطة الدراسية (ساعتان معتمدتان من المعدل)' : '1.2 Course Credit in Study Plan (2 Credit Hours in GPA)', isAr),
+          createTOCSubItem('sec_intro_req', isAr ? '1.2 متطلبات المقرر في الخطة الدراسية وساعات التدريب المعتمدة' : '1.2 Course Credit & Requirements in Academic Plan', isAr),
 
           // Chapter 2: Host Organization
           createTOCChapterItem('chap_org', isAr ? `الفصل الثاني: التعريف بجهة التدريب (${entityName})` : `CHAPTER 2: TRAINING ORGANIZATION (${entityName})`, isAr),
