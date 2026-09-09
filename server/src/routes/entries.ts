@@ -279,7 +279,7 @@ router.post('/batch-academic-rewrite', async (req: AuthenticatedRequest, res: Re
       return;
     }
 
-    const { weekNumber, apiKey, model } = parseResult.data;
+    const { weekNumber, apiKey, model, style } = parseResult.data;
     const userId = req.user!.userId;
 
     // Fetch user entries
@@ -310,7 +310,7 @@ router.post('/batch-academic-rewrite', async (req: AuthenticatedRequest, res: Re
       });
     }
 
-    logger.info({ userId, count: entries.length, weekNumber }, 'Starting batch academic rewrite of entries');
+    logger.info({ userId, count: entries.length, weekNumber, style }, 'Starting batch academic rewrite of entries');
 
     const updatedEntries = [];
 
@@ -331,13 +331,14 @@ router.post('/batch-academic-rewrite', async (req: AuthenticatedRequest, res: Re
         logger.warn({ revErr, entryId: entry.id }, 'Could not create revision before batch rewrite');
       }
 
-      // 2. Rewrite academically
+      // 2. Rewrite academically with requested style
       const rewritten = await rewriteEntryAcademically({
         title: entry.title,
         description: entry.description,
         category: entry.category,
         apiKey,
-        model
+        model,
+        style
       });
 
       // 3. Update entry in database

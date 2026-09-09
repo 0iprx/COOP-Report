@@ -79,17 +79,30 @@ export const profileSchema = z.object({
 
 export const aiProcessSchema = z.object({
   text: z.string().min(1, 'النص مطلوب للتحسين'),
-  action: z.enum(['polish', 'spellcheck', 'summarize', 'translate', 'audit_all', 'academic_rewrite']),
+  action: z.enum([
+    'polish',
+    'spellcheck',
+    'summarize',
+    'translate',
+    'audit_all',
+    'academic_rewrite',
+    'executive_summary',
+    'challenges_solutions',
+    'skills_synthesis',
+    'recommendations'
+  ]),
   targetLang: z.enum(['ar', 'en']).optional(),
   context: z.string().optional(),
   apiKey: z.string().optional(),
-  model: z.string().optional()
+  model: z.string().optional(),
+  style: z.enum(['procedural', 'star_impact', 'academic_competency', 'concise_executive']).optional()
 });
 
 export const batchRewriteEntriesSchema = z.object({
   weekNumber: z.number().int().positive().optional(),
   apiKey: z.string().optional(),
-  model: z.string().optional()
+  model: z.string().optional(),
+  style: z.enum(['procedural', 'star_impact', 'academic_competency', 'concise_executive']).optional().default('procedural')
 });
 
 export const organizationLookupSchema = z.object({

@@ -1,5 +1,23 @@
 import React, { useState } from 'react';
-import { Sparkles, Check, X, ShieldCheck, Key, Cpu, AlertCircle, Loader2, Target, Cog, Wrench, BarChart3, ExternalLink } from 'lucide-react';
+import {
+  Sparkles,
+  Check,
+  X,
+  ShieldCheck,
+  Key,
+  Cpu,
+  AlertCircle,
+  Loader2,
+  Target,
+  Cog,
+  Wrench,
+  BarChart3,
+  ExternalLink,
+  Award,
+  GraduationCap,
+  FileText,
+  Layers
+} from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { api } from '../../services/api';
 
@@ -21,6 +39,7 @@ export const BatchRewriteModal: React.FC<BatchRewriteModalProps> = ({
   const { t, isAr } = useLanguage();
   const [apiKey, setApiKey] = useState<string>(() => localStorage.getItem('coop_gemini_api_key') || '');
   const [model, setModel] = useState<string>('gemini-2.5-flash');
+  const [style, setStyle] = useState<'procedural' | 'star_impact' | 'academic_competency' | 'concise_executive'>('procedural');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successResult, setSuccessResult] = useState<any | null>(null);
@@ -40,7 +59,8 @@ export const BatchRewriteModal: React.FC<BatchRewriteModalProps> = ({
       const res = await api.post('/entries/batch-academic-rewrite', {
         weekNumber,
         apiKey: apiKey.trim() || undefined,
-        model
+        model,
+        style
       });
 
       setSuccessResult(res.data);
@@ -128,44 +148,215 @@ export const BatchRewriteModal: React.FC<BatchRewriteModalProps> = ({
             </div>
           ) : (
             <>
-              {/* Architecture Explanation Card */}
-              <div className="p-4 bg-bg border border-line rounded-xl space-y-2.5">
-                <div className="flex items-center justify-between text-xs font-bold text-sub">
-                  <span>{t('الهيكلية الهندسية المعتمدة لكل يوم:', 'Approved Daily Engineering Structure:')}</span>
-                  <span className="px-2 py-0.5 rounded-md bg-accent-dim text-accent text-[11px]">
+              {/* Style Selector: 4 Advanced Report Archetypes */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-sub flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5 text-accent" />
+                    <span>{t('نمط وفلسفة الصياغة الفنية المطلوبة:', 'Report Writing Archetype & Philosophy:')}</span>
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-accent-dim text-accent text-[11px] font-bold">
                     {totalEntries} {t('سجلات مستهدفة', 'target entries')}
                   </span>
+                </label>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setStyle('procedural')}
+                    className={`p-3 rounded-xl border text-start transition-all flex items-start gap-2.5 ${
+                      style === 'procedural'
+                        ? 'bg-accent/5 border-accent shadow-xs ring-1 ring-accent/30'
+                        : 'bg-card border-line hover:border-accent/40'
+                    }`}
+                  >
+                    <div className={`p-1.5 rounded-lg shrink-0 ${style === 'procedural' ? 'bg-accent text-white' : 'bg-bg text-sub'}`}>
+                      <Wrench className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="font-extrabold text-xs text-ink">{t('الهندسي الإجرائي المعتمد', 'Standard Procedural Engineering')}</div>
+                      <div className="text-[10.5px] text-sub pt-0.5 leading-snug">{t('الهدف، الخطوات الميدانية، الأدوات، والمخرجات (الأكثر اعتماداً في الجامعات)', 'Objective, steps, tools, outputs')}</div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setStyle('star_impact')}
+                    className={`p-3 rounded-xl border text-start transition-all flex items-start gap-2.5 ${
+                      style === 'star_impact'
+                        ? 'bg-accent/5 border-accent shadow-xs ring-1 ring-accent/30'
+                        : 'bg-card border-line hover:border-accent/40'
+                    }`}
+                  >
+                    <div className={`p-1.5 rounded-lg shrink-0 ${style === 'star_impact' ? 'bg-accent text-white' : 'bg-bg text-sub'}`}>
+                      <Award className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="font-extrabold text-xs text-ink">{t('الأثر وحل المشكلات (STAR)', 'STAR Impact & Troubleshooting')}</div>
+                      <div className="text-[10.5px] text-sub pt-0.5 leading-snug">{t('نطاق التكليف، الحلول والتشخيص، التقنيات، والقيمة المضافة للشركة', 'Situation, Task, Action, Result')}</div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setStyle('academic_competency')}
+                    className={`p-3 rounded-xl border text-start transition-all flex items-start gap-2.5 ${
+                      style === 'academic_competency'
+                        ? 'bg-accent/5 border-accent shadow-xs ring-1 ring-accent/30'
+                        : 'bg-card border-line hover:border-accent/40'
+                    }`}
+                  >
+                    <div className={`p-1.5 rounded-lg shrink-0 ${style === 'academic_competency' ? 'bg-accent text-white' : 'bg-bg text-sub'}`}>
+                      <GraduationCap className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="font-extrabold text-xs text-ink">{t('الأكاديمي التحليلي (الجدارات)', 'Competency & Learning Outcomes')}</div>
+                      <div className="text-[10.5px] text-sub pt-0.5 leading-snug">{t('ربط الممارسة العملية بالمفاهيم التخصصية ومعايير الاعتماد', 'Mapping field tasks to academic competencies')}</div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setStyle('concise_executive')}
+                    className={`p-3 rounded-xl border text-start transition-all flex items-start gap-2.5 ${
+                      style === 'concise_executive'
+                        ? 'bg-accent/5 border-accent shadow-xs ring-1 ring-accent/30'
+                        : 'bg-card border-line hover:border-accent/40'
+                    }`}
+                  >
+                    <div className={`p-1.5 rounded-lg shrink-0 ${style === 'concise_executive' ? 'bg-accent text-white' : 'bg-bg text-sub'}`}>
+                      <FileText className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="font-extrabold text-xs text-ink">{t('الموجز التنفيذي المركز', 'Concise Executive Summary')}</div>
+                      <div className="text-[10.5px] text-sub pt-0.5 leading-snug">{t('فقرة مباشرة فائقة التركيز لسرعة المراجعة ولجان المناقشة', 'Tight professional narrative for rapid review')}</div>
+                    </div>
+                  </button>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                  <div className="p-2.5 bg-card border border-line rounded-lg">
-                    <span className="font-bold text-accent flex items-center gap-1.5">
-                      <Target className="w-3.5 h-3.5 shrink-0" />
-                      <span>{t('الهدف التشغيلي', 'Objective')}</span>
-                    </span>
-                    <p className="text-[11px] text-sub pt-0.5">{t('الغاية التقنية لمهام اليوم بدقة', 'Precise operational purpose')}</p>
-                  </div>
-                  <div className="p-2.5 bg-card border border-line rounded-lg">
-                    <span className="font-bold text-accent flex items-center gap-1.5">
-                      <Cog className="w-3.5 h-3.5 shrink-0" />
-                      <span>{t('الخطوات الميدانية', 'Procedural Steps')}</span>
-                    </span>
-                    <p className="text-[11px] text-sub pt-0.5">{t('سرد إجرائي مهني بالخطوات المنفذة', 'Clear procedural execution')}</p>
-                  </div>
-                  <div className="p-2.5 bg-card border border-line rounded-lg">
-                    <span className="font-bold text-accent flex items-center gap-1.5">
-                      <Wrench className="w-3.5 h-3.5 shrink-0" />
-                      <span>{t('الأنظمة والأدوات', 'Tools & Systems')}</span>
-                    </span>
-                    <p className="text-[11px] text-sub pt-0.5">{t('حصر الأجهزة والبرمجيات المذكورة', 'Listed hardware/software tools')}</p>
-                  </div>
-                  <div className="p-2.5 bg-card border border-line rounded-lg">
-                    <span className="font-bold text-accent flex items-center gap-1.5">
-                      <BarChart3 className="w-3.5 h-3.5 shrink-0" />
-                      <span>{t('المخرجات والنتائج', 'Outcomes & Metrics')}</span>
-                    </span>
-                    <p className="text-[11px] text-sub pt-0.5">{t('النتائج المتحققة بنهاية اليوم', 'Tangible outputs verified')}</p>
-                  </div>
+              </div>
+
+              {/* Dynamic Architecture Preview Card */}
+              <div className="p-3.5 bg-bg border border-line rounded-xl space-y-2">
+                <div className="text-xs font-bold text-sub flex items-center justify-between">
+                  <span>{t('هيكلية السجل الناتج:', 'Restructured Output Sections:')}</span>
+                  <span className="text-[11px] font-extrabold text-accent">
+                    {style === 'procedural' && t('4 أقسام: الهدف، الخطوات، الأدوات، النتائج', '4 Sections')}
+                    {style === 'star_impact' && t('4 أقسام: التكليف، الحلول، الأنظمة، القيمة المضافة', '4 Sections')}
+                    {style === 'academic_competency' && t('4 أقسام: الجدارة، التطبيق، المفاهيم، مخرجات التعلم', '4 Sections')}
+                    {style === 'concise_executive' && t('فقرة تنفيذية شاملة ومباشرة', 'Executive Narrative')}
+                  </span>
                 </div>
+
+                {style === 'procedural' && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    <div className="p-2 bg-card border border-line rounded-lg">
+                      <span className="font-bold text-accent flex items-center gap-1.5">
+                        <Target className="w-3.5 h-3.5 shrink-0" />
+                        <span>{t('الهدف التشغيلي', 'Objective')}</span>
+                      </span>
+                      <p className="text-[10.5px] text-sub pt-0.5">{t('الغاية التقنية لمهام اليوم بدقة', 'Precise operational purpose')}</p>
+                    </div>
+                    <div className="p-2 bg-card border border-line rounded-lg">
+                      <span className="font-bold text-accent flex items-center gap-1.5">
+                        <Cog className="w-3.5 h-3.5 shrink-0" />
+                        <span>{t('الخطوات الميدانية', 'Procedural Steps')}</span>
+                      </span>
+                      <p className="text-[10.5px] text-sub pt-0.5">{t('سرد إجرائي مهني بالخطوات المنفذة', 'Clear procedural execution')}</p>
+                    </div>
+                    <div className="p-2 bg-card border border-line rounded-lg">
+                      <span className="font-bold text-accent flex items-center gap-1.5">
+                        <Wrench className="w-3.5 h-3.5 shrink-0" />
+                        <span>{t('الأنظمة والأدوات', 'Tools & Systems')}</span>
+                      </span>
+                      <p className="text-[10.5px] text-sub pt-0.5">{t('حصر الأجهزة والبرمجيات المذكورة', 'Listed hardware/software tools')}</p>
+                    </div>
+                    <div className="p-2 bg-card border border-line rounded-lg">
+                      <span className="font-bold text-accent flex items-center gap-1.5">
+                        <BarChart3 className="w-3.5 h-3.5 shrink-0" />
+                        <span>{t('المخرجات والنتائج', 'Outcomes & Metrics')}</span>
+                      </span>
+                      <p className="text-[10.5px] text-sub pt-0.5">{t('النتائج المتحققة بنهاية اليوم', 'Tangible outputs verified')}</p>
+                    </div>
+                  </div>
+                )}
+
+                {style === 'star_impact' && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    <div className="p-2 bg-card border border-line rounded-lg">
+                      <span className="font-bold text-accent flex items-center gap-1.5">
+                        <Target className="w-3.5 h-3.5 shrink-0" />
+                        <span>{t('نطاق التكليف والمهمة', 'Scope & Mission')}</span>
+                      </span>
+                      <p className="text-[10.5px] text-sub pt-0.5">{t('المسؤولية الميدانية المسندة بدقة', 'Assigned field responsibility')}</p>
+                    </div>
+                    <div className="p-2 bg-card border border-line rounded-lg">
+                      <span className="font-bold text-accent flex items-center gap-1.5">
+                        <Cog className="w-3.5 h-3.5 shrink-0" />
+                        <span>{t('الإجراءات والحلول الفنية', 'Solutions & Action')}</span>
+                      </span>
+                      <p className="text-[10.5px] text-sub pt-0.5">{t('التحليل وحل المشكلات والأعطال', 'Troubleshooting & resolution')}</p>
+                    </div>
+                    <div className="p-2 bg-card border border-line rounded-lg">
+                      <span className="font-bold text-accent flex items-center gap-1.5">
+                        <Wrench className="w-3.5 h-3.5 shrink-0" />
+                        <span>{t('الأنظمة والتقنيات المعتمدة', 'Applied Systems')}</span>
+                      </span>
+                      <p className="text-[10.5px] text-sub pt-0.5">{t('البيئات والأجهزة المستخدمة فعلياً', 'Production tools & systems')}</p>
+                    </div>
+                    <div className="p-2 bg-card border border-line rounded-lg">
+                      <span className="font-bold text-accent flex items-center gap-1.5">
+                        <BarChart3 className="w-3.5 h-3.5 shrink-0" />
+                        <span>{t('الأثر والقيمة المضافة', 'Business Impact')}</span>
+                      </span>
+                      <p className="text-[10.5px] text-sub pt-0.5">{t('مؤشرات الإنجاز والجودة للجهة', 'Verified operational value')}</p>
+                    </div>
+                  </div>
+                )}
+
+                {style === 'academic_competency' && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    <div className="p-2 bg-card border border-line rounded-lg">
+                      <span className="font-bold text-accent flex items-center gap-1.5">
+                        <GraduationCap className="w-3.5 h-3.5 shrink-0" />
+                        <span>{t('الجدارة والمهارة المستهدفة', 'Target Competency')}</span>
+                      </span>
+                      <p className="text-[10.5px] text-sub pt-0.5">{t('المهارة المرتبطة بمعايير الاعتماد', 'Curriculum learning outcome')}</p>
+                    </div>
+                    <div className="p-2 bg-card border border-line rounded-lg">
+                      <span className="font-bold text-accent flex items-center gap-1.5">
+                        <Cog className="w-3.5 h-3.5 shrink-0" />
+                        <span>{t('الممارسة والتطبيق الميداني', 'Practical Application')}</span>
+                      </span>
+                      <p className="text-[10.5px] text-sub pt-0.5">{t('تطبيق المفاهيم النظرية عملياً', 'Hands-on practice in work context')}</p>
+                    </div>
+                    <div className="p-2 bg-card border border-line rounded-lg">
+                      <span className="font-bold text-accent flex items-center gap-1.5">
+                        <Wrench className="w-3.5 h-3.5 shrink-0" />
+                        <span>{t('الأدوات والمفاهيم المطبقة', 'Applied Frameworks')}</span>
+                      </span>
+                      <p className="text-[10.5px] text-sub pt-0.5">{t('المعايير الهندسية والأنظمة', 'Standards & tools utilized')}</p>
+                    </div>
+                    <div className="p-2 bg-card border border-line rounded-lg">
+                      <span className="font-bold text-accent flex items-center gap-1.5">
+                        <BarChart3 className="w-3.5 h-3.5 shrink-0" />
+                        <span>{t('مخرجات التعلم والتقييم', 'Learning Outcomes')}</span>
+                      </span>
+                      <p className="text-[10.5px] text-sub pt-0.5">{t('التقييم الذاتي والدروس المستفادة', 'Acquired mastery & reflection')}</p>
+                    </div>
+                  </div>
+                )}
+
+                {style === 'concise_executive' && (
+                  <div className="p-2.5 bg-card border border-line rounded-lg text-xs">
+                    <span className="font-bold text-accent flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5 shrink-0" />
+                      <span>{t('ملخص الإنجاز الميداني المركز', 'Concise Executive Summary')}</span>
+                    </span>
+                    <p className="text-[11px] text-sub pt-1 leading-relaxed">
+                      {t('صياغة فقرة احترافية محكمة وموجزة توجز النشاط، والأدوات، والنتائج دون تشعب، مناسبة جداً للتقارير السريعة وعروض لجان المناقشة.', 'A tight single narrative summarizing core task, tools, and results.')}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* API Configuration & Gemini Flash settings */}

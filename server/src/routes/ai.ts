@@ -110,7 +110,7 @@ router.post('/process', aiQuotaLimiter, async (req: AuthenticatedRequest, res: R
       return;
     }
 
-    const { text, action, targetLang, context } = parseResult.data;
+    const { text, action, targetLang, context, style } = parseResult.data;
     const userApiKey = (req.headers['x-gemini-key'] as string) || (req.body as any)?.apiKey;
     const userModel = (req.headers['x-ai-model'] as string) || (req.body as any)?.model;
 
@@ -120,7 +120,8 @@ router.post('/process', aiQuotaLimiter, async (req: AuthenticatedRequest, res: R
       targetLang,
       context,
       apiKey: userApiKey,
-      model: userModel
+      model: userModel,
+      style
     });
 
     const diff = computeWordDiff(text, result);
@@ -156,7 +157,7 @@ router.post('/stream-process', aiQuotaLimiter, async (req: AuthenticatedRequest,
       return;
     }
 
-    const { text, action, targetLang, context } = parseResult.data;
+    const { text, action, targetLang, context, style } = parseResult.data;
     const userApiKey = (req.headers['x-gemini-key'] as string) || (req.body as any)?.apiKey;
     const userModel = (req.headers['x-ai-model'] as string) || (req.body as any)?.model;
 
@@ -174,7 +175,8 @@ router.post('/stream-process', aiQuotaLimiter, async (req: AuthenticatedRequest,
       targetLang,
       context,
       apiKey: userApiKey,
-      model: userModel
+      model: userModel,
+      style
     });
 
     // Stream out words progressively for visual smooth SSE experience

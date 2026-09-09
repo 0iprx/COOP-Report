@@ -17,7 +17,19 @@ if (anthropicKey) {
   }
 }
 
-export type AIAction = 'polish' | 'spellcheck' | 'summarize' | 'translate' | 'audit_all' | 'academic_rewrite';
+export type AIAction =
+  | 'polish'
+  | 'spellcheck'
+  | 'summarize'
+  | 'translate'
+  | 'audit_all'
+  | 'academic_rewrite'
+  | 'executive_summary'
+  | 'challenges_solutions'
+  | 'skills_synthesis'
+  | 'recommendations';
+
+export type RewriteStyle = 'procedural' | 'star_impact' | 'academic_competency' | 'concise_executive';
 
 export interface ProcessRequest {
   text: string;
@@ -26,6 +38,7 @@ export interface ProcessRequest {
   context?: string;
   apiKey?: string;
   model?: string;
+  style?: RewriteStyle;
 }
 
 export async function processTextWithAI({
@@ -34,7 +47,8 @@ export async function processTextWithAI({
   targetLang = 'ar',
   context = '',
   apiKey,
-  model
+  model,
+  style = 'procedural'
 }: ProcessRequest): Promise<{ result: string; mode: 'llm' | 'fallback' }> {
   const trimmed = text.trim();
   if (!trimmed) {
@@ -43,7 +57,7 @@ export async function processTextWithAI({
 
   // 1. Try LLM Providers (Gemini -> Claude -> Groq -> OpenAI)
   try {
-    const llmResult = await callAvailableLLM(trimmed, action, targetLang, context, apiKey, model);
+    const llmResult = await callAvailableLLM(trimmed, action, targetLang, context, apiKey, model, style);
     if (llmResult) {
       return { result: llmResult, mode: 'llm' };
     }
@@ -52,12 +66,12 @@ export async function processTextWithAI({
   }
 
   // 2. Intelligent Built-in Academic Linguistic Engine & Translation API
-  const result = await executeBuiltInEngine(trimmed, action, targetLang);
+  const result = await executeBuiltInEngine(trimmed, action, targetLang, style);
   return { result, mode: 'fallback' };
 }
 
 /**
- * Calls available LLMs with priority on Gemini Flash for strict fidelity and speed
+ * Calls available LLMs with world-class engineering & co-op reporting intelligence
  */
 async function callAvailableLLM(
   text: string,
@@ -65,22 +79,84 @@ async function callAvailableLLM(
   targetLang: 'ar' | 'en',
   context: string,
   userApiKey?: string,
-  userModel?: string
+  userModel?: string,
+  style: RewriteStyle = 'procedural'
 ): Promise<string | null> {
-  const systemPrompt = `أنت مهندس ومستشار أكاديمي خبير في توثيق ومراجعة تقارير التدريب التعاوني الميداني لطلاب الجامعات والكليات التقنية.
-قواعد لغوية وفنية حاسمة يجب الالتزام بها دون استثناء:
-1. ممنوع منعاً باتاً استخدام العبارات الإنشائية المستهلكة أو المبتذلة أو مقدمات الذكاء الاصطناعي النمطية (مثل: "مما لا شك فيه"، "في إطار السعي الدؤوب"، "انطلاقاً من حرصنا"، "بأبهى حلة"، "يسرني ويشرفني"، "يشكل جسراً حيوياً").
-2. الالتزام المطلق بالأمانة العلمية (Zero Hallucination): ممنوع منعاً باتاً اختلاق أي أجهزة أو مهام أو أرقام أو برمجيات أو وقائع لم يذكرها المتدرب، وممنوع حذف أي تفاصيل ذكرها.
-3. ممنوع منعاً باتاً استخدام أي إيموجيات أو رموز تعبيرية نهائياً في أي مكان من النص، واعتمد كلياً على الصياغة الهندسية الفصيحة والنصوص الأكاديمية الصرفة.
-4. استخدم لغة هندسية وتقنية رصينة ومباشرة تعتمد على الأفعال الإجرائية الملموسة (تهيئة، فحص، تكوين، اختبار، تحليل، توثيق، استكشاف الأعطال وإصلاحها).
-5. حافظ على المصطلحات التقنية العالمية الشائعة بالإنجليزية بين قوسين (مثل Active Directory, Docker, VLAN, Firewall, Switch, Patch Panel, FTTH, OTDR) بدقة دون تعريب ركيك.
-6. اذكر الحقائق والخطوات التنفيذية والنتائج بأسلوب علمي موضوعي بعيد تماماً عن التضخيم أو الحشو البلاغي.
-7. أعد فقط النص المعالج المطلوب دون أي تحيات أو اعتذارات أو تعليقات خارجية وبدون أي إيموجي.`;
+  const systemPrompt = `أنت المرجع الاستشاري الأول عالمياً وخبير التوثيق المعتمد لتقارير التدريب التعاوني والإنجاز الهندسي والميداني للجامعات والكليات التقنية وكبرى الهيئات والمؤسسات الصناعية والتقنية (مثل أرامكو، سابك، نيوم، STC، والاعتمادات الأكاديمية العالمية ABET و NCAAA).
+تمتلك نضجاً استشارياً وفهماً عميقاً لكافة أشكال التقارير الفنية:
+- التقارير التشغيلية واليومية (Daily Field Logs).
+- التقارير التوليفية والأسبوعية (Weekly Synthesis & Milestones).
+- منهجيات حل المشكلات واستكشاف الأعطال (STAR / Root-Cause & Resolution).
+- تقارير الإنجاز التنفيذية للقيادات ولجان التقييم (Executive Achievement Reports).
+- التقارير الأكاديمية الشاملة لملفات التخرج (Comprehensive Academic Dossiers).
+
+قواعد صارمة لا تُخرق إطلاقاً:
+1. الأمانة العلمية المطلقة والتطابق التام 100% (Absolute Zero Hallucination):
+   - التزم التزاماً جازماً وحصرياً بما دوّنه المتدرب من حقائق، خطوات، أنظمة، أدوات، أرقام، ومشكلات.
+   - ممنوع منعاً باتاً اختلاق أي أجهزة، أرقام، برمجيات، أو وقائع وهمية لم تحدث.
+   - ممنوع منعاً باتاً حذف، إغفال، أو التقليل من أي أداة أو خطوة أو عطل أو ملاحظة ذكرها المتدرب.
+
+2. البلاغة الهندسية التعبيرية الرفيعة:
+   - حظر تام لكافة العبارات الإنشائية المستهلكة، ومقدمات الذكاء الاصطناعي الركيكة (مثل: "مما لا شك فيه"، "في إطار السعي الدؤوب"، "انطلاقاً من حرصنا"، "بأبهى حلة"، "يسرني ويشرفني").
+   - الاعتماد الحصري على الصياغة الإجرائية الرصينة والأفعال الميدانية المباشرة (تهيئة، تكوين، معايرة، فحص، اختبار، ربط، استكشاف الأعطال وإصلاحها، تحليل، توثيق).
+   - إتقان تام للمصطلحات التقنية العالمية والمحلية في مختلف التخصصات (هندسة البرمجيات، الشبكات، الأمن السيبراني، الاتصالات، الكهرباء، الميكانيكا، إدارة النظم، الدعم الفني).
+   - كتابة المصطلحات الفنية الإنجليزية واختصاراتها المعتمدة بدقة بين قوسين (مثل VLAN, Active Directory, OTDR, FTTH, Docker, REST API, PLC, Patch Panel, Firewall...).
+
+3. خلو مطلق من الإيموجيات:
+   - ممنوع منعاً باتاً استخدام أي إيموجيات أو رموز تعبيرية نهائياً في أي جزء من النص. التقرير وثيقة هندسية وأكاديمية رسمية بحتة.
+
+4. أعد فقط النص المطلوب المعالج وفق الهيكلية المحددة دون أي تحيات أو مقدمات أو خاتمة خارج النص.`;
 
   let userPrompt = '';
   switch (action) {
-    case 'academic_rewrite':
-      userPrompt = `أعد صياغة وترتيب وتوثيق سجل اليوم التالي ليكون بأسلوب تقرير هندسي وميداني رسمي متكامل، وفق القواعد الأكاديمية الصارمة:
+    case 'academic_rewrite': {
+      if (style === 'star_impact') {
+        userPrompt = `أعد صياغة وترتيب وتوثيق سجل اليوم التالي وفق منهجية إنجازات الأعمال وحل المشكلات الهندسية (STAR Framework / Situation-Task-Action-Result):
+- صفر اختلاق: التزم حصراً بالمهام والأنظمة والوقائع التي ذكرها المتدرب دون اختلاق أي معلومة، ودون حذف أي تفصيلة.
+- ممنوع منعاً باتاً استخدام أي إيموجي نهائياً في النص.
+- صياغة تنفيذية مباشرة تبرز المسؤولية والحلول والأثر الملموس.
+- قسّم النص بدقة إلى الأقسام الأربعة التالية حصراً:
+نطاق التكليف والمهمة الميدانية:
+(سطر يحدد الموقف ومسؤولية المتدرب الميدانية الموكلة استناداً للمكتوب فقط)
+
+الإجراءات والحلول الفنية:
+(سرد هندسي منظم لخطوات التحليل والتنفيذ واستكشاف الأعطال وحلها)
+
+الأنظمة والتقنيات المعتمدة:
+(حصر البرمجيات أو الأجهزة أو المقاييس أو البيئات المذكورة فقط)
+
+الأثر والقيمة المضافة:
+(المخرجات الملموسة ومؤشرات الإنجاز والجودة بنهاية اليوم)
+
+أعد فقط النص المنظم بالأقسام الأربعة أعلاه دون أي إيموجيات ودون أي كلام إضافي أو مقدمات:\n\n${text}`;
+      } else if (style === 'academic_competency') {
+        userPrompt = `أعد صياغة وترتيب وتوثيق سجل اليوم التالي وفق معايير الاعتماد الأكاديمي المبنية على الجدارات الهندسية ومخرجات التعلم (Competency-Based Technical Reporting):
+- صفر اختلاق: التزم حصراً بالمهام والأنظمة والأدوات التي ذكرها المتدرب دون إضافة أي تفاصيل، ودون حذف أي تفصيل.
+- ممنوع منعاً باتاً استخدام أي إيموجي نهائياً في النص.
+- ربط الممارسة الميدانية العملية بالمفاهيم التخصصية بأسلوب أكاديمي رفيع.
+- قسّم النص بدقة إلى الأقسام الأربعة التالية حصراً:
+الجدارة والمهارة المستهدفة:
+(سطر يحدد الجدارة الهندسية أو المهنية المرتبطة بمهام اليوم استناداً للمكتوب فقط)
+
+الممارسة والتطبيق الميداني:
+(سرد منظم ودقيق لكيفية تطبيق المهمة عملياً في موقع العمل)
+
+الأدوات والمفاهيم التقنية المطبقة:
+(حصر التقنيات والأجهزة والمعايير المذكورة في النص فقط)
+
+مخرجات التعلم والتقييم الذاتي:
+(ملخص النتائج المكتسبة ومدى استيفاء متطلبات الجدارة بنهاية اليوم)
+
+أعد فقط النص المنظم بالأقسام الأربعة أعلاه دون أي إيموجيات ودون أي كلام إضافي أو مقدمات:\n\n${text}`;
+      } else if (style === 'concise_executive') {
+        userPrompt = `أعد صياغة وتلخيص سجل اليوم التالي بأسلوب الموجز التنفيذي الفائق التركيز (Concise Executive Narrative):
+- صفر اختلاق: التزم حصراً بالمهام والأنظمة والأدوات التي ذكرها المتدرب.
+- ممنوع منعاً باتاً استخدام أي إيموجي نهائياً.
+- اكتب فقرة فنية مترابطة ومباشرة (في 3 إلى 5 أسطر) توجز: جوهر النشاط المنفذ، الأدوات المستخدمة، والنتيجة المتحققة، بدون تشعب أو حشو إنشائي، لتكون جاهزة للمراجعة السريعة من المشرف واللجنة.
+أعد فقط النص الموجز دون أي إيموجيات ودون أي كلام خارجي:\n\n${text}`;
+      } else {
+        // Default: procedural
+        userPrompt = `أعد صياغة وترتيب وتوثيق سجل اليوم التالي ليكون بأسلوب تقرير هندسي وميداني رسمي متكامل، وفق القواعد الأكاديمية الصارمة:
 - صفر اختلاق: التزم حصراً بالمهام والأنظمة والأدوات التي ذكرها المتدرب دون إضافة أي تفاصيل من وحي الخيال، ودون حذف أي جهاز أو خطوة كُتبت.
 - ممنوع منعاً باتاً استخدام أي إيموجي نهائياً في كامل النص.
 - صياغة إجرائية بصيغة الجمع أو المبني للمعلوم المؤسسي (مثل: تم تنفيذ، جرى فحص، باشرنا أعمال، استكمال...).
@@ -98,6 +174,36 @@ async function callAvailableLLM(
 (ملخص النتائج الملموسة والمتحققة بنهاية اليوم)
 
 أعد فقط النص المنظم بالأقسام الأربعة أعلاه دون أي إيموجيات ودون أي كلام إضافي أو مقدمات:\n\n${text}`;
+      }
+      break;
+    }
+    case 'executive_summary':
+      userPrompt = `بصفتك كبير المستشارين الأكاديميين لتقارير التدريب التعاوني، أعد صياغة موجز تنفيذي شامل ورفيع المستوى (Executive Summary) لتقرير التدريب استناداً للنص التالي:
+- صفر اختلاق: التزم بالوقائع والأنشطة والجهات والمهام الواردة في النص حصراً.
+- ممنوع استخدام أي إيموجي نهائياً.
+- اكتب ملخصاً تنفيذياً محكماً يبرز: بيئة التدريب، النطاق التشغيلي، حجم الأعمال الميدانية المنجزة، والأثر الفني التراكمي.
+أعد فقط الموجز التنفيذي دون أي إيموجي أو مقدمات:\n\n${text}`;
+      break;
+    case 'challenges_solutions':
+      userPrompt = `حلّل النص التالي واستخلص منه التحديات الفنية والتشغيلية الميدانية التي واجهت المتدرب وطرق التغلب عليها:
+- صفر اختلاق: التزم فقط بالصعوبات أو المشكلات أو الأعطال المذكورة أو المستنبطة مباشرة من النص دون تزييف.
+- ممنوع استخدام أي إيموجي نهائياً.
+- قسّم النص إلى نقاط محددة: (التحدي الفني: ... | الإجراء المتخذ وحل المشكلة: ...).
+أعد فقط النص المطلوب دون أي إيموجي أو مقدمات:\n\n${text}`;
+      break;
+    case 'skills_synthesis':
+      userPrompt = `حلّل النص التالي واستخلص المهارات والقدرات العملية المكتسبة من واقع المهام المنفذة:
+- صفر اختلاق: التزم فقط بالمهام والأدوات الواردة في النص.
+- ممنوع استخدام أي إيموجي نهائياً.
+- صنف المهارات إلى: (المهارات التقنية التخصصية، مهارات إدارة وتشخيص الأعطال، المهارات المهنية والتواصل الميداني).
+أعد فقط المهارات المصنفة دون أي إيموجي أو مقدمات:\n\n${text}`;
+      break;
+    case 'recommendations':
+      userPrompt = `صغ مجموعة من التوصيات الفنية والتطويرية الاحترافية الموجهة لجهة التدريب والكلية/الجامعة بناءً على التجارب الميدانية الواردة في النص التالي:
+- صفر اختلاق: استند حصراً إلى بيئة وطبيعة المهام المذكورة.
+- ممنوع استخدام أي إيموجي نهائياً.
+- صغ توصيات عملية تسهم في رفع جودة التدريب وتعزيز الجاهزية المهنية.
+أعد فقط التوصيات دون أي إيموجي أو مقدمات:\n\n${text}`;
       break;
     case 'polish':
       userPrompt = `أعد صياغة وتدقيق النص التالي بأسلوب مهني وهندسي رفيع يناسب تقرير تدريب تعاوني جامعي رسمي، مع التخلص التام من أي حشو أو ركاكة وبدون أي إيموجيات، والتركيز على الخطوات الإجرائية والأدوات المستخدمة والنتائج المتحققة دون اختلاق أي معلومات جديدة. أعد النص المصاغ فقط:\n\n${text}`;
@@ -255,7 +361,12 @@ async function callAvailableLLM(
 /**
  * Built-in zero-dependency translation & academic language engine
  */
-async function executeBuiltInEngine(text: string, action: AIAction, targetLang: 'ar' | 'en'): Promise<string> {
+async function executeBuiltInEngine(
+  text: string,
+  action: AIAction,
+  targetLang: 'ar' | 'en',
+  style: RewriteStyle = 'procedural'
+): Promise<string> {
   // Translation: Use zero-config high-accuracy web translation endpoint
   if (action === 'translate') {
     const translated = await translateWithWebAPI(text, targetLang);
@@ -270,7 +381,7 @@ async function executeBuiltInEngine(text: string, action: AIAction, targetLang: 
     return polishArabicText(text);
   }
 
-  if (action === 'summarize') {
+  if (action === 'summarize' || action === 'executive_summary') {
     return summarizeText(text);
   }
 
@@ -279,7 +390,11 @@ async function executeBuiltInEngine(text: string, action: AIAction, targetLang: 
   }
 
   if (action === 'academic_rewrite') {
-    return formatAcademicDailyLogOffline(text);
+    return formatAcademicDailyLogOffline(text, style);
+  }
+
+  if (action === 'challenges_solutions' || action === 'skills_synthesis' || action === 'recommendations') {
+    return polishArabicText(text);
   }
 
   return text;
@@ -287,15 +402,14 @@ async function executeBuiltInEngine(text: string, action: AIAction, targetLang: 
 
 /**
  * Intelligent deterministic academic structurer when offline or without LLM key
- * Preserves 100% of user text and structures it into 4 official report sections
+ * Preserves 100% of user text and structures it into the selected official style
  */
-function formatAcademicDailyLogOffline(input: string): string {
+function formatAcademicDailyLogOffline(input: string, style: RewriteStyle = 'procedural'): string {
   if (!input || !input.trim()) return '';
 
-  const polished = polishArabicText(input);
+  const polished = polishArabicText(input).replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '');
 
-  // If already structured with sections, return polished
-  if (polished.includes('الهدف التشغيلي') && polished.includes('الخطوات الميدانية')) {
+  if (polished.includes('الهدف التشغيلي') || polished.includes('نطاق التكليف') || polished.includes('الجدارة والمهارة')) {
     return polished;
   }
 
@@ -309,6 +423,40 @@ function formatAcademicDailyLogOffline(input: string): string {
   const matches = [...new Set(polished.match(techKeywords) || [])];
   const toolsText = matches.length > 0 ? matches.join('، ') : 'أدوات القياس والفحص الميداني، والأنظمة التشغيلية المعتمدة';
 
+  if (style === 'star_impact') {
+    return `نطاق التكليف والمهمة الميدانية:
+${firstSentence}
+
+الإجراءات والحلول الفنية:
+${remaining.split('\n').map(l => l.startsWith('•') ? l : `• ${l}`).join('\n')}
+
+الأنظمة والتقنيات المعتمدة:
+• ${toolsText}
+
+الأثر والقيمة المضافة:
+• إنجاز كافة المهام الميدانية بكفاءة عالية وضمان استقرار ومطابقة الأنظمة التشغيلية.`;
+  }
+
+  if (style === 'academic_competency') {
+    return `الجدارة والمهارة المستهدفة:
+${firstSentence}
+
+الممارسة والتطبيق الميداني:
+${remaining.split('\n').map(l => l.startsWith('•') ? l : `• ${l}`).join('\n')}
+
+الأدوات والمفاهيم التقنية المطبقة:
+• ${toolsText}
+
+مخرجات التعلم والتقييم الذاتي:
+• تعزيز الجدارة العملية وتطبيق المبادئ الأكاديمية بنجاح على أرض الواقع المهني.`;
+  }
+
+  if (style === 'concise_executive') {
+    return `ملخص الإنجاز الميداني:
+تم ${firstSentence} مع استكمال ${remaining.replace(/\n/g, '، ')} باستخدام ${toolsText}، والتحقق من سلامة المخرجات الفنية بالكامل.`;
+  }
+
+  // Default: procedural
   return `الهدف التشغيلي:
 ${firstSentence}
 
@@ -330,13 +478,15 @@ export async function rewriteEntryAcademically({
   description,
   category,
   apiKey,
-  model
+  model,
+  style = 'procedural'
 }: {
   title: string;
   description: string;
   category?: string;
   apiKey?: string;
   model?: string;
+  style?: RewriteStyle;
 }): Promise<{
   title: string;
   description: string;
@@ -350,7 +500,8 @@ export async function rewriteEntryAcademically({
     targetLang: 'ar',
     context: `عنوان اليوم الحالي: ${title}`,
     apiKey,
-    model
+    model,
+    style
   });
 
   // 2. Elevate title
