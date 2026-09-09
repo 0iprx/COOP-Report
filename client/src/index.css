@@ -344,7 +344,7 @@ html, body {
 @media print {
   @page {
     size: A4 portrait;
-    margin: 12mm 12mm 14mm 12mm;
+    margin: 0 !important;
   }
 
   *, *::before, *::after {
@@ -377,6 +377,47 @@ html, body {
     max-width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
+  }
+
+  /* Universal Print Reset: Eliminate program frames, card borders, and box shadows */
+  .bg-card,
+  .border,
+  .border-line,
+  .shadow-sm,
+  .shadow-xs,
+  .shadow-md,
+  .shadow-2xs,
+  div[class*="rounded-2xl"],
+  div[class*="rounded-xl"],
+  div[class*="rounded-lg"] {
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Dedicated Printable Full A4 Sheets with 18mm academic margins */
+  #weekly-cover-page,
+  .day-card-print,
+  #weekly-summary-dossier,
+  #weekly-final-evidence-page,
+  #sec-cover,
+  #sec-intro,
+  #sec-toc,
+  div[id^="sec-"] {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 100vh !important;
+    padding: 18mm 18mm !important;
+    margin: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: always !important;
+    break-after: page !important;
   }
 
   /* Printable Sheet Containers */
@@ -426,21 +467,6 @@ html, body {
   tr {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
-  }
-
-  /* Academic clean styling in print - Strip box borders, backgrounds, and frames */
-  .day-card-print {
-    border: none !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    margin: 0 !important;
-    padding: 12px 0 !important;
-    overflow: visible !important;
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-    page-break-after: always !important;
-    break-after: page !important;
   }
 
   .day-card-print:last-child {

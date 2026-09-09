@@ -637,7 +637,7 @@ export const DailyLogTab: React.FC = () => {
                   title={t('اقتراح تصنيف وترقية أكاديمية فورية بناءً على محتوى اليوم', 'Auto-infer engineering domain & title')}
                 >
                   <Sparkles className="w-3 h-3 text-accent" />
-                  <span>{t('✨ التدقيق والترقية الأكاديمية الفورية', '✨ Auto-Elevate & Suggest Category')}</span>
+                  <span>{t('التدقيق والترقية الأكاديمية الفورية', 'Auto-Elevate & Suggest Category')}</span>
                 </button>
               </div>
               <input
@@ -705,21 +705,21 @@ export const DailyLogTab: React.FC = () => {
                     className="w-full px-3 py-2 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent text-ink font-bold"
                     required
                   >
-                    <optgroup label={isAr ? '🏢 مجالات هندسية وتخصصية' : '🏢 Engineering & Specialized'}>
+                    <optgroup label={isAr ? 'مجالات هندسية وتخصصية' : 'Engineering & Specialized'}>
                       {ENTRY_CATEGORIES.slice(0, 10).map((cat) => (
                         <option key={cat} value={cat}>
                           {isAr ? cat : (CATEGORY_TRANSLATIONS[cat] || cat)}
                         </option>
                       ))}
                     </optgroup>
-                    <optgroup label={isAr ? '📌 تصنيفات عامة' : '📌 General Categories'}>
+                    <optgroup label={isAr ? 'تصنيفات عامة' : 'General Categories'}>
                       {ENTRY_CATEGORIES.slice(10).map((cat) => (
                         <option key={cat} value={cat}>
                           {isAr ? cat : (CATEGORY_TRANSLATIONS[cat] || cat)}
                         </option>
                       ))}
                     </optgroup>
-                    <option value="__custom__">✨ {t('+ كتابة تصنيف مخصص...', '+ Custom category...')}</option>
+                    <option value="__custom__">{t('+ كتابة تصنيف مخصص...', '+ Custom category...')}</option>
                   </select>
                 </div>
               )}
@@ -744,7 +744,7 @@ export const DailyLogTab: React.FC = () => {
                   title={isRecording ? t('جارٍ الاستماع... انقر للإيقاف', 'Listening... Click to stop') : t('إملاء صوتي مباشر عبر المايكروفون', 'Voice Dictation via Microphone')}
                 >
                   {isRecording ? <MicOff className="w-3.5 h-3.5 text-white" /> : <Mic className="w-3.5 h-3.5 text-accent" />}
-                  <span>{isRecording ? t('جارٍ الاستماع...', 'Listening...') : t('إملاء صوتي 🎙️', 'Voice 🎙️')}</span>
+                  <span>{isRecording ? t('جارٍ الاستماع...', 'Listening...') : t('إملاء صوتي', 'Voice')}</span>
                 </button>
               </div>
 
@@ -857,7 +857,7 @@ export const DailyLogTab: React.FC = () => {
               title={t('إعادة صياغة وهيكلة جميع السجلات اليومية أكاديمياً بدون اختلاق', 'Academic batch restructuring')}
             >
               <Sparkles className="w-3.5 h-3.5 text-accent" />
-              <span>{t('✨ إعادة صياغة وترتيب السجلات أكاديمياً (شامل)', '✨ Batch Academic Rewrite')}</span>
+              <span>{t('إعادة صياغة وترتيب السجلات أكاديمياً (شامل)', 'Batch Academic Rewrite')}</span>
             </button>
           )}
         </div>

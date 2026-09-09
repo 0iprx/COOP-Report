@@ -6,6 +6,7 @@ import { generateAcademicDocx, generateWeeklyDocx } from '../services/docxServic
 import { generateStandaloneHTMLReport } from '../services/htmlReportService.js';
 import { generatePresentationBuffer } from '../services/presentationService.js';
 import { calculateHoursBetween, getWeekEnd, getWeekStart, inferProfessionalCategory, elevateTaskTitle, polishAcademicNarrative } from '@coop/shared';
+import { rewriteEntryAcademically } from '../services/aiService.js';
 import { logger } from '../logger.js';
 
 const router = Router();
@@ -122,13 +123,12 @@ router.post('/weekly/audit-polish', async (req: AuthenticatedRequest, res: Respo
       return;
     }
 
+    const userApiKey = (req.headers['x-gemini-key'] as string) || (req.body as any)?.apiKey || (req.query.apiKey as string);
+    const userModel = (req.headers['x-ai-model'] as string) || (req.body as any)?.model;
+
     const updatedList = [];
 
     for (const entry of entries) {
-      const elevatedCategory = inferProfessionalCategory(entry.description, entry.title);
-      const elevatedTitle = elevateTaskTitle(entry.title, entry.description);
-      const polishedDesc = polishAcademicNarrative(entry.description);
-
       // Archive previous version to entryRevision before upgrading (Zero Data Loss Guarantee)
       try {
         await prisma.entryRevision.create({
@@ -145,13 +145,21 @@ router.post('/weekly/audit-polish', async (req: AuthenticatedRequest, res: Respo
         logger.warn({ revErr }, 'Non-fatal: failed to archive revision during weekly audit-polish');
       }
 
+      const rewritten = await rewriteEntryAcademically({
+        title: entry.title,
+        description: entry.description,
+        category: entry.category,
+        apiKey: userApiKey,
+        model: userModel
+      });
+
       // Update entry with executive engineering content
       const updated = await prisma.entry.update({
         where: { id: entry.id },
         data: {
-          title: elevatedTitle,
-          category: elevatedCategory,
-          description: polishedDesc
+          title: rewritten.title,
+          category: rewritten.category,
+          description: rewritten.description
         }
       });
 

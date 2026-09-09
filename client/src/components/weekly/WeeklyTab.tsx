@@ -584,7 +584,7 @@ export const WeeklyTab: React.FC = () => {
         </div>
       )}
 
-      <div className="bg-card border border-line rounded-2xl p-4 sm:p-6 shadow-sm">
+      <div className="bg-card border border-line rounded-2xl p-4 sm:p-6 shadow-sm print:border-none print:shadow-none print:p-0 print:m-0 print:rounded-none print:bg-transparent">
         {/* Top Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 mb-4 border-b border-line no-print">
           <div>
@@ -612,18 +612,17 @@ export const WeeklyTab: React.FC = () => {
             </button>
 
             <button
-              onClick={handleAuditPolishWeek}
-              disabled={isAuditingWeek || !weekReport?.entries?.length}
-              className="px-3.5 py-1.5 text-xs font-black text-white bg-linear-to-r from-accent to-[#C0102A] hover:opacity-90 rounded-xl transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
-              title={t('تدقيق لغوي وهندسي وإعادة صياغة وترقية تصنيفات وعناوين كافة مهام الأسبوع وفق أعلى المعايير بضغطة واحدة', 'Audit, elevate titles, and rephrase entire week')}
+              onClick={() => setBatchModalOpen(true)}
+              className="px-3.5 py-1.5 text-xs font-black text-white bg-accent hover:bg-accent/90 rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
+              title={t('إعادة صياغة وهيكلة مهام الأسبوع أكاديمياً بالذكاء الاصطناعي مع الأمانة العلمية الصارمة بدون اختلاق أو فقدان للمعلومات', 'Academic AI Restructure for Week')}
             >
-              <Sparkles className={`w-3.5 h-3.5 ${isAuditingWeek ? 'animate-spin' : ''}`} />
-              <span>{isAuditingWeek ? t('جارٍ التدقيق والترقية...', 'Auditing & Elevating...') : t('✨ التدقيق والترقية الأكاديمية للأسبوع', '✨ AI Polish & Upgrade Week')}</span>
+              <Sparkles className="w-3.5 h-3.5 text-white" />
+              <span>{t('الصياغة الأكاديمية بالذكاء الاصطناعي', 'Academic AI Rewrite')}</span>
             </button>
 
             <button
               onClick={handlePrintPDF}
-              className="px-3.5 py-1.5 text-xs font-bold text-white bg-accent hover:bg-accent/90 rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
+              className="px-3.5 py-1.5 text-xs font-bold text-white bg-ink hover:bg-ink/85 rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
               title={t('طباعة تقرير الأسبوع مباشرة أو حفظه كـ PDF رسمي متناسق', 'Print weekly report or save as PDF')}
             >
               <Printer className="w-3.5 h-3.5" />
@@ -646,15 +645,6 @@ export const WeeklyTab: React.FC = () => {
             >
               {copied ? <Check className="w-3.5 h-3.5 text-ok" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copied ? t('تم النسخ!', 'Copied!') : t('نسخ النص', 'Copy Text')}</span>
-            </button>
-
-            <button
-              onClick={() => setBatchModalOpen(true)}
-              className="px-3 py-1.5 text-xs font-bold text-accent bg-accent/10 hover:bg-accent/20 rounded-xl border border-accent/25 transition-all flex items-center gap-1.5 shadow-2xs"
-              title={t('إعادة صياغة وهيكلة السجلات أكاديمياً بدون اختلاق', 'Academic batch restructuring')}
-            >
-              <Sparkles className="w-3.5 h-3.5 text-accent" />
-              <span>{t('✨ إعادة صياغة السجلات أكاديمياً', '✨ Academic Rewrite')}</span>
             </button>
 
             <button
@@ -1537,21 +1527,21 @@ export const WeeklyTab: React.FC = () => {
                       }}
                       className="w-full px-3 py-2 bg-bg border border-line rounded-xl focus:outline-none focus:border-accent text-ink font-bold"
                     >
-                      <optgroup label={isAr ? '🏢 مجالات هندسية وتخصصية' : '🏢 Engineering & Specialized'}>
+                      <optgroup label={isAr ? 'مجالات هندسية وتخصصية' : 'Engineering & Specialized'}>
                         {CATEGORIES.slice(0, 10).map((cat) => (
                           <option key={cat} value={cat}>
                             {cat}
                           </option>
                         ))}
                       </optgroup>
-                      <optgroup label={isAr ? '📌 تصنيفات عامة' : '📌 General Categories'}>
+                      <optgroup label={isAr ? 'تصنيفات عامة' : 'General Categories'}>
                         {CATEGORIES.slice(10).map((cat) => (
                           <option key={cat} value={cat}>
                             {cat}
                           </option>
                         ))}
                       </optgroup>
-                      <option value="__custom__">✨ {t('+ كتابة تصنيف مخصص...', '+ Custom category...')}</option>
+                      <option value="__custom__">{t('+ كتابة تصنيف مخصص...', '+ Custom category...')}</option>
                     </select>
                   )}
                 </div>

@@ -111,12 +111,16 @@ router.post('/process', aiQuotaLimiter, async (req: AuthenticatedRequest, res: R
     }
 
     const { text, action, targetLang, context } = parseResult.data;
+    const userApiKey = (req.headers['x-gemini-key'] as string) || (req.body as any)?.apiKey;
+    const userModel = (req.headers['x-ai-model'] as string) || (req.body as any)?.model;
 
     const { result, mode } = await processTextWithAI({
       text,
       action,
       targetLang,
-      context
+      context,
+      apiKey: userApiKey,
+      model: userModel
     });
 
     const diff = computeWordDiff(text, result);
@@ -153,6 +157,8 @@ router.post('/stream-process', aiQuotaLimiter, async (req: AuthenticatedRequest,
     }
 
     const { text, action, targetLang, context } = parseResult.data;
+    const userApiKey = (req.headers['x-gemini-key'] as string) || (req.body as any)?.apiKey;
+    const userModel = (req.headers['x-ai-model'] as string) || (req.body as any)?.model;
 
     // Set SSE headers
     res.setHeader('Content-Type', 'text/event-stream');
@@ -166,7 +172,9 @@ router.post('/stream-process', aiQuotaLimiter, async (req: AuthenticatedRequest,
       text,
       action,
       targetLang,
-      context
+      context,
+      apiKey: userApiKey,
+      model: userModel
     });
 
     // Stream out words progressively for visual smooth SSE experience

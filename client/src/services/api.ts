@@ -25,6 +25,10 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  const geminiKey = localStorage.getItem('coop_gemini_api_key');
+  if (geminiKey) {
+    config.headers['x-gemini-key'] = geminiKey;
+  }
   return config;
 });
 

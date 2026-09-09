@@ -11,7 +11,8 @@ import {
   Image as ImageIcon,
   Plus,
   Loader2,
-  ShieldCheck
+  ShieldCheck,
+  X
 } from 'lucide-react';
 
 interface Props {
@@ -393,9 +394,10 @@ export const WeeklyEvidenceSection: React.FC<Props> = ({ weekIndex, traineeId, r
               <button
                 type="button"
                 onClick={() => setSelectedImageForZoom(null)}
-                className="text-sub hover:text-ink text-xs font-bold px-2 py-1"
+                className="text-sub hover:text-ink text-xs font-bold p-1 rounded-lg hover:bg-line transition-colors flex items-center gap-1"
               >
-                إغلاق ✕
+                <X className="w-4 h-4" />
+                <span>إغلاق</span>
               </button>
             </div>
 

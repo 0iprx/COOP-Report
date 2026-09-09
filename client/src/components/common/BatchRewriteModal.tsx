@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, Check, X, ShieldCheck, Key, Cpu, AlertCircle, Loader2 } from 'lucide-react';
+import { Sparkles, Check, X, ShieldCheck, Key, Cpu, AlertCircle, Loader2, Target, Cog, Wrench, BarChart3, ExternalLink } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { api } from '../../services/api';
 
@@ -138,19 +138,31 @@ export const BatchRewriteModal: React.FC<BatchRewriteModalProps> = ({
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                   <div className="p-2.5 bg-card border border-line rounded-lg">
-                    <span className="font-bold text-accent">🎯 {t('الهدف التشغيلي', 'Objective')}</span>
+                    <span className="font-bold text-accent flex items-center gap-1.5">
+                      <Target className="w-3.5 h-3.5 shrink-0" />
+                      <span>{t('الهدف التشغيلي', 'Objective')}</span>
+                    </span>
                     <p className="text-[11px] text-sub pt-0.5">{t('الغاية التقنية لمهام اليوم بدقة', 'Precise operational purpose')}</p>
                   </div>
                   <div className="p-2.5 bg-card border border-line rounded-lg">
-                    <span className="font-bold text-accent">⚙️ {t('الخطوات الميدانية', 'Procedural Steps')}</span>
+                    <span className="font-bold text-accent flex items-center gap-1.5">
+                      <Cog className="w-3.5 h-3.5 shrink-0" />
+                      <span>{t('الخطوات الميدانية', 'Procedural Steps')}</span>
+                    </span>
                     <p className="text-[11px] text-sub pt-0.5">{t('سرد إجرائي مهني بالخطوات المنفذة', 'Clear procedural execution')}</p>
                   </div>
                   <div className="p-2.5 bg-card border border-line rounded-lg">
-                    <span className="font-bold text-accent">🛠️ {t('الأنظمة والأدوات', 'Tools & Systems')}</span>
+                    <span className="font-bold text-accent flex items-center gap-1.5">
+                      <Wrench className="w-3.5 h-3.5 shrink-0" />
+                      <span>{t('الأنظمة والأدوات', 'Tools & Systems')}</span>
+                    </span>
                     <p className="text-[11px] text-sub pt-0.5">{t('حصر الأجهزة والبرمجيات المذكورة', 'Listed hardware/software tools')}</p>
                   </div>
                   <div className="p-2.5 bg-card border border-line rounded-lg">
-                    <span className="font-bold text-accent">📊 {t('المخرجات والنتائج', 'Outcomes & Metrics')}</span>
+                    <span className="font-bold text-accent flex items-center gap-1.5">
+                      <BarChart3 className="w-3.5 h-3.5 shrink-0" />
+                      <span>{t('المخرجات والنتائج', 'Outcomes & Metrics')}</span>
+                    </span>
                     <p className="text-[11px] text-sub pt-0.5">{t('النتائج المتحققة بنهاية اليوم', 'Tangible outputs verified')}</p>
                   </div>
                 </div>
@@ -169,7 +181,8 @@ export const BatchRewriteModal: React.FC<BatchRewriteModalProps> = ({
                     rel="noreferrer"
                     className="text-[11px] font-bold text-accent hover:underline flex items-center gap-1"
                   >
-                    <span>{t('احصل على مفتاح مجاني وفوري ↗', 'Get Free API Key ↗')}</span>
+                    <span>{t('احصل على مفتاح مجاني وفوري', 'Get Free API Key')}</span>
+                    <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
                 <input

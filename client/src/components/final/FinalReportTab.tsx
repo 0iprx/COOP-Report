@@ -1390,7 +1390,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                   title="معاينة كافة صفحات وأقسام التقرير ببيانات نموذجية متكاملة لرؤية جمال وتنسيق القالب"
                 >
                   <Eye className="w-3.5 h-3.5" />
-                  <span>{isSampleMode ? 'إيقاف المعاينة النموذجية' : '👁️ معاينة القالب ببيانات نموذجية تجريبية'}</span>
+                  <span>{isSampleMode ? 'إيقاف المعاينة النموذجية' : 'معاينة القالب ببيانات نموذجية تجريبية'}</span>
                 </button>
                 <button
                   type="button"
@@ -2130,7 +2130,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
       <div
         id="report-paper-view"
         dir={isAr ? 'rtl' : 'ltr'}
-        className="bg-card border border-line rounded-2xl p-4 sm:p-8 md:p-12 shadow-sm leading-relaxed text-ink space-y-8 print-only-container print-page-wrapper overflow-x-auto"
+        className="bg-card border border-line rounded-2xl p-4 sm:p-8 md:p-12 shadow-sm leading-relaxed text-ink space-y-8 print-only-container print-page-wrapper overflow-x-auto print:border-none print:shadow-none print:p-0 print:m-0 print:rounded-none print:bg-transparent print:space-y-0"
       >
         {/* Cover Page */}
         <div id="sec-cover" className="scroll-mt-24 text-center pb-10 border-b-2 border-line space-y-6">
