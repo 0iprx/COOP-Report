@@ -59,7 +59,18 @@ export async function processTextWithAI({
   try {
     const llmResult = await callAvailableLLM(trimmed, action, targetLang, context, apiKey, model, style);
     if (llmResult) {
-      return { result: llmResult, mode: 'llm' };
+      // Safety guard: sanitize LLM output (strip bullets, emojis, forbidden words)
+      let sanitized = llmResult
+        .replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
+        .replace(/\b(معتمد[ةه]?|المعتمد[ةه]?)\b/g, (m) => {
+          if (m.includes('ة')) return 'المستخدمة';
+          return 'المطبقة';
+        });
+      // If bullets leaked through despite prompt rules, convert to paragraphs
+      if (/^[•\-\*]\s/m.test(sanitized)) {
+        sanitized = convertBulletsToCohesiveParagraphs(sanitized);
+      }
+      return { result: sanitized.trim(), mode: 'llm' };
     }
   } catch (err: any) {
     logger.warn({ err: err?.message }, 'External LLM call failed or unavailable. Using smart academic engine.');
@@ -404,7 +415,7 @@ async function executeBuiltInEngine(
   }
 
   if (action === 'challenges_solutions' || action === 'skills_synthesis' || action === 'recommendations') {
-    return polishArabicText(text);
+    return convertBulletsToCohesiveParagraphs(polishArabicText(text));
   }
 
   return text;
@@ -463,8 +474,13 @@ ${cohesiveRemaining}
   }
 
   if (style === 'concise_executive') {
+    const executiveBody = convertBulletsToCohesiveParagraphs(remaining);
     return `ملخص الإنجاز الميداني:
-تم ${firstSentence} مع استكمال ${remaining.replace(/^[•\-\*]\s*/gm, '').replace(/\n+/g, '، ')} باستخدام ${toolsText}، والتحقق التام من سلامة المخرجات الفنية.`;
+تم ${firstSentence}
+
+${executiveBody}
+
+تم توظيف ${toolsText} في تنفيذ المهام، والتحقق التام من سلامة المخرجات الفنية.`;
   }
 
   // Default: procedural
@@ -681,15 +697,14 @@ function polishArabicText(input: string): string {
     s = s.replace(re, rep);
   }
 
-  // 5. Structure into elegant procedural sections
+  // 5. Structure into clean procedural sections (no bullets)
   const lines = s.split('\n').map(l => l.trim()).filter(Boolean);
   const formattedSections: string[] = [];
-  let inBulletList = false;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
-    // Check if line is a bullet item or list item
+    // Strip any leading bullet symbols into clean text
     if (line.startsWith('•') || line.startsWith('-') || line.startsWith('*')) {
       const cleanBullet = line.replace(/^[•\-\*]\s*/, '').trim();
       formattedSections.push(cleanBullet);
@@ -698,28 +713,19 @@ function polishArabicText(input: string): string {
 
     // Check if line is a subsection header (e.g., "بعد الساعة 02:00 ظهراً : قسم ...")
     if (/^(في تمام الساعة|بعد الساعة|الساعة|قسم|فريق|مرحلة|محور|منظومة)\s*[\d:]*.*:?$/i.test(line) && line.length < 80) {
-      if (inBulletList) {
-        formattedSections.push('');
-        inBulletList = false;
-      }
       const title = line.replace(/:$/, '').trim();
       formattedSections.push(`\n**${title}:**`);
       continue;
     }
 
     // Normal narrative line
-    if (inBulletList) {
-      formattedSections.push('');
-      inBulletList = false;
-    }
-
     formattedSections.push(line);
   }
 
   let result = formattedSections.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 
   // Ensure trailing punctuation
-  if (result && !/[.!?؟•]$/.test(result)) {
+  if (result && !/[.!?؟]$/.test(result)) {
     result += '.';
   }
 
@@ -767,32 +773,30 @@ function summarizeText(text: string): string {
   }
 
   // 3. Extract tool acronyms
-  const tools: string[] = [];
   const matches = clean.match(/\b(ONT|OLT|ODN|ODB|UTP|AAA|FTTH|5G|SLA|VLAN|Trouble Ticket)\b/gi) || [];
   const uniqueTools = Array.from(new Set(matches.map(m => m.toUpperCase())));
 
-  // Build authentic multi-dimensional summary
-  const summaryLines: string[] = ['موجز النشاط والإنجاز الميداني:'];
+  // Build cohesive paragraph summary (NO bullets)
+  const summaryParts: string[] = ['موجز النشاط والإنجاز الميداني:'];
 
   if (domains.length > 0) {
-    summaryLines.push(`• النطاق التشغيلي: ${domains.slice(0, 3).join('، ')}.`);
+    summaryParts.push(`تركز النشاط الميداني ضمن النطاق التشغيلي لـ ${domains.slice(0, 3).join('، ')}.`);
   }
 
   if (procedures.length > 0) {
-    summaryLines.push(`• أبرز المهام المنفذة:\n  - ${procedures.join('\n  - ')}.`);
+    summaryParts.push(`شملت أبرز المهام المنفذة: ${procedures.join('، و')}.`);
   } else {
-    // Fallback if no specific pattern matched: pick first 2 meaningful sentences
     const sentences = clean.split(/[.\n]/).map(s => s.trim()).filter(s => s.length > 20);
     if (sentences.length > 0) {
-      summaryLines.push(`• المهام المنفذة: ${sentences.slice(0, 2).join('، ')}.`);
+      summaryParts.push(`تضمنت المهام المنفذة: ${sentences.slice(0, 2).join('، ')}.`);
     }
   }
 
   if (uniqueTools.length > 0) {
-    summaryLines.push(`• التقنيات والأدوات الموظفة: ${uniqueTools.join(', ')}.`);
+    summaryParts.push(`تم توظيف التقنيات والأدوات التالية في تنفيذ المهام: ${uniqueTools.join('، ')}.`);
   }
 
-  return summaryLines.join('\n');
+  return summaryParts.join('\n\n');
 }
 
 /**

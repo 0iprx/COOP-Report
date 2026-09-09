@@ -840,8 +840,10 @@ export function convertBulletsToCohesiveParagraphs(rawText: string = ''): string
   for (const line of lines) {
     const isBoldHeader = line.startsWith('**') && line.endsWith('**') && line.length < 80;
     const isNamedHeader = sectionHeaderRegex.test(line);
+    // Generic detection: any short Arabic line ending with colon is likely a section header
+    const isGenericColonHeader = !isBoldHeader && !isNamedHeader && /^[\u0600-\u06FF\s]{4,55}[:：]$/.test(line);
 
-    if (isBoldHeader || isNamedHeader) {
+    if (isBoldHeader || isNamedHeader || isGenericColonHeader) {
       if (currentSection.header || currentSection.lines.length > 0) {
         sections.push(currentSection);
       }
