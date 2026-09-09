@@ -453,7 +453,7 @@ router.get('/export/backup/markdown', async (req: AuthenticatedRequest, res: Res
       md += `- **القسم والتخصص:** ${reportData.profile.department || '—'}\n`;
       md += `- **جهة التدريب:** ${reportData.profile.entityAddress || '—'}\n`;
       md += `- **المشرف الميداني:** ${reportData.profile.supervisorName || reportData.profile.responsibleName || '—'}\n`;
-      md += `- **إجمالي الساعات المعتمدة:** ${reportData.totalHours} من ${reportData.profile.courseHours || 280} ساعة\n`;
+      md += `- **إجمالي الساعات المسجلة:** ${reportData.totalHours} من ${reportData.profile.courseHours || 280} ساعة\n`;
       md += `- **إجمالي أيام التدريب المسجلة:** ${reportData.totalDays} يوم\n\n`;
 
       md += `---\n\n## الفصل الأول: مقدمة التدريب والأهداف\n`;

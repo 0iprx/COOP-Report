@@ -220,12 +220,27 @@ export const ACTUAL_PREVIOUS_REPORTS: ReportSample[] = [
     specialty: 'إدارة وتأمين شبكات الحاسب (Network Administration)',
     hostCompany: 'شركة الاتصالات السعودية (stc - قطاع العمليات والشبكات)',
     studentTitle: 'تهيئة وإدارة البنية التحتية لشبكات الألياف الضوئية والخوادم الافتراضية',
-    executiveSummary: 'يمثل هذا التقرير التوثيق النهائي لفترة التدريب التعاوني في قطاع العمليات والشبكات بشركة stc على مدار 14 أسبوعاً (320 ساعة ميدانية معتمدة). شملت المهام صيانة كبائن التوزيع (MDF/IDF)، وتكوين شبكات الاتصال المحلية الافتراضية (VLANs) على محولات Cisco Catalyst، وربط خطوط المشتركين بنظام الألياف الضوئية (FTTH)، ورصد أداء الشبكة ومعالجة 84 تذكرة بلاغ عطل فني وفق مؤشرات الأداء (SLA).',
-    introText: 'انطلاقاً من الخطة التدريبية المعتمدة بالكلية، يهدف هذا المقرر الميداني إلى تطبيق المعارف والمهارات المكتسبة في معامل الكلية على بيئة العمل المؤسسية الفعلية، والتعرف على المعايير الصناعية المعتمدة في إدارة الشبكات وتقنيات الاتصال الحديثة.',
+    executiveSummary: 'يمثل هذا التقرير التوثيق النهائي لفترة التدريب التعاوني في قطاع العمليات والشبكات بشركة stc على مدار 14 أسبوعاً (320 ساعة تدريبية فعلية). شملت المهام صيانة كبائن التوزيع (MDF/IDF)، وتكوين شبكات الاتصال المحلية الافتراضية (VLANs) على محولات Cisco Catalyst، وربط خطوط المشتركين بنظام الألياف الضوئية (FTTH)، ورصد أداء الشبكة ومعالجة 84 تذكرة بلاغ عطل فني وفق مؤشرات الأداء (SLA).',
+    introText: 'انطلاقاً من الخطة التدريبية المقررة بالكلية، يهدف هذا المقرر الميداني إلى تطبيق المعارف والمهارات المكتسبة في معامل الكلية على بيئة العمل المؤسسية الفعلية، والتعرف على المعايير الصناعية المتبعة في إدارة الشبكات وتقنيات الاتصال الحديثة.',
     entityIntroText: 'تعد شركة الاتصالات السعودية (stc) رائدة التحول الرقمي ومزود الاتصالات الرائد في الشرق الأوسط. يتميز قطاع الشبكات والعمليات ببيئة عمل احترافية تدير آلاف المقاسم والخوادم ومراكز البيانات الموزعة، مع الالتزام الصارم بضوابط الأمان واستمرارية الخدمة بنسبة توافر 99.99%.',
     skillsText: '• المهارات الفنية: برمجة وتكوين محولات وموجهات Cisco، فحص توصيلات الألياف الضوئية بجهاز OTDR، تركيب وتأريض كبائن الاتصالات، وضبط جدران الحماية Fortinet.\n• المهارات الشخصية: التواصل الفني، العمل في نوبات الطوارئ، وتوثيق الإجراءات القياسية (SOP).',
     challengesText: 'واجه الفريق تذبذباً في إشارات بعض خطوط الألياف الضوئية لأحد القطاعات؛ تم استخدام جهاز فحص الانكسار الضوئي وتحديد نقطة الانحناء الحرج وإعادة لحام الشعيرات، مما استعاد جودة الإشارة بنسبة 100%.',
     conclusionText: 'أثبتت فترة التدريب التعاوني أهميتها المحورية في تجسير الفجوة بين الجانبين الأكاديمي والعملي، وساهمت في تعزيز الثقة والجاهزية للانخراط في سوق العمل التقني بكفاءة عالية واحترافية تامة.'
+  },
+  {
+    id: 'huawei-telecom',
+    name: 'نموذج هندسة شبكات الاتصالات وهواوي (Huawei & Telecom)',
+    institution: 'كلية الاتصالات والمعلومات بالرياض (قسم تقنية الاتصالات)',
+    templateId: 'telecom',
+    specialty: 'هندسة الاتصالات وشبكات الجيل الخامس (5G RAN & Transmission)',
+    hostCompany: 'شركة هواوي تك إنفستمنت العربية بالتعاون مع المشغلين (stc / Mobily / Zain)',
+    studentTitle: 'فحص وتكامل محطات الجيل الخامس ومسارات المايكروويف والألياف الضوئية (5G & RTN Integration)',
+    executiveSummary: 'يوثق هذا التقرير مخرجات التدريب الميداني في مشاريع توسعة وتحديث شبكات الاتصالات المتنقلة. شملت المهام تركيب واختبار وحدات النطاق الأساسي BBU5900، وفحص كوابل التغذية والموجة الراجعة (VSWR) للهوائيات، وتهيئة وصلات المايكروويف RTN 950A، وفحص مسارات الألياف الضوئية بجهاز OTDR للتأكد من مستويات الطاقة الضوئية (Optical RX Power). أسفرت الأعمال عن إتمام اختبارات القبول الموقعي (PAT) لـ 26 محطة بنسبة نجاح 100% ودون تسجيل أي إنذارات حرجة.',
+    introText: 'يهدف التدريب الميداني في كلية الاتصالات والمعلومات إلى مواءمة المعارف الأكاديمية مع الواقع التشغيلي لمشاريع الاتصالات الكبرى، وتطبيق معايير وإجراءات التشغيل القياسية (SOP) العالمية.',
+    entityIntroText: 'تعد شركة هواوي من رواد تقنية المعلومات والاتصالات عالمياً، وتعمل بشراكة استراتيجية مع مشغلي الاتصالات (stc، موبايلي، زين) لبناء وتحديث البنية التحتية لشبكات الجيل الخامس وشبكات النقل التراسلي المتقدمة.',
+    skillsText: '• المهارات الفنية: فحص الموجة الراجعة بجهاز Site Master، لحام واختبار الألياف الضوئية (Splicing & OTDR)، تهيئة وحدات BBU و RRU، استخدام برمجيات Web LMT و U2020، ومطابقة متطلبات فحص القبول PAT.\n• المهارات المهنية: الالتزام الصارم بضوابط السلامة المهنية الميدانية (HSE)، إدارة تصاريح العمل (Work Permits)، والعمل الجماعي الفعال.',
+    challengesText: 'ظهور إنذار عدم اتساق المسار الضوئي (Optical Link Loss) أثناء تدشين أحد المواقع؛ جرى فحص الوصلات بجهاز OTDR واكتشاف انحناء حرج في كابل التغذية مع تلوث نهاية موصل الـ SFP. تم تنظيف العدسات وإعادة المسار، مما أعاد طاقة الإشارة إلى -13.8 dBm وأنهى الإنذار بنجاح.',
+    conclusionText: 'أثمر التدريب التعاوني عن إتقان المهارات الميدانية التشغيلية المعقدة في قطاع الاتصالات، وعزز الجاهزية الكاملة للعمل كمهندس اتصالات وشبكات يمتلك الكفاءة العالية في بيئات العمل الحية.'
   },
   {
     id: 'kfupm-software',
@@ -1148,22 +1163,22 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                   : 'bg-line text-sub'
               }`}>
                 {reportData?.profile?.status === 'approved'
-                  ? 'معتمد رسمياً وموقع رقمياً'
+                  ? 'مكتمل وموقع رقمياً'
                   : reportData?.profile?.status === 'changes_requested'
                   ? 'مطلوب تعديلات وإعادة تقديم'
                   : reportData?.profile?.status === 'submitted' || reportData?.profile?.status === 'under_review'
                   ? 'تم الرفع — قيد الفحص والمراجعة الإشرافية'
-                  : 'مسودة — لم يُرفع للاعتماد بعد'}
+                  : 'مسودة — قيد الإعداد والمراجعة'}
               </span>
             </div>
             <p className="text-[11px] text-sub mt-0.5">
               {reportData?.profile?.status === 'approved'
-                ? `تم التوقيع الإلكتروني من المشرف: ${reportData.profile.supervisorName || 'المشرف المعتمد'}`
+                ? `تم التوقيع الإلكتروني من المشرف: ${reportData.profile.supervisorName || 'المشرف المسؤول'}`
                 : reportData?.profile?.status === 'changes_requested'
-                ? 'يرجى قراءة ملاحظات المشرف وتعديل الأقسام ثم إعادة الرفع للاعتماد.'
+                ? 'يرجى قراءة ملاحظات المشرف وتعديل الأقسام ثم إعادة الإرسال للمراجعة.'
                 : reportData?.profile?.status === 'submitted' || reportData?.profile?.status === 'under_review'
                 ? 'تقريرك الآن معروض في بوابة المشرف الميداني للتدقيق والمصادقة.'
-                : 'عند الانتهاء من استكمال الفصول، ارفع التقرير للمشرف الأكاديمي للاعتماد الرسمي.'}
+                : 'عند الانتهاء من استكمال الفصول، ارفع التقرير للمشرف الأكاديمي للمراجعة والتقييم.'}
             </p>
           </div>
         </div>
@@ -1376,7 +1391,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <LayoutTemplate className="w-4 h-4 text-accent" />
-                <span className="text-xs font-bold text-ink">اختر قالب التقرير المعتمد لمؤسستك أو جامعتك:</span>
+                <span className="text-xs font-bold text-ink">اختر قالب التقرير الأنسب لمؤسستك أو جامعتك:</span>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
                 <button
@@ -1398,13 +1413,13 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                   className="px-3 py-1.5 text-xs font-bold text-accent bg-accent-dim hover:bg-accent-dim/80 rounded-xl border border-accent/20 transition-all flex items-center gap-1.5 shadow-xs"
                 >
                   <BookOpen className="w-3.5 h-3.5" />
-                  <span>استعراض نماذج وتقارير سابقة معتمدة (Library)</span>
+                  <span>استعراض نماذج وتقارير سابقة نموذجية (Library)</span>
                 </button>
               </div>
             </div>
 
             {/* Template Selector Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
               {REPORT_TEMPLATES.map((tmpl) => {
                 const isActive = (profileData.reportTemplate || 'royal') === tmpl.id;
                 return (
@@ -1674,7 +1689,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
 
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <label className="block text-xs font-bold text-sub">عدد أسابيع التدريب المعتمدة</label>
+                <label className="block text-xs font-bold text-sub">عدد أسابيع التدريب المقررة</label>
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
@@ -2215,12 +2230,12 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
               <span className="font-bold text-sub">{isAr ? 'ساعات المقرر في الخطة:' : 'Course Credit:'}</span>{' '}
               <span className="font-extrabold text-ok">
                 {activePreviewProfile.courseHours
-                  ? `${activePreviewProfile.courseHours} ${isAr ? 'ساعة تدريبية معتمدة' : 'Accredited Hours'}`
-                  : (isAr ? 'معتمد في الخطة الدراسية' : 'Accredited Course')}
+                  ? `${activePreviewProfile.courseHours} ${isAr ? 'ساعة تدريبية فعلية' : 'Training Hours'}`
+                  : (isAr ? 'مقرر في الخطة الدراسية' : 'Academic Course')}
               </span>
             </div>
             <div>
-              <span className="font-bold text-sub">{isAr ? 'المدة التدريبية المعتمدة:' : 'Training Duration:'}</span>{' '}
+              <span className="font-bold text-sub">{isAr ? 'المدة التدريبية المقررة:' : 'Training Duration:'}</span>{' '}
               <span className="font-bold text-ink">
                 {activePreviewProfile.trainingWeeks || 14} {isAr ? 'أسبوعاً تدريبياً ميدانياً' : 'Weeks Field Training'}
               </span>
@@ -2253,7 +2268,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             <a href="#sec-intro" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
               <span className="group-hover:translate-x-[-2px] transition-transform">
                 {isAr
-                  ? '١. المقدمة وأهداف التدريب وبيانات الخطة المعتمدة'
+                  ? '١. المقدمة وأهداف التدريب وبيانات الخطة التدريبية'
                   : '1. Introduction, Objectives & Academic Training Plan'}
               </span>
               <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
@@ -2400,7 +2415,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                       {/* Executive Weekly Tasks Table Matrix */}
                       <div className="overflow-x-auto border border-line rounded-xl my-2 bg-card print:border-line print:bg-white break-inside-avoid shadow-xs">
                         <div className="bg-bg px-4 py-2.5 border-b border-line flex items-center justify-between text-xs font-black text-ink">
-                          <span>{isAr ? 'جدول حصر وتوثيق الأنشطة والمهام الأسبوعية المعتمد' : 'Official Weekly Tasks Executive Matrix'}</span>
+                          <span>{isAr ? 'جدول حصر وتوثيق الأنشطة والمهام الأسبوعية' : 'Official Weekly Tasks Executive Matrix'}</span>
                           <span className="text-[11px] font-bold text-accent">
                             {w.totalDays || w.entries.length} {isAr ? 'أيام عمل' : 'days'} &middot; {weekHours} {isAr ? 'ساعة فعلية' : 'hours'}
                           </span>
@@ -2550,7 +2565,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                             <span>{isAr ? 'الموجز التنفيذي والمخرجات والكفايات المكتسبة للأسبوع' : 'Weekly Executive Synthesis & Acquired Competencies'}</span>
                           </div>
                           <span className="text-[11px] font-bold text-sub">
-                            {isAr ? 'صياغة أكاديمية استشارية معتمدة' : 'Official Academic Synthesis'}
+                            {isAr ? 'صياغة أكاديمية استشارية احترافية' : 'Academic Synthesis'}
                           </span>
                         </div>
 
@@ -2683,7 +2698,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                 {compiledTools.length > 0 && (
                   <div className="pt-2 border-t border-line/60 flex flex-wrap items-center gap-1.5">
                     <span className="text-[11px] font-black text-sub ml-1">
-                      {isAr ? 'الأنظمة والتقنيات والأدوات المعتمدة في الميدان:' : 'Field Verified Technologies & Systems:'}
+                      {isAr ? 'الأنظمة والتقنيات والأدوات المستخدمة في الميدان:' : 'Field Verified Technologies & Systems:'}
                     </span>
                     {compiledTools.map((tool, tIdx) => (
                       <span
@@ -2755,7 +2770,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                 <div className="p-2.5 rounded-xl bg-bg/50 border border-line/60">
                   <span className="block text-[11px] text-muted">{isAr ? 'إجمالي الساعات المنجزة:' : 'Total Hours Completed:'}</span>
                   <span className="font-extrabold text-ok">
-                    {isSampleMode ? (activePreviewProfile.courseHours || 280) : (reportData?.totalHours || 0)} / {activePreviewProfile.courseHours || 280} {isAr ? 'ساعة معتمدة' : 'Hours'}
+                    {isSampleMode ? (activePreviewProfile.courseHours || 280) : (reportData?.totalHours || 0)} / {activePreviewProfile.courseHours || 280} {isAr ? 'ساعة فعلية' : 'Hours'}
                   </span>
                 </div>
               </div>
@@ -2768,7 +2783,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                 </div>
                 <p>
                   {isAr
-                    ? 'أقر أنا المتدرب الموقع أدناه بأن كافة المهام والأنشطة والتقارير والأدلة التوثيقية الواردة في هذا التقرير تمثل عملي الميداني الفعلي المنجز تحت إشراف وتوجيه المختصين في جهة التدريب ووفق الخطة المعتمدة.'
+                    ? 'أقر أنا المتدرب الموقع أدناه بأن كافة المهام والأنشطة والتقارير والأدلة التوثيقية الواردة في هذا التقرير تمثل عملي الميداني الفعلي المنجز تحت إشراف وتوجيه المختصين في جهة التدريب ووفق الخطة التدريبية المقررة.'
                     : 'I, the undersigned trainee, declare that all tasks, field activities, and evidence documented in this report represent my genuine operational work completed under the direct supervision of the host organization.'}
                 </p>
                 <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-line text-xs">
@@ -2784,12 +2799,12 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                 <div className="border border-line rounded-xl p-4 bg-surface space-y-3 flex flex-col justify-between">
                   <div className="space-y-2">
                     <div className="font-extrabold text-xs text-ink pb-1.5 border-b border-line flex items-center justify-between">
-                      <span>{isAr ? 'اعتماد المشرف الميداني (جهة التدريب)' : 'Field Supervisor Endorsement (Host)'}</span>
+                      <span>{isAr ? 'مراجعة وتوقيع المشرف الميداني (جهة التدريب)' : 'Field Supervisor Sign-Off (Host)'}</span>
                       <span className="text-[10px] text-accent font-bold">{activePreviewProfile.entityAddress || 'جهة التدريب'}</span>
                     </div>
                     <div className="space-y-1 text-[11.5px] text-sub">
                       <div><b>{isAr ? 'اسم المشرف الميداني:' : 'Supervisor Name:'}</b> {activePreviewProfile.responsibleName || '................................'}</div>
-                      <div><b>{isAr ? 'المنصب / الصفة:' : 'Title / Role:'}</b> {isAr ? 'المشرف الميداني المعتمد' : 'Authorized Field Mentor'}</div>
+                      <div><b>{isAr ? 'المنصب / الصفة:' : 'Title / Role:'}</b> {isAr ? 'المشرف الميداني المسؤول' : 'Field Supervisor'}</div>
                       <div className="pt-1">
                         <b>{isAr ? 'التقييم العام للمتدرب:' : 'Overall Performance Rating:'}</b>
                         <div className="flex items-center gap-3 pt-1 text-[11px] font-bold text-ink">
@@ -2816,16 +2831,16 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                 <div className="border border-line rounded-xl p-4 bg-surface space-y-3 flex flex-col justify-between">
                   <div className="space-y-2">
                     <div className="font-extrabold text-xs text-ink pb-1.5 border-b border-line flex items-center justify-between">
-                      <span>{isAr ? 'اعتماد المشرف الأكاديمي (الجامعة / الكلية)' : 'Academic Supervisor Endorsement (Institution)'}</span>
+                      <span>{isAr ? 'مراجعة وتوقيع المشرف الأكاديمي (الجامعة / الكلية)' : 'Academic Supervisor Sign-Off (Institution)'}</span>
                       <span className="text-[10px] text-accent font-bold">{activePreviewProfile.trainingUnit || 'المؤسسة التعليمية'}</span>
                     </div>
                     <div className="space-y-1 text-[11.5px] text-sub">
                       <div><b>{isAr ? 'اسم المشرف الأكاديمي:' : 'Supervisor Name:'}</b> {activePreviewProfile.supervisorName || '................................'}</div>
                       <div><b>{isAr ? 'القسم العلمي:' : 'Academic Department:'}</b> {activePreviewProfile.department || '................................'}</div>
                       <div className="pt-1">
-                        <b>{isAr ? 'حالة الاعتماد النهائي:' : 'Final Approval Status:'}</b>
+                        <b>{isAr ? 'حالة التقييم النهائي:' : 'Final Evaluation Status:'}</b>
                         <div className="flex items-center gap-3 pt-1 text-[11px] font-bold text-ink">
-                          <span>[  ] {isAr ? 'مقبول ومعتمد' : 'Approved'}</span>
+                          <span>[  ] {isAr ? 'مستوفٍ للشروط' : 'Approved'}</span>
                           <span>[  ] {isAr ? 'تعديلات مطلوبة' : 'Revisions'}</span>
                         </div>
                       </div>
@@ -2862,7 +2877,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                 </div>
                 <div>
                   <h3 className="text-base sm:text-lg font-extrabold text-ink flex items-center gap-2">
-                    <span>مركز إرشادات وقوالب التقرير التعاوني المعتمدة</span>
+                    <span>مركز إرشادات ونماذج التقرير التعاوني</span>
                     <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20">
                       دليل شامل + نماذج حقيقية
                     </span>
@@ -2954,7 +2969,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                           <span>الهيكل الأكاديمي القياسي لتقرير التدريب التعاوني (Standard Structure)</span>
                         </h4>
                         <p className="text-sub">
-                          يتألف التقرير الاحترافي المعتمد من 6 أقسام جوهرية متسلسلة تحقق معايير التقييم للجان الأكاديمية والشركات:
+                          يتألف التقرير الاحترافي من 6 أقسام جوهرية متسلسلة تحقق معايير التقييم للجان الأكاديمية والشركات:
                         </p>
                       </div>
 
@@ -2995,7 +3010,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                             <span>سجل المهام والمشاريع التراكمية</span>
                           </div>
                           <p className="text-[11px] text-sub leading-relaxed">
-                            توثيق زمني أو بحسب المشاريع يوضح تفاصيل العمل اليومي والأسبوعي مقترناً بالساعات والفئات المعتمدة.
+                            توثيق زمني أو بحسب المشاريع يوضح تفاصيل العمل اليومي والأسبوعي مقترناً بالساعات والفئات المحددة.
                           </p>
                         </div>
 
@@ -3070,7 +3085,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                           قاعدة كتابة السجل اليومي والأسبوعي (The 3-Part Log Rule)
                         </h4>
                         <div className="p-3 bg-card border border-line rounded-lg font-mono text-xs text-ink font-bold">
-                          [فعل إجرائي محدد] + [الأداة أو البيئة أو النظام المعتمد] + [النتيجة الملموسة والمحققة]
+                          [فعل إجرائي محدد] + [الأداة أو البيئة أو النظام المستخدم] + [النتيجة الملموسة والمحققة]
                         </div>
                       </div>
 
@@ -3112,7 +3127,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                           منهجية STAR لتوثيق التحديات وحلها (Situation, Task, Action, Result)
                         </h4>
                         <p className="text-sub">
-                          هذه المنهجية هي المعيار المعتمد لدى لجان تقييم ABET وشركات مثل أرامكو وسابك لتقييم قدرة المتدرب على حل المشكلات الهندسية:
+                          هذه المنهجية هي المعيار الموصى به لدى لجان تقييم ABET وشركات مثل أرامكو وسابك لتقييم قدرة المتدرب على حل المشكلات الهندسية:
                         </p>
                       </div>
 
@@ -3150,7 +3165,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                     <div className="space-y-3 animate-fade-in">
                       <div className="p-4 bg-bg border border-line rounded-xl">
                         <h4 className="text-sm font-extrabold text-accent mb-1">
-                          قاموس الأفعال الإجرائية (Action Verbs Bank) المعتمدة في التقارير
+                          قاموس الأفعال الإجرائية (Action Verbs Bank) في التقارير الفنية
                         </h4>
                         <p className="text-sub">
                           ابدأ كل جملة ومهمة بأحد هذه الأفعال لإضفاء الصبغة الهندسية والأكاديمية الرفيعة:
@@ -3317,7 +3332,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                     <div>
                       <h4 className="font-extrabold text-accent text-xs mb-1 flex items-center gap-1.5">
                         <Award className="w-3.5 h-3.5" />
-                        <span>الملخص التنفيذي المعتمد (Executive Summary):</span>
+                        <span>الملخص التنفيذي (Executive Summary):</span>
                       </h4>
                       <p className="p-3 bg-bg border border-line rounded-xl leading-relaxed whitespace-pre-wrap text-sub">{selectedSample.executiveSummary}</p>
                     </div>
@@ -3550,7 +3565,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                   <Sparkle className="w-3 h-3 text-accent" />
                   أمثلة شائعة:
                 </span>
-                {['أرامكو السعودية', 'سدايا SDAIA', 'شركة علم', 'stc', 'سابك', 'مصرف الراجحي', 'وزارة الصحة', 'نيوم NEOM', 'هيئة الزكاة والضريبة'].map((name) => (
+                {['أرامكو السعودية', 'stc', 'هواوي السعودية Huawei', 'موبايلي Mobily', 'زين السعودية Zain', 'سدايا SDAIA', 'شركة علم', 'سابك', 'نيوم NEOM', 'مصرف الراجحي'].map((name) => (
                   <button
                     key={name}
                     type="button"

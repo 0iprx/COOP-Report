@@ -67,7 +67,8 @@ const TEMPLATE_COLORS: Record<string, { primary: string; secondary: string }> = 
   royal: { primary: '8B0000', secondary: '2F6B4F' },
   modern: { primary: '0284C7', secondary: '0F172A' },
   executive: { primary: '1E293B', secondary: 'D97706' },
-  tvtc: { primary: '065F46', secondary: '1F2937' }
+  tvtc: { primary: '065F46', secondary: '1F2937' },
+  telecom: { primary: '002B49', secondary: '00A3E0' }
 };
 
 function tryParseBase64Image(dataUri?: string): Buffer | null {
@@ -370,12 +371,12 @@ export async function generateAcademicDocx(reportData: FinalReportData, lang: 'a
           // Chapter 1: Introduction
           createTOCChapterItem('chap_intro', isAr ? 'الفصل الأول: المقدمة وأهداف التدريب وبيانات المقرر' : 'CHAPTER 1: INTRODUCTION & OBJECTIVES', isAr),
           createTOCSubItem('sec_intro_obj', isAr ? '1.1 أهداف التدريب التعاوني ودوافعه الأكاديمية' : '1.1 Objectives & Academic Motivations', isAr),
-          createTOCSubItem('sec_intro_req', isAr ? '1.2 متطلبات المقرر في الخطة الدراسية وساعات التدريب المعتمدة' : '1.2 Course Credit & Requirements in Academic Plan', isAr),
+          createTOCSubItem('sec_intro_req', isAr ? '1.2 متطلبات المقرر في الخطة الدراسية وساعات التدريب المقررة' : '1.2 Course Credit & Requirements in Academic Plan', isAr),
 
           // Chapter 2: Host Organization
           createTOCChapterItem('chap_org', isAr ? `الفصل الثاني: التعريف بجهة التدريب (${entityName})` : `CHAPTER 2: TRAINING ORGANIZATION (${entityName})`, isAr),
           createTOCSubItem('sec_org_about', isAr ? '2.1 نبذة عن جهة التدريب وهيكلها الإداري' : '2.1 Host Organization & Department', isAr),
-          createTOCSubItem('sec_org_plan', isAr ? `2.2 الخطة المعتمدة للتدريب (${trainingWeeksCount} أسبوعاً)` : `2.2 Approved COOP Plan (${trainingWeeksCount} Weeks)`, isAr),
+          createTOCSubItem('sec_org_plan', isAr ? `2.2 الخطة المقررة للتدريب (${trainingWeeksCount} أسبوعاً)` : `2.2 Training Plan (${trainingWeeksCount} Weeks)`, isAr),
 
           // Chapter 3: Weekly Training Timeline (All 14 Weeks)
           createTOCChapterItem('chap_timeline', isAr ? `الفصل الثالث: تقارير وسجل الأسابيع التدريبية الميدانية (${trainingWeeksCount} أسبوعاً)` : `CHAPTER 3: WEEKLY TRAINING REPORTS (${trainingWeeksCount} WEEKS)`, isAr),
@@ -463,7 +464,7 @@ export async function generateAcademicDocx(reportData: FinalReportData, lang: 'a
                 id: 'sec_intro_req',
                 children: [
                   new TextRun({
-                    text: isAr ? `1.2 متطلبات المقرر وساعات التدريب المعتمدة (${courseHours} ساعة)` : `1.2 Course Hours & Requirements (${courseHours} hrs)`,
+                    text: isAr ? `1.2 متطلبات المقرر وساعات التدريب المقررة (${courseHours} ساعة)` : `1.2 Course Hours & Requirements (${courseHours} hrs)`,
                     bold: true,
                     size: 26,
                     color: '2F6B4F'
@@ -876,9 +877,9 @@ function createMetaTable(
     [isAr ? 'ساعات المقرر المطلوبة' : 'Required Course Hours', `${courseHours} ${isAr ? 'ساعة' : 'hrs'}`],
     [
       isAr ? 'إجمالي الساعات المنجزة' : 'Total Logged Hours',
-      `${totalHours} ${isAr ? 'ساعة معتمدة' : 'hrs'} (${progressPercent}% ${isAr ? 'من المقرر' : 'completed'})`
+      `${totalHours} ${isAr ? 'ساعة فعلية' : 'hrs'} (${progressPercent}% ${isAr ? 'من المقرر' : 'completed'})`
     ],
-    [isAr ? 'مدة التدريب المعتمدة' : 'Training Weeks', `${p.trainingWeeks || 14} ${isAr ? 'أسبوعاً' : 'weeks'}`]
+    [isAr ? 'مدة التدريب المقررة' : 'Training Weeks', `${p.trainingWeeks || 14} ${isAr ? 'أسبوعاً' : 'weeks'}`]
   ];
 
   return new Table({
@@ -1022,7 +1023,7 @@ function createWeekStatBanner(
                 children: [
                   new TextRun({
                     text: isAr
-                      ? `ساعات الأسبوع: ${w.totalHours} ساعة  |  أيام العمل: ${w.totalDays} أيام  |  المهام: ${w.entries.length} مهام  |  الحالة: ${hasEntries ? 'منجز ومعتمد' : 'أسبوع تدريبي مؤجل / متاح للتوثيق لاحقاً'}`
+                      ? `ساعات الأسبوع: ${w.totalHours} ساعة  |  أيام العمل: ${w.totalDays} أيام  |  المهام: ${w.entries.length} مهام  |  الحالة: ${hasEntries ? 'منجز وموثق' : 'أسبوع تدريبي مؤجل / متاح للتوثيق لاحقاً'}`
                       : `Week Hours: ${w.totalHours} hrs  |  Active Days: ${w.totalDays}  |  Tasks: ${w.entries.length}  |  Status: ${hasEntries ? 'Completed' : 'Postponed / Available for Update'}`,
                     size: 22,
                     bold: true,
@@ -1394,7 +1395,7 @@ function createFinalApprovalTable(
               new Paragraph({
                 bidirectional: isAr,
                 spacing: { before: 100 },
-                children: [new TextRun({ text: `${isAr ? 'الساعات المعتمدة المنجزة:' : 'Approved Hours:'} ${totalHours} / ${courseHours} ${isAr ? 'ساعة' : 'hrs'}`, size: 22 })]
+                children: [new TextRun({ text: `${isAr ? 'الساعات الفعلية المنجزة:' : 'Completed Hours:'} ${totalHours} / ${courseHours} ${isAr ? 'ساعة' : 'hrs'}`, size: 22 })]
               }),
               new Paragraph({
                 bidirectional: isAr,
@@ -1886,7 +1887,7 @@ export async function generateWeeklyDocx(
             spacing: { before: 240, after: 120 },
             children: [
               new TextRun({
-                text: isAr ? 'جدول حصر وتوثيق الأنشطة والمهام الأسبوعية المعتمد:' : 'Official Weekly Tasks Executive Matrix:',
+                text: isAr ? 'جدول حصر وتوثيق الأنشطة والمهام الأسبوعية:' : 'Weekly Tasks Executive Matrix:',
                 bold: true,
                 size: 24,
                 color: primaryColor

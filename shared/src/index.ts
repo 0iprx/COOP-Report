@@ -64,7 +64,7 @@ export const profileSchema = z.object({
   startDate: z.string().max(20).default(''),
   companyLogo: z.string().optional().default(''),
   institutionLogo: z.string().optional().default(''),
-  reportTemplate: z.enum(['royal', 'modern', 'executive', 'tvtc']).default('royal'),
+  reportTemplate: z.enum(['royal', 'modern', 'executive', 'tvtc', 'telecom']).default('royal'),
   executiveSummary: z.string().optional().default(''),
   challengesText: z.string().optional().default(''),
   recommendationsText: z.string().optional().default(''),
@@ -165,7 +165,7 @@ export interface ReportProfileDTO {
   startDate: string;
   companyLogo?: string;
   institutionLogo?: string;
-  reportTemplate?: 'royal' | 'modern' | 'executive' | 'tvtc';
+  reportTemplate?: 'royal' | 'modern' | 'executive' | 'tvtc' | 'telecom';
   executiveSummary?: string;
   challengesText?: string;
   recommendationsText?: string;
@@ -259,8 +259,8 @@ export const REPORT_TEMPLATES = [
     nameEn: 'Royal Academic',
     primaryColor: '#8B0000',
     secondaryColor: '#2F6B4F',
-    badge: 'معتمد',
-    descriptionAr: 'الطابع الأكاديمي الكلاسيكي المعتمد للجامعات بلمسات العنابي والخطوط الرصينة'
+    badge: 'أكاديمي',
+    descriptionAr: 'الطابع الأكاديمي الكلاسيكي للجامعات بلمسات العنابي والخطوط الرصينة'
   },
   {
     id: 'modern',
@@ -287,7 +287,16 @@ export const REPORT_TEMPLATES = [
     primaryColor: '#065F46',
     secondaryColor: '#1F2937',
     badge: 'رسمي',
-    descriptionAr: 'مطابق للكليشات ونماذج التدريب الميداني المعتمدة بالمؤسسة العامة للتدريب التقني والمهني'
+    descriptionAr: 'مطابق للكليشات ونماذج التدريب الميداني بالمؤسسة العامة للتدريب التقني والمهني'
+  },
+  {
+    id: 'telecom',
+    nameAr: 'هندسة الاتصالات والشبكات (STC/هواوي)',
+    nameEn: 'Telecom & Network Engineering',
+    primaryColor: '#002B49',
+    secondaryColor: '#00A3E0',
+    badge: 'اتصالات',
+    descriptionAr: 'تصميم هندسي عالي الدقة متخصص بمشاريع البنية التحتية للاتصالات، الأبراج، والألياف الضوئية'
   }
 ] as const;
 
@@ -576,7 +585,7 @@ export function generateAcademicWeeklySynthesis(
   if (/hr|موارد بشرية|مقابلة|بيئة العمل|أنظمة|تهيئة/i.test(combinedText)) {
     dynamicCompetencies.push(
       isAr
-        ? 'استيعاب الهيكل التنظيمي واللوائح الإدارية وسياسات الأمن والسلامة المهنية المعتمدة لدى المنشأة.'
+        ? 'استيعاب الهيكل التنظيمي واللوائح الإدارية وسياسات الأمن والسلامة المهنية المعمول بها لدى المنشأة.'
         : 'Understanding enterprise organization, operational policies, and occupational safety guidelines.'
     );
   }
@@ -646,7 +655,7 @@ export function generateAcademicWeeklySynthesis(
   const mainFocus = technicalPillars.slice(0, 2).join(isAr ? ' و ' : ' and ');
 
   const executiveSummary = isAr
-    ? `تم خلال هذه الفترة التدريبية إنجاز ${tasksCountText}${hoursText ? ` عبر ${hoursText}` : ''}، حيث تركّز العمل الميداني على (${mainFocus})، مع الالتزام التام بإجراءات المنشأة وضوابط الجودة المعتمدة.`
+    ? `تم خلال هذه الفترة التدريبية إنجاز ${tasksCountText}${hoursText ? ` عبر ${hoursText}` : ''}، حيث تركّز العمل الميداني على (${mainFocus})، مع الالتزام التام بإجراءات المنشأة وضوابط الجودة المطبقة.`
     : `During this training timeframe, ${tasksCountText} were successfully accomplished${hoursText ? ` over ${hoursText}` : ''}, focusing primarily on (${mainFocus}), ensuring strict adherence to host entity quality workflows.`;
 
   // 5. Build Full Synthesis Narrative

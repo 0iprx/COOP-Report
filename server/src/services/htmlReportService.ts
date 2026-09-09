@@ -105,7 +105,8 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
       --bg: ${
         profile.reportTemplate === 'modern' ? '#F8FAFC' :
         profile.reportTemplate === 'executive' ? '#F1F5F9' :
-        profile.reportTemplate === 'tvtc' ? '#F4FBF7' : '#F7F5F0'
+        profile.reportTemplate === 'tvtc' ? '#F4FBF7' :
+        profile.reportTemplate === 'telecom' ? '#F0F7FF' : '#F7F5F0'
       };
       --card: #FFFFFF;
       --ink: #1B1B18;
@@ -114,12 +115,14 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
       --accent: ${
         profile.reportTemplate === 'modern' ? '#0284C7' :
         profile.reportTemplate === 'executive' ? '#1E293B' :
-        profile.reportTemplate === 'tvtc' ? '#065F46' : '#8B0000'
+        profile.reportTemplate === 'tvtc' ? '#065F46' :
+        profile.reportTemplate === 'telecom' ? '#002B49' : '#8B0000'
       };
       --accent-dim: ${
         profile.reportTemplate === 'modern' ? '#E0F2FE' :
         profile.reportTemplate === 'executive' ? '#E2E8F0' :
-        profile.reportTemplate === 'tvtc' ? '#E6F4EA' : '#F4DDDF'
+        profile.reportTemplate === 'tvtc' ? '#E6F4EA' :
+        profile.reportTemplate === 'telecom' ? '#E0F2FE' : '#F4DDDF'
       };
       --ok: #2F6B4F;
       --ok-bg: #E5F1EA;
@@ -410,7 +413,7 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
           <div class="meta-item"><b>${isAr ? 'القسم / التخصص:' : 'Department:'}</b> ${escapeHtml(profile.department) || '—'}</div>
           <div class="meta-item"><b>${isAr ? 'المشرف الأكاديمي:' : 'Academic Supervisor:'}</b> ${escapeHtml(profile.supervisorName) || '—'}</div>
           <div class="meta-item"><b>${isAr ? 'المشرف الميداني:' : 'Field Supervisor:'}</b> ${escapeHtml(profile.responsibleName) || '—'}</div>
-          <div class="meta-item"><b>${isAr ? 'ساعات المقرر في الخطة:' : 'Course Credit:'}</b> ${courseHours ? `${courseHours} ${isAr ? 'ساعة تدريبية معتمدة' : 'Accredited Hours'}` : (isAr ? 'معتمد في الخطة الدراسية' : 'Accredited Course')}</div>
+          <div class="meta-item"><b>${isAr ? 'ساعات المقرر في الخطة:' : 'Course Credit:'}</b> ${courseHours ? `${courseHours} ${isAr ? 'ساعة تدريبية فعلية' : 'Training Hours'}` : (isAr ? 'مقرر في الخطة الدراسية' : 'Academic Course')}</div>
           <div class="meta-item"><b>${isAr ? 'المدة التدريبية:' : 'Training Duration:'}</b> ${profile.trainingWeeks || 14} ${isAr ? 'أسبوعاً تدريبياً ميدانياً' : 'Weeks'}</div>
           <div class="meta-item"><b>${isAr ? 'حالة التوثيق الميداني:' : 'Documentation Status:'}</b> ${weeks.length} ${isAr ? 'أسبوعاً موثقاً بالكامل (100%)' : 'Weeks Completed (100%)'}</div>
         </div>
@@ -427,7 +430,7 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
         </a>
 
         <a class="toc-row" href="#sec-intro">
-          <span>${isAr ? '• 1. المقدمة وأهداف التدريب وبيانات الخطة المعتمدة' : '• 1. Introduction, Objectives & Academic Training Plan'}</span>
+          <span>${isAr ? '• 1. المقدمة وأهداف التدريب وبيانات الخطة التدريبية' : '• 1. Introduction, Objectives & Academic Training Plan'}</span>
           <span class="toc-dots"></span>
           <span class="toc-page">${isAr ? '٢' : '2'}</span>
         </a>
@@ -508,7 +511,7 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
               <!-- Executive Weekly Tasks Matrix Table -->
               <div style="margin-bottom: 16px; overflow-x: auto;">
                 <div style="font-size: 12px; font-weight: 800; color: var(--accent); margin-bottom: 6px; display: flex; justify-content: space-between;">
-                  <span>${isAr ? 'جدول حصر وتوثيق الأنشطة والمهام الأسبوعية المعتمد' : 'Official Weekly Tasks Executive Matrix'}</span>
+                  <span>${isAr ? 'جدول حصر وتوثيق الأنشطة والمهام الأسبوعية' : 'Official Weekly Tasks Executive Matrix'}</span>
                   <span>${w.totalDays || w.entries.length} ${isAr ? 'أيام عمل' : 'days'} &middot; ${weekHours} ${isAr ? 'ساعة فعلية' : 'hours'}</span>
                 </div>
                 <table class="entries-table" style="width: 100%; font-size: 11.5px; border-collapse: collapse;">
@@ -628,17 +631,17 @@ export function generateStandaloneHTMLReport(reportData: FinalReportData, lang: 
       <p style="line-height: 1.8; color: var(--ink);">${escapeHtml(profile.conclusionText || (isAr ? `في ختام فترة التدريب التعاوني الميداني، حققت هذه التجربة أهدافها التعليمية والتطبيقية بنجاح من خلال ربط المفاهيم الأكاديمية بالممارسة الهندسية والتشغيلية المباشرة في ${profile.entityAddress || 'المنشأة المستضيفة'}.\n\nأبرز التوصيات المهنية:\n• تعزيز برامج التدريب الميداني التخصصية في هندسة الشبكات والأمن السيبراني وتقنيات الألياف الضوئية.\n• أتمتة الإجراءات والربط الرقمي المباشر بين فرق العمل وأنظمة إدارة البلاغات والتذاكر الفنية (ITIL).\n• استمرار الشراكة الأكاديمية والمهنية الفعالة بين المؤسسات التعليمية وسوق العمل.` : `At the conclusion of the cooperative field training period, this experience successfully achieved its academic and practical goals by bridging theory with direct engineering operations at ${profile.entityAddress || 'the host organization'}.\n\nKey Recommendations:\n• Advancing field training programs in network engineering and cybersecurity.\n• Automating incident management and ticket escalation workflows under ITIL standards.\n• Sustaining strong institutional collaboration between universities and industry.`))}</p>
 
       <!-- Section 6: Approval -->
-      <h2 class="section-title page-break" id="sec-approval">${isAr ? '6. استمارة اعتماد وتوقيعات الإشراف' : '6. Supervisory Approval & Final Sign-Off'}</h2>
+      <h2 class="section-title page-break" id="sec-approval">${isAr ? '6. استمارة مراجعة وتوقيعات الإشراف' : '6. Supervisory Review & Final Sign-Off'}</h2>
       <table class="approval-table">
         <tr>
           <td>
-            <b>${isAr ? 'اعتماد المشرف الميداني (جهة التدريب):' : 'Field Supervisor Approval:'}</b><br><br>
+            <b>${isAr ? 'مراجعة وتوقيع المشرف الميداني (جهة التدريب):' : 'Field Supervisor Sign-Off:'}</b><br><br>
             ${isAr ? 'الاسم:' : 'Name:'} ${escapeHtml(profile.responsibleName) || '....................'}<br><br>
-            ${isAr ? 'الساعات المعتمدة:' : 'Approved Hours:'} ${totalHours} / ${courseHours}<br><br>
+            ${isAr ? 'الساعات الفعلية المنجزة:' : 'Completed Hours:'} ${totalHours} / ${courseHours}<br><br>
             ${isAr ? 'التوقيع والختم: ........................................' : 'Signature & Stamp: ........................................'}
           </td>
           <td>
-            <b>${isAr ? 'اعتماد المشرف الأكاديمي (الكلية / الجامعة):' : 'Academic Supervisor Approval:'}</b><br><br>
+            <b>${isAr ? 'مراجعة وتوقيع المشرف الأكاديمي (الكلية / الجامعة):' : 'Academic Supervisor Sign-Off:'}</b><br><br>
             ${isAr ? 'الاسم:' : 'Name:'} ${escapeHtml(profile.supervisorName) || '....................'}<br><br>
             ${isAr ? 'الدرجة النهائية:' : 'Final Grade:'} ....................<br><br>
             ${isAr ? 'التوقيع والختم: ........................................' : 'Signature & Stamp: ........................................'}

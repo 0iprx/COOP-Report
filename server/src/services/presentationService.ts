@@ -183,7 +183,7 @@ export async function generatePresentationBuffer(
     ? `• اسم المتدرب: ${reportData.profile.studentName || '—'}\n\n` +
       `• الرقم التدريبي / الأكاديمي: ${reportData.profile.trainingNumber || '—'}\n\n` +
       `• الكلية / القسم: ${reportData.profile.trainingUnit || reportData.profile.department || '—'}\n\n` +
-      `• المشرف الميداني المعتمد: ${reportData.profile.supervisorName || reportData.profile.responsibleName || '—'}`
+      `• المشرف الميداني المسؤول: ${reportData.profile.supervisorName || reportData.profile.responsibleName || '—'}`
     : `• Trainee Name: ${reportData.profile.studentName || '—'}\n\n` +
       `• Student ID: ${reportData.profile.trainingNumber || '—'}\n\n` +
       `• Department: ${reportData.profile.trainingUnit || reportData.profile.department || '—'}\n\n` +
@@ -229,7 +229,7 @@ export async function generatePresentationBuffer(
 
   const metricsInfo = isAr
     ? `• إجمالي الأسابيع التدريبية: ${reportData.profile.trainingWeeks || 14} أسبوعاً متصلاً\n\n` +
-      `• ساعات الإنجاز المسجلة: ${reportData.totalHours} من ${reportData.profile.courseHours || 280} ساعة معتمدة\n\n` +
+      `• ساعات الإنجاز المسجلة: ${reportData.totalHours} من ${reportData.profile.courseHours || 280} ساعة تدريبية\n\n` +
       `• إجمالي الأيام الموثقة: ${reportData.totalDays} يوم عمل ميداني\n\n` +
       `• حالة التقرير: مكتمل وموثق وفق أعلى المعايير الهندسية الأكاديمية`
     : `• Total Training Weeks: ${reportData.profile.trainingWeeks || 14} Structured Weeks\n\n` +
@@ -688,7 +688,7 @@ export async function generatePresentationBuffer(
     s6,
     '06',
     isAr ? 'التوثيق والشواهد' : 'FIELD EVIDENCE',
-    isAr ? '٥. الشواهد الميدانية والأدلة المصورة المعتمدة' : '5. Verified Photographic Evidence & Artifacts'
+    isAr ? '٥. الشواهد الميدانية والأدلة المصورة' : '5. Field Photographic Evidence & Artifacts'
   );
 
   const evidenceBoxes = isAr
@@ -706,7 +706,7 @@ export async function generatePresentationBuffer(
         {
           title: 'سجلات المراجعة وتوقيع المشرف',
           tag: 'شكل (3-1)',
-          desc: 'نماذج التقييم الدوري الأسبوعي ومحاضر الاجتماعات الفنية الموقعة مع المشرف الميداني المعتمد.'
+          desc: 'نماذج التقييم الدوري الأسبوعي ومحاضر الاجتماعات الفنية مع المشرف الميداني المسؤول.'
         }
       ]
     : [
@@ -866,11 +866,11 @@ export async function generatePresentationBuffer(
   });
 
   const signoffDetails = isAr
-    ? `• المشرف الميداني المسؤول: ${reportData.profile.supervisorName || reportData.profile.responsibleName || 'المشرف المعتمد'}\\n\\n` +
+    ? `• المشرف الميداني المسؤول: ${reportData.profile.supervisorName || reportData.profile.responsibleName || 'المشرف المسؤول'}\\n\\n` +
       `• التقييم العام للمتدرب: ممتاز (متميز في الأداء والانضباط)\\n\\n` +
       `• الالتزام بساعات التدريب: مكتمل بنسبة 100% (${reportData.totalHours} ساعة)\\n\\n` +
-      `• توصية جهة التدريب: اعتماد التقرير الفني والموافقة على مناقشة المتدرب\\n\\n` +
-      `• الختم والتوقيع الرسمي: معتمد وموثق بالسجلات الميدانية`
+      `• توصية جهة التدريب: مراجعة التقرير الفني والموافقة على مناقشة المتدرب\\n\\n` +
+      `• الختم والتوقيع الرسمي: مسجل وموثق بالسجلات الميدانية`
     : `• Designated Field Supervisor: ${reportData.profile.supervisorName || reportData.profile.responsibleName || 'Field Supervisor'}\\n\\n` +
       `• Overall Performance Rating: Outstanding / Excellent\\n\\n` +
       `• Attendance & Hour Fulfillment: 100% Complete (${reportData.totalHours} Hours)\\n\\n` +
