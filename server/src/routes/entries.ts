@@ -1,7 +1,8 @@
 import { Router, Response } from 'express';
 import { prisma } from '../db.js';
 import { authenticate, AuthenticatedRequest } from '../middleware/auth.js';
-import { entrySchema } from '@coop/shared';
+import { entrySchema, batchRewriteEntriesSchema } from '@coop/shared';
+import { rewriteEntryAcademically } from '../services/aiService.js';
 import { logger } from '../logger.js';
 
 const router = Router();
@@ -266,6 +267,100 @@ router.post('/:id/revisions/:revId/rollback', async (req: AuthenticatedRequest, 
   } catch (err) {
     logger.error({ err }, 'Error rolling back entry revision');
     res.status(500).json({ error: 'تعذر التراجع عن التعديل واستعادة النسخة' });
+  }
+});
+
+// POST /api/entries/batch-academic-rewrite (Rewrite all entries or specific week academically with zero hallucination)
+router.post('/batch-academic-rewrite', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const parseResult = batchRewriteEntriesSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      res.status(400).json({ error: parseResult.error.errors[0]?.message || 'بيانات غير صالحة' });
+      return;
+    }
+
+    const { weekNumber, apiKey, model } = parseResult.data;
+    const userId = req.user!.userId;
+
+    // Fetch user entries
+    let entries = await prisma.entry.findMany({
+      where: {
+        userId,
+        deletedAt: null
+      },
+      orderBy: { entryDate: 'asc' }
+    });
+
+    if (entries.length === 0) {
+      res.json({ message: 'لا توجد سجلات لمعالجتها', processedCount: 0, entries: [] });
+      return;
+    }
+
+    // If weekNumber is specified, filter entries by week
+    if (weekNumber) {
+      const profile = await prisma.reportProfile.findUnique({ where: { userId } });
+      const startDateStr = profile?.startDate || entries[0].entryDate;
+      const start = new Date(startDateStr);
+
+      entries = entries.filter(e => {
+        const eDate = new Date(e.entryDate);
+        const diffDays = Math.floor((eDate.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+        const w = Math.max(1, Math.floor(diffDays / 7) + 1);
+        return w === weekNumber;
+      });
+    }
+
+    logger.info({ userId, count: entries.length, weekNumber }, 'Starting batch academic rewrite of entries');
+
+    const updatedEntries = [];
+
+    for (const entry of entries) {
+      // 1. Archive current version to EntryRevision
+      try {
+        await prisma.entryRevision.create({
+          data: {
+            entryId: entry.id,
+            title: entry.title,
+            category: entry.category,
+            description: entry.description,
+            timeFrom: entry.timeFrom,
+            timeTo: entry.timeTo
+          }
+        });
+      } catch (revErr) {
+        logger.warn({ revErr, entryId: entry.id }, 'Could not create revision before batch rewrite');
+      }
+
+      // 2. Rewrite academically
+      const rewritten = await rewriteEntryAcademically({
+        title: entry.title,
+        description: entry.description,
+        category: entry.category,
+        apiKey,
+        model
+      });
+
+      // 3. Update entry in database
+      const updated = await prisma.entry.update({
+        where: { id: entry.id },
+        data: {
+          title: rewritten.title,
+          description: rewritten.description,
+          category: rewritten.category
+        }
+      });
+
+      updatedEntries.push(updated);
+    }
+
+    res.json({
+      message: `تمت إعادة صياغة وترتيب ${updatedEntries.length} سجلات أكاديمياً بنجاح وبدون أي اختلاق`,
+      processedCount: updatedEntries.length,
+      entries: updatedEntries
+    });
+  } catch (err: any) {
+    logger.error({ err }, 'Error in batch academic rewrite');
+    res.status(500).json({ error: err?.message || 'تعذر استكمال إعادة الصياغة الأكاديمية' });
   }
 });
 

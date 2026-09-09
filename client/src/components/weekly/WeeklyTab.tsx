@@ -31,12 +31,14 @@ import {
   Award
 } from 'lucide-react';
 import { DiffModal } from '../common/DiffModal';
+import { BatchRewriteModal } from '../common/BatchRewriteModal';
 
 const CATEGORIES = ENTRY_CATEGORIES;
 
 export const WeeklyTab: React.FC = () => {
   const queryClient = useQueryClient();
   const { lang, isAr, t } = useLanguage();
+  const [batchModalOpen, setBatchModalOpen] = useState<boolean>(false);
   const [selectedWeek, setSelectedWeek] = useState<string>('');
   const [copied, setCopied] = useState<boolean>(false);
   const [downloadingPptx, setDownloadingPptx] = useState<boolean>(false);
@@ -644,6 +646,15 @@ export const WeeklyTab: React.FC = () => {
             >
               {copied ? <Check className="w-3.5 h-3.5 text-ok" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copied ? t('تم النسخ!', 'Copied!') : t('نسخ النص', 'Copy Text')}</span>
+            </button>
+
+            <button
+              onClick={() => setBatchModalOpen(true)}
+              className="px-3 py-1.5 text-xs font-bold text-accent bg-accent/10 hover:bg-accent/20 rounded-xl border border-accent/25 transition-all flex items-center gap-1.5 shadow-2xs"
+              title={t('إعادة صياغة وهيكلة السجلات أكاديمياً بدون اختلاق', 'Academic batch restructuring')}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-accent" />
+              <span>{t('✨ إعادة صياغة السجلات أكاديمياً', '✨ Academic Rewrite')}</span>
             </button>
 
             <button
@@ -1793,6 +1804,20 @@ export const WeeklyTab: React.FC = () => {
           setEditingEntry((prev) => (prev ? { ...prev, description: improvedText } : null));
           setDiffModalOpen(false);
           setSaveToast(t('تم تطبيق التعديلات الذكية بنجاح!', 'AI improvements applied successfully!'));
+          setTimeout(() => setSaveToast(''), 3000);
+        }}
+      />
+
+      {/* Batch Academic Rewrite Modal */}
+      <BatchRewriteModal
+        isOpen={batchModalOpen}
+        onClose={() => setBatchModalOpen(false)}
+        totalEntries={activeEntries.length || allDocumentedEntries.length}
+        weekNumber={reportMode === 'weekly' ? weekReport?.weekNumber : undefined}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['finalReport'] });
+          queryClient.invalidateQueries({ queryKey: ['entries'] });
+          setSaveToast(t('تمت إعادة صياغة وترتيب السجلات أكاديمياً بنجاح!', 'Entries academically restructured successfully!'));
           setTimeout(() => setSaveToast(''), 3000);
         }}
       />

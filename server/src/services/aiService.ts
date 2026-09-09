@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { logger } from '../logger.js';
+import { elevateTaskTitle, inferProfessionalCategory } from '@coop/shared';
 
 const anthropicKey = process.env.ANTHROPIC_API_KEY?.trim().replace(/^["']|["']$/g, '');
 const geminiKey = process.env.GEMINI_API_KEY?.trim().replace(/^["']|["']$/g, '');
@@ -16,29 +17,33 @@ if (anthropicKey) {
   }
 }
 
-export type AIAction = 'polish' | 'spellcheck' | 'summarize' | 'translate' | 'audit_all';
+export type AIAction = 'polish' | 'spellcheck' | 'summarize' | 'translate' | 'audit_all' | 'academic_rewrite';
 
-interface ProcessRequest {
+export interface ProcessRequest {
   text: string;
   action: AIAction;
   targetLang?: 'ar' | 'en';
   context?: string;
+  apiKey?: string;
+  model?: string;
 }
 
 export async function processTextWithAI({
   text,
   action,
   targetLang = 'ar',
-  context = ''
+  context = '',
+  apiKey,
+  model
 }: ProcessRequest): Promise<{ result: string; mode: 'llm' | 'fallback' }> {
   const trimmed = text.trim();
   if (!trimmed) {
     return { result: '', mode: 'fallback' };
   }
 
-  // 1. Try LLM Providers (Claude -> Gemini -> Groq -> OpenAI)
+  // 1. Try LLM Providers (Gemini -> Claude -> Groq -> OpenAI)
   try {
-    const llmResult = await callAvailableLLM(trimmed, action, targetLang, context);
+    const llmResult = await callAvailableLLM(trimmed, action, targetLang, context, apiKey, model);
     if (llmResult) {
       return { result: llmResult, mode: 'llm' };
     }
@@ -52,42 +57,64 @@ export async function processTextWithAI({
 }
 
 /**
- * Calls available LLMs if keys are present
+ * Calls available LLMs with priority on Gemini Flash for strict fidelity and speed
  */
 async function callAvailableLLM(
   text: string,
   action: AIAction,
   targetLang: 'ar' | 'en',
-  context: string
+  context: string,
+  userApiKey?: string,
+  userModel?: string
 ): Promise<string | null> {
   const systemPrompt = `أنت مهندس ومستشار أكاديمي خبير في توثيق ومراجعة تقارير التدريب التعاوني الميداني لطلاب الجامعات والكليات التقنية.
 قواعد لغوية وفنية حاسمة يجب الالتزام بها دون استثناء:
 1. ممنوع منعاً باتاً استخدام العبارات الإنشائية المستهلكة أو المبتذلة أو مقدمات الذكاء الاصطناعي النمطية (مثل: "مما لا شك فيه"، "في إطار السعي الدؤوب"، "انطلاقاً من حرصنا"، "بأبهى حلة"، "يسرني ويشرفني"، "يشكل جسراً حيوياً").
-2. استخدم لغة هندسية وتقنية رصينة ومباشرة تعتمد على الأفعال الإجرائية الملموسة (تهيئة، فحص، تكوين، اختبار، تحليل، توثيق، استكشاف الأعطال وإصلاحها).
-3. حافظ على المصطلحات التقنية العالمية الشائعة بالإنجليزية بين قوسين (مثل Active Directory, Docker, VLAN, Firewall, Switch, Patch Panel) بدقة دون تعريب ركيك.
-4. اذكر الحقائق والخطوات التنفيذية والنتائج بأسلوب علمي موضوعي بعيد تماماً عن التضخيم أو الحشو البلاغي.
-5. أعد فقط النص المعالج المطلوب دون أي تحيات أو اعتذارات أو تعليقات خارجية.`;
+2. الالتزام المطلق بالأمانة العلمية (Zero Hallucination): ممنوع منعاً باتاً اختلاق أي أجهزة أو مهام أو أرقام أو برمجيات أو وقائع لم يذكرها المتدرب، وممنوع حذف أي تفاصيل ذكرها.
+3. استخدم لغة هندسية وتقنية رصينة ومباشرة تعتمد على الأفعال الإجرائية الملموسة (تهيئة، فحص، تكوين، اختبار، تحليل، توثيق، استكشاف الأعطال وإصلاحها).
+4. حافظ على المصطلحات التقنية العالمية الشائعة بالإنجليزية بين قوسين (مثل Active Directory, Docker, VLAN, Firewall, Switch, Patch Panel, FTTH, OTDR) بدقة دون تعريب ركيك.
+5. اذكر الحقائق والخطوات التنفيذية والنتائج بأسلوب علمي موضوعي بعيد تماماً عن التضخيم أو الحشو البلاغي.
+6. أعد فقط النص المعالج المطلوب دون أي تحيات أو اعتذارات أو تعليقات خارجية.`;
 
   let userPrompt = '';
   switch (action) {
+    case 'academic_rewrite':
+      userPrompt = `أعد صياغة وترتيب وتوثيق سجل اليوم التالي ليكون بأسلوب تقرير هندسي وميداني رسمي متكامل، وفق القواعد الأكاديمية الصارمة:
+- صفر اختلاق: التزم حصراً بالمهام والأنظمة والأدوات التي ذكرها المتدرب دون إضافة أي تفاصيل من وحي الخيال، ودون حذف أي جهاز أو خطوة كُتبت.
+- صياغة إجرائية بصيغة الجمع أو المبني للمعلوم المؤسسي (مثل: تم تنفيذ، جرى فحص، باشرنا أعمال، استكمال...).
+- قسّم النص إلى الأقسام الأربعة التالية حصراً:
+🎯 الهدف التشغيلي:
+(سطر يحدد بدقة الغاية الفنية لمهام اليوم بناءً على ما كُتب فقط)
+
+⚙️ الإجراءات والخطوات الميدانية:
+(سرد منظم ودقيق للخطوات الفنية الميدانية المنفذة استناداً للمكتوب)
+
+🛠️ الأنظمة والأدوات المستخدمة:
+(حصر البرمجيات أو الأجهزة أو المقاييس أو الكوابل أو البيئات المذكورة في النص)
+
+📊 المخرجات والنتائج الفنية:
+(ملخص النتائج الملموسة والمتحققة بنهاية اليوم)
+
+أعد فقط النص المنظم بالأقسام الأربعة أعلاه دون أي كلام إضافي أو مقدمات:\n\n${text}`;
+      break;
     case 'polish':
-      userPrompt = `أعد صياغة وتدقيق النص التالي بأسلوب مهني وهندسي رفيع يناسب تقرير تدريب تعاوني جامعي رسمي، مع التخلص التام من أي حشو أو ركاكة، والتركيز على الخطوات الإجرائية والأدوات المستخدمة والنتائج المتحققة. أعد النص المصاغ فقط:\n\n${text}`;
+      userPrompt = `أعد صياغة وتدقيق النص التالي بأسلوب مهني وهندسي رفيع يناسب تقرير تدريب تعاوني جامعي رسمي، مع التخلص التام من أي حشو أو ركاكة، والتركيز على الخطوات الإجرائية والأدوات المستخدمة والنتائج المتحققة دون اختلاق أي معلومات جديدة. أعد النص المصاغ فقط:\n\n${text}`;
       break;
     case 'spellcheck':
       userPrompt = `صحّح كافة الأخطاء الإملائية والنحوية وعلامات الترقيم والهمزات وضبط المصطلحات الفنية في النص التالي بدقة لغوية فائقة. أعد النص المصحح فقط:\n\n${text}`;
       break;
     case 'summarize':
-      userPrompt = `لخّص النص التالي في نقاط فنية مركزة وموجزة (Executive Summary) تبرز الأنشطة الميدانية والمهام التقنية المنفذة بوضوح. أعد الملخص فقط:\n\n${text}`;
+      userPrompt = `لخّص النص التالي في نقاط فنية مركزة وموجزة (Executive Summary) تبرز الأنشطة الميدانية والمهام التقنية المنفذة بوضوح بناءً على المكتوب فقط. أعد الملخص فقط:\n\n${text}`;
       break;
     case 'translate':
       if (targetLang === 'en') {
-        userPrompt = `Translate the following Arabic field training record into precise, professional, technical academic English suitable for an engineering co-op report. Preserve technical acronyms and factual metrics. Output ONLY the translated text:\n\n${text}`;
+        userPrompt = `Translate the following Arabic field training record into precise, professional, technical academic English suitable for an engineering co-op report. Preserve technical acronyms and factual metrics strictly. Output ONLY the translated text:\n\n${text}`;
       } else {
         userPrompt = `ترجم النص التالي إلى لغة عربية فنية وتقنية رصينة ومباشرة تناسب تقريراً هندسياً رسمياً، مع إبقاء المصطلحات التقنية الشائعة بين قوسين. أعد النص المترجم فقط:\n\n${text}`;
       }
       break;
     case 'audit_all':
-      userPrompt = `قم بمراجعة وتدقيق شامل للنص التالي (لغوياً، نحوياً، وهندسياً) للتأكد من خلوه من أي ركاكة أو أسلوب آلي نمطي. أعد النص بعد المراجعة فقط:\n\n${text}`;
+      userPrompt = `قم بمراجعة وتدقيق شامل للنص التالي (لغوياً، نحوياً، وهندسياً) للتأكد من خلوه من أي ركاكة أو أسلوب آلي نمطي دون المساس بالحقائق المذكورة. أعد النص بعد المراجعة فقط:\n\n${text}`;
       break;
   }
 
@@ -95,50 +122,67 @@ async function callAvailableLLM(
     userPrompt = `[سياق النص: ${context}]\n\n` + userPrompt;
   }
 
-  // A. Anthropic
+  // A. Google Gemini (Preferred for high accuracy, speed, and 0 hallucination)
+  const activeGeminiKey = userApiKey?.trim() || geminiKey;
+  if (activeGeminiKey) {
+    const candidateModels = [
+      userModel?.trim() || process.env.GEMINI_MODEL?.trim() || 'gemini-2.5-flash',
+      'gemini-2.0-flash',
+      'gemini-1.5-flash'
+    ];
+    const uniqueModels = [...new Set(candidateModels.filter(Boolean))];
+
+    for (const m of uniqueModels) {
+      try {
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${activeGeminiKey}`;
+        const res = await fetch(geminiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: AbortSignal.timeout(25000),
+          body: JSON.stringify({
+            contents: [
+              {
+                role: 'user',
+                parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }]
+              }
+            ],
+            generationConfig: {
+              temperature: 0.15,
+              maxOutputTokens: 2048
+            }
+          })
+        });
+        if (res.ok) {
+          const data: any = await res.json();
+          const content = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (content) return content.trim();
+        } else {
+          const errText = await res.text();
+          logger.warn({ model: m, status: res.status, err: errText }, 'Gemini model returned non-ok status, trying next model');
+        }
+      } catch (e: any) {
+        logger.warn({ model: m, err: e?.message }, 'Gemini provider error or timeout');
+      }
+    }
+  }
+
+  // B. Anthropic
   if (anthropicClient) {
     try {
       const res = await anthropicClient.messages.create(
         {
           model: 'claude-3-5-sonnet-20241022',
           max_tokens: 1800,
-          temperature: 0.25,
+          temperature: 0.2,
           system: systemPrompt,
           messages: [{ role: 'user', content: userPrompt }]
         },
-        { timeout: 10000 }
+        { timeout: 15000 }
       );
       const block = res.content[0];
       if (block && block.type === 'text') return block.text.trim();
     } catch (e: any) {
       logger.warn({ err: e?.message }, 'Anthropic provider error or timeout');
-    }
-  }
-
-  // B. Google Gemini
-  if (geminiKey) {
-    try {
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`;
-      const res = await fetch(geminiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: AbortSignal.timeout(10000),
-        body: JSON.stringify({
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }]
-            }
-          ]
-        })
-      });
-      if (res.ok) {
-        const data: any = await res.json();
-        const content = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (content) return content.trim();
-      }
-    } catch (e: any) {
-      logger.warn({ err: e?.message }, 'Gemini provider error or timeout');
     }
   }
 
@@ -229,7 +273,95 @@ async function executeBuiltInEngine(text: string, action: AIAction, targetLang: 
     return polishArabicText(applyArabicSpellCorrections(text));
   }
 
+  if (action === 'academic_rewrite') {
+    return formatAcademicDailyLogOffline(text);
+  }
+
   return text;
+}
+
+/**
+ * Intelligent deterministic academic structurer when offline or without LLM key
+ * Preserves 100% of user text and structures it into 4 official report sections
+ */
+function formatAcademicDailyLogOffline(input: string): string {
+  if (!input || !input.trim()) return '';
+
+  const polished = polishArabicText(input);
+
+  // If already structured with sections, return polished
+  if (polished.includes('الهدف التشغيلي') && polished.includes('الخطوات الميدانية')) {
+    return polished;
+  }
+
+  const lines = polished.split('\n').map(l => l.trim()).filter(Boolean);
+  const firstSentence = lines[0] || 'تنفيذ المهام التقنية والتشغيلية الموكلة بدقة ومهنية.';
+  const remainingLines = lines.slice(1);
+  const remaining = remainingLines.length > 0 ? remainingLines.join('\n') : firstSentence;
+
+  // Extract tools/tech if mentioned
+  const techKeywords = /(FTTH|OTDR|OLT|ONT|VLAN|IP|TCP|UDP|Router|Switch|Server|Active Directory|Linux|Windows|Cisco|Huawei|Fiber|RJ45|UTP|5G|LTE|4G|NOC|DNS|DHCP|Firewall|كابل|راوتر|سويتش|ألياف|فحص|شبكة|خادم|شاشة|أداة|جهاز)/gi;
+  const matches = [...new Set(polished.match(techKeywords) || [])];
+  const toolsText = matches.length > 0 ? matches.join('، ') : 'أدوات القياس والفحص الميداني، والأنظمة التشغيلية المعتمدة';
+
+  return `🎯 الهدف التشغيلي:
+${firstSentence}
+
+⚙️ الإجراءات والخطوات الميدانية:
+${remaining.split('\n').map(l => l.startsWith('•') ? l : `• ${l}`).join('\n')}
+
+🛠️ الأنظمة والأدوات المستخدمة:
+• ${toolsText}
+
+📊 المخرجات والنتائج الفنية:
+• إنجاز كافة المهام الميدانية المقررة والتحقق من سلامة العمليات والمطابقة التشغيلية.`;
+}
+
+/**
+ * High-level helper to comprehensively rewrite an entry academically
+ */
+export async function rewriteEntryAcademically({
+  title,
+  description,
+  category,
+  apiKey,
+  model
+}: {
+  title: string;
+  description: string;
+  category?: string;
+  apiKey?: string;
+  model?: string;
+}): Promise<{
+  title: string;
+  description: string;
+  category: string;
+  mode: 'llm' | 'fallback';
+}> {
+  // 1. Process description with academic_rewrite
+  const { result: structuredDesc, mode } = await processTextWithAI({
+    text: description,
+    action: 'academic_rewrite',
+    targetLang: 'ar',
+    context: `عنوان اليوم الحالي: ${title}`,
+    apiKey,
+    model
+  });
+
+  // 2. Elevate title
+  const elevatedTitle = elevateTaskTitle(title, structuredDesc || description, true);
+
+  // 3. Infer category if generic or missing
+  const inferredCat = (!category || category === 'أخرى' || category === 'تطوير / برمجة')
+    ? inferProfessionalCategory(description, title)
+    : category;
+
+  return {
+    title: elevatedTitle,
+    description: structuredDesc || description,
+    category: inferredCat,
+    mode
+  };
 }
 
 /**

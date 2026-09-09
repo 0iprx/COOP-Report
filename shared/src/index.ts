@@ -79,9 +79,17 @@ export const profileSchema = z.object({
 
 export const aiProcessSchema = z.object({
   text: z.string().min(1, 'النص مطلوب للتحسين'),
-  action: z.enum(['polish', 'spellcheck', 'summarize', 'translate', 'audit_all']),
+  action: z.enum(['polish', 'spellcheck', 'summarize', 'translate', 'audit_all', 'academic_rewrite']),
   targetLang: z.enum(['ar', 'en']).optional(),
-  context: z.string().optional()
+  context: z.string().optional(),
+  apiKey: z.string().optional(),
+  model: z.string().optional()
+});
+
+export const batchRewriteEntriesSchema = z.object({
+  weekNumber: z.number().int().positive().optional(),
+  apiKey: z.string().optional(),
+  model: z.string().optional()
 });
 
 export const organizationLookupSchema = z.object({
@@ -102,6 +110,7 @@ export type LoginInput = z.infer<typeof loginSchema>;
 export type EntryInput = z.infer<typeof entrySchema>;
 export type ProfileInput = z.infer<typeof profileSchema>;
 export type AIProcessInput = z.infer<typeof aiProcessSchema>;
+export type BatchRewriteEntriesInput = z.infer<typeof batchRewriteEntriesSchema>;
 export type OrganizationLookupInput = z.infer<typeof organizationLookupSchema>;
 
 export interface OrganizationLookupResult {
