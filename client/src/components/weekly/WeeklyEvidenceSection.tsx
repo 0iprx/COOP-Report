@@ -147,7 +147,7 @@ export const WeeklyEvidenceSection: React.FC<Props> = ({ weekIndex, traineeId, r
   };
 
   return (
-    <div className="bg-card border border-line rounded-2xl p-5 space-y-4 shadow-sm" dir="rtl">
+    <div className={`bg-card border border-line rounded-2xl p-5 space-y-4 shadow-sm ${photos.length === 0 && !isAdding ? 'print:hidden no-print' : ''}`} dir="rtl">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-line">
         <div className="flex items-center gap-2.5">
@@ -323,11 +323,11 @@ export const WeeklyEvidenceSection: React.FC<Props> = ({ weekIndex, traineeId, r
       {isLoading ? (
         <div className="text-center py-6 text-sub text-xs">جارٍ تحميل الصور التوثيقية...</div>
       ) : photos.length === 0 && !isAdding ? (
-        <div className="p-4 border border-line rounded-xl text-center text-xs text-sub bg-bg/40">
+        <div className="p-4 border border-line rounded-xl text-center text-xs text-sub bg-bg/40 no-print print:hidden">
           لم يتم إرفاق صور توثيقية لهذا الأسبوع حتى الآن.
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 print:grid-cols-3 gap-3 print:gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 print:grid-cols-2 gap-3 print:gap-3">
           {photos.map((photo, idx) => (
             <div
               key={photo.id}
@@ -335,12 +335,12 @@ export const WeeklyEvidenceSection: React.FC<Props> = ({ weekIndex, traineeId, r
             >
               <div
                 onClick={() => setSelectedImageForZoom(photo)}
-                className="cursor-pointer overflow-hidden min-h-[160px] max-h-[360px] print:min-h-0 print:h-[120px] relative bg-slate-50 dark:bg-slate-900/40 p-1.5 flex items-center justify-center print:cursor-default"
+                className="cursor-pointer overflow-hidden min-h-[160px] max-h-[360px] print:min-h-0 print:h-[200px] relative bg-slate-50 dark:bg-slate-900/40 p-1.5 flex items-center justify-center print:cursor-default"
               >
                 <img
                   src={photo.imageData}
                   alt={photo.caption}
-                  className="max-h-[340px] print:max-h-[115px] w-auto max-w-full object-contain group-hover:scale-105 transition-transform duration-200 print:transform-none rounded"
+                  className="max-h-[340px] print:max-h-[190px] w-auto max-w-full object-contain group-hover:scale-105 transition-transform duration-200 print:transform-none rounded"
                 />
                 <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-ink/70 text-white text-[9px] font-bold no-print print:hidden">
                   انقر للتكبير

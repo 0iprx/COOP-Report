@@ -1680,11 +1680,11 @@ export const WeeklyTab: React.FC = () => {
                         {customEvidenceList.length} {isAr ? 'صور موثقة' : 'photos'}
                       </span>
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 print:grid-cols-3 print:gap-2.5">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 print:grid-cols-2 print:gap-3">
                       {customEvidenceList.map((photo, pIdx) => (
                         <div key={photo.id || pIdx} className="border border-line rounded-xl overflow-hidden bg-bg p-2 space-y-1 print:border-slate-300 print:bg-white print:p-1.5 flex flex-col print:break-inside-avoid">
-                          <div className="w-full min-h-[120px] max-h-[260px] print:min-h-0 print:h-[120px] overflow-hidden rounded-lg bg-slate-50 dark:bg-slate-900/40 p-1 flex items-center justify-center">
-                            <img src={photo.imageData} alt={photo.caption || ''} className="max-h-[240px] print:max-h-[115px] w-auto max-w-full object-contain rounded" />
+                          <div className="w-full min-h-[120px] max-h-[260px] print:min-h-0 print:h-[200px] overflow-hidden rounded-lg bg-slate-50 dark:bg-slate-900/40 p-1 flex items-center justify-center">
+                            <img src={photo.imageData} alt={photo.caption || ''} className="max-h-[240px] print:max-h-[190px] w-auto max-w-full object-contain rounded" />
                           </div>
                           {photo.caption && (
                             <p className="text-[11px] font-bold text-ink truncate print:text-[8.5pt] print:mt-1">{photo.caption}</p>

@@ -866,15 +866,15 @@ export async function generatePresentationBuffer(
   });
 
   const signoffDetails = isAr
-    ? `• المشرف الميداني المسؤول: ${reportData.profile.supervisorName || reportData.profile.responsibleName || 'المشرف المسؤول'}\\n\\n` +
-      `• التقييم العام للمتدرب: ممتاز (متميز في الأداء والانضباط)\\n\\n` +
-      `• الالتزام بساعات التدريب: مكتمل بنسبة 100% (${reportData.totalHours} ساعة)\\n\\n` +
-      `• توصية جهة التدريب: مراجعة التقرير الفني والموافقة على مناقشة المتدرب\\n\\n` +
+    ? `• المشرف الميداني المسؤول: ${reportData.profile.supervisorName || reportData.profile.responsibleName || 'المشرف المسؤول'}\n\n` +
+      `• التقييم العام للمتدرب: ممتاز (متميز في الأداء والانضباط)\n\n` +
+      `• الالتزام بساعات التدريب: مكتمل بنسبة 100% (${reportData.totalHours} ساعة)\n\n` +
+      `• توصية جهة التدريب: مراجعة التقرير الفني والموافقة على مناقشة المتدرب\n\n` +
       `• الختم والتوقيع الرسمي: مسجل وموثق بالسجلات الميدانية`
-    : `• Designated Field Supervisor: ${reportData.profile.supervisorName || reportData.profile.responsibleName || 'Field Supervisor'}\\n\\n` +
-      `• Overall Performance Rating: Outstanding / Excellent\\n\\n` +
-      `• Attendance & Hour Fulfillment: 100% Complete (${reportData.totalHours} Hours)\\n\\n` +
-      `• Final Host Recommendation: Approved for Academic Defense\\n\\n` +
+    : `• Designated Field Supervisor: ${reportData.profile.supervisorName || reportData.profile.responsibleName || 'Field Supervisor'}\n\n` +
+      `• Overall Performance Rating: Outstanding / Excellent\n\n` +
+      `• Attendance & Hour Fulfillment: 100% Complete (${reportData.totalHours} Hours)\n\n` +
+      `• Final Host Recommendation: Approved for Academic Defense\n\n` +
       `• Official Sign-off & Stamp: Verified and Filed`;
 
   s7.addText(signoffDetails, {
@@ -938,8 +938,8 @@ export async function generatePresentationBuffer(
 
   s8.addText(
     isAr
-      ? `إعداد المتدرب: ${reportData.profile.studentName || '—'}  |  الرقم التدريبي: ${reportData.profile.trainingNumber || '—'}\\nالجهة المستضيفة: ${reportData.profile.entityAddress || '—'}`
-      : `Presented by: ${reportData.profile.studentName || '—'}  |  ID: ${reportData.profile.trainingNumber || '—'}\\nHost: ${reportData.profile.entityAddress || '—'}`,
+      ? `إعداد المتدرب: ${reportData.profile.studentName || '—'}  |  الرقم التدريبي: ${reportData.profile.trainingNumber || '—'}\nالجهة المستضيفة: ${reportData.profile.entityAddress || '—'}`
+      : `Presented by: ${reportData.profile.studentName || '—'}  |  ID: ${reportData.profile.trainingNumber || '—'}\nHost: ${reportData.profile.entityAddress || '—'}`,
     {
       x: 4.0,
       y: 4.45,
