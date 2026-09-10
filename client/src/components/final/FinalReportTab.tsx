@@ -134,11 +134,17 @@ export const getWeekTopic = (w: { weekIndex: number; entries?: { title: string; 
 // Helper to render procedural narrative with structured bullets and headers
 export const renderProceduralNarrative = (rawText: string) => {
   if (!rawText) return null;
-  const cohesiveText = convertBulletsToCohesiveParagraphs(rawText);
+
+  // Pre-split inline section headers so they become distinct paragraph blocks
+  const preprocessed = rawText
+    .replace(/(?<=[.!?؟])\s+(Period|Location|Training Summary|Executive Summary|Technical Summary|Summary|Field Procedures|Technical Actions|Technical Steps|Systems & Tools|Systems & Technologies|Applied Tools|Technical Outcomes|Deliverables|Conclusion|الموقع|الفترة|موجز الإنجاز|الهدف التشغيلي|الإجراءات|الأنظمة|الخلاصة|المخرجات)\s*[:：]/gi, '\n\n$1:\n')
+    .replace(/\n{3,}/g, '\n\n');
+
+  const cohesiveText = convertBulletsToCohesiveParagraphs(preprocessed);
   const lines = cohesiveText.split('\n');
   const elements: React.ReactNode[] = [];
 
-  const sectionHeaderRegex = /^(الهدف التشغيلي|نطاق التكليف والمهمة الميدانية|نطاق التكليف|الجدارة والمهارة المستهدفة|الإجراءات والخطوات الميدانية|الإجراءات والحلول الفنية|الممارسة والتطبيق الميداني|الأنظمة والأدوات المستخدمة|الأنظمة والتقنيات المستخدمة|الأدوات والمفاهيم التقنية المطبقة|المخرجات والنتائج الفنية|الأثر والقيمة المضافة|مخرجات التعلم والتقييم الذاتي|ملخص الإنجاز الميداني|موجز الإنجاز|فريق|قسم|مرحلة)\s*[:：]?$/i;
+  const sectionHeaderRegex = /^(الهدف التشغيلي|نطاق التكليف والمهمة الميدانية|نطاق التكليف|الجدارة والمهارة المستهدفة|الإجراءات والخطوات الميدانية|الإجراءات والحلول الفنية|الممارسة والتطبيق الميداني|الأنظمة والأدوات المستخدمة|الأنظمة والتقنيات المستخدمة|الأدوات والمفاهيم التقنية المطبقة|المخرجات والنتائج الفنية|الأثر والقيمة المضافة|مخرجات التعلم والتقييم الذاتي|ملخص الإنجاز الميداني|موجز الإنجاز|فريق|قسم|مرحلة|الموقع|الفترة|الخلاصة|Period|Location|Training Summary|Executive Summary|Field Procedures|Technical Actions|Technical Steps|Systems & Tools|Systems & Technologies|Applied Tools|Technical Outcomes|Deliverables|Conclusion|Challenges & Resolutions|Key Learnings)\s*[:：]?$/i;
 
   for (let i = 0; i < lines.length; i++) {
     const trimmed = lines[i].trim();
@@ -146,13 +152,13 @@ export const renderProceduralNarrative = (rawText: string) => {
 
     const isHeader = (trimmed.startsWith('**') && trimmed.endsWith('**')) ||
       sectionHeaderRegex.test(trimmed) ||
-      (/^(في تمام الساعة|بعد الساعة|الساعة|قسم|فريق|مرحلة|منظومة|موجز|الفترة)\s*[\d:]*.*:?$/i.test(trimmed) && trimmed.length < 80);
+      (/^(في تمام الساعة|بعد الساعة|الساعة|قسم|فريق|مرحلة|منظومة|موجز|الفترة|Period|Location|Summary)\s*[\d:]*.*:?$/i.test(trimmed) && trimmed.length < 80);
 
     if (isHeader) {
       const title = trimmed.replace(/^\*\*|\*\*$/g, '').replace(/[:：]$/, '').trim();
       elements.push(
-        <div key={`heading-${elements.length}`} className="font-black text-xs sm:text-sm text-accent pt-3 pb-1 border-b border-line/40 flex items-center gap-1.5 first:pt-0">
-          <span className="w-1.5 h-3.5 bg-accent rounded-full shrink-0"></span>
+        <div key={`heading-${elements.length}`} className="font-black text-xs sm:text-sm text-accent pt-3 pb-1 border-b border-line/40 flex items-center gap-1.5 first:pt-0 print:text-slate-900 print:border-slate-300 print:pt-3 print:pb-1">
+          <span className="w-1.5 h-3.5 bg-accent rounded-full shrink-0 print:bg-slate-800"></span>
           <span>{title}:</span>
         </div>
       );
@@ -164,7 +170,7 @@ export const renderProceduralNarrative = (rawText: string) => {
     if (!cleanPara) continue;
 
     elements.push(
-      <p key={`p-${elements.length}`} className="text-xs sm:text-sm leading-relaxed sm:leading-loose text-ink my-1.5 text-justify font-normal">
+      <p key={`p-${elements.length}`} className="text-xs sm:text-sm leading-relaxed sm:leading-loose text-ink my-1.5 text-justify font-normal print:text-[10.5pt] print:leading-[1.85] print:mb-3">
         {cleanPara}
       </p>
     );

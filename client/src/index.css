@@ -363,7 +363,7 @@ html, body {
 @media print {
   @page {
     size: A4 portrait;
-    margin: 0 !important;
+    margin: 12mm 15mm 12mm 15mm !important;
   }
 
   *, *::before, *::after {
@@ -382,8 +382,8 @@ html, body {
     padding: 0 !important;
     background: #ffffff !important;
     color: #0f172a !important;
-    font-size: 9.5pt !important;
-    line-height: 1.5 !important;
+    font-size: 10pt !important;
+    line-height: 1.65 !important;
     overflow: visible !important;
   }
 
@@ -414,10 +414,9 @@ html, body {
     box-shadow: none !important;
   }
 
-  /* Dedicated Printable Full A4 Sheets with 18mm academic margins (Covers & Major Sections) */
+  /* Dedicated Printable Full A4 Sheets (Covers & Major Sections) */
   #weekly-cover-page,
   #weekly-summary-dossier,
-  #weekly-final-evidence-page,
   #sec-cover,
   #sec-intro,
   #sec-toc,
@@ -425,8 +424,9 @@ html, body {
     box-sizing: border-box !important;
     width: 100% !important;
     max-width: 100% !important;
-    min-height: 100vh !important;
-    padding: 18mm 18mm !important;
+    min-height: auto !important;
+    height: auto !important;
+    padding: 0 !important;
     margin: 0 !important;
     border: none !important;
     border-radius: 0 !important;
@@ -438,23 +438,67 @@ html, body {
     break-after: page !important;
   }
 
-  /* Day Cards in Print: Natural intelligent flow, zero empty blank pages */
+  /* Weekly Page 2: Synthesis & Matrix Table Page */
+  #weekly-page-2-synthesis {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: auto !important;
+    padding-top: 4mm !important;
+    margin: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    page-break-before: always !important;
+    break-before: page !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Day Cards in Print: STRICTLY ONE DEDICATED PAGE PER DAY - Absolute zero truncation or cramming */
   .day-card-print {
     box-sizing: border-box !important;
     width: 100% !important;
     max-width: 100% !important;
-    min-height: 0 !important;
-    padding: 8px 0 16px 0 !important;
-    margin: 0 0 16px 0 !important;
+    min-height: auto !important;
+    padding: 4mm 0 0 0 !important;
+    margin: 0 !important;
     border: none !important;
-    border-bottom: 1.5px solid #cbd5e1 !important;
+    border-bottom: none !important;
     border-radius: 0 !important;
     box-shadow: none !important;
     background: transparent !important;
+    page-break-before: always !important;
+    break-before: page !important;
+    page-break-after: always !important;
+    break-after: page !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+  }
+
+  .day-card-print:last-child {
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
+  /* Official Field Supervisory Endorsement & Evidence (Dedicated Final Page) */
+  .endorsement-box-print,
+  #weekly-final-evidence-page {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: auto !important;
+    padding-top: 6mm !important;
+    margin: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    page-break-before: always !important;
+    break-before: page !important;
     page-break-after: auto !important;
     break-after: auto !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
   /* Printable Sheet Containers */
@@ -585,28 +629,40 @@ html, body {
     background: transparent !important;
     border: none !important;
     padding: 0 !important;
-    margin-top: 4px !important;
+    margin-top: 6px !important;
     border-radius: 0 !important;
-    font-size: 9.5pt !important;
-    line-height: 1.6 !important;
+    font-size: 10.5pt !important;
+    line-height: 1.85 !important;
+    color: #0f172a !important;
+  }
+
+  .procedural-narrative-box p {
+    margin-bottom: 12px !important;
+    font-size: 10.5pt !important;
+    line-height: 1.85 !important;
+    text-align: justify !important;
+    color: #1e293b !important;
   }
 
   table {
     width: 100% !important;
     border-collapse: collapse !important;
     table-layout: auto !important;
+    margin-top: 10px !important;
   }
 
   th, td {
     border: 1px solid #cbd5e1 !important;
-    padding: 5px 8px !important;
-    font-size: 8.5pt !important;
+    padding: 8px 10px !important;
+    font-size: 9pt !important;
+    line-height: 1.4 !important;
   }
 
   th {
     background-color: #f1f5f9 !important;
     color: #0f172a !important;
     font-weight: 800 !important;
+    text-transform: uppercase !important;
   }
 
   .page-break {
