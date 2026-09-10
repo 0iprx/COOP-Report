@@ -29,6 +29,25 @@
   --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
 }
 
+/* ── Comprehensive Dark Mode Theme ───────────────────────── */
+html.dark, .dark {
+  --bg:           #0F1117;
+  --surface:      #181B22;
+  --card:         #1E222D;
+  --ink:          #F0F3F6;
+  --sub:          #9EA7B4;
+  --muted:        #656E7B;
+  --line:         #2D333F;
+  --accent:       #E63950;
+  --accent-dim:   #3A161E;
+  --accent-mid:   #F05268;
+  --ok:           #34D399;
+  --ok-bg:        #064E3B40;
+  --warn:         #FBBF24;
+  --warn-bg:      #78350F40;
+}
+
+
 /* ── Base ────────────────────────────────────────────────── */
 
 *, *::before, *::after {
@@ -395,9 +414,8 @@ html, body {
     box-shadow: none !important;
   }
 
-  /* Dedicated Printable Full A4 Sheets with 18mm academic margins */
+  /* Dedicated Printable Full A4 Sheets with 18mm academic margins (Covers & Major Sections) */
   #weekly-cover-page,
-  .day-card-print,
   #weekly-summary-dossier,
   #weekly-final-evidence-page,
   #sec-cover,
@@ -418,6 +436,25 @@ html, body {
     break-inside: avoid !important;
     page-break-after: always !important;
     break-after: page !important;
+  }
+
+  /* Day Cards in Print: Natural intelligent flow, zero empty blank pages */
+  .day-card-print {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    padding: 8px 0 16px 0 !important;
+    margin: 0 0 16px 0 !important;
+    border: none !important;
+    border-bottom: 1.5px solid #cbd5e1 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: auto !important;
+    break-after: auto !important;
   }
 
   /* Printable Sheet Containers */

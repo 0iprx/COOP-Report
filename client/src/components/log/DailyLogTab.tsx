@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { saveOfflineEntry, getPendingEntries, syncPendingEntries } from '../../services/offlineSync';
 import { useLanguage } from '../../context/LanguageContext';
+import { useTheme } from '../../context/ThemeContext';
 import { ENTRY_CATEGORIES, EntryDTO, DiffChunk, inferProfessionalCategory, elevateTaskTitle } from '@coop/shared';
 import {
   Calendar,
@@ -22,7 +23,12 @@ import {
   X,
   Edit3,
   Mic,
-  MicOff
+  MicOff,
+  MapPin,
+  HelpCircle,
+  ListFilter,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { DiffModal } from '../common/DiffModal';
 import { BatchRewriteModal } from '../common/BatchRewriteModal';
@@ -50,7 +56,8 @@ const CATEGORY_TRANSLATIONS: Record<string, string> = {
 
 export const DailyLogTab: React.FC = () => {
   const queryClient = useQueryClient();
-  const { lang, isAr, t } = useLanguage();
+  const { lang, setLang, isAr, t } = useLanguage();
+  const { theme, toggleTheme, isDark } = useTheme();
 
   // Form State
   const [editingEntryId, setEditingEntryId] = useState<number | null>(null);
@@ -64,6 +71,71 @@ export const DailyLogTab: React.FC = () => {
   const [description, setDescription] = useState<string>('');
   const [formError, setFormError] = useState<string>('');
   const [draftRestoredNotice, setDraftRestoredNotice] = useState<boolean>(false);
+
+  // Q&A Structured Daily Log States (Questions & Answers)
+  const [entryMode, setEntryMode] = useState<'qa' | 'free'>('qa');
+  const [qaLocation, setQaLocation] = useState<string>('');
+  const [qaPeriod, setQaPeriod] = useState<string>('صباحًا');
+  const [qaActivities, setQaActivities] = useState<string>('');
+  const [qaAchievements, setQaAchievements] = useState<string>('');
+  const [qaChallenges, setQaChallenges] = useState<string>('');
+  const [qaNewLearnings, setQaNewLearnings] = useState<string>('');
+
+  const buildDescriptionFromQA = (
+    loc: string = qaLocation,
+    per: string = qaPeriod,
+    act: string = qaActivities,
+    ach: string = qaAchievements,
+    cha: string = qaChallenges,
+    lrn: string = qaNewLearnings
+  ) => {
+    const parts: string[] = [];
+    const meta: string[] = [];
+    if (per.trim()) meta.push(`${isAr ? 'الفترة:' : 'Period:'} ${per.trim()}`);
+    if (loc.trim()) meta.push(`${isAr ? 'الموقع:' : 'Location:'} ${loc.trim()}`);
+    if (meta.length > 0) parts.push(meta.join(' | '));
+
+    if (act.trim()) parts.push(act.trim());
+    if (ach.trim()) parts.push(`${isAr ? 'الإنجاز:' : 'Accomplishments:'} ${ach.trim()}`);
+    if (cha.trim()) parts.push(`${isAr ? 'المشاكل:' : 'Challenges:'} ${cha.trim()}`);
+    if (lrn.trim()) parts.push(`${isAr ? 'الجديد:' : 'New Learnings:'} ${lrn.trim()}`);
+
+    return parts.join('\n\n');
+  };
+
+  const parseQAText = (raw: string) => {
+    let loc = '';
+    let per = 'صباحًا';
+    let ach = '';
+    let cha = '';
+    let lrn = '';
+    let act = raw || '';
+
+    const locMatch = act.match(/(?:الموقع|Location)\s*[:：]\s*([^\n|]+)/i);
+    if (locMatch) loc = locMatch[1].trim();
+
+    const perMatch = act.match(/(?:الفترة|Period)\s*[:：]\s*([^\n|]+)/i);
+    if (perMatch) per = perMatch[1].trim();
+
+    const achMatch = act.match(/(?:الإنجاز|الإنجازات|Accomplishments?|Achievements?)\s*[:：]\s*([^\n]+)/i);
+    if (achMatch) ach = achMatch[1].trim();
+
+    const chaMatch = act.match(/(?:المشاكل|التحديات|الصعوبات|Challenges?|Problems?)\s*[:：]\s*([^\n]+)/i);
+    if (chaMatch) cha = chaMatch[1].trim();
+
+    const lrnMatch = act.match(/(?:الجديد|المكتسب|المهارات المكتسبة|New Learnings?|Learned)\s*[:：]\s*([^\n]+)/i);
+    if (lrnMatch) lrn = lrnMatch[1].trim();
+
+    act = act
+      .replace(/(?:الفترة|Period)\s*[:：][^\n|]+(?:\||\n|$)/gi, '')
+      .replace(/(?:الموقع|Location)\s*[:：][^\n|]+(?:\||\n|$)/gi, '')
+      .replace(/(?:الإنجاز|الإنجازات|Accomplishments?|Achievements?)\s*[:：][^\n]+/gi, '')
+      .replace(/(?:المشاكل|التحديات|الصعوبات|Challenges?|Problems?)\s*[:：][^\n]+/gi, '')
+      .replace(/(?:الجديد|المكتسب|المهارات المكتسبة|New Learnings?|Learned)\s*[:：][^\n]+/gi, '')
+      .trim();
+
+    return { loc, per, ach, cha, lrn, act };
+  };
 
   // Modal States
   const [batchModalOpen, setBatchModalOpen] = useState<boolean>(false);
@@ -349,6 +421,12 @@ export const DailyLogTab: React.FC = () => {
     setIsCustomCategory(false);
     setCustomCategory('');
     setFormError('');
+    setQaLocation('');
+    setQaPeriod('صباحًا');
+    setQaActivities('');
+    setQaAchievements('');
+    setQaChallenges('');
+    setQaNewLearnings('');
   };
 
   const handleStartEdit = (entry: any) => {
@@ -364,7 +442,15 @@ export const DailyLogTab: React.FC = () => {
       setIsCustomCategory(false);
       setCategory(entry.category || ENTRY_CATEGORIES[0]);
     }
-    setDescription(entry.description);
+    const rawDesc = entry.description || '';
+    setDescription(rawDesc);
+    const parsed = parseQAText(rawDesc);
+    setQaLocation(parsed.loc);
+    setQaPeriod(parsed.per || 'صباحًا');
+    setQaActivities(parsed.act);
+    setQaAchievements(parsed.ach);
+    setQaChallenges(parsed.cha);
+    setQaNewLearnings(parsed.lrn);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -426,23 +512,29 @@ export const DailyLogTab: React.FC = () => {
       setFormError(t('يرجى كتابة اسم التصنيف المخصص أو اختيار تصنيف من القائمة', 'Please enter a custom category name'));
       return;
     }
-    if (!description.trim()) {
-      setFormError(t('يرجى كتابة تفاصيل المهام المنفذة', 'Please enter task details'));
+    let finalDesc = description.trim();
+    if (entryMode === 'qa') {
+      const built = buildDescriptionFromQA().trim();
+      if (built) finalDesc = built;
+    }
+
+    if (!finalDesc) {
+      setFormError(t('يرجى كتابة تفاصيل المهام المنفذة أو تعبئة نموذج الأسئلة', 'Please enter task details or fill the Q&A form'));
       return;
     }
 
     setFormError('');
 
     let finalCategory = isCustomCategory ? customCategory.trim() : category.trim();
-    if ((!finalCategory || finalCategory === 'تدريب وتعلّم' || finalCategory === 'أخرى') && (description || title)) {
-      const suggested = inferProfessionalCategory(description, title);
+    if ((!finalCategory || finalCategory === 'تدريب وتعلّم' || finalCategory === 'أخرى') && (finalDesc || title)) {
+      const suggested = inferProfessionalCategory(finalDesc, title);
       if (suggested && suggested !== 'تدريب وتعلّم') {
         finalCategory = suggested;
       }
     }
 
     let finalTitle = title.trim();
-    const elevated = elevateTaskTitle(finalTitle, description);
+    const elevated = elevateTaskTitle(finalTitle, finalDesc);
     if (elevated && finalTitle !== elevated && finalTitle.length < 25) {
       finalTitle = elevated;
     }
@@ -453,7 +545,7 @@ export const DailyLogTab: React.FC = () => {
       timeTo,
       title: finalTitle,
       category: finalCategory,
-      description: description.trim()
+      description: finalDesc
     };
 
     if (editingEntryId) {
@@ -727,44 +819,240 @@ export const DailyLogTab: React.FC = () => {
           </div>
 
           {/* Description & AI Toolbar */}
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <label className="block text-xs font-bold text-sub">{t('تفاصيل الإنجاز والمهام المنفذة', 'Task Details & Accomplishments')}</label>
-                
-                {/* Cutting-Edge Voice Dictation Button */}
-                <button
-                  type="button"
-                  onClick={toggleVoiceRecording}
-                  className={`px-2.5 py-0.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${
-                    isRecording
-                      ? 'bg-accent text-white animate-pulse shadow-sm ring-2 ring-accent/30'
-                      : 'bg-bg text-sub hover:text-accent border border-line hover:border-accent/40'
-                  }`}
-                  title={isRecording ? t('جارٍ الاستماع... انقر للإيقاف', 'Listening... Click to stop') : t('إملاء صوتي مباشر عبر المايكروفون', 'Voice Dictation via Microphone')}
-                >
-                  {isRecording ? <MicOff className="w-3.5 h-3.5 text-white" /> : <Mic className="w-3.5 h-3.5 text-accent" />}
-                  <span>{isRecording ? t('جارٍ الاستماع...', 'Listening...') : t('إملاء صوتي', 'Voice')}</span>
-                </button>
-              </div>
+          <div className="space-y-3">
+            {/* Entry Mode Toggle: Smart Q&A Guided Form vs Direct Freeform */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-1.5 bg-bg border border-line rounded-2xl">
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  if (entryMode !== 'qa') {
+                    const parsed = parseQAText(description);
+                    setQaLocation(parsed.loc);
+                    setQaPeriod(parsed.per || 'صباحًا');
+                    setQaActivities(parsed.act);
+                    setQaAchievements(parsed.ach);
+                    setQaChallenges(parsed.cha);
+                    setQaNewLearnings(parsed.lrn);
+                    setEntryMode('qa');
+                  }
+                }}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                  entryMode === 'qa'
+                    ? 'bg-accent text-white shadow-xs'
+                    : 'text-sub hover:text-ink hover:bg-card'
+                }`}
+              >
+                <HelpCircle className="w-3.5 h-3.5" />
+                <span>{t('نموذج الأسئلة الذكي المنظّم (Q&A)', 'Smart Guided Q&A')}</span>
+              </button>
 
-              <div className="flex items-center gap-3 text-[11px] text-sub">
-                <span>
-                  {description.trim() ? description.trim().split(/\s+/).length : 0} {t('كلمة', 'words')}
-                </span>
-                <span>•</span>
-                <span>{t('حفظ فوري للمسودة مفعل', 'Draft autosaved')}</span>
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (entryMode !== 'free') {
+                    setDescription(buildDescriptionFromQA());
+                    setEntryMode('free');
+                  }
+                }}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                  entryMode === 'free'
+                    ? 'bg-accent text-white shadow-xs'
+                    : 'text-sub hover:text-ink hover:bg-card'
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>{t('الكتابة الحرة المباشرة', 'Freeform Text')}</span>
+              </button>
             </div>
 
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={4}
-              placeholder={t('اشرح ما أنجزته بدقة، والبرمجيات أو الأجهزة التي تعاملت معها، والتحديات الفنية التي تم حلها...', 'Explain in detail what you accomplished, software/hardware tools used, and technical solutions...')}
-              className="w-full p-3 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent leading-relaxed text-ink"
-              required
-            />
+            <span className="text-[11px] font-bold text-sub px-2">
+              {entryMode === 'qa'
+                ? t('أجب على الأسئلة وسيقوم النظام بهيكلة التقرير اليومي تلقائياً', 'Answer the prompts and the system will structure your daily report')
+                : t('تحرير نص السرد الأكاديمي مباشرة', 'Edit the academic narrative directly')}
+            </span>
+          </div>
+
+          {/* If Q&A Guided Form Mode */}
+          {entryMode === 'qa' ? (
+            <div className="p-4 sm:p-5 bg-card border border-line rounded-2xl space-y-4 shadow-2xs">
+              {/* Row 1: Location & Period */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-sub flex items-center gap-1">
+                    <MapPin className="w-3.5 h-3.5 text-accent" />
+                    <span>{t('الموقع ومقر التدريب الميداني', 'Site / Office Location')}</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={qaLocation}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setQaLocation(v);
+                      setDescription(buildDescriptionFromQA(v, qaPeriod, qaActivities, qaAchievements, qaChallenges, qaNewLearnings));
+                    }}
+                    placeholder={t('مثال: Huawei – العليا، أو الإدارة العامة / الموقع الميداني', 'e.g. Huawei – Olaya, or HQ Field Office')}
+                    className="w-full px-3 py-2 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent text-ink font-medium"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-sub flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5 text-accent" />
+                    <span>{t('الفترة التشغيلية', 'Work Shift / Period')}</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={qaPeriod}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setQaPeriod(v);
+                      setDescription(buildDescriptionFromQA(qaLocation, v, qaActivities, qaAchievements, qaChallenges, qaNewLearnings));
+                    }}
+                    placeholder={t('صباحًا / مساءً / دوام كامل', 'Morning / Evening / Full Day')}
+                    className="w-full px-3 py-2 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent text-ink font-medium"
+                  />
+                </div>
+              </div>
+
+              {/* Row 2: Activities (What did you do in detail?) */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-sub flex items-center gap-1">
+                    <FileText className="w-3.5 h-3.5 text-accent" />
+                    <span>{t('الأنشطة والمهام المنفذة (ماذا فعلت بالتفصيل؟)', 'Tasks & Activities Performed (In Detail)')}</span>
+                  </label>
+
+                  {/* Voice Dictation Button */}
+                  <button
+                    type="button"
+                    onClick={toggleVoiceRecording}
+                    className={`px-2.5 py-0.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      isRecording
+                        ? 'bg-accent text-white animate-pulse shadow-sm ring-2 ring-accent/30'
+                        : 'bg-bg text-sub hover:text-accent border border-line hover:border-accent/40'
+                    }`}
+                    title={isRecording ? t('جارٍ الاستماع... انقر للإيقاف', 'Listening... Click to stop') : t('إملاء صوتي مباشر', 'Voice Dictation')}
+                  >
+                    {isRecording ? <MicOff className="w-3.5 h-3.5 text-white" /> : <Mic className="w-3.5 h-3.5 text-accent" />}
+                    <span>{isRecording ? t('جارٍ الاستماع...', 'Listening...') : t('إملاء صوتي', 'Voice')}</span>
+                  </button>
+                </div>
+                <textarea
+                  value={qaActivities}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setQaActivities(v);
+                    setDescription(buildDescriptionFromQA(qaLocation, qaPeriod, v, qaAchievements, qaChallenges, qaNewLearnings));
+                  }}
+                  rows={3}
+                  placeholder={t(
+                    'مثال: بدأ اليوم بالحضور إلى مقر شركة Huawei في العليا لاستكمال البيانات وتوقيع المستندات، ثم التوجه لقسم تقنية المعلومات لاستلام جهاز العمل وحسابات النظام...',
+                    'e.g. Started the day by attending Huawei Olaya office to finalize onboarding forms, then met IT department to collect laptop and credentials...'
+                  )}
+                  className="w-full p-3 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent leading-relaxed text-ink"
+                  required
+                />
+              </div>
+
+              {/* Row 3: Achievements (الإنجاز) */}
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-sub flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-ok" />
+                  <span>{t('أهم الإنجازات والمخرجات المتحققة (الإنجاز)', 'Key Achievements & Deliverables')}</span>
+                </label>
+                <input
+                  type="text"
+                  value={qaAchievements}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setQaAchievements(v);
+                    setDescription(buildDescriptionFromQA(qaLocation, qaPeriod, qaActivities, v, qaChallenges, qaNewLearnings));
+                  }}
+                  placeholder={t('مثال: استكمال إجراءات التدريب واستلام أدوات وحسابات العمل وتحديد مقر التدريب', 'e.g. Completed onboarding formalities, received laptop and accounts, confirmed training site')}
+                  className="w-full px-3 py-2 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent text-ink"
+                />
+              </div>
+
+              {/* Row 4: Challenges & Problems (المشاكل) */}
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-sub flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 text-warn" />
+                  <span>{t('المشاكل أو التحديات الفنية وطريقة معالجتها (المشاكل)', 'Technical Challenges & How Resolved')}</span>
+                </label>
+                <input
+                  type="text"
+                  value={qaChallenges}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setQaChallenges(v);
+                    setDescription(buildDescriptionFromQA(qaLocation, qaPeriod, qaActivities, qaAchievements, v, qaNewLearnings));
+                  }}
+                  placeholder={t('مثال: لا توجد حالات فنية خلال هذا اليوم (أو اذكر المشكلة وكيف تم حلها)', 'e.g. No technical issues encountered today (or mention problem & resolution)')}
+                  className="w-full px-3 py-2 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent text-ink"
+                />
+              </div>
+
+              {/* Row 5: What's New & Learned (الجديد) */}
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-sub flex items-center gap-1">
+                  <Sparkles className="w-3.5 h-3.5 text-accent" />
+                  <span>{t('الجديد والمعارف والمهارات التي تم اكتسابها اليوم (الجديد)', 'New Knowledge & Acquired Skills Today')}</span>
+                </label>
+                <input
+                  type="text"
+                  value={qaNewLearnings}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setQaNewLearnings(v);
+                    setDescription(buildDescriptionFromQA(qaLocation, qaPeriod, qaActivities, qaAchievements, qaChallenges, v));
+                  }}
+                  placeholder={t('مثال: التعرف على بيئة العمل وإجراءات الانضمام والأقسام المرتبطة بالتدريب', 'e.g. Familiarization with work environment, organizational structure and onboarding workflows')}
+                  className="w-full px-3 py-2 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent text-ink"
+                />
+              </div>
+            </div>
+          ) : (
+            /* Freeform Textarea Mode */
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <label className="block text-xs font-bold text-sub">{t('نص الإنجاز والمهام المنفذة (سرد حر)', 'Direct Task Narrative')}</label>
+                  
+                  <button
+                    type="button"
+                    onClick={toggleVoiceRecording}
+                    className={`px-2.5 py-0.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      isRecording
+                        ? 'bg-accent text-white animate-pulse shadow-sm ring-2 ring-accent/30'
+                        : 'bg-bg text-sub hover:text-accent border border-line hover:border-accent/40'
+                    }`}
+                    title={isRecording ? t('جارٍ الاستماع... انقر للإيقاف', 'Listening... Click to stop') : t('إملاء صوتي مباشر', 'Voice Dictation')}
+                  >
+                    {isRecording ? <MicOff className="w-3.5 h-3.5 text-white" /> : <Mic className="w-3.5 h-3.5 text-accent" />}
+                    <span>{isRecording ? t('جارٍ الاستماع...', 'Listening...') : t('إملاء صوتي', 'Voice')}</span>
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-3 text-[11px] text-sub">
+                  <span>
+                    {description.trim() ? description.trim().split(/\s+/).length : 0} {t('كلمة', 'words')}
+                  </span>
+                  <span>•</span>
+                  <span>{t('حفظ فوري للمسودة مفعل', 'Draft autosaved')}</span>
+                </div>
+              </div>
+
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={5}
+                placeholder={t('اشرح ما أنجزته بدقة، والبرمجيات أو الأجهزة التي تعاملت معها، والتحديات الفنية التي تم حلها...', 'Explain in detail what you accomplished, software/hardware tools used, and technical solutions...')}
+                className="w-full p-3 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent leading-relaxed text-ink"
+                required
+              />
+            </div>
+          )}
 
             {/* AI Enhancement Toolbar */}
             <div className="flex flex-wrap items-center gap-2 pt-1">
@@ -1102,6 +1390,13 @@ export const DailyLogTab: React.FC = () => {
         diffChunks={diffChunks}
         onAccept={() => {
           setDescription(improvedText);
+          const parsed = parseQAText(improvedText);
+          setQaLocation(parsed.loc);
+          setQaPeriod(parsed.per || 'صباحًا');
+          setQaActivities(parsed.act);
+          setQaAchievements(parsed.ach);
+          setQaChallenges(parsed.cha);
+          setQaNewLearnings(parsed.lrn);
           setDiffModalOpen(false);
           showToast(t('تم تطبيق التعديلات الذكية بنجاح!', 'AI improvements applied successfully!'));
         }}

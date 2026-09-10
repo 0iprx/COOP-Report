@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
-import { LogOut, Shield, User, BookOpen, ShieldCheck, Loader2 } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
+import { LogOut, Shield, User, BookOpen, ShieldCheck, Loader2, Sun, Moon } from 'lucide-react';
 import { api } from '../../services/api';
 
 export const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
   const { lang, setLang, t } = useLanguage();
+  const { theme, toggleTheme, isDark } = useTheme();
   const [isDownloadingBackup, setIsDownloadingBackup] = useState(false);
   const [backupToast, setBackupToast] = useState('');
 
@@ -113,6 +115,17 @@ export const Navbar: React.FC = () => {
               <span className="sm:hidden">EN</span>
             </button>
           </div>
+
+          {/* Theme Switcher: Dark / Light Mode */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="p-2 rounded-xl border border-line bg-bg text-sub hover:text-accent hover:border-accent/40 transition-colors shrink-0 shadow-2xs"
+            title={isDark ? t('التبديل إلى الوضع النهاري', 'Switch to Light Mode') : t('التبديل إلى الوضع الليلي', 'Switch to Dark Mode')}
+            aria-label="Toggle Theme"
+          >
+            {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-ink" />}
+          </button>
 
           {/* User Menu */}
           {user && (

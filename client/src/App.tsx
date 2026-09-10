@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { api } from './services/api';
 import { Navbar } from './components/common/Navbar';
 import { AuthScreen } from './components/auth/AuthScreen';
@@ -181,7 +182,9 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <LanguageProvider>
-          <MainDashboard />
+          <ThemeProvider>
+            <MainDashboard />
+          </ThemeProvider>
         </LanguageProvider>
       </AuthProvider>
     </QueryClientProvider>

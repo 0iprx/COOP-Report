@@ -1,23 +1,24 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
       colors: {
-        bg:           '#F3F1EC',
-        surface:      '#FAFAF8',
-        card:         '#FFFFFF',
-        ink:          '#18181A',
-        sub:          '#686560',
-        muted:        '#9E9A93',
-        line:         '#E6E2D8',
-        accent:       '#C0102A',
-        'accent-dim': '#F6DDE1',
-        'accent-mid': '#E8354D',
-        ok:           '#2A6348',
-        'ok-bg':      '#E3F0EA',
-        warn:         '#B45309',
-        'warn-bg':    '#FEF3C7'
+        bg:           'var(--bg)',
+        surface:      'var(--surface)',
+        card:         'var(--card)',
+        ink:          'var(--ink)',
+        sub:          'var(--sub)',
+        muted:        'var(--muted)',
+        line:         'var(--line)',
+        accent:       'var(--accent)',
+        'accent-dim': 'var(--accent-dim)',
+        'accent-mid': 'var(--accent-mid)',
+        ok:           'var(--ok)',
+        'ok-bg':      'var(--ok-bg)',
+        warn:         'var(--warn)',
+        'warn-bg':    'var(--warn-bg)'
       },
       fontFamily: {
         tajawal: ['Tajawal', 'sans-serif'],

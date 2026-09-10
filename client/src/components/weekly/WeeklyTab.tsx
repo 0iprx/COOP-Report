@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
+import { useTheme } from '../../context/ThemeContext';
 import { FinalReportData, EntryDTO, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis, formatWeekPeriod, ENTRY_CATEGORIES, elevateTaskTitle, normalizeStudentName, polishAcademicNarrative, convertBulletsToCohesiveParagraphs } from '@coop/shared';
 import { WeeklyEvidenceSection } from './WeeklyEvidenceSection';
 import {
@@ -28,7 +29,10 @@ import {
   History,
   Building,
   GraduationCap,
-  Award
+  Award,
+  Sun,
+  Moon,
+  Globe
 } from 'lucide-react';
 import { DiffModal } from '../common/DiffModal';
 import { BatchRewriteModal } from '../common/BatchRewriteModal';
@@ -37,7 +41,8 @@ const CATEGORIES = ENTRY_CATEGORIES;
 
 export const WeeklyTab: React.FC = () => {
   const queryClient = useQueryClient();
-  const { lang, isAr, t } = useLanguage();
+  const { lang, setLang, isAr, t } = useLanguage();
+  const { theme, toggleTheme, isDark } = useTheme();
   const [batchModalOpen, setBatchModalOpen] = useState<boolean>(false);
   const [selectedWeek, setSelectedWeek] = useState<string>('');
   const [copied, setCopied] = useState<boolean>(false);
@@ -631,6 +636,41 @@ export const WeeklyTab: React.FC = () => {
               <Download className="w-3.5 h-3.5" />
               <span>Markdown</span>
             </button>
+
+            {/* Direct Language Switcher in Weekly Tab */}
+            <div className="inline-flex p-0.5 bg-bg border border-line rounded-xl text-xs font-bold shadow-2xs shrink-0">
+              <button
+                type="button"
+                onClick={() => setLang('ar')}
+                className={`px-2.5 py-1 rounded-lg transition-all ${
+                  lang === 'ar' ? 'bg-accent text-white shadow-xs font-black' : 'text-sub hover:text-ink'
+                }`}
+                title="تحويل كامل الواجهة والتقارير إلى العربية"
+              >
+                عربي
+              </button>
+              <button
+                type="button"
+                onClick={() => setLang('en')}
+                className={`px-2.5 py-1 rounded-lg transition-all ${
+                  lang === 'en' ? 'bg-accent text-white shadow-xs font-black' : 'text-sub hover:text-ink'
+                }`}
+                title="Switch entire interface and reports to English"
+              >
+                EN
+              </button>
+            </div>
+
+            {/* Theme Toggle Button */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="p-2 rounded-xl border border-line bg-bg text-sub hover:text-accent hover:border-accent/40 transition-colors shrink-0 shadow-2xs"
+              title={isDark ? t('التبديل إلى الوضع النهاري', 'Switch to Light Mode') : t('التبديل إلى الوضع الليلي', 'Switch to Dark Mode')}
+              aria-label="Toggle Theme"
+            >
+              {isDark ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-ink" />}
+            </button>
           </div>
         </div>
 
@@ -1119,8 +1159,7 @@ export const WeeklyTab: React.FC = () => {
               return (
                 <div
                   id="weekly-page-2-synthesis"
-                  className="space-y-6 print:page-break print:break-after-page print:pt-4"
-                  style={{ pageBreakAfter: 'always', breakAfter: 'page' }}
+                  className="space-y-6 print:pt-4"
                 >
                   {/* Synthesis Box */}
                   <div className="p-5 sm:p-6 bg-card border border-line rounded-2xl space-y-4 text-start break-inside-avoid shadow-xs print:border-none print:shadow-none print:p-0 print:bg-transparent synthesis-box-print">
@@ -1269,14 +1308,16 @@ export const WeeklyTab: React.FC = () => {
                 </button>
               </div>
             ) : (
-              <div id="weekly-days-dossier" className="space-y-4">
+              <div id="weekly-days-dossier" className="space-y-4 print:page-break print:break-before-page print:pt-4" style={{ breakBefore: 'page' }}>
+                <div className="hidden print:block text-xs font-black text-slate-800 uppercase tracking-wider pb-2 mb-3 border-b-2 border-slate-800">
+                  {isAr ? 'سجل وتفاصيل المهام والأنشطة اليومية الميدانية' : 'Detailed Daily Field Tasks & Activities'}
+                </div>
                 {activeEntries.map((entry: EntryDTO, dayIdx: number) => {
                   const entryHours = calculateHoursBetween(entry.timeFrom || '08:00', entry.timeTo || '16:00');
                   return (
                     <div
                       key={entry.id}
-                      className="border border-line rounded-2xl overflow-hidden bg-card shadow-xs hover:shadow-sm transition-all text-start day-card-print break-inside-avoid print:page-break print:break-after-page print:border-none print:shadow-none print:bg-transparent print:p-0"
-                      style={{ pageBreakAfter: 'always', breakAfter: 'page' }}
+                      className="border border-line rounded-2xl overflow-hidden bg-card shadow-xs hover:shadow-sm transition-all text-start day-card-print break-inside-avoid print:border-b print:border-slate-300 print:shadow-none print:bg-transparent print:p-0 print:mb-6"
                     >
                       {/* Day Card Header */}
                       <div className="bg-bg px-4 sm:px-5 py-3 border-b border-line flex flex-wrap items-center justify-between gap-2.5 print:bg-transparent print:px-0 print:border-b-2 print:border-slate-800">
