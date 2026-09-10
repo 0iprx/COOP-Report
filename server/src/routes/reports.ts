@@ -302,14 +302,17 @@ router.post('/weekly/translate', async (req: AuthenticatedRequest, res: Response
       // 2. Translate Title
       let translatedTitle = entry.title;
       try {
-        translatedTitle = await processTextWithAI({
+        const titleAiRes = await processTextWithAI({
           text: entry.title,
           action: 'translate',
           targetLang,
           apiKey: userApiKey,
           model: userModel
         });
-        translatedTitle = translatedTitle.replace(/^["'«»]+|["'«»]+$/g, '').trim() || entry.title;
+        const rawTitle = typeof titleAiRes === 'string' ? titleAiRes : (titleAiRes as any)?.result;
+        if (rawTitle && typeof rawTitle === 'string') {
+          translatedTitle = rawTitle.replace(/^["'«»]+|["'«»]+$/g, '').trim() || entry.title;
+        }
       } catch (err) {
         logger.warn({ err, entryId: entry.id }, 'Translation of title fell back to original');
       }
@@ -317,17 +320,23 @@ router.post('/weekly/translate', async (req: AuthenticatedRequest, res: Response
       // 3. Translate Description
       let translatedDesc = entry.description;
       try {
-        translatedDesc = await processTextWithAI({
+        const descAiRes = await processTextWithAI({
           text: entry.description,
           action: 'translate',
           targetLang,
           apiKey: userApiKey,
           model: userModel
         });
-        translatedDesc = translatedDesc.trim() || entry.description;
+        const rawDesc = typeof descAiRes === 'string' ? descAiRes : (descAiRes as any)?.result;
+        if (rawDesc && typeof rawDesc === 'string') {
+          translatedDesc = rawDesc.trim() || entry.description;
+        }
       } catch (err) {
         logger.warn({ err, entryId: entry.id }, 'Translation of description fell back to original');
       }
+
+      // 4. Elevate title for target language
+      translatedTitle = elevateTaskTitle(translatedTitle || entry.title, translatedDesc || entry.description, targetLang === 'ar');
 
       // 4. Translate Category
       let translatedCategory = entry.category;

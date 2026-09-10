@@ -39,6 +39,68 @@ import { BatchRewriteModal } from '../common/BatchRewriteModal';
 
 const CATEGORIES = ENTRY_CATEGORIES;
 
+const formatCategory = (cat: string, isAr: boolean) => {
+  if (isAr) return cat;
+  const categoryMapArToEn: Record<string, string> = {
+    'إجراءات الانضمام والتعريف ببيئة العمل': 'Onboarding & Workplace Orientation',
+    'هندسة الشبكات وتراسل البيانات': 'Network Engineering & Data Transmission',
+    'شبكات النفاذ والألياف الضوئية (FTTH)': 'Access Networks & Fiber Optics (FTTH)',
+    'شبكات الاتصالات اللاسلكية والجيل الخامس (5G)': 'Wireless Telecom & 5G Networks',
+    'إدارة الأعطال والتشغيل ومراقبة الأنظمة (NOC)': 'Incident Management, Operations & NOC',
+    'أمن المعلومات والأمن السيبراني': 'Information Security & Cybersecurity',
+    'الدعم الفني الميداني وصيانة النظم': 'Field Technical Support & Systems Maintenance',
+    'تطوير وهندسة البرمجيات والأنظمة': 'Software & Systems Engineering',
+    'الحوسبة السحابية وإدارة الخوادم': 'Cloud Computing & Server Administration',
+    'الاجتماعات الفنية والتخطيط التشغيلي': 'Technical Meetings & Operational Planning',
+    'التوثيق الهندسي وضبط الجودة': 'Engineering Documentation & Quality Control',
+    'تطوير / برمجة': 'Development / Programming',
+    'دعم فني': 'Technical Support',
+    'اجتماعات': 'Meetings',
+    'تدريب وتعلّم': 'Training & Learning',
+    'توثيق': 'Documentation',
+    'شبكات': 'Networking',
+    'أنظمة': 'Systems',
+    'أمن سيبراني': 'Cybersecurity',
+    'صيانة ودعم فني': 'Maintenance & Technical Support',
+    'برمجة وتطوير': 'Software Development',
+    'إدارة مشاريع': 'Project Management',
+    'قواعد بيانات': 'Databases',
+    'أخرى': 'Other'
+  };
+  return categoryMapArToEn[cat] || cat;
+};
+
+const translateSectionHeader = (header: string, isAr: boolean) => {
+  if (isAr) return header;
+  const clean = header.replace(/[:：]$/, '').trim();
+  const headerMap: Record<string, string> = {
+    'موجز الإنجاز': 'Executive Accomplishment Summary',
+    'ملخص الإنجاز الميداني': 'Field Accomplishment Summary',
+    'الهدف التشغيلي': 'Operational Objective',
+    'نطاق التكليف والمهمة الميدانية': 'Operational Scope & Field Assignment',
+    'نطاق التكليف': 'Assignment Scope',
+    'الجدارة والمهارة المستهدفة': 'Target Competency & Skill',
+    'الإجراءات والخطوات الميدانية': 'Field Procedures & Technical Steps',
+    'الإجراءات والحلول الفنية': 'Technical Actions & Troubleshooting',
+    'الممارسة والتطبيق الميداني': 'Field Practice & Practical Application',
+    'الأنظمة والأدوات المستخدمة': 'Systems, Tools & Equipment Utilized',
+    'الأنظمة والتقنيات المستخدمة': 'Systems & Technologies Utilized',
+    'الأدوات والمفاهيم التقنية المطبقة': 'Applied Tools & Technical Concepts',
+    'المخرجات والنتائج الفنية': 'Technical Outcomes & Deliverables',
+    'الأثر والقيمة المضافة': 'Value Added & Business Impact',
+    'مخرجات التعلم والتقييم الذاتي': 'Learning Outcomes & Self-Assessment',
+    'الموقع': 'Location',
+    'الفترة': 'Period',
+    'المهام والأنشطة الميدانية': 'Field Tasks & Activities',
+    'التحديات والحلول': 'Challenges & Resolutions',
+    'ما تم تعلمه اليوم': 'Key Learnings & Knowledge Acquired',
+    'فريق': 'Assigned Team',
+    'قسم': 'Department / Unit',
+    'مرحلة': 'Phase / Milestone'
+  };
+  return headerMap[clean] || clean;
+};
+
 export const WeeklyTab: React.FC = () => {
   const queryClient = useQueryClient();
   const { lang, setLang, isAr, t } = useLanguage();
@@ -360,6 +422,19 @@ export const WeeklyTab: React.FC = () => {
     }
   };
 
+  const handleSwitchLangWithPrompt = (newLang: 'ar' | 'en') => {
+    setLang(newLang);
+    if (newLang === 'en' && activeEntries.some((e) => /[\u0600-\u06FF]/.test(e.description || ''))) {
+      if (window.confirm('تم تحويل الواجهة والترويسات إلى الإنجليزية.\n\nهل تريد أيضاً ترجمة محتوى التقرير الفعلي (نصوص المهام والسرد الأكاديمي) بالكامل إلى اللغة الإنجليزية بالذكاء الاصطناعي؟\n(مضمون بدون أي فقدان للبيانات مع حفظ نسخة احتياطية في سجل التعديلات)')) {
+        handleTranslateWeekEntries('en');
+      }
+    } else if (newLang === 'ar' && activeEntries.some((e) => /^[A-Za-z]/.test(e.description?.trim() || ''))) {
+      if (window.confirm('تم تحويل الواجهة والترويسات إلى العربية.\n\nهل تريد أيضاً ترجمة محتوى التقرير الفعلي (نصوص المهام والسرد الأكاديمي) بالكامل إلى اللغة العربية بالذكاء الاصطناعي؟')) {
+        handleTranslateWeekEntries('ar');
+      }
+    }
+  };
+
   const handleDownloadPresentation = async () => {
     try {
       setDownloadingPptx(true);
@@ -534,10 +609,11 @@ export const WeeklyTab: React.FC = () => {
 
       if (isHeader) {
         const title = trimmed.replace(/^\*\*|\*\*$/g, '').replace(/[:：]$/, '').trim();
+        const displayTitle = translateSectionHeader(title, isAr);
         elements.push(
           <div key={`heading-${elements.length}`} className="font-black text-xs sm:text-sm text-accent pt-3 pb-1 border-b border-line/40 flex items-center gap-1.5 first:pt-0">
             <span className="w-1.5 h-3.5 bg-accent rounded-full shrink-0"></span>
-            <span>{title}:</span>
+            <span>{displayTitle}:</span>
           </div>
         );
         continue;
@@ -713,7 +789,7 @@ export const WeeklyTab: React.FC = () => {
             <div className="inline-flex p-0.5 bg-bg border border-line rounded-xl text-xs font-bold shadow-2xs shrink-0">
               <button
                 type="button"
-                onClick={() => setLang('ar')}
+                onClick={() => handleSwitchLangWithPrompt('ar')}
                 className={`px-2.5 py-1 rounded-lg transition-all ${
                   lang === 'ar' ? 'bg-accent text-white shadow-xs font-black' : 'text-sub hover:text-ink'
                 }`}
@@ -723,7 +799,7 @@ export const WeeklyTab: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={() => setLang('en')}
+                onClick={() => handleSwitchLangWithPrompt('en')}
                 className={`px-2.5 py-1 rounded-lg transition-all ${
                   lang === 'en' ? 'bg-accent text-white shadow-xs font-black' : 'text-sub hover:text-ink'
                 }`}
@@ -1077,7 +1153,55 @@ export const WeeklyTab: React.FC = () => {
         {isLoading && reportMode === 'weekly' ? (
           <div className="text-center py-12 text-sub text-sm">{t('جارٍ تحميل تقرير الأسبوع...', 'Loading weekly log...')}</div>
         ) : (
-          <div id="weekly-paper-view" className="printable-a4-sheet space-y-6">
+          <>
+            {/* Dynamic Language Content Sync Banner (When content language differs from viewing language) */}
+            {!isAr && activeEntries.some((e) => /[\u0600-\u06FF]/.test(e.description || '')) && (
+              <div className="p-4 rounded-2xl bg-indigo-50/95 dark:bg-indigo-950/50 border-2 border-indigo-300 dark:border-indigo-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md no-print mb-5 text-start">
+                <div className="space-y-0.5">
+                  <div className="text-xs font-black text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5">
+                    <Globe className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                    <span>English Report Mode Active (Headers & Titles Translated)</span>
+                  </div>
+                  <p className="text-[11.5px] text-indigo-700 dark:text-indigo-300 font-medium leading-relaxed">
+                    Task details & accomplishments are currently saved in Arabic. Click here to translate all task narratives & entries into fluent technical English using AI:
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleTranslateWeekEntries('en')}
+                  disabled={isTranslatingWeek}
+                  className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs shadow-md transition-all flex items-center justify-center gap-2 shrink-0 disabled:opacity-50"
+                >
+                  <Sparkles className={`w-3.5 h-3.5 ${isTranslatingWeek ? 'animate-spin' : ''}`} />
+                  <span>{isTranslatingWeek ? 'Translating Report...' : 'Translate All Narratives to English (AI)'}</span>
+                </button>
+              </div>
+            )}
+
+            {isAr && activeEntries.some((e) => /^[A-Za-z]/.test(e.description?.trim() || '')) && (
+              <div className="p-4 rounded-2xl bg-indigo-50/95 dark:bg-indigo-950/50 border-2 border-indigo-300 dark:border-indigo-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md no-print mb-5 text-start">
+                <div className="space-y-0.5">
+                  <div className="text-xs font-black text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5">
+                    <Globe className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                    <span>عرض التقرير باللغة العربية مفعّل</span>
+                  </div>
+                  <p className="text-[11.5px] text-indigo-700 dark:text-indigo-300 font-medium leading-relaxed">
+                    محتوى بعض المهام والسرد مدوّن بالإنجليزية. انقر هنا لترجمة كافة عناوين ونصوص التقرير إلى لغة عربية أكاديمية بالذكاء الاصطناعي:
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleTranslateWeekEntries('ar')}
+                  disabled={isTranslatingWeek}
+                  className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs shadow-md transition-all flex items-center justify-center gap-2 shrink-0 disabled:opacity-50"
+                >
+                  <Sparkles className={`w-3.5 h-3.5 ${isTranslatingWeek ? 'animate-spin' : ''}`} />
+                  <span>{isTranslatingWeek ? 'جارٍ ترجمة التقرير...' : 'ترجمة كافة النصوص إلى العربية (AI)'}</span>
+                </button>
+              </div>
+            )}
+
+            <div id="weekly-paper-view" className="printable-a4-sheet space-y-6">
             {/* Hidden File Inputs for Interactive Cover Page Logo Uploads */}
             <input
               type="file"
@@ -1339,11 +1463,11 @@ export const WeeklyTab: React.FC = () => {
                               </td>
                               <td className="p-2.5">
                                 <span className="px-2.5 py-1 rounded-md text-[10.5px] font-extrabold bg-slate-100 text-slate-800 whitespace-nowrap border border-slate-300 shadow-xs print:bg-white print:border-slate-400">
-                                  {entry.category}
+                                  {formatCategory(entry.category, isAr)}
                                 </span>
                               </td>
                               <td className="p-2.5 font-bold text-ink leading-snug">
-                                {elevateTaskTitle(entry.title, entry.description)}
+                                {elevateTaskTitle(entry.title, entry.description, isAr)}
                               </td>
                             </tr>
                           );
@@ -1409,7 +1533,7 @@ export const WeeklyTab: React.FC = () => {
                         {/* Left: Category Tag, Hours calculation, and Actions */}
                         <div className="flex items-center gap-2.5">
                           <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-slate-100 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 print:bg-white print:border-slate-400 print:text-black shadow-xs">
-                            {entry.category}
+                            {formatCategory(entry.category, isAr)}
                           </span>
                           <span className="text-xs font-bold text-sub">
                             {entryHours} {isAr ? 'ساعات' : 'hrs'}
@@ -1457,7 +1581,7 @@ export const WeeklyTab: React.FC = () => {
                             {isAr ? 'النشاط الفني والمهمة التشغيلية الميدانية:' : 'Technical Activity & Operational Scope:'}
                           </div>
                           <h4 className="text-sm sm:text-base font-black text-ink leading-snug">
-                            {elevateTaskTitle(entry.title, entry.description)}
+                            {elevateTaskTitle(entry.title, entry.description, isAr)}
                           </h4>
                         </div>
 
@@ -1540,8 +1664,9 @@ export const WeeklyTab: React.FC = () => {
               </div>
             </div>
           </div>
-        )}
-      </div>
+        </>
+      )}
+    </div>
 
       {/* Edit / Add Entry Modal */}
       {isEditModalOpen && editingEntry && (

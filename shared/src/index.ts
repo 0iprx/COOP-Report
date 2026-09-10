@@ -730,40 +730,49 @@ export function elevateTaskTitle(title: string = '', description: string = '', i
     /بداية اليوم.*access/i.test(t) ||
     /team access|access team/i.test(t) ||
     (/access/i.test(t) && /ftth/i.test(desc)) ||
-    /مباشرة الأعمال التشغيلية مع فريق.*access/i.test(t)
+    /مباشرة الأعمال التشغيلية مع فريق.*access/i.test(t) ||
+    /التهيئة التشغيلية وإدارة صلاحيات/i.test(t)
   ) {
     return isAr
       ? 'التهيئة التشغيلية وإدارة صلاحيات النفاذ والتحكم مع فريق (Access Team)'
       : 'Operational Onboarding & Network Access Control Administration with Access Team';
   }
-  if (/اليوم بيكون عن 5g/i.test(t) || (/5g/i.test(t) && /(fwa|cpe|mvno|earth)/i.test(desc))) {
+  if (/اليوم بيكون عن 5g/i.test(t) || (/5g/i.test(t) && /(fwa|cpe|mvno|earth)/i.test(desc)) || /مؤشرات أداء شبكات 5g|المسح الجغرافي/i.test(t)) {
     return isAr
       ? 'الفحص الفني لمؤشرات أداء شبكات 5G والمسح الجغرافي للمحطات عبر أنظمة Google Earth'
       : 'Technical 5G KPI Verification & Geographic Site Survey via Google Earth Systems';
   }
-  if (/العمل مع قسم 5g/i.test(t) || (/5g/i.test(t) && /(patching|configuration|cyber)/i.test(desc))) {
+  if (/العمل مع قسم 5g/i.test(t) || (/5g/i.test(t) && /(patching|configuration|cyber)/i.test(desc)) || /5g patching|ضبط تكوينات ومحددات شبكات الجيل الخامس/i.test(t)) {
     return isAr
       ? 'ضبط تكوينات ومحددات شبكات الجيل الخامس (5G Patching) وإجراءات الاستجابة السيبرانية'
       : '5G Network Parameter Configurations (5G Patching) & Cyber Incident Response Workflows';
   }
-  if (/ftth|ألياف|فايبر|ont|olt|odn|odb|fiber|بوكسية|لحام|splice|otdr/i.test(t) || /(ftth|fiber|فايبر|otdr|سبلايسر|splice|لحام)/i.test(desc)) {
+  if (/ftth|ألياف|فايبر|ont|olt|odn|odb|fiber|بوكسية|لحام|splice|otdr/i.test(t) || /(ftth|fiber|فايبر|otdr|سبلايسر|splice|لحام)/i.test(desc) || /مكونات شبكات النفاذ الضوئي/i.test(t)) {
     return isAr
       ? 'الفحص والمعاينة الميدانية لمكونات شبكات النفاذ الضوئي (FTTH) ومسارات التوزيع'
       : 'Optical Access Network (FTTH) Field Inspection & Distribution Path Verification';
   }
-  if (/trouble ticket|إنذار|alarm|صيانة|عطل|link down|تذاكر/i.test(t) || /alarm/i.test(desc)) {
+  if (/trouble ticket|إنذار|alarm|صيانة|عطل|link down|تذاكر/i.test(t) || /alarm/i.test(desc) || /تصنيف ومعالجة بلاغات الأعطال/i.test(t)) {
     return isAr
       ? 'تصنيف ومعالجة بلاغات الأعطال ومتابعة الإنذارات التشغيلية (Trouble Tickets)'
       : 'Trouble Ticket Classification & Operational Network Alarm Remediation';
   }
-  if (/اول يوم عمل.*(hr|مقابلة|موارد)/i.test(t) || /مقابلة hr/i.test(t) || /اول يوم عمل/i.test(t)) {
+  if (
+    /اول يوم عمل.*(hr|مقابلة|موارد)/i.test(t) ||
+    /مقابلة hr/i.test(t) ||
+    /اول يوم عمل/i.test(t) ||
+    /التهيئة المؤسسية/i.test(t) ||
+    /التعريف ببيئة العمل/i.test(t) ||
+    /إجراءات الانضمام/i.test(t) ||
+    /موارد بشرية/i.test(t)
+  ) {
     return isAr
       ? 'التهيئة المؤسسية ومقابلة الموارد البشرية (HR) والتعريف ببيئة العمل والأنظمة'
       : 'Enterprise Onboarding, HR Orientation & Workplace Systems Familiarization';
   }
 
   if (!isAr) {
-    if (/^[A-Za-z0-9\s\-_\.,:\(\)]+$/.test(t)) {
+    if (/^[A-Za-z0-9\s\-_\.,:\(\)\/]+$/.test(t)) {
       return t;
     }
     if (/شبك|راوتر|سويتش|vlan/i.test(t)) return 'Network Infrastructure Configuration & Switch Port Administration';
@@ -771,6 +780,7 @@ export function elevateTaskTitle(title: string = '', description: string = '', i
     if (/أمن|حماية|أمان|ثغرة/i.test(t)) return 'Cybersecurity Analysis, Threat Mitigation & Access Governance';
     if (/دعم|صيانة|طابعة|مستخدم/i.test(t)) return 'Field Technical Support & End-User Workplace Troubleshooting';
     if (/برمج|تطوير|كود|قاعدة/i.test(t)) return 'Software Engineering, Code Optimization & Database Operations';
+    if (/ألياف|ضوئ|كابل|كيبل/i.test(t)) return 'Optical Access Network (FTTH) Field Verification & Path Testing';
     return 'Field Technical Engineering Operations & Core Activities';
   }
 
