@@ -35,7 +35,7 @@ export const BatchRewriteModal: React.FC<BatchRewriteModalProps> = ({
   onSuccess
 }) => {
   const { t, isAr } = useLanguage();
-  const [model, setModel] = useState<string>('gemini-2.5-flash');
+  const [model, setModel] = useState<string>('gemini-3.6-flash');
   const [style, setStyle] = useState<'procedural' | 'star_impact' | 'academic_competency' | 'concise_executive'>('procedural');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -365,8 +365,9 @@ export const BatchRewriteModal: React.FC<BatchRewriteModalProps> = ({
                       disabled={isProcessing}
                       className="w-full px-3 py-2 text-xs bg-bg border border-line rounded-xl focus:outline-none focus:border-accent text-ink font-semibold"
                     >
-                      <option value="gemini-2.5-flash">Gemini 2.5 Flash ({t('الموصى به - فائق الدقة والسرعة', 'Recommended')})</option>
-                      <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                      <option value="gemini-3.6-flash">Gemini 3.6 Flash ({t('الموصى به - فائق الدقة والسرعة', 'Recommended')})</option>
+                      <option value="gemini-3.7-flash">Gemini 3.7 Flash</option>
+                      <option value="gemini-flash-latest">Gemini Flash Latest</option>
                       <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
                     </select>
                   </div>

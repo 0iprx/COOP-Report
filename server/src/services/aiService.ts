@@ -257,8 +257,9 @@ async function callAvailableLLM(
     const candidateModels = [
       userModel?.trim(),
       process.env.GEMINI_MODEL?.trim(),
-      'gemini-2.5-flash',
-      'gemini-2.0-flash',
+      'gemini-3.6-flash',
+      'gemini-3.7-flash',
+      'gemini-flash-latest',
       'gemini-1.5-flash',
       'gemini-1.5-pro'
     ].filter(Boolean) as string[];
@@ -270,7 +271,7 @@ async function callAvailableLLM(
         const res = await fetch(geminiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          signal: AbortSignal.timeout(25000),
+          signal: AbortSignal.timeout(10000),
           body: JSON.stringify({
             contents: [
               {
@@ -574,14 +575,32 @@ async function translateWithWebAPI(text: string, targetLang: 'ar' | 'en'): Promi
 async function fetchSingleChunkTranslation(chunk: string, targetLang: 'ar' | 'en'): Promise<string | null> {
   if (!chunk.trim()) return '';
 
-  // 1. Google GTX
+  // 1. Google Clients5 (Ultra-fast ~100ms, zero-block, high-accuracy)
+  try {
+    const url = `https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=auto&tl=${targetLang}&q=${encodeURIComponent(chunk)}`;
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      },
+      signal: AbortSignal.timeout(4000)
+    });
+    if (res.ok) {
+      const data: any = await res.json();
+      if (Array.isArray(data) && Array.isArray(data[0]) && data[0][0]) {
+        return data[0][0].trim();
+      }
+      if (typeof data === 'string') return data.trim();
+    }
+  } catch {}
+
+  // 2. Google GTX
   try {
     const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(chunk)}`;
     const res = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
       },
-      signal: AbortSignal.timeout(6000)
+      signal: AbortSignal.timeout(4000)
     });
     if (res.ok) {
       const data: any = await res.json();
@@ -595,7 +614,7 @@ async function fetchSingleChunkTranslation(chunk: string, targetLang: 'ar' | 'en
     }
   } catch {}
 
-  // 2. MyMemory Translate API
+  // 3. MyMemory Translate API
   try {
     const langpair = targetLang === 'en' ? 'ar|en' : 'en|ar';
     const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunk)}&langpair=${langpair}`;
@@ -603,7 +622,7 @@ async function fetchSingleChunkTranslation(chunk: string, targetLang: 'ar' | 'en
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
       },
-      signal: AbortSignal.timeout(6000)
+      signal: AbortSignal.timeout(4000)
     });
     if (res.ok) {
       const data: any = await res.json();
