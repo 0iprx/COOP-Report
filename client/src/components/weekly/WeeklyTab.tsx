@@ -1266,11 +1266,11 @@ export const WeeklyTab: React.FC = () => {
             {/* Page 1: Standalone Weekly/Custom Academic Cover Page */}
             <div
               id="weekly-cover-page"
-              className="text-center py-8 sm:py-14 border-b-2 border-line pb-10 sm:pb-16 break-inside-avoid print:page-break print:break-after-page print:border-none print:min-h-[92vh] print:flex print:flex-col print:justify-around print:p-0"
+              className="text-center py-8 sm:py-14 border-b-2 border-line pb-10 sm:pb-16 break-inside-avoid print:page-break print:break-after-page print:border-none print:p-0 print:m-0"
               style={{ pageBreakAfter: 'always', breakAfter: 'page' }}
             >
               {/* Dual Logos & Academic Identity Header */}
-              <div className="flex items-center justify-between gap-2 sm:gap-4 mb-6 sm:mb-8 border-b border-line/60 pb-4 sm:pb-6 print:border-b-2 print:border-slate-800">
+              <div className="flex items-center justify-between gap-2 sm:gap-4 mb-6 sm:mb-8 border-b border-line/60 pb-4 sm:pb-6 print:border-b-2 print:border-slate-800 print:mb-0">
                 {/* Institution Logo (Right in RTL / Left in LTR) */}
                 <div
                   onClick={() => institutionLogoInputRef.current?.click()}
@@ -1337,54 +1337,66 @@ export const WeeklyTab: React.FC = () => {
                 </div>
               </div>
 
-              {/* Title & Period Badge */}
-              <div className="inline-block px-3.5 py-1 rounded-full text-xs font-extrabold bg-accent/10 text-accent border border-accent/20 mb-2 print:bg-transparent print:border-none print:text-slate-800 print:text-sm">
-                {reportMode === 'weekly'
-                  ? (isAr ? `الأسبوع التدريبي: الأسبوع ${currentWeekObj?.weekIndex || 1}` : `Training Week: Week ${currentWeekObj?.weekIndex || 1}`)
-                  : (isAr ? `تقرير التدريب الميداني للفترة المحددة (${activeTotalDays} أيام عمل)` : `Field Training Report (${activeTotalDays} Days)`)}
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-black text-accent mt-2 print:text-black print:text-3xl">
-                {reportMode === 'weekly'
-                  ? (isAr ? 'تقرير التدريب التعاوني الأسبوعي (Weekly Co-op Report)' : 'Weekly Cooperative Training Report')
-                  : (isAr ? 'تقرير التدريب الميداني التراكمي (Co-op Field Report)' : 'Cooperative Field Training Report')}
-              </h1>
-              <div className="text-sm sm:text-base font-bold text-sub mt-1">
-                {reportMode === 'weekly'
-                  ? (weekReport ? `${isAr ? 'الفترة التدريبية المنفذة: ' : 'Executed Period: '} ${formatWeekPeriod(weekReport, isAr)}` : '—')
-                  : `${isAr ? 'الفترة الزمنية المشمولة بالتقرير: ' : 'Reported Period: '} ${customPeriodLabel}`}
-              </div>
-              <div className="text-sm sm:text-base font-bold text-ink mt-2">
-                {isAr ? 'جهة التدريب:' : 'Host Organization:'} <span className="text-accent print:text-black">{entityName}</span>
+              {/* Title & Period Badge (Centered in the Middle) */}
+              <div className="my-auto py-6 print:my-auto print:py-6 space-y-2">
+                <div className="inline-block px-3.5 py-1 rounded-full text-xs font-extrabold bg-accent/10 text-accent border border-accent/20 mb-1 print:bg-slate-100 print:border print:border-slate-300 print:text-slate-900 print:text-xs">
+                  {reportMode === 'weekly'
+                    ? (isAr ? `الأسبوع التدريبي: الأسبوع ${currentWeekObj?.weekIndex || 1}` : `Training Week: Week ${currentWeekObj?.weekIndex || 1}`)
+                    : (isAr ? `تقرير التدريب الميداني للفترة المحددة (${activeTotalDays} أيام عمل)` : `Field Training Report (${activeTotalDays} Days)`)}
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-black text-accent mt-2 print:text-black print:text-3xl print:leading-tight">
+                  {reportMode === 'weekly'
+                    ? (isAr ? 'تقرير التدريب التعاوني الأسبوعي (Weekly Co-op Report)' : 'Weekly Cooperative Training Report')
+                    : (isAr ? 'تقرير التدريب الميداني التراكمي (Co-op Field Report)' : 'Cooperative Field Training Report')}
+                </h1>
+                <div className="text-sm sm:text-base font-bold text-sub mt-2 print:text-slate-600">
+                  {reportMode === 'weekly'
+                    ? (weekReport ? `${isAr ? 'الفترة التدريبية المنفذة: ' : 'Executed Period: '} ${formatWeekPeriod(weekReport, isAr)}` : '—')
+                    : `${isAr ? 'الفترة الزمنية المشمولة بالتقرير: ' : 'Reported Period: '} ${customPeriodLabel}`}
+                </div>
+                <div className="text-sm sm:text-base font-bold text-ink mt-2 print:text-slate-800">
+                  {isAr ? 'جهة التدريب:' : 'Host Organization:'} <span className="text-accent print:text-black font-extrabold">{entityName}</span>
+                </div>
               </div>
 
-              {/* Trainee Information Matrix Card */}
-              <div
-                className="mt-6 sm:mt-8 max-w-xl mx-auto bg-bg border border-line rounded-xl p-5 text-start grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs trainee-matrix-print print:border-none print:shadow-none print:bg-transparent print:p-0 print:gap-4 print:text-sm print:mt-10"
-                dir={isAr ? 'rtl' : 'ltr'}
-              >
-                <div>
-                  <span className="font-bold text-sub">{isAr ? 'اسم المتدرب:' : 'Trainee Name:'}</span> <span className="font-extrabold text-ink">{normalizeStudentName(finalReportData?.profile?.studentName) || '—'}</span>
-                </div>
-                <div>
-                  <span className="font-bold text-sub">{isAr ? 'الرقم التدريبي:' : 'Training ID:'}</span> <span className="font-extrabold text-ink">{finalReportData?.profile?.trainingNumber || '—'}</span>
-                </div>
-                <div>
-                  <span className="font-bold text-sub">{isAr ? 'القسم / التخصص:' : 'Department:'}</span> <span className="font-extrabold text-ink">{finalReportData?.profile?.department || '—'}</span>
-                </div>
-                <div>
-                  <span className="font-bold text-sub">{isAr ? 'المشرف الأكاديمي:' : 'Academic Supervisor:'}</span> <span className="font-extrabold text-ink">{finalReportData?.profile?.supervisorName || '—'}</span>
-                </div>
-                <div>
-                  <span className="font-bold text-sub">{isAr ? 'المشرف الميداني:' : 'Field Supervisor:'}</span> <span className="font-extrabold text-ink">{finalReportData?.profile?.responsibleName || '—'}</span>
-                </div>
-                <div>
-                  <span className="font-bold text-sub">{isAr ? 'إجمالي الساعات الفعلية:' : 'Logged Hours:'}</span> <span className="font-extrabold text-accent print:text-black">{activeTotalHours} {isAr ? 'ساعة تدريبية' : 'hrs'}</span>
-                </div>
-                <div>
-                  <span className="font-bold text-sub">{isAr ? 'أيام العمل المنجزة:' : 'Active Days:'}</span> <span className="font-extrabold text-ink">{activeTotalDays} {isAr ? 'أيام' : 'days'}</span>
-                </div>
-                <div>
-                  <span className="font-bold text-sub">{isAr ? 'حالة التوثيق:' : 'Status:'}</span> <span className="font-extrabold text-ok print:text-black">{activeEntries.length ? (isAr ? 'مكتمل التوثيق' : 'Completed') : (isAr ? 'قيد التوثيق' : 'Pending')}</span>
+              {/* Trainee Information Matrix Card - Lower Placement ("نزل الجدول تحت قليلا مرتب") */}
+              <div className="mt-auto pt-6 print:mt-auto print:pt-4">
+                <div
+                  className="max-w-xl mx-auto bg-bg border border-line rounded-xl p-5 text-start grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs trainee-matrix-print print:border print:border-slate-300 print:rounded-xl print:bg-slate-50/60 print:p-4 print:gap-x-6 print:gap-y-2.5 print:text-xs shadow-xs"
+                  dir={isAr ? 'rtl' : 'ltr'}
+                >
+                  <div className="flex items-center justify-between border-b border-line/50 pb-1.5 print:border-slate-200">
+                    <span className="font-bold text-sub">{isAr ? 'اسم المتدرب:' : 'Trainee Name:'}</span>
+                    <span className="font-black text-ink">{normalizeStudentName(finalReportData?.profile?.studentName) || '—'}</span>
+                  </div>
+                  <div className="flex items-center justify-between border-b border-line/50 pb-1.5 print:border-slate-200">
+                    <span className="font-bold text-sub">{isAr ? 'الرقم التدريبي:' : 'Training ID:'}</span>
+                    <span className="font-mono font-black text-ink">{finalReportData?.profile?.trainingNumber || '—'}</span>
+                  </div>
+                  <div className="flex items-center justify-between border-b border-line/50 pb-1.5 print:border-slate-200">
+                    <span className="font-bold text-sub">{isAr ? 'القسم / التخصص:' : 'Department:'}</span>
+                    <span className="font-bold text-ink">{finalReportData?.profile?.department || '—'}</span>
+                  </div>
+                  <div className="flex items-center justify-between border-b border-line/50 pb-1.5 print:border-slate-200">
+                    <span className="font-bold text-sub">{isAr ? 'المشرف الأكاديمي:' : 'Academic Supervisor:'}</span>
+                    <span className="font-bold text-ink">{finalReportData?.profile?.supervisorName || '—'}</span>
+                  </div>
+                  <div className="flex items-center justify-between border-b border-line/50 pb-1.5 print:border-slate-200">
+                    <span className="font-bold text-sub">{isAr ? 'المشرف الميداني:' : 'Field Supervisor:'}</span>
+                    <span className="font-bold text-ink">{finalReportData?.profile?.responsibleName || '—'}</span>
+                  </div>
+                  <div className="flex items-center justify-between border-b border-line/50 pb-1.5 print:border-slate-200">
+                    <span className="font-bold text-sub">{isAr ? 'إجمالي الساعات الفعلية:' : 'Logged Hours:'}</span>
+                    <span className="font-black text-accent print:text-black">{activeTotalHours} {isAr ? 'ساعة تدريبية' : 'hrs'}</span>
+                  </div>
+                  <div className="flex items-center justify-between border-b border-line/50 pb-1.5 print:border-slate-200">
+                    <span className="font-bold text-sub">{isAr ? 'أيام العمل المنجزة:' : 'Active Days:'}</span>
+                    <span className="font-black text-ink">{activeTotalDays} {isAr ? 'أيام' : 'days'}</span>
+                  </div>
+                  <div className="flex items-center justify-between border-b border-line/50 pb-1.5 print:border-slate-200">
+                    <span className="font-bold text-sub">{isAr ? 'حالة التوثيق:' : 'Status:'}</span>
+                    <span className="font-black text-ok print:text-black">{activeEntries.length ? (isAr ? 'مكتمل التوثيق' : 'Completed') : (isAr ? 'قيد التوثيق' : 'Pending')}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1668,14 +1680,14 @@ export const WeeklyTab: React.FC = () => {
                         {customEvidenceList.length} {isAr ? 'صور موثقة' : 'photos'}
                       </span>
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 print:grid-cols-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 print:grid-cols-3 print:gap-2.5">
                       {customEvidenceList.map((photo, pIdx) => (
-                        <div key={photo.id || pIdx} className="border border-line rounded-xl overflow-hidden bg-bg p-2 space-y-1.5 print:border-slate-300 flex flex-col">
-                          <div className="w-full min-h-[160px] max-h-[320px] overflow-hidden rounded-lg bg-slate-50 dark:bg-slate-900/40 p-1 flex items-center justify-center">
-                            <img src={photo.imageData} alt={photo.caption || ''} className="max-h-[300px] w-auto max-w-full object-contain rounded" />
+                        <div key={photo.id || pIdx} className="border border-line rounded-xl overflow-hidden bg-bg p-2 space-y-1 print:border-slate-300 print:bg-white print:p-1.5 flex flex-col print:break-inside-avoid">
+                          <div className="w-full min-h-[120px] max-h-[260px] print:min-h-0 print:h-[120px] overflow-hidden rounded-lg bg-slate-50 dark:bg-slate-900/40 p-1 flex items-center justify-center">
+                            <img src={photo.imageData} alt={photo.caption || ''} className="max-h-[240px] print:max-h-[115px] w-auto max-w-full object-contain rounded" />
                           </div>
                           {photo.caption && (
-                            <p className="text-[11px] font-bold text-ink truncate">{photo.caption}</p>
+                            <p className="text-[11px] font-bold text-ink truncate print:text-[8.5pt] print:mt-1">{photo.caption}</p>
                           )}
                         </div>
                       ))}
@@ -1684,8 +1696,11 @@ export const WeeklyTab: React.FC = () => {
                 )
               )}
 
-              {/* Formal Supervisory Approval & Stamp Block (For Official Print & Defense) */}
-              <div className="border border-line rounded-2xl overflow-hidden bg-card text-start break-inside-avoid print:border-none print:shadow-none print:bg-transparent endorsement-box-print">
+              {/* Formal Supervisory Approval & Stamp Block (For Official Print & Defense - Kept in SAME Page) */}
+              <div
+                className="border border-line rounded-2xl overflow-hidden bg-card text-start break-inside-avoid print:border-none print:shadow-none print:bg-transparent endorsement-box-print print:mt-3"
+                style={{ pageBreakBefore: 'avoid', breakBefore: 'avoid' }}
+              >
                 <div className="bg-bg px-5 py-3 border-b border-line flex items-center justify-between print:bg-transparent print:px-0 print:border-b-2 print:border-slate-800" dir={isAr ? 'rtl' : 'ltr'}>
                   <span className="text-xs font-black text-ink">{t('المصادقة والاعتماد الميداني الرسمي', 'Official Field Supervisory Endorsement')}</span>
                   <span className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-lg border border-slate-200 dark:border-slate-700 shrink-0">{entityName}</span>

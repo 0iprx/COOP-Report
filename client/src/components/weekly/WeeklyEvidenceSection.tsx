@@ -327,28 +327,28 @@ export const WeeklyEvidenceSection: React.FC<Props> = ({ weekIndex, traineeId, r
           لم يتم إرفاق صور توثيقية لهذا الأسبوع حتى الآن.
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 print:grid-cols-2 gap-3 print:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 print:grid-cols-3 gap-3 print:gap-2.5">
           {photos.map((photo, idx) => (
             <div
               key={photo.id}
-              className="group border border-line rounded-xl overflow-hidden bg-bg/50 hover:border-accent/40 transition-all flex flex-col justify-between print:border-line print:bg-white print:break-inside-avoid"
+              className="group border border-line rounded-xl overflow-hidden bg-bg/50 hover:border-accent/40 transition-all flex flex-col justify-between print:border-line print:bg-white print:break-inside-avoid print:p-1.5"
             >
               <div
                 onClick={() => setSelectedImageForZoom(photo)}
-                className="cursor-pointer overflow-hidden min-h-[160px] max-h-[360px] relative bg-slate-50 dark:bg-slate-900/40 p-1.5 flex items-center justify-center print:cursor-default"
+                className="cursor-pointer overflow-hidden min-h-[160px] max-h-[360px] print:min-h-0 print:h-[120px] relative bg-slate-50 dark:bg-slate-900/40 p-1.5 flex items-center justify-center print:cursor-default"
               >
                 <img
                   src={photo.imageData}
                   alt={photo.caption}
-                  className="max-h-[340px] w-auto max-w-full object-contain group-hover:scale-105 transition-transform duration-200 print:transform-none rounded"
+                  className="max-h-[340px] print:max-h-[115px] w-auto max-w-full object-contain group-hover:scale-105 transition-transform duration-200 print:transform-none rounded"
                 />
                 <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-ink/70 text-white text-[9px] font-bold no-print print:hidden">
                   انقر للتكبير
                 </span>
               </div>
 
-              <div className="p-2.5 flex-1 flex flex-col justify-between gap-2">
-                <p className="text-ink text-[11px] font-bold leading-snug line-clamp-2 print:line-clamp-none print:text-xs">
+              <div className="p-2.5 print:p-1.5 flex-1 flex flex-col justify-between gap-2">
+                <p className="text-ink text-[11px] font-bold leading-snug line-clamp-2 print:line-clamp-none print:text-[8.5pt]">
                   <span className="text-accent font-extrabold ml-1">شكل ({idx + 1}):</span>
                   {photo.caption}
                 </p>
