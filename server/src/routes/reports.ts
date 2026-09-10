@@ -6,7 +6,7 @@ import { generateAcademicDocx, generateWeeklyDocx } from '../services/docxServic
 import { generateStandaloneHTMLReport } from '../services/htmlReportService.js';
 import { generatePresentationBuffer } from '../services/presentationService.js';
 import { calculateHoursBetween, getWeekEnd, getWeekStart, inferProfessionalCategory, elevateTaskTitle, polishAcademicNarrative } from '@coop/shared';
-import { rewriteEntryAcademically } from '../services/aiService.js';
+import { rewriteEntryAcademically, processTextWithAI } from '../services/aiService.js';
 import { logger } from '../logger.js';
 
 const router = Router();
@@ -176,6 +176,193 @@ router.post('/weekly/audit-polish', async (req: AuthenticatedRequest, res: Respo
   } catch (err) {
     logger.error({ err }, 'Error in audit-polish weekly report');
     res.status(500).json({ error: 'تعذر تدقيق وإعادة صياغة مهام الأسبوع' });
+  }
+});
+
+// POST /api/reports/weekly/translate
+// Translates titles, descriptions, and categories of all tasks in the week or custom scope between Arabic and English
+router.post('/weekly/translate', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const targetUserId = await resolveTargetUserId(req);
+    if (!targetUserId) {
+      res.status(403).json({ error: 'غير مصرح لك بتعديل بيانات هذا المتدرب' });
+      return;
+    }
+
+    const targetLang: 'ar' | 'en' = req.body.targetLang === 'ar' ? 'ar' : 'en';
+    let weekStart = (req.query.week as string) || (req.body.week as string);
+    const startDate = req.body.startDate as string | undefined;
+    const endDate = req.body.endDate as string | undefined;
+    const entryIds = req.body.entryIds as number[] | undefined;
+
+    let entries: any[] = [];
+
+    if (Array.isArray(entryIds) && entryIds.length > 0) {
+      entries = await prisma.entry.findMany({
+        where: {
+          id: { in: entryIds },
+          userId: targetUserId,
+          deletedAt: null
+        },
+        orderBy: { entryDate: 'asc' }
+      });
+    } else if (startDate && endDate) {
+      entries = await prisma.entry.findMany({
+        where: {
+          userId: targetUserId,
+          deletedAt: null,
+          entryDate: {
+            gte: startDate,
+            lte: endDate
+          }
+        },
+        orderBy: { entryDate: 'asc' }
+      });
+    } else {
+      if (!weekStart) {
+        const latest = await prisma.entry.findFirst({
+          where: { userId: targetUserId, deletedAt: null },
+          orderBy: { entryDate: 'desc' }
+        });
+        weekStart = latest ? getWeekStart(latest.entryDate) : getWeekStart(new Date().toISOString().split('T')[0]);
+      }
+      const weekEnd = getWeekEnd(weekStart);
+
+      entries = await prisma.entry.findMany({
+        where: {
+          userId: targetUserId,
+          deletedAt: null,
+          entryDate: {
+            gte: weekStart,
+            lte: weekEnd
+          }
+        },
+        orderBy: { entryDate: 'asc' }
+      });
+    }
+
+    if (entries.length === 0) {
+      res.status(400).json({ error: 'لا توجد مهام مسجلة في هذه الفترة للترجمة' });
+      return;
+    }
+
+    const userApiKey = (req.headers['x-gemini-key'] as string) || (req.body as any)?.apiKey || (req.query.apiKey as string);
+    const userModel = (req.headers['x-ai-model'] as string) || (req.body as any)?.model;
+
+    const categoryMapArToEn: Record<string, string> = {
+      'هندسة الشبكات وتراسل البيانات': 'Network Engineering & Data Transmission',
+      'شبكات النفاذ والألياف الضوئية (FTTH)': 'Access Networks & Fiber Optics (FTTH)',
+      'شبكات الاتصالات اللاسلكية والجيل الخامس (5G)': 'Wireless Telecom & 5G Networks',
+      'إدارة الأعطال والتشغيل ومراقبة الأنظمة (NOC)': 'Incident Management, Operations & NOC',
+      'أمن المعلومات والأمن السيبراني': 'Information Security & Cybersecurity',
+      'الدعم الفني الميداني وصيانة النظم': 'Field Technical Support & Systems Maintenance',
+      'تطوير وهندسة البرمجيات والأنظمة': 'Software & Systems Engineering',
+      'الحوسبة السحابية وإدارة الخوادم': 'Cloud Computing & Server Administration',
+      'الاجتماعات الفنية والتخطيط التشغيلي': 'Technical Meetings & Operational Planning',
+      'التوثيق الهندسي وضبط الجودة': 'Engineering Documentation & Quality Control',
+      'تطوير / برمجة': 'Software Development',
+      'دعم فني': 'Technical Support',
+      'اجتماعات': 'Meetings',
+      'تدريب وتعلّم': 'Training & Learning',
+      'توثيق': 'Documentation',
+      'شبكات': 'Networking',
+      'أنظمة': 'Systems',
+      'أمن سيبراني': 'Cybersecurity',
+      'صيانة ودعم فني': 'Maintenance & Technical Support',
+      'برمجة وتطوير': 'Software Development',
+      'إدارة مشاريع': 'Project Management',
+      'قواعد بيانات': 'Databases',
+      'أخرى': 'Other'
+    };
+
+    const categoryMapEnToAr: Record<string, string> = Object.entries(categoryMapArToEn).reduce((acc, [ar, en]) => {
+      acc[en] = ar;
+      return acc;
+    }, {} as Record<string, string>);
+
+    const updatedList = [];
+
+    for (const entry of entries) {
+      // 1. Snapshot revision before modifying (Zero Data Loss Guarantee)
+      try {
+        await prisma.entryRevision.create({
+          data: {
+            entryId: entry.id,
+            title: entry.title,
+            category: entry.category,
+            description: entry.description,
+            timeFrom: entry.timeFrom,
+            timeTo: entry.timeTo
+          }
+        });
+      } catch (revErr) {
+        logger.warn({ revErr }, 'Non-fatal: failed to archive revision during weekly translate');
+      }
+
+      // 2. Translate Title
+      let translatedTitle = entry.title;
+      try {
+        translatedTitle = await processTextWithAI({
+          text: entry.title,
+          action: 'translate',
+          targetLang,
+          apiKey: userApiKey,
+          model: userModel
+        });
+        translatedTitle = translatedTitle.replace(/^["'«»]+|["'«»]+$/g, '').trim() || entry.title;
+      } catch (err) {
+        logger.warn({ err, entryId: entry.id }, 'Translation of title fell back to original');
+      }
+
+      // 3. Translate Description
+      let translatedDesc = entry.description;
+      try {
+        translatedDesc = await processTextWithAI({
+          text: entry.description,
+          action: 'translate',
+          targetLang,
+          apiKey: userApiKey,
+          model: userModel
+        });
+        translatedDesc = translatedDesc.trim() || entry.description;
+      } catch (err) {
+        logger.warn({ err, entryId: entry.id }, 'Translation of description fell back to original');
+      }
+
+      // 4. Translate Category
+      let translatedCategory = entry.category;
+      if (targetLang === 'en') {
+        translatedCategory = categoryMapArToEn[entry.category] || entry.category;
+      } else {
+        translatedCategory = categoryMapEnToAr[entry.category] || entry.category;
+      }
+
+      // 5. Update Entry
+      const updated = await prisma.entry.update({
+        where: { id: entry.id },
+        data: {
+          title: translatedTitle,
+          category: translatedCategory,
+          description: translatedDesc
+        }
+      });
+
+      updatedList.push(updated);
+    }
+
+    logger.info({ userId: targetUserId, targetLang, count: updatedList.length }, 'Successfully translated weekly report entries');
+
+    res.json({
+      message: targetLang === 'en'
+        ? `تمت ترجمة محتوى مهام التقرير (${updatedList.length} مهمة) إلى اللغة الإنجليزية بنجاح مع حفظ نسخة احتياطية لكافة السجلات`
+        : `تمت ترجمة محتوى مهام التقرير (${updatedList.length} مهمة) إلى اللغة العربية بنجاح مع حفظ نسخة احتياطية لكافة السجلات`,
+      updatedCount: updatedList.length,
+      entries: updatedList,
+      targetLang
+    });
+  } catch (err) {
+    logger.error({ err }, 'Error in translate weekly report');
+    res.status(500).json({ error: 'تعذر ترجمة محتوى تقرير الأسبوع' });
   }
 });
 

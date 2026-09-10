@@ -49,6 +49,7 @@ export const WeeklyTab: React.FC = () => {
   const [downloadingPptx, setDownloadingPptx] = useState<boolean>(false);
   const [downloadingDocx, setDownloadingDocx] = useState<boolean>(false);
   const [isAuditingWeek, setIsAuditingWeek] = useState<boolean>(false);
+  const [isTranslatingWeek, setIsTranslatingWeek] = useState<boolean>(false);
 
   // Report Mode: Weekly Scheduled vs Custom Date Range
   const [reportMode, setReportMode] = useState<'weekly' | 'custom'>('weekly');
@@ -309,6 +310,53 @@ export const WeeklyTab: React.FC = () => {
       setTimeout(() => setErrorToast(''), 3500);
     } finally {
       setIsAuditingWeek(false);
+    }
+  };
+
+  // AI-powered Report Content Translation between Arabic and English (Zero Data Loss with Revisions)
+  const handleTranslateWeekEntries = async (targetLang: 'ar' | 'en') => {
+    if (!activeEntries || activeEntries.length === 0) {
+      setErrorToast(t('لا توجد مهام أو سجلات في هذه الفترة لترجمتها', 'No tasks to translate in this period'));
+      setTimeout(() => setErrorToast(''), 3000);
+      return;
+    }
+
+    const confirmMsg = targetLang === 'en'
+      ? (isAr
+          ? `هل تريد ترجمة محتوى مهام هذا التقرير (${activeEntries.length} مهمة) بالكامل إلى اللغة الإنجليزية بالذكاء الاصطناعي؟\n\n• تشمل الترجمة: عناوين المهام، السرد الفني، والتصنيفات الهندسية.\n• سيتم تلقائياً حفظ نسخة احتياطية لكافة السجلات في سجل التعديلات (Revisions) مع إمكانية التراجع بأي وقت.`
+          : `Translate all ${activeEntries.length} tasks in this report to English via AI?\n\n• Translates titles, technical descriptions, and categories.\n• Automatic revision backups are saved to ensure zero data loss.`)
+      : (isAr
+          ? `هل تريد ترجمة محتوى مهام هذا التقرير (${activeEntries.length} مهمة) بالكامل إلى اللغة العربية بالذكاء الاصطناعي؟\n\n• تشمل الترجمة: عناوين المهام، السرد الفني، والتصنيفات الهندسية.\n• سيتم تلقائياً حفظ نسخة احتياطية لكافة السجلات في سجل التعديلات (Revisions) مع إمكانية التراجع بأي وقت.`
+          : `Translate all ${activeEntries.length} tasks in this report to Arabic via AI?\n\n• Translates titles, technical descriptions, and categories.\n• Automatic revision backups are saved to ensure zero data loss.`);
+
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      setIsTranslatingWeek(true);
+      const payload = reportMode === 'custom'
+        ? { entryIds: activeEntries.map((e) => e.id), targetLang }
+        : { week: selectedWeek, targetLang };
+
+      const res = await api.post('/reports/weekly/translate', payload);
+
+      setLang(targetLang);
+
+      await queryClient.invalidateQueries({ queryKey: ['weekly', selectedWeek] });
+      await queryClient.invalidateQueries({ queryKey: ['finalReport'] });
+      await queryClient.invalidateQueries({ queryKey: ['entries'] });
+
+      setSaveToast(
+        res.data?.message ||
+          (targetLang === 'en'
+            ? 'تمت ترجمة محتوى التقرير إلى الإنجليزية بنجاح مع حفظ نسخة احتياطية!'
+            : 'تمت ترجمة محتوى التقرير إلى العربية بنجاح مع حفظ نسخة احتياطية!')
+      );
+      setTimeout(() => setSaveToast(''), 4500);
+    } catch (err: any) {
+      setErrorToast(err?.response?.data?.error || t('تعذر ترجمة محتوى التقرير، يرجى المحاولة لاحقاً', 'Failed to translate report content'));
+      setTimeout(() => setErrorToast(''), 3500);
+    } finally {
+      setIsTranslatingWeek(false);
     }
   };
 
@@ -600,6 +648,30 @@ export const WeeklyTab: React.FC = () => {
             >
               <Sparkles className="w-3.5 h-3.5 text-white" />
               <span>{t('الصياغة الأكاديمية بالذكاء الاصطناعي', 'Academic AI Rewrite')}</span>
+            </button>
+
+            {/* AI Report Translation Button (AR ⇄ EN) */}
+            <button
+              type="button"
+              onClick={() => handleTranslateWeekEntries(lang === 'ar' ? 'en' : 'ar')}
+              disabled={isTranslatingWeek || activeEntries.length === 0}
+              className={`px-3.5 py-1.5 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 shadow-sm text-white ${
+                isTranslatingWeek
+                  ? 'bg-purple-600 animate-pulse'
+                  : 'bg-purple-600 hover:bg-purple-700'
+              } disabled:opacity-50`}
+              title={
+                lang === 'ar'
+                  ? 'ترجمة محتوى التقرير بالكامل (عناوين، تفاصيل أنشطة، تصنيفات) إلى الإنجليزية بالذكاء الاصطناعي مع حفظ نسخة احتياطية'
+                  : 'Translate entire report content (titles, activities, categories) to Arabic via AI with automatic revision backup'
+              }
+            >
+              <Languages className={`w-3.5 h-3.5 ${isTranslatingWeek ? 'animate-spin' : ''}`} />
+              <span>
+                {isTranslatingWeek
+                  ? (lang === 'ar' ? 'جارٍ ترجمة التقرير للإنجليزية...' : 'Translating report to Arabic...')
+                  : (lang === 'ar' ? 'ترجمة محتوى التقرير (English)' : 'ترجمة محتوى التقرير (عربي)')}
+              </span>
             </button>
 
             <button
