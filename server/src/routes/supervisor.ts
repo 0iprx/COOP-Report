@@ -63,6 +63,33 @@ router.post('/link', async (req: AuthenticatedRequest, res: Response): Promise<v
   }
 });
 
+// POST /api/supervisor/unlink (Called by Trainee to remove supervisor link)
+router.post('/unlink', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    await prisma.user.update({
+      where: { id: req.user!.userId },
+      data: { supervisorId: null }
+    });
+
+    await logAuditEvent({
+      userId: req.user!.userId,
+      tenantId: req.user!.tenantId,
+      action: 'TRAINEE_UNLINK_SUPERVISOR',
+      entityType: 'SUPERVISOR',
+      entityId: null,
+      metadata: {},
+      req
+    });
+
+    logger.info({ traineeId: req.user!.userId }, 'Trainee unlinked supervisor');
+
+    res.json({ message: 'تم فك ربط المشرف بنجاح' });
+  } catch (err) {
+    logger.error({ err }, 'Error unlinking supervisor');
+    res.status(500).json({ error: 'تعذر فك ربط المشرف' });
+  }
+});
+
 // POST /api/supervisor/submit-report (Called by Trainee to submit their report for review)
 router.post('/submit-report', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
