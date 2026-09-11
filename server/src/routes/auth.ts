@@ -337,4 +337,71 @@ router.get('/me', authenticate, async (req: AuthenticatedRequest, res: Response)
   }
 });
 
+// Update Account (Username and/or Password)
+router.put('/update-account', authenticate, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.userId;
+    const { username, password } = req.body;
+
+    if (!username && !password) {
+      res.status(400).json({ error: 'يرجى تقديم اسم المستخدم أو كلمة المرور الجديدة' });
+      return;
+    }
+
+    const updateData: { username?: string; passwordHash?: string } = {};
+
+    if (username && typeof username === 'string') {
+      const trimmed = username.trim();
+      if (trimmed.length < 3) {
+        res.status(400).json({ error: 'اسم المستخدم يجب ألا يقل عن 3 أحرف' });
+        return;
+      }
+      const existing = await prisma.user.findUnique({ where: { username: trimmed } });
+      if (existing && existing.id !== userId) {
+        res.status(400).json({ error: 'اسم المستخدم مسجل مسبقاً، يرجى اختيار اسم آخر' });
+        return;
+      }
+      updateData.username = trimmed;
+    }
+
+    if (password && typeof password === 'string' && password.trim()) {
+      if (password.length < 6) {
+        res.status(400).json({ error: 'كلمة المرور يجب ألا تقل عن 6 أحرف' });
+        return;
+      }
+      updateData.passwordHash = await bcrypt.hash(password, 12);
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+      select: {
+        id: true,
+        username: true,
+        role: true,
+        supervisorId: true,
+        tenantId: true
+      }
+    });
+
+    await logAuditEvent({
+      userId,
+      tenantId: req.user!.tenantId || 'default_tenant',
+      action: 'USER_UPDATE_CREDENTIALS',
+      entityType: 'USER',
+      entityId: userId,
+      metadata: { changedUsername: !!updateData.username, changedPassword: !!updateData.passwordHash },
+      req
+    });
+
+    res.json({
+      message: 'تم تحديث بيانات الحساب بنجاح',
+      user: updatedUser
+    });
+  } catch (err) {
+    logger.error({ err }, 'Error updating account credentials');
+    res.status(500).json({ error: 'تعذر تحديث بيانات الحساب' });
+  }
+});
+
 export default router;
