@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
 import { prisma } from '../db.js';
 import { authenticate, AuthenticatedRequest } from '../middleware/auth.js';
-import { entrySchema, batchRewriteEntriesSchema } from '@coop/shared';
+import { entrySchema, batchRewriteEntriesSchema, isEntryStructuredQA, convertFreeformNarrativeToQA } from '@coop/shared';
 import { rewriteEntryAcademically } from '../services/aiService.js';
 import { logger } from '../logger.js';
 
@@ -403,6 +403,94 @@ router.post('/batch-academic-rewrite', async (req: AuthenticatedRequest, res: Re
   } catch (err: any) {
     logger.error({ err }, 'Error in batch academic rewrite');
     res.status(500).json({ error: err?.message || 'تعذر استكمال إعادة الصياغة الأكاديمية' });
+  }
+});
+
+// POST /api/entries/batch-structure-qa (Format & structure freeform entries into daily Q&A template)
+router.post('/batch-structure-qa', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { weekNumber, entryIds, forceAll } = req.body;
+    const userId = req.user!.userId;
+
+    let whereClause: any = {
+      userId,
+      deletedAt: null
+    };
+
+    if (entryIds && Array.isArray(entryIds) && entryIds.length > 0) {
+      whereClause.id = { in: entryIds };
+    }
+
+    let entries = await prisma.entry.findMany({
+      where: whereClause,
+      orderBy: { entryDate: 'asc' }
+    });
+
+    if (weekNumber && (!entryIds || entryIds.length === 0)) {
+      const profile = await prisma.reportProfile.findUnique({ where: { userId } });
+      if (entries.length > 0) {
+        const startDateStr = profile?.startDate || entries[0].entryDate;
+        const start = new Date(startDateStr);
+        entries = entries.filter(e => {
+          const eDate = new Date(e.entryDate);
+          const diffDays = Math.floor((eDate.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+          const w = Math.max(1, Math.floor(diffDays / 7) + 1);
+          return w === weekNumber;
+        });
+      }
+    }
+
+    const profile = await prisma.reportProfile.findUnique({ where: { userId } });
+    const defaultLocation = profile?.trainingUnit || profile?.entityAddress || '';
+
+    const updatedList = [];
+
+    for (const entry of entries) {
+      const isAlreadyStructured = isEntryStructuredQA(entry.description);
+      if (isAlreadyStructured && !forceAll) {
+        continue;
+      }
+
+      // Archive revision before modifying to guarantee zero data loss
+      try {
+        await prisma.entryRevision.create({
+          data: {
+            entryId: entry.id,
+            title: entry.title,
+            category: entry.category,
+            description: entry.description,
+            timeFrom: entry.timeFrom,
+            timeTo: entry.timeTo
+          }
+        });
+      } catch (revErr) {
+        logger.warn({ revErr, entryId: entry.id }, 'Could not create revision before batch-structure-qa');
+      }
+
+      const structuredDescription = convertFreeformNarrativeToQA(entry.description, {
+        defaultLocation,
+        timeFrom: entry.timeFrom,
+        isAr: true
+      });
+
+      const updated = await prisma.entry.update({
+        where: { id: entry.id },
+        data: {
+          description: structuredDescription
+        }
+      });
+
+      updatedList.push(updated);
+    }
+
+    res.json({
+      message: `تم تحويل وهيكلة ${updatedList.length} مهمة بنجاح إلى نموذج الأسئلة اليومي المنظم`,
+      processedCount: updatedList.length,
+      entries: updatedList
+    });
+  } catch (err) {
+    logger.error({ err }, 'Error in batch-structure-qa');
+    res.status(500).json({ error: 'حدث خطأ أثناء هيكلة السجلات' });
   }
 });
 

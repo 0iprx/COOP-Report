@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
-import { FinalReportData, EntryDTO, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis, formatWeekPeriod, ENTRY_CATEGORIES, elevateTaskTitle, normalizeStudentName, polishAcademicNarrative, convertBulletsToCohesiveParagraphs } from '@coop/shared';
+import { FinalReportData, EntryDTO, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis, formatWeekPeriod, ENTRY_CATEGORIES, elevateTaskTitle, normalizeStudentName, polishAcademicNarrative, convertBulletsToCohesiveParagraphs, isEntryStructuredQA } from '@coop/shared';
 import { WeeklyEvidenceSection } from './WeeklyEvidenceSection';
 import {
   Calendar,
@@ -32,11 +32,13 @@ import {
   Award,
   Sun,
   Moon,
-  Globe
+  Globe,
+  ListChecks
 } from 'lucide-react';
 import { DiffModal } from '../common/DiffModal';
 import { BatchRewriteModal } from '../common/BatchRewriteModal';
 import { ProceduralNarrativeView } from '../common/ProceduralNarrativeView';
+import { DailyFormatAuditModal } from './DailyFormatAuditModal';
 
 const CATEGORIES = ENTRY_CATEGORIES;
 
@@ -146,6 +148,7 @@ export const WeeklyTab: React.FC = () => {
   const { lang, setLang, isAr, t } = useLanguage();
   const { theme, toggleTheme, isDark } = useTheme();
   const [batchModalOpen, setBatchModalOpen] = useState<boolean>(false);
+  const [auditModalOpen, setAuditModalOpen] = useState<boolean>(false);
   const [selectedWeek, setSelectedWeek] = useState<string>('');
   const [copied, setCopied] = useState<boolean>(false);
   const [downloadingPptx, setDownloadingPptx] = useState<boolean>(false);
@@ -276,6 +279,9 @@ export const WeeklyTab: React.FC = () => {
   const activeEntries: EntryDTO[] = reportMode === 'custom'
     ? filteredCustomEntries
     : (weekReport?.entries || []);
+
+  const activeStructuredCount = activeEntries.filter((e) => isEntryStructuredQA(e.description)).length;
+  const activeFreeformCount = activeEntries.length - activeStructuredCount;
 
   const activeTotalHours = activeEntries.reduce((acc, e) => {
     return acc + calculateHoursBetween(e.timeFrom || '08:00', e.timeTo || '16:00');
@@ -631,9 +637,16 @@ export const WeeklyTab: React.FC = () => {
   };
 
   // Helper to render procedural narrative with classified sections or cohesive paragraphs
-  const renderProceduralNarrative = (rawText: string) => {
+  const renderProceduralNarrative = (rawText: string, entryTimeFrom?: string) => {
     if (!rawText) return null;
-    return <ProceduralNarrativeView rawText={rawText} isAr={isAr} />;
+    return (
+      <ProceduralNarrativeView
+        rawText={rawText}
+        isAr={isAr}
+        defaultLocation={entityName}
+        defaultPeriod={entryTimeFrom && parseInt(entryTimeFrom.split(':')[0], 10) >= 13 ? (isAr ? 'مسائيًا' : 'Evening') : (isAr ? 'صباحًا' : 'Morning')}
+      />
+    );
   };
 
   // AI Enhancement State for Day Editing Modal
@@ -727,6 +740,30 @@ export const WeeklyTab: React.FC = () => {
             >
               <Sparkles className="w-3.5 h-3.5 text-white" />
               <span>{t('الصياغة الأكاديمية بالذكاء الاصطناعي', 'Academic AI Rewrite')}</span>
+            </button>
+
+            {/* Audit & Enforce Daily Q&A Format Button */}
+            <button
+              type="button"
+              onClick={() => setAuditModalOpen(true)}
+              className={`px-3.5 py-1.5 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 shadow-sm text-white ${
+                activeFreeformCount > 0
+                  ? 'bg-gradient-to-r from-teal-600 to-emerald-700 hover:from-teal-700 hover:to-emerald-800 ring-2 ring-amber-400/50'
+                  : 'bg-teal-700 hover:bg-teal-800'
+              }`}
+              title={t('فحص نمط تدوين مهام الأسبوع (نموذج الأسئلة vs النظام الحر) وتوحيدها بالتقرير لطباعتها', 'Audit daily logging style (Q&A vs Freeform) and format for print')}
+            >
+              <ListChecks className="w-3.5 h-3.5 text-white" />
+              <span>{t('فحص وتوحيد نمط التدوين', 'Audit & Apply Q&A Style')}</span>
+              {activeFreeformCount > 0 ? (
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-amber-300 text-slate-950">
+                  {activeFreeformCount} {isAr ? 'حر' : 'free'}
+                </span>
+              ) : (
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-white/20 text-white">
+                  ✓ {isAr ? 'منظم' : 'Q&A'}
+                </span>
+              )}
             </button>
 
             {/* AI Report Translation Button (AR ⇄ EN) */}
@@ -1204,6 +1241,35 @@ export const WeeklyTab: React.FC = () => {
               </div>
             )}
 
+            {/* Freeform to Q&A Style Alert & Action Banner */}
+            {activeFreeformCount > 0 && (
+              <div className="p-4 rounded-2xl bg-teal-50/95 dark:bg-teal-950/50 border-2 border-teal-300 dark:border-teal-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md no-print mb-5 text-start">
+                <div className="space-y-0.5">
+                  <div className="text-xs font-black text-teal-900 dark:text-teal-200 flex items-center gap-1.5">
+                    <ListChecks className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+                    <span>
+                      {isAr
+                        ? `تنبيه التنسيق الأكاديمي: تم رصد ${activeFreeformCount} مهام مدونة بالنظام الحر (بدون تقسيمات الأسئلة)`
+                        : `Formatting Alert: ${activeFreeformCount} tasks logged in freeform text`}
+                    </span>
+                  </div>
+                  <p className="text-[11.5px] text-teal-800 dark:text-teal-300 font-medium leading-relaxed">
+                    {isAr
+                      ? 'يمكنك فحص وهيكلة هذه المهام بنمط الأسئلة اليومي المنظم لتظهر بالتقرير ببطاقات (الموقع، الفترة، الإنجازات، التحديات، الجديد) وجاهزة للطباعة:'
+                      : 'You can audit and structure these tasks into the daily Q&A template (Location, Period, Achievements, Challenges, New Skills) for academic print:'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAuditModalOpen(true)}
+                  className="px-4 py-2.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-black text-xs shadow-md transition-all flex items-center justify-center gap-2 shrink-0"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>{isAr ? 'فحص وتوحيد النمط للطباعة' : 'Audit & Format for Print'}</span>
+                </button>
+              </div>
+            )}
+
             <div id="weekly-paper-view" className="printable-a4-sheet space-y-6">
             {/* Hidden File Inputs for Interactive Cover Page Logo Uploads */}
             <input
@@ -1607,7 +1673,7 @@ export const WeeklyTab: React.FC = () => {
                             {isAr ? 'السرد الإجرائي ونتائج التنفيذ الهندسي والميداني:' : 'Procedural Narrative & Engineering Results:'}
                           </div>
                           <div className="text-ink text-xs sm:text-sm leading-loose bg-bg/50 p-4 rounded-xl border border-line/60 procedural-narrative-box print:bg-transparent print:border-none print:p-0 print:text-sm print:leading-relaxed">
-                            {renderProceduralNarrative(entry.description)}
+                            {renderProceduralNarrative(entry.description, entry.timeFrom)}
                           </div>
                         </div>
                       </div>
@@ -2043,6 +2109,21 @@ export const WeeklyTab: React.FC = () => {
           queryClient.invalidateQueries({ queryKey: ['finalReport'] });
           queryClient.invalidateQueries({ queryKey: ['entries'] });
           setSaveToast(t('تمت إعادة صياغة وترتيب السجلات أكاديمياً بنجاح!', 'Entries academically restructured successfully!'));
+          setTimeout(() => setSaveToast(''), 3000);
+        }}
+      />
+
+      {/* Daily Format Audit & Q&A Structuring Modal */}
+      <DailyFormatAuditModal
+        isOpen={auditModalOpen}
+        onClose={() => setAuditModalOpen(false)}
+        entries={activeEntries}
+        weekNumber={currentWeekObj?.weekIndex || (reportMode === 'weekly' ? weekReport?.weekNumber : 1) || 1}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['weekly', selectedWeek] });
+          queryClient.invalidateQueries({ queryKey: ['finalReport'] });
+          queryClient.invalidateQueries({ queryKey: ['entries'] });
+          setSaveToast(t('تم توحيد وهيكلة مهام الأسبوع بنمط الأسئلة اليومي بنجاح!', 'Week tasks successfully unified into daily Q&A pattern!'));
           setTimeout(() => setSaveToast(''), 3000);
         }}
       />

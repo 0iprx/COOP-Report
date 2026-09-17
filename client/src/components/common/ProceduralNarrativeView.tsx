@@ -1,10 +1,13 @@
 import React from 'react';
-import { parseStructuredDailyNarrative, convertBulletsToCohesiveParagraphs } from '@coop/shared';
+import { parseStructuredDailyNarrative, convertBulletsToCohesiveParagraphs, convertFreeformNarrativeToQA } from '@coop/shared';
 import { MapPin, Clock, FileText, CheckCircle2, AlertCircle, Sparkles } from 'lucide-react';
 
 interface ProceduralNarrativeViewProps {
   rawText: string;
   isAr?: boolean;
+  forceDailyQA?: boolean;
+  defaultLocation?: string;
+  defaultPeriod?: string;
 }
 
 export const translateSectionHeader = (header: string, isAr: boolean) => {
@@ -77,10 +80,26 @@ export const translateSectionHeader = (header: string, isAr: boolean) => {
   return headerMap[clean] || clean;
 };
 
-export const ProceduralNarrativeView: React.FC<ProceduralNarrativeViewProps> = ({ rawText, isAr = true }) => {
+export const ProceduralNarrativeView: React.FC<ProceduralNarrativeViewProps> = ({
+  rawText,
+  isAr = true,
+  forceDailyQA = false,
+  defaultLocation,
+  defaultPeriod
+}) => {
   if (!rawText || !rawText.trim()) return null;
 
-  const parsed = parseStructuredDailyNarrative(rawText);
+  let textToParse = rawText;
+  let parsed = parseStructuredDailyNarrative(textToParse);
+
+  if (forceDailyQA && !parsed.hasStructuredSections) {
+    textToParse = convertFreeformNarrativeToQA(rawText, {
+      defaultLocation,
+      defaultPeriod,
+      isAr
+    });
+    parsed = parseStructuredDailyNarrative(textToParse);
+  }
 
   // If guided / classified sections exist, render the structured academic layout
   if (parsed && parsed.hasStructuredSections) {

@@ -1014,3 +1014,131 @@ export function parseStructuredDailyNarrative(raw: string = ''): StructuredDaily
     hasStructuredSections
   };
 }
+
+/**
+ * Checks whether an entry narrative was written with the structured Q&A format or in freeform.
+ */
+export function isEntryStructuredQA(raw: string = ''): boolean {
+  if (!raw || !raw.trim()) return false;
+  const parsed = parseStructuredDailyNarrative(raw);
+  return Boolean(parsed.hasStructuredSections && (parsed.achievements || parsed.challenges || parsed.newLearnings || (parsed.location && parsed.period)));
+}
+
+/**
+ * Converts a freeform narrative into the structured Daily Q&A pattern:
+ * - Period (الفترة)
+ * - Location (الموقع)
+ * - Activities (المهام الإجرائية)
+ * - Achievements (الإنجازات)
+ * - Challenges (المشاكل والتحديات)
+ * - New Learnings (الجديد والمعارف)
+ */
+export function convertFreeformNarrativeToQA(
+  rawText: string = '',
+  options: {
+    defaultPeriod?: string;
+    defaultLocation?: string;
+    isAr?: boolean;
+    timeFrom?: string;
+  } = {}
+): string {
+  const trimmed = rawText.trim();
+  if (!trimmed) return '';
+
+  const isAr = options.isAr !== false;
+  // If already structured, return as is (normalized)
+  const alreadyParsed = parseStructuredDailyNarrative(trimmed);
+  if (alreadyParsed.hasStructuredSections && (alreadyParsed.achievements || alreadyParsed.challenges || alreadyParsed.newLearnings)) {
+    return trimmed;
+  }
+
+  // Determine period
+  let period = options.defaultPeriod || '';
+  if (!period) {
+    if (options.timeFrom) {
+      const hour = parseInt(options.timeFrom.split(':')[0], 10);
+      if (!isNaN(hour)) {
+        period = hour >= 13 ? (isAr ? 'مسائيًا' : 'Evening') : (isAr ? 'صباحًا' : 'Morning');
+      }
+    }
+    if (!period) {
+      const perMatch = trimmed.match(/(?:الفترة|Period)\s*[:：]\s*([^|\n.]+)/i) ||
+        trimmed.match(/(صباح[اً|ا]|مساءً|مسائياً|شفت صباحي|شفت مسائي|Morning|Evening)/i);
+      period = perMatch ? perMatch[1].trim() : (isAr ? 'صباحًا' : 'Morning');
+    }
+  }
+
+  // Determine location
+  let location = options.defaultLocation || '';
+  if (!location) {
+    const locMatch = trimmed.match(/(?:الموقع|Location|مقر|فرع|مبنى)\s*[:：]\s*([^|\n.]+)/i) ||
+      trimmed.match(/(?:في|بمقر|بفرع)\s+(شركة\s+[^.،\n]+|مقر\s+[^.،\n]+|موقع\s+[^.،\n]+)/i);
+    if (locMatch) location = locMatch[1].trim();
+  }
+
+  let activities = trimmed;
+  let achievements = alreadyParsed.achievements || '';
+  let challenges = alreadyParsed.challenges || '';
+  let newLearnings = alreadyParsed.newLearnings || '';
+
+  // Extract achievements if present in narrative
+  if (!achievements) {
+    const achMatch = activities.match(/(?:تم تحقيق|تم إنجاز|الإنجاز|المخرجات المتحققة|نجحنا في|تمكنا من|Successfully|achieved|accomplished)\s*[:：]?\s*([^.]+?(?:\.|$))/i);
+    if (achMatch) {
+      achievements = achMatch[0].replace(/^(?:تم تحقيق|تم إنجاز|الإنجاز|المخرجات المتحققة|نجحنا في|تمكنا من|Successfully|achieved|accomplished)\s*[:：]?\s*/i, '').trim();
+      activities = activities.replace(achMatch[0], '').trim();
+    }
+  }
+
+  // Extract challenges if present
+  if (!challenges) {
+    const chaMatch = activities.match(/(?:واجهتنا مشكلة|المشكلة|التحدي|الصعوبات|صعوبة في|عطل|عائق|Faced an issue|issue with|problem|challenge)\s*[:：]?\s*([^.]+?(?:\.|$))/i);
+    if (chaMatch) {
+      challenges = chaMatch[0].replace(/^(?:واجهتنا مشكلة|المشكلة|التحدي|الصعوبات|صعوبة في|عطل|عائق|Faced an issue|issue with|problem|challenge)\s*[:：]?\s*/i, '').trim();
+      activities = activities.replace(chaMatch[0], '').trim();
+    }
+  }
+
+  // Extract new learnings if present
+  if (!newLearnings) {
+    const lrnMatch = activities.match(/(?:اكتسبت|تعلمت|الجديد اليوم|المعارف المكتسبة|مهارة جديدة|Learned|acquired skill|new knowledge)\s*[:：]?\s*([^.]+?(?:\.|$))/i);
+    if (lrnMatch) {
+      newLearnings = lrnMatch[0].replace(/^(?:اكتسبت|تعلمت|الجديد اليوم|المعارف المكتسبة|مهارة جديدة|Learned|acquired skill|new knowledge)\s*[:：]?\s*/i, '').trim();
+      activities = activities.replace(lrnMatch[0], '').trim();
+    }
+  }
+
+  // If after extraction activities became empty, restore trimmed
+  if (!activities.trim()) {
+    activities = trimmed;
+  }
+
+  // If no achievements were found, summarize or state completion
+  if (!achievements) {
+    achievements = isAr
+      ? 'استكمال وإنجاز كافة المهام الميدانية الموكلة بدقة ووفق المعايير التشغيلية المعتمدة.'
+      : 'Successfully finalized all assigned operational tasks in compliance with field standards.';
+  }
+
+  // Clean activities of stray dots / dashes
+  activities = activities
+    .replace(/(?:الفترة|Period)\s*[:：][^\n|]+(?:\||\n|$)/gi, '')
+    .replace(/(?:الموقع|Location)\s*[:：][^\n|]+(?:\||\n|$)/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+
+  // Assemble into daily Q&A structure
+  const parts: string[] = [];
+  const meta: string[] = [];
+  if (period) meta.push(`${isAr ? 'الفترة:' : 'Period:'} ${period}`);
+  if (location) meta.push(`${isAr ? 'الموقع:' : 'Location:'} ${location}`);
+  if (meta.length > 0) parts.push(meta.join(' | '));
+
+  parts.push(activities);
+  if (achievements) parts.push(`${isAr ? 'الإنجاز:' : 'Accomplishments:'} ${achievements}`);
+  if (challenges) parts.push(`${isAr ? 'المشاكل:' : 'Challenges:'} ${challenges}`);
+  if (newLearnings) parts.push(`${isAr ? 'الجديد:' : 'New Learnings:'} ${newLearnings}`);
+
+  return parts.join('\n\n');
+}
+
