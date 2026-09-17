@@ -117,21 +117,21 @@ export const DailyLogTab: React.FC = () => {
     const perMatch = act.match(/(?:الفترة|Period)\s*[:：]\s*([^\n|]+)/i);
     if (perMatch) per = perMatch[1].trim();
 
-    const achMatch = act.match(/(?:الإنجاز|الإنجازات|Accomplishments?|Achievements?)\s*[:：]\s*([^\n]+)/i);
+    const achMatch = act.match(/(?:الإنجاز|الإنجازات|Accomplishments?|Achievements?)\s*[:：]\s*([\s\S]*?)(?=(?:\n\s*(?:المشاكل|التحديات|الصعوبات|Challenges?|Problems?|الجديد|المكتسب|المهارات المكتسبة|New Learnings?|Learned)\s*[:：]|$))/i);
     if (achMatch) ach = achMatch[1].trim();
 
-    const chaMatch = act.match(/(?:المشاكل|التحديات|الصعوبات|Challenges?|Problems?)\s*[:：]\s*([^\n]+)/i);
+    const chaMatch = act.match(/(?:المشاكل|التحديات|الصعوبات|Challenges?|Problems?)\s*[:：]\s*([\s\S]*?)(?=(?:\n\s*(?:الجديد|المكتسب|المهارات المكتسبة|New Learnings?|Learned)\s*[:：]|$))/i);
     if (chaMatch) cha = chaMatch[1].trim();
 
-    const lrnMatch = act.match(/(?:الجديد|المكتسب|المهارات المكتسبة|New Learnings?|Learned)\s*[:：]\s*([^\n]+)/i);
+    const lrnMatch = act.match(/(?:الجديد|المكتسب|المهارات المكتسبة|New Learnings?|Learned)\s*[:：]\s*([\s\S]*?)$/i);
     if (lrnMatch) lrn = lrnMatch[1].trim();
 
     act = act
       .replace(/(?:الفترة|Period)\s*[:：][^\n|]+(?:\||\n|$)/gi, '')
       .replace(/(?:الموقع|Location)\s*[:：][^\n|]+(?:\||\n|$)/gi, '')
-      .replace(/(?:الإنجاز|الإنجازات|Accomplishments?|Achievements?)\s*[:：][^\n]+/gi, '')
-      .replace(/(?:المشاكل|التحديات|الصعوبات|Challenges?|Problems?)\s*[:：][^\n]+/gi, '')
-      .replace(/(?:الجديد|المكتسب|المهارات المكتسبة|New Learnings?|Learned)\s*[:：][^\n]+/gi, '')
+      .replace(/(?:الإنجاز|الإنجازات|Accomplishments?|Achievements?)\s*[:：][\s\S]*?(?=(?:\n\s*(?:المشاكل|التحديات|الصعوبات|Challenges?|Problems?|الجديد|المكتسب|المهارات المكتسبة|New Learnings?|Learned)\s*[:：]|$))/gi, '')
+      .replace(/(?:المشاكل|التحديات|الصعوبات|Challenges?|Problems?)\s*[:：][\s\S]*?(?=(?:\n\s*(?:الجديد|المكتسب|المهارات المكتسبة|New Learnings?|Learned)\s*[:：]|$))/gi, '')
+      .replace(/(?:الجديد|المكتسب|المهارات المكتسبة|New Learnings?|Learned)\s*[:：][\s\S]*?$/gi, '')
       .trim();
 
     return { loc, per, ach, cha, lrn, act };
@@ -961,16 +961,19 @@ export const DailyLogTab: React.FC = () => {
                   <CheckCircle2 className="w-3.5 h-3.5 text-ok" />
                   <span>{t('أهم الإنجازات والمخرجات المتحققة (الإنجاز)', 'Key Achievements & Deliverables')}</span>
                 </label>
-                <input
-                  type="text"
+                <textarea
                   value={qaAchievements}
                   onChange={(e) => {
                     const v = e.target.value;
                     setQaAchievements(v);
                     setDescription(buildDescriptionFromQA(qaLocation, qaPeriod, qaActivities, v, qaChallenges, qaNewLearnings));
                   }}
-                  placeholder={t('مثال: استكمال إجراءات التدريب واستلام أدوات وحسابات العمل وتحديد مقر التدريب', 'e.g. Completed onboarding formalities, received laptop and accounts, confirmed training site')}
-                  className="w-full px-3 py-2 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent text-ink"
+                  rows={2}
+                  placeholder={t(
+                    'مثال: استكمال إجراءات التدريب واستلام أدوات وحسابات العمل...\n(يمكنك كتابة عدة أسطر ونقاط تحت بعضها)',
+                    'e.g. Completed onboarding formalities, received laptop and accounts...\n(You can enter multiple lines or bullet points)'
+                  )}
+                  className="w-full p-3 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent text-ink leading-relaxed resize-y min-h-[56px]"
                 />
               </div>
 
@@ -980,16 +983,19 @@ export const DailyLogTab: React.FC = () => {
                   <AlertCircle className="w-3.5 h-3.5 text-warn" />
                   <span>{t('المشاكل أو التحديات الفنية وطريقة معالجتها (المشاكل)', 'Technical Challenges & How Resolved')}</span>
                 </label>
-                <input
-                  type="text"
+                <textarea
                   value={qaChallenges}
                   onChange={(e) => {
                     const v = e.target.value;
                     setQaChallenges(v);
                     setDescription(buildDescriptionFromQA(qaLocation, qaPeriod, qaActivities, qaAchievements, v, qaNewLearnings));
                   }}
-                  placeholder={t('مثال: لا توجد حالات فنية خلال هذا اليوم (أو اذكر المشكلة وكيف تم حلها)', 'e.g. No technical issues encountered today (or mention problem & resolution)')}
-                  className="w-full px-3 py-2 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent text-ink"
+                  rows={2}
+                  placeholder={t(
+                    'مثال: لم أواجه أي مشاكل تقنية خلال اليوم (أو اذكر المشكلة وكيف تم حلها بالتفصيل)...',
+                    'e.g. No technical issues encountered today (or describe issues & how they were resolved)...'
+                  )}
+                  className="w-full p-3 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent text-ink leading-relaxed resize-y min-h-[56px]"
                 />
               </div>
 
@@ -999,16 +1005,19 @@ export const DailyLogTab: React.FC = () => {
                   <Sparkles className="w-3.5 h-3.5 text-accent" />
                   <span>{t('الجديد والمعارف والمهارات التي تم اكتسابها اليوم (الجديد)', 'New Knowledge & Acquired Skills Today')}</span>
                 </label>
-                <input
-                  type="text"
+                <textarea
                   value={qaNewLearnings}
                   onChange={(e) => {
                     const v = e.target.value;
                     setQaNewLearnings(v);
                     setDescription(buildDescriptionFromQA(qaLocation, qaPeriod, qaActivities, qaAchievements, qaChallenges, v));
                   }}
-                  placeholder={t('مثال: التعرف على بيئة العمل وإجراءات الانضمام والأقسام المرتبطة بالتدريب', 'e.g. Familiarization with work environment, organizational structure and onboarding workflows')}
-                  className="w-full px-3 py-2 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent text-ink"
+                  rows={2}
+                  placeholder={t(
+                    'مثال: التعرف على بيئة العمل وإجراءات الانضمام...\n(يمكنك كتابة عدة مهارات ومصطلحات تقنية تحت بعضها)',
+                    'e.g. Familiarization with work environment, onboarding workflows...\n(You can enter multiple skills & technical terms)'
+                  )}
+                  className="w-full p-3 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent text-ink leading-relaxed resize-y min-h-[56px]"
                 />
               </div>
             </div>
