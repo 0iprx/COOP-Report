@@ -943,3 +943,74 @@ export function convertBulletsToCohesiveParagraphs(rawText: string = ''): string
 
   return outputParts.join('\n\n');
 }
+
+export interface StructuredDailyNarrative {
+  location?: string;
+  period?: string;
+  activities: string;
+  achievements?: string;
+  challenges?: string;
+  newLearnings?: string;
+  hasStructuredSections: boolean;
+}
+
+/**
+ * Parses daily task narratives into classified sections (Period, Location, Activities, Achievements, Challenges, New Learnings).
+ * Detects both Arabic and English forms seamlessly.
+ */
+export function parseStructuredDailyNarrative(raw: string = ''): StructuredDailyNarrative {
+  if (!raw || !raw.trim()) {
+    return {
+      activities: '',
+      hasStructuredSections: false
+    };
+  }
+
+  let period = '';
+  let location = '';
+  let achievements = '';
+  let challenges = '';
+  let newLearnings = '';
+
+  const NEXT_SECTION_LOOKAHEAD = '(?=(?:\\n|\\.\\s*|\\s+)(?:Challenges?|Problems?|Issues?|المشاكل|التحديات|الصعوبات|New Learnings?|Key Learnings?|الجديد|المكتسب|المهارات المكتسبة)\\s*[:：]|$)';
+
+  const perMatch = raw.match(/(?:^|\s+|\|)(?:الفترة|Period)\s*[:：]\s*([^|\n.]+?)(?=\s*\||\n|\.\s+[A-Z\u0600-\u06FF]|$)/i);
+  if (perMatch) period = perMatch[1].trim();
+
+  const locMatch = raw.match(/(?:^|\s+|\|)(?:الموقع|Location)\s*[:：]\s*([^|\n.]+?)(?=\s*\||\n|\.\s+[A-Z\u0600-\u06FF]|$)/i);
+  if (locMatch) location = locMatch[1].trim();
+
+  const achRegex = new RegExp(`(?:Accomplishments?|Achievements?|Deliverables?|الإنجاز(?:ات)?|المخرجات|النتائج)\\s*[:：]\\s*([\\s\\S]*?)${NEXT_SECTION_LOOKAHEAD}`, 'i');
+  const achMatch = raw.match(achRegex);
+  if (achMatch) achievements = achMatch[1].replace(/[.،,\s]+$/, '').trim();
+
+  const NEXT_SECTION_CHA_LOOKAHEAD = '(?=(?:\\n|\\.\\s*|\\s+)(?:New Learnings?|Key Learnings?|الجديد|المكتسب|المهارات المكتسبة)\\s*[:：]|$)';
+  const chaRegex = new RegExp(`(?:Challenges?|Problems?|Issues?|المشاكل|التحديات|الصعوبات)\\s*[:：]\\s*([\\s\\S]*?)${NEXT_SECTION_CHA_LOOKAHEAD}`, 'i');
+  const chaMatch = raw.match(chaRegex);
+  if (chaMatch) challenges = chaMatch[1].replace(/[.،,\s]+$/, '').trim();
+
+  const lrnMatch = raw.match(/(?:New Learnings?|Key Learnings?|الجديد|المكتسب|المهارات المكتسبة)\s*[:：]\\s*([\\s\\S]*?)$/i);
+  if (lrnMatch) newLearnings = lrnMatch[1].replace(/[.،,\s]+$/, '').trim();
+
+  let act = raw
+    .replace(/(?:^|\s+|\|)(?:الفترة|Period)\s*[:：]\s*[^|\n.]+?(?=\s*\||\n|\.\s+[A-Z\u0600-\u06FF]|$)/gi, '')
+    .replace(/(?:^|\s+|\|)(?:الموقع|Location)\s*[:：]\s*[^|\n.]+?(?=\s*\||\n|\.\s+[A-Z\u0600-\u06FF]|$)/gi, '')
+    .replace(new RegExp(`(?:Accomplishments?|Achievements?|Deliverables?|الإنجاز(?:ات)?|المخرجات|النتائج)\\s*[:：]\\s*[\\s\\S]*?${NEXT_SECTION_LOOKAHEAD}`, 'gi'), '')
+    .replace(new RegExp(`(?:Challenges?|Problems?|Issues?|المشاكل|التحديات|الصعوبات)\\s*[:：]\\s*[\\s\\S]*?${NEXT_SECTION_CHA_LOOKAHEAD}`, 'gi'), '')
+    .replace(/(?:New Learnings?|Key Learnings?|الجديد|المكتسب|المهارات المكتسبة)\s*[:：]\s*[\s\S]*?$/gi, '')
+    .replace(/^[|.\s-]+/, '')
+    .replace(/[|.\s-]+$/, '')
+    .trim();
+
+  const hasStructuredSections = Boolean(period || location || achievements || challenges || newLearnings);
+
+  return {
+    period: period || undefined,
+    location: location || undefined,
+    achievements: achievements || undefined,
+    challenges: challenges || undefined,
+    newLearnings: newLearnings || undefined,
+    activities: act,
+    hasStructuredSections
+  };
+}

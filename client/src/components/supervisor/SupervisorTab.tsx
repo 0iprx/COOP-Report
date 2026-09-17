@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { FinalReportData, WeekGroup, EntryDTO, formatDateArabic } from '@coop/shared';
+import { ProceduralNarrativeView } from '../common/ProceduralNarrativeView';
 import {
   ShieldCheck,
   UserCheck,
@@ -1013,9 +1014,9 @@ export const SupervisorTab: React.FC = () => {
                               </span>
                             </div>
 
-                            <p className="text-sub leading-relaxed whitespace-pre-wrap font-normal text-xs pt-1">
-                              {entry.description}
-                            </p>
+                            <div className="pt-1">
+                              <ProceduralNarrativeView rawText={entry.description} isAr={true} />
+                            </div>
                           </div>
                         );
                       })}
@@ -1166,9 +1167,9 @@ export const SupervisorTab: React.FC = () => {
                               <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-accent-dim text-accent">
                                 {entry.category}
                               </span>
-                              <p className="text-sub leading-relaxed whitespace-pre-wrap pt-0.5 font-normal">
-                                {entry.description}
-                              </p>
+                              <div className="pt-1">
+                                <ProceduralNarrativeView rawText={entry.description} isAr={true} />
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -1281,9 +1282,9 @@ export const SupervisorTab: React.FC = () => {
                                 <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-accent-dim text-accent">
                                   {entry.category}
                                 </span>
-                                <p className="text-sub leading-relaxed whitespace-pre-wrap font-normal text-[11px]">
-                                  {entry.description}
-                                </p>
+                                <div className="pt-1">
+                                  <ProceduralNarrativeView rawText={entry.description} isAr={true} />
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -1433,9 +1434,9 @@ export const SupervisorTab: React.FC = () => {
                             <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-accent-dim text-accent">
                               {entry.category}
                             </span>
-                            <p className="text-sub leading-relaxed whitespace-pre-wrap font-normal text-xs pt-1">
-                              {entry.description}
-                            </p>
+                            <div className="pt-1">
+                              <ProceduralNarrativeView rawText={entry.description} isAr={true} />
+                            </div>
                           </div>
                         ))}
                       </div>
