@@ -11,6 +11,7 @@ import {
   countWords,
   estimatePageCount
 } from '@coop/shared';
+import { loadInsightsForUser } from './entryInsightService.js';
 
 export async function buildFinalReportData(userId: number): Promise<FinalReportData> {
   // Fetch profile or default
@@ -70,8 +71,11 @@ export async function buildFinalReportData(userId: number): Promise<FinalReportD
   // Fetch entries (excluding soft-deleted)
   const entriesRaw = await prisma.entry.findMany({
     where: { userId, deletedAt: null },
-    orderBy: { entryDate: 'asc' }
+    orderBy: [{ entryDate: 'asc' }, { id: 'asc' }]
   });
+
+  // AI agent analyses (correction + learning classification); missing table must not break the report
+  const insightMap = await loadInsightsForUser(userId).catch(() => new Map());
 
   const entries: EntryDTO[] = entriesRaw.map((e: {
     id: number;
@@ -93,7 +97,8 @@ export async function buildFinalReportData(userId: number): Promise<FinalReportD
     title: e.title,
     category: e.category as EntryDTO['category'],
     description: e.description,
-    createdAt: e.createdAt.toISOString()
+    createdAt: e.createdAt.toISOString(),
+    insight: insightMap.get(e.id) || null
   }));
 
   // Group entries by week

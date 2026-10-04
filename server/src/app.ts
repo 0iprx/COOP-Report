@@ -20,7 +20,11 @@ import testdevRoutes from './routes/testdev.js';
 import adminRoutes from './routes/admin.js';
 import exportsRoutes from './routes/exports.js';
 import verifyRoutes from './routes/verify.js';
+import insightsRoutes from './routes/insights.js';
+import agentRoutes from './routes/agent.js';
+import periodReportsRoutes from './routes/periodReports.js';
 import { syncDatabaseSchema } from './startup.js';
+import { warmUpLocalEngine } from './services/localLlmService.js';
 
 // Process Crash Shields (prevents container crashes from unexpected async rejections)
 process.setMaxListeners(0);
@@ -79,6 +83,9 @@ app.use('/api/testdev', testdevRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/exports', exportsRoutes);
 app.use('/api/verify', verifyRoutes);
+app.use('/api/insights', insightsRoutes);
+app.use('/api/agent', agentRoutes);
+app.use('/api/period-reports', periodReportsRoutes);
 
 // Serve Frontend Static Files (Vite SPA)
 const clientDistCandidates = [
@@ -132,6 +139,8 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   syncDatabaseSchema().catch((err) => {
     logger.warn({ err }, 'Schema sync error on startup');
   });
+  // Download (first boot only) and load the built-in AI model in the background
+  warmUpLocalEngine();
 });
 
 process.on('SIGTERM', () => {

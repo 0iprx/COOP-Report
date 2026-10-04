@@ -51,6 +51,10 @@ import {
 } from 'lucide-react';
 import { DiffModal } from '../common/DiffModal';
 import { ProceduralNarrativeView } from '../common/ProceduralNarrativeView';
+import { ReportTOC } from './ReportTOC';
+import { EntryInsightPanel, EntryLocation, insightText } from './EntryInsightPanel';
+import { LearningMap } from './LearningMap';
+import { InsightAgentPanel, ReportAgentSettings } from './InsightAgentPanel';
 
 const PROFILE_DRAFT_KEY = 'coop_profile_draft_v2';
 const PROFILE_HISTORY_KEY = 'coop_profile_history_v2';
@@ -421,6 +425,32 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
     ? { ...MOCK_SAMPLE_PREVIEW_PROFILE, reportTemplate: profileData.reportTemplate }
     : profileData;
   const activePreviewWeeks = isSampleMode ? MOCK_SAMPLE_PREVIEW_WEEKS : displayWeeks;
+
+  // AI agent presentation settings (remembered per browser)
+  const [agentSettings, setAgentSettings] = useState<ReportAgentSettings>(() => {
+    const defaults: ReportAgentSettings = { showInsights: true, useCorrectedText: true, tocShowDays: true };
+    try {
+      return { ...defaults, ...JSON.parse(localStorage.getItem('coop_report_agent_settings') || '{}') };
+    } catch {
+      return defaults;
+    }
+  });
+  const updateAgentSettings = (next: ReportAgentSettings) => {
+    setAgentSettings(next);
+    try {
+      localStorage.setItem('coop_report_agent_settings', JSON.stringify(next));
+    } catch {
+      // storage unavailable — keep the in-memory setting
+    }
+  };
+
+  // Week / day position of every entry, used for cross-references between days
+  const entryLocations = new Map<number, EntryLocation>();
+  activePreviewWeeks.forEach((w: any) =>
+    (w.entries || []).forEach((e: EntryDTO, i: number) => entryLocations.set(e.id, { weekIndex: w.weekIndex, dayNumber: i + 1 }))
+  );
+  const locateEntry = (id: number) => entryLocations.get(id);
+  const allRealEntries: EntryDTO[] = rawWeeks.flatMap((w) => w.entries || []);
 
   // Record a version snapshot
   const recordVersion = (label: string, newData: ProfileInput) => {
@@ -2063,6 +2093,16 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
 
 
 
+      {/* Daily-log AI agent */}
+      {!isSampleMode && (
+        <InsightAgentPanel
+          entries={allRealEntries}
+          isAr={isAr}
+          settings={agentSettings}
+          onSettingsChange={updateAgentSettings}
+        />
+      )}
+
       {/* Sample Preview Mode Banner */}
       {isSampleMode && (
         <div className="p-3.5 mb-4 bg-accent-dim/60 border border-accent/30 rounded-xl flex items-center justify-between gap-3 text-xs text-ink no-print shadow-xs">
@@ -2192,108 +2232,20 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
           </div>
         </div>
 
-        {/* Academic Table of Contents (Page 2 in Print & Master Academic Dossier) */}
-        <div id="sec-toc" className="scroll-mt-24 py-6 page-break space-y-4" dir={isAr ? 'rtl' : 'ltr'}>
-          <h2 className="text-base font-black text-[#8B0000] text-center pb-3 mb-5 border-b-2 border-[#8B0000] flex items-center justify-center gap-2">
-            <Bookmark className="w-5 h-5" />
-            <span>{isAr ? 'فهرس المحتويات وموضوعات الأسابيع' : 'Table of Contents & Weekly Topics'}</span>
-          </h2>
-
-          <div className="space-y-2.5 max-w-2xl mx-auto text-xs font-bold">
-            <a href="#sec-cover" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
-              <span className="group-hover:translate-x-[-2px] transition-transform">
-                {isAr ? 'فهرس المحتويات وصفحة الغلاف' : 'Cover Page & Student Credentials'}
-              </span>
-              <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
-              <span className="text-[#8B0000] font-black">{isAr ? '١' : '1'}</span>
-            </a>
-
-            <a href="#sec-intro" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
-              <span className="group-hover:translate-x-[-2px] transition-transform">
-                {isAr
-                  ? '١. المقدمة وأهداف التدريب وبيانات الخطة التدريبية'
-                  : '1. Introduction, Objectives & Academic Training Plan'}
-              </span>
-              <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
-              <span className="text-[#8B0000] font-black">{isAr ? '٢' : '2'}</span>
-            </a>
-
-            <a href="#sec-entity" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
-              <span className="group-hover:translate-x-[-2px] transition-transform">
-                {isAr
-                  ? `٢. التعريف بجهة التدريب وطبيعة العمل ${activePreviewProfile.entityAddress ? `(${activePreviewProfile.entityAddress})` : ''}`
-                  : `2. Host Organization Overview ${activePreviewProfile.entityAddress ? `(${activePreviewProfile.entityAddress})` : ''}`}
-              </span>
-              <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
-              <span className="text-[#8B0000] font-black">{isAr ? '٣' : '3'}</span>
-            </a>
-
-            <a href="#sec-timeline" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
-              <span className="group-hover:translate-x-[-2px] transition-transform">
-                {isAr
-                  ? `٣. الباب التدريبي: سجل وتقارير الأسابيع الميدانية الـ (${displayWeeks.length} أسبوعاً)`
-                  : `3. Training Reports & Weekly Field Records (${displayWeeks.length} Weeks)`}
-              </span>
-              <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
-              <span className="text-[#8B0000] font-black">{isAr ? toArabicIndic(4) : '4'}</span>
-            </a>
-
-            {/* Child Weeks Narrative Topic Indexing - Guaranteed for all actual weeks */}
-            <div className="space-y-1.5 pr-2 sm:pr-4 py-1">
-              {displayWeeks.map((w, idx) => {
-                const isLast = idx === displayWeeks.length - 1;
-                const treeSymbol = isLast ? '└──' : '├──';
-                const pageNum = 5 + idx;
-
-                return (
-                  <a
-                    key={w.weekIndex}
-                    href={`#week-${w.weekIndex}`}
-                    className="flex items-baseline justify-between text-sub hover:text-accent pr-3 pl-2 py-1 rounded-lg hover:bg-bg/60 transition-colors group text-[11.5px]"
-                  >
-                    <div className="flex items-baseline gap-2 flex-1 min-w-0 pr-1">
-                      <span className="text-muted/60 font-mono text-[11px] select-none shrink-0">{treeSymbol}</span>
-                      <span className="font-bold text-ink group-hover:text-accent transition-colors shrink-0">
-                        {isAr ? `تقرير ${getArabicWeekName(w.weekIndex)}:` : `Week ${w.weekIndex} Report:`}
-                      </span>
-                      <span className="text-sub group-hover:text-ink transition-colors truncate">
-                        {getWeekTopic(w, isAr)}
-                      </span>
-                    </div>
-                    <span className="flex-grow mx-3 border-b border-dotted border-line relative top-[-4px]"></span>
-                    <span className="text-ok font-bold shrink-0">
-                      {isAr ? toArabicIndic(pageNum) : pageNum}
-                    </span>
-                  </a>
-                );
-              })}
-            </div>
-
-            <a href="#sec-skills" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
-              <span className="group-hover:translate-x-[-2px] transition-transform">
-                {isAr ? '٤. المعارف والمهارات والتجارب المكتسبة' : '4. Acquired Competencies & Technical Skills'}
-              </span>
-              <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
-              <span className="text-[#8B0000] font-black">{isAr ? toArabicIndic(5 + displayWeeks.length) : 5 + displayWeeks.length}</span>
-            </a>
-
-            <a href="#sec-conclusion" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
-              <span className="group-hover:translate-x-[-2px] transition-transform">
-                {isAr ? '٥. الخاتمة والتوصيات العامة' : '5. Conclusion & Recommendations'}
-              </span>
-              <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
-              <span className="text-[#8B0000] font-black">{isAr ? toArabicIndic(6 + displayWeeks.length) : 6 + displayWeeks.length}</span>
-            </a>
-
-            <a href="#sec-approval" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
-              <span className="group-hover:translate-x-[-2px] transition-transform">
-                {isAr ? '٦. استمارة تقييم واعتماد المشرفين والملاحق' : '6. Supervisory Approval Form & Appendices'}
-              </span>
-              <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
-              <span className="text-[#8B0000] font-black">{isAr ? toArabicIndic(7 + displayWeeks.length) : 7 + displayWeeks.length}</span>
-            </a>
-          </div>
-        </div>
+        {/* Academic Table of Contents — numbered, every line links to its section (links survive PDF export) */}
+        <ReportTOC
+          weeks={activePreviewWeeks as any}
+          isAr={isAr}
+          entityAddress={activePreviewProfile.entityAddress}
+          showDays={agentSettings.tocShowDays}
+          hasLearningMap={activePreviewWeeks.some((w: any) => (w.entries || []).some((e: EntryDTO) => e.insight))}
+          useCorrectedText={agentSettings.useCorrectedText}
+          weekLabel={(w) => (isAr ? getArabicWeekName(w.weekIndex) : `Week ${w.weekIndex}`)}
+          weekTopic={(w) => getWeekTopic(w, isAr)}
+          formatPeriod={(w) => formatWeekPeriod(w, isAr)}
+          formatDate={(d) => (isAr ? formatDateArabic(d) : formatDateEnglish(d))}
+          numerals={(n) => (isAr ? toArabicIndic(n) : String(n))}
+        />
 
         {/* Section 1: Intro */}
         <div id="sec-intro" className="scroll-mt-24 space-y-3 pt-4 page-break">
@@ -2323,7 +2275,9 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
         {/* Section 3: Detailed Weekly Technical Reports */}
         <div id="sec-timeline" className="scroll-mt-24 space-y-6 pt-4 page-break">
           <h2 className="text-lg font-extrabold text-ink border-b-2 border-accent pb-1.5 inline-block">
-            {isAr ? '3. تقارير وسجل الأسابيع التدريبية الميدانية (14 أسبوعاً)' : '3. Weekly Technical Training Reports (14 Weeks)'}
+            {isAr
+              ? `3. تقارير وسجل الأسابيع التدريبية الميدانية (${toArabicIndic(activePreviewWeeks.length)} أسبوعاً)`
+              : `3. Weekly Technical Training Reports (${activePreviewWeeks.length} Weeks)`}
           </h2>
 
           {activePreviewWeeks.map((w) => {
@@ -2396,7 +2350,9 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                                     </span>
                                   </td>
                                   <td className="p-2.5 font-bold text-ink leading-snug">
-                                    {elevateTaskTitle(entry.title, entry.description, isAr)}
+                                    {entry.insight && !entry.insight.isStale && agentSettings.useCorrectedText
+                                      ? insightText(entry.insight, isAr).title
+                                      : elevateTaskTitle(entry.title, entry.description, isAr)}
                                   </td>
                                 </tr>
                               );
@@ -2412,8 +2368,10 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                       <div className="space-y-3">
                         {w.entries.map((entry: EntryDTO, eIdx: number) => {
                           const entryHours = calculateHoursBetween(entry.timeFrom, entry.timeTo);
+                          const insight = entry.insight && !entry.insight.isStale ? entry.insight : null;
+                          const shown = insight && agentSettings.useCorrectedText ? insightText(insight, isAr) : null;
                           return (
-                            <div key={entry.id || eIdx} className="rounded-xl border border-line bg-card overflow-hidden text-xs shadow-2xs day-card-print break-inside-avoid">
+                            <div key={entry.id || eIdx} id={`entry-${entry.id}`} className="scroll-mt-24 rounded-xl border border-line bg-card overflow-hidden text-xs shadow-2xs day-card-print break-inside-avoid">
                               {/* Entry Header: Day Badge, Date, Time Span, Hours, Category */}
                               <div className="bg-surface/80 px-4 py-2.5 border-b border-line flex flex-wrap items-center justify-between gap-2">
                                 <div className="flex items-center gap-2 flex-wrap">
@@ -2445,7 +2403,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                                     {isAr ? 'النشاط الفني والمهمة التشغيلية الميدانية:' : 'Technical Activity & Operational Scope:'}
                                   </div>
                                   <h4 className="text-sm font-black text-ink leading-snug">
-                                    {elevateTaskTitle(entry.title, entry.description, isAr)}
+                                    {shown ? shown.title : elevateTaskTitle(entry.title, entry.description, isAr)}
                                   </h4>
                                 </div>
 
@@ -2454,9 +2412,18 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                                     {isAr ? 'السرد الإجرائي ونتائج التنفيذ الهندسي:' : 'Procedural Narrative & Engineering Results:'}
                                   </div>
                                   <div className="procedural-narrative-box bg-bg/40 p-3 rounded-lg border border-line/50">
-                                    {renderProceduralNarrative(entry.description, isAr)}
+                                    {renderProceduralNarrative(shown ? shown.text : entry.description, isAr)}
                                   </div>
                                 </div>
+
+                                {insight && agentSettings.showInsights && (
+                                  <EntryInsightPanel
+                                    insight={insight}
+                                    isAr={isAr}
+                                    locate={locateEntry}
+                                    formatDate={(d) => (isAr ? formatDateArabic(d) : formatDateEnglish(d))}
+                                  />
+                                )}
                               </div>
                             </div>
                           );
@@ -2657,6 +2624,15 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             );
           })()}
         </div>
+
+        {/* Section 4.1: Cumulative learning record from the AI agent */}
+        <LearningMap
+          entries={activePreviewWeeks.flatMap((w: any) => w.entries || [])}
+          isAr={isAr}
+          locate={locateEntry}
+          formatDate={(d) => (isAr ? formatDateArabic(d) : formatDateEnglish(d))}
+          numerals={(n) => (isAr ? toArabicIndic(n) : String(n))}
+        />
 
         {/* Section 5: Conclusion */}
         <div id="sec-conclusion" className="scroll-mt-24 space-y-3 pt-4 page-break">

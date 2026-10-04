@@ -741,3 +741,192 @@ html, body {
     padding: 0 !important;
   }
 }
+
+/* ============================================================
+   Table of contents, AI agent analysis & learning record
+   (screen + print — uses the same tokens as the rest of the report)
+   ============================================================ */
+
+.toc-summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 14px;
+  font-size: 11.5px;
+  color: var(--sub);
+  margin-bottom: 18px;
+}
+.toc-summary b { color: var(--ink); font-weight: 900; }
+.toc-summary-new b { color: var(--ok); }
+.toc-summary-reinforced b { color: var(--warn); }
+
+.toc-list { display: flex; flex-direction: column; gap: 2px; }
+
+.toc-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--ink);
+  text-decoration: none;
+  padding: 3px 6px;
+  border-radius: 6px;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.toc-row:hover { background: var(--bg); color: var(--accent); }
+.toc-num { flex-shrink: 0; min-width: 2.6em; font-weight: 900; color: #8B0000; font-variant-numeric: tabular-nums; }
+.toc-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.toc-leader { flex: 1 1 auto; min-width: 16px; border-bottom: 2px dotted var(--line); transform: translateY(-4px); }
+.toc-trail { flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; color: var(--sub); font-weight: 700; }
+
+.toc-level-1 { font-size: 12.5px; font-weight: 800; margin-top: 8px; }
+.toc-level-2 { font-size: 11.5px; font-weight: 600; padding-inline-start: 22px; color: var(--ink); }
+.toc-level-2 .toc-num { color: var(--ok); }
+.toc-level-3 { font-size: 10.5px; font-weight: 500; padding-inline-start: 46px; color: var(--sub); }
+.toc-level-3 .toc-num { color: var(--muted); font-weight: 700; }
+.toc-level-3 .toc-title { white-space: nowrap; }
+.toc-day { font-weight: 800; color: var(--ink); }
+.toc-week-block { display: flex; flex-direction: column; gap: 1px; }
+
+.toc-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px 8px;
+  margin-top: 18px;
+  font-size: 10.5px;
+  color: var(--sub);
+}
+
+/* Learning-status badges */
+.insight-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 800;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+.insight-badge-compact { padding: 0 7px; font-size: 9.5px; }
+.insight-badge-new { background: var(--ok-bg); color: var(--ok); border-color: color-mix(in srgb, var(--ok) 30%, transparent); }
+.insight-badge-reinforced { background: var(--warn-bg); color: var(--warn); border-color: color-mix(in srgb, var(--warn) 30%, transparent); }
+.insight-badge-routine { background: var(--bg); color: var(--sub); border-color: var(--line); }
+
+/* Agent analysis panel under each day */
+.insight-panel {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-inline-start: 3px solid var(--sub);
+  border-radius: 10px;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.insight-panel-new { border-inline-start-color: var(--ok); }
+.insight-panel-reinforced { border-inline-start-color: var(--warn); }
+.insight-panel-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 8px; }
+.insight-panel-title { font-size: 10.5px; font-weight: 900; color: var(--accent); }
+.insight-panel-meta { display: inline-flex; align-items: center; gap: 6px; }
+.insight-style-tag { font-size: 10px; font-weight: 700; color: var(--sub); }
+.insight-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; margin: 0; }
+.insight-cell { min-width: 0; }
+.insight-cell-wide { grid-column: 1 / -1; }
+.insight-cell dt { font-size: 10px; font-weight: 900; color: var(--sub); margin-bottom: 2px; }
+.insight-cell dd { margin: 0; font-size: 11.5px; line-height: 1.8; color: var(--ink); }
+.insight-tools { display: flex; flex-wrap: wrap; gap: 4px; }
+.insight-tool { padding: 1px 7px; border-radius: 6px; font-size: 10.5px; font-family: ui-monospace, monospace; font-weight: 700; background: var(--bg); border: 1px solid var(--line); }
+.insight-refs { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-inline-start: 6px; }
+.insight-ref { font-size: 10px; font-weight: 800; color: var(--accent); text-decoration: none; padding: 0 6px; border-radius: 6px; background: var(--accent-dim); white-space: nowrap; }
+@media (max-width: 640px) {
+  .insight-grid { grid-template-columns: minmax(0, 1fr); }
+  .toc-level-3 { padding-inline-start: 28px; }
+  .toc-level-3 .toc-title { white-space: normal; }
+}
+
+/* Cumulative learning record */
+.learning-map-table th,
+.learning-map-table td { border: 1px solid var(--line); padding: 6px 8px; vertical-align: top; }
+.learning-map-table th { background: var(--bg); font-weight: 800; font-size: 11px; color: var(--ink); }
+.learning-map-table tr { break-inside: avoid; page-break-inside: avoid; }
+
+@media print {
+  /* The index may span several pages when every day is listed */
+  #sec-toc {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+  #sec-learning-map {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+  .toc-row { padding: 1.5px 0 !important; color: #0f172a !important; }
+  .toc-level-1 { font-size: 10.5pt !important; }
+  .toc-level-2 { font-size: 9.5pt !important; }
+  .toc-level-3 { font-size: 8.5pt !important; color: #334155 !important; }
+  .toc-leader { border-bottom: 1.5px dotted #94a3b8 !important; }
+
+  .insight-panel {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    border-inline-start: 3px solid #64748b !important;
+    border-radius: 0 !important;
+    padding: 6px 8px !important;
+    margin-top: 8px !important;
+  }
+  .insight-panel-new { border-inline-start-color: #2A6348 !important; }
+  .insight-panel-reinforced { border-inline-start-color: #B45309 !important; }
+  .insight-cell dd { font-size: 9.5pt !important; line-height: 1.6 !important; }
+  .insight-badge-new { background: #E3F0EA !important; color: #2A6348 !important; border: 1px solid #2A6348 !important; }
+  .insight-badge-reinforced { background: #FEF3C7 !important; color: #B45309 !important; border: 1px solid #B45309 !important; }
+  .insight-badge-routine { background: #f1f5f9 !important; color: #475569 !important; border: 1px solid #94a3b8 !important; }
+  .insight-ref { background: #f1f5f9 !important; color: #8B0000 !important; }
+  .learning-map-table th, .learning-map-table td { border: 1px solid #cbd5e1 !important; }
+}
+
+/* ── Periodic (weekly / monthly) report document ───────────── */
+.period-doc { line-height: 1.85; }
+.period-info th,
+.period-info td { border: 1px solid var(--line); padding: 6px 10px; text-align: start; vertical-align: top; }
+.period-info th { width: 34%; background: var(--bg); font-weight: 800; color: var(--ink); }
+.period-progress { margin-top: 4px; height: 5px; background: var(--bg); border-radius: 999px; overflow: hidden; }
+.period-progress > div { height: 100%; background: var(--ok); }
+.period-section { margin-top: 22px; break-inside: auto; }
+.period-section h2 {
+  font-size: 14px;
+  font-weight: 900;
+  color: #8B0000;
+  border-bottom: 2px solid #8B0000;
+  padding-bottom: 4px;
+  margin-bottom: 10px;
+  break-after: avoid;
+  page-break-after: avoid;
+}
+.period-section p { font-size: 13px; margin-bottom: 10px; text-align: justify; }
+.period-section ul { list-style: disc; padding-inline-start: 22px; font-size: 13px; }
+.period-section li { margin-bottom: 4px; }
+.period-sub { font-size: 11.5px; font-weight: 900; margin-bottom: 4px; }
+.period-sub-new { color: var(--ok); }
+.period-sub-reinforced { color: var(--warn); }
+.period-table th,
+.period-table td { border: 1px solid var(--line); padding: 6px 8px; vertical-align: top; }
+.period-table th { background: var(--bg); font-weight: 800; }
+.period-table tr { break-inside: avoid; page-break-inside: avoid; }
+.period-signoff { break-inside: avoid; page-break-inside: avoid; }
+
+@media print {
+  #period-report-paper {
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+  .period-section p, .period-section ul { font-size: 10.5pt !important; }
+  .period-info th { background: #f1f5f9 !important; }
+  .period-progress { background: #e2e8f0 !important; }
+  .period-progress > div { background: #2A6348 !important; }
+}

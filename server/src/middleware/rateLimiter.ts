@@ -77,6 +77,27 @@ export const aiQuotaLimiter = rateLimit({
 });
 
 /**
+ * 2b. Daily-entry analysis agent: 300 analyses / hour per user.
+ * Kept separate from the generation quota so analysing a full training log (often 60–80 days)
+ * in one pass does not lock the trainee out of the other AI tools.
+ */
+export const insightAgentLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: userKeyGenerator,
+  handler: (req: any, res: Response) => {
+    logger.warn({ userId: req.user?.userId }, 'Rate limit quota exceeded on insight agent endpoint');
+    res.status(429).json({
+      error: 'تم تجاوز حد التحليل الذكي لليوميات (300 تحليل/ساعة). يرجى المحاولة لاحقاً.',
+      errorEn: 'Hourly analysis quota reached (300 analyses/hour). Please try again later.',
+      retryAfterMinutes: 60
+    });
+  }
+});
+
+/**
  * 3. General API Ceiling: 300 requests / minute
  */
 export const generalApiLimiter = rateLimit({
