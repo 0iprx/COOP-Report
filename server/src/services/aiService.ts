@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { logger } from '../logger.js';
+import { generateLocal } from './localLlmService.js';
 import { elevateTaskTitle, inferProfessionalCategory, convertBulletsToCohesiveParagraphs } from '@coop/shared';
 
 const anthropicKey = process.env.ANTHROPIC_API_KEY?.trim().replace(/^["']|["']$/g, '');
@@ -251,6 +252,51 @@ async function callAvailableLLM(
     userPrompt = `[سياق النص: ${context}]\n\n` + userPrompt;
   }
 
+  return runLLMChain(systemPrompt, userPrompt, { apiKey: userApiKey, model: userModel });
+}
+
+export interface LLMChainOptions {
+  apiKey?: string;
+  model?: string;
+  maxTokens?: number;
+  temperature?: number;
+  timeoutMs?: number;
+  /** Ask providers that support it to return a strict JSON object */
+  jsonMode?: boolean;
+  /** JSON schema enforced token-by-token by the built-in local model */
+  jsonSchema?: Record<string, unknown>;
+  /** Background jobs may wait for the local model to finish downloading/loading */
+  waitForLocal?: boolean;
+  localTimeoutMs?: number;
+}
+
+/**
+ * Runs a prompt through the configured provider chain (Gemini -> Claude -> Groq -> OpenAI)
+ * and returns the first non-empty answer, or null when no provider is available.
+ */
+export async function runLLMChain(
+  systemPrompt: string,
+  userPrompt: string,
+  opts: LLMChainOptions = {}
+): Promise<string | null> {
+  const userApiKey = opts.apiKey;
+  const userModel = opts.model;
+  const timeoutMs = opts.timeoutMs ?? 10000;
+
+  // 0. Built-in local model (no API key, no external AI service)
+  try {
+    const local = await generateLocal(systemPrompt, userPrompt, {
+      maxTokens: opts.maxTokens ?? 1500,
+      temperature: opts.temperature,
+      jsonSchema: opts.jsonSchema,
+      waitForReady: opts.waitForLocal,
+      timeoutMs: opts.localTimeoutMs
+    });
+    if (local) return local;
+  } catch (e: any) {
+    logger.warn({ err: e?.message }, 'Local AI engine error');
+  }
+
   // A. Google Gemini (Preferred for high accuracy, speed, and 0 hallucination)
   const activeGeminiKey = userApiKey?.trim() || geminiKey;
   if (activeGeminiKey) {
@@ -271,7 +317,7 @@ async function callAvailableLLM(
         const res = await fetch(geminiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          signal: AbortSignal.timeout(10000),
+          signal: AbortSignal.timeout(timeoutMs),
           body: JSON.stringify({
             contents: [
               {
@@ -280,8 +326,9 @@ async function callAvailableLLM(
               }
             ],
             generationConfig: {
-              temperature: 0.15,
-              maxOutputTokens: 2048
+              temperature: opts.temperature ?? 0.15,
+              maxOutputTokens: opts.maxTokens ?? 2048,
+              ...(opts.jsonMode ? { responseMimeType: 'application/json' } : {})
             }
           })
         });
@@ -304,13 +351,13 @@ async function callAvailableLLM(
     try {
       const res = await anthropicClient.messages.create(
         {
-          model: 'claude-3-5-sonnet-20241022',
-          max_tokens: 1800,
-          temperature: 0.2,
+          model: process.env.ANTHROPIC_MODEL?.trim() || 'claude-sonnet-5-5',
+          max_tokens: opts.maxTokens ?? 1800,
+          temperature: opts.temperature ?? 0.2,
           system: systemPrompt,
           messages: [{ role: 'user', content: userPrompt }]
         },
-        { timeout: 15000 }
+        { timeout: Math.max(timeoutMs, 15000) }
       );
       const block = res.content[0];
       if (block && block.type === 'text') return block.text.trim();
@@ -328,14 +375,15 @@ async function callAvailableLLM(
           'Authorization': `Bearer ${groqKey}`,
           'Content-Type': 'application/json'
         },
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(timeoutMs),
         body: JSON.stringify({
           model: 'llama-3.3-70b-versatile',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
           ],
-          temperature: 0.25
+          temperature: opts.temperature ?? 0.25,
+          ...(opts.jsonMode ? { response_format: { type: 'json_object' } } : {})
         })
       });
       if (res.ok) {
@@ -357,14 +405,15 @@ async function callAvailableLLM(
           'Authorization': `Bearer ${openaiKey}`,
           'Content-Type': 'application/json'
         },
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(timeoutMs),
         body: JSON.stringify({
           model: 'gpt-4o-mini',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
           ],
-          temperature: 0.25
+          temperature: opts.temperature ?? 0.25,
+          ...(opts.jsonMode ? { response_format: { type: 'json_object' } } : {})
         })
       });
       if (res.ok) {
@@ -426,7 +475,7 @@ async function executeBuiltInEngine(
  * Intelligent deterministic academic structurer when offline or without LLM key
  * Preserves 100% of user text and structures it into the selected official style
  */
-function formatAcademicDailyLogOffline(input: string, style: RewriteStyle = 'procedural'): string {
+export function formatAcademicDailyLogOffline(input: string, style: RewriteStyle = 'procedural'): string {
   if (!input || !input.trim()) return '';
 
   const polished = polishArabicText(input).replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '');
@@ -551,7 +600,7 @@ export async function rewriteEntryAcademically({
 /**
  * Free instant translation API with multi-chunk support and MyMemory fallback
  */
-async function translateWithWebAPI(text: string, targetLang: 'ar' | 'en'): Promise<string | null> {
+export async function translateWithWebAPI(text: string, targetLang: 'ar' | 'en'): Promise<string | null> {
   const clean = text.trim();
   if (!clean) return '';
 
@@ -821,7 +870,7 @@ function summarizeText(text: string): string {
 /**
  * Comprehensive Orthographic & Spelling rules (Hamzat, Ta' Marbuta, Tanween, Grammatical Rules)
  */
-function applyArabicSpellCorrections(input: string): string {
+export function applyArabicSpellCorrections(input: string): string {
   let s = input;
 
   const rules: Array<[RegExp, string]> = [

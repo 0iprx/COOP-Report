@@ -39,6 +39,9 @@ export interface ExportPayload {
   entries: any[];
   revisions: any[];
   evidence?: any[];
+  /** AI agent analyses and weekly/monthly report versions (archived with the backup) */
+  insights?: any[];
+  periodReports?: any[];
 }
 
 export interface BackupPackage {
@@ -65,7 +68,9 @@ export async function exportUserArchive(userId: number): Promise<{ backup: Backu
       },
       evidence: {
         where: { deletedAt: null }
-      }
+      },
+      entryInsights: true,
+      periodReports: { orderBy: [{ periodType: 'asc' }, { periodKey: 'asc' }, { version: 'asc' }] }
     }
   });
 
@@ -103,7 +108,9 @@ export async function exportUserArchive(userId: number): Promise<{ backup: Backu
       weekIndex: ev.weekIndex,
       caption: ev.caption,
       imageData: ev.imageData
-    }))
+    })),
+    insights: user.entryInsights.map(({ id, tenantId, userId: _u, ...rest }) => rest),
+    periodReports: user.periodReports.map(({ id, tenantId, userId: _u, ...rest }) => rest)
   };
 
   // Compute SHA-256 Checksum for zero corruption guarantee

@@ -49,7 +49,9 @@ export async function syncDatabaseSchema(): Promise<void> {
 
     if (fs.existsSync(targetSchema)) {
       logger.info({ targetSchema }, 'Running automatic prisma db push...');
-      execSync(`npx prisma db push --schema="${targetSchema}" --skip-generate --accept-data-loss`, {
+      // Never pass --accept-data-loss: additive changes apply automatically, while any change
+      // that could drop a column/table/row is refused and logged instead of destroying data.
+      execSync(`npx prisma db push --schema="${targetSchema}" --skip-generate`, {
         stdio: 'inherit',
         timeout: 30000,
         env: {

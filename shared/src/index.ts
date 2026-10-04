@@ -148,6 +148,146 @@ export interface EntryDTO {
   category: EntryCategory;
   description: string;
   createdAt: string;
+  insight?: EntryInsightDTO | null;
+}
+
+/**
+ * - new: knowledge or skill that does not appear in any earlier entry
+ * - reinforced: builds on something learned before, with a new angle, depth or context
+ * - routine: repeats an earlier task with no new learning
+ */
+export type LearningStatus = 'new' | 'reinforced' | 'routine';
+
+export const LEARNING_STATUS_LABELS: Record<LearningStatus, { ar: string; en: string }> = {
+  new: { ar: 'معرفة جديدة', en: 'New learning' },
+  reinforced: { ar: 'تعزيز لمعرفة سابقة', en: 'Reinforced' },
+  routine: { ar: 'مهمة متكررة', en: 'Routine task' }
+};
+
+export type RewriteStyleId = 'procedural' | 'star_impact' | 'academic_competency' | 'concise_executive';
+
+export const REWRITE_STYLE_LABELS: Record<RewriteStyleId, { ar: string; en: string }> = {
+  procedural: { ar: 'سرد إجرائي ميداني', en: 'Procedural field narrative' },
+  star_impact: { ar: 'منهجية STAR لحل المشكلات', en: 'STAR problem-solving' },
+  academic_competency: { ar: 'الجدارات ومخرجات التعلم', en: 'Competency & learning outcomes' },
+  concise_executive: { ar: 'موجز تنفيذي', en: 'Concise executive' }
+};
+
+export interface EntryInsightRelatedRef {
+  entryId: number;
+  entryDate: string;
+  title: string;
+}
+
+export interface EntryInsightDTO {
+  entryId: number;
+  correctedTitle: string;
+  correctedText: string;
+  learningStatus: LearningStatus;
+  goal: string;
+  actionsDone: string;
+  learnedWhat: string;
+  tools: string[];
+  relatedEntryIds: number[];
+  related?: EntryInsightRelatedRef[];
+  relationNote?: string | null;
+  similarityScore: number;
+  rewriteStyle: RewriteStyleId;
+  mode: 'llm' | 'fallback';
+  en?: {
+    title: string;
+    text: string;
+    goal: string;
+    actionsDone: string;
+    learnedWhat: string;
+    relationNote: string;
+  } | null;
+  /** true when the entry was edited after this analysis was produced */
+  isStale?: boolean;
+  updatedAt: string;
+}
+
+// ==========================================
+// Periodic (weekly / monthly) COOP reports
+// ==========================================
+export type PeriodType = 'weekly' | 'monthly';
+
+export type PeriodSectionKey =
+  | 'executive_summary'
+  | 'objectives'
+  | 'weekly_breakdown'
+  | 'activities'
+  | 'skills'
+  | 'challenges'
+  | 'tools'
+  | 'progress'
+  | 'reflection'
+  | 'next_plan';
+
+export interface PeriodReportSection {
+  key: PeriodSectionKey;
+  heading: string;
+  body: string;
+  items?: string[];
+}
+
+export interface PeriodReportActivityRow {
+  entryId: number;
+  date: string;
+  dateLabel: string;
+  title: string;
+  summary: string;
+  hours: number;
+  learningStatus?: LearningStatus;
+}
+
+export interface PeriodReportContent {
+  title: string;
+  subtitle: string;
+  sections: PeriodReportSection[];
+  activities: PeriodReportActivityRow[];
+  newSkills: string[];
+  reinforcedSkills: string[];
+  tools: string[];
+}
+
+export interface PeriodReportStats {
+  hours: number;
+  days: number;
+  entries: number;
+  newCount: number;
+  reinforcedCount: number;
+  routineCount: number;
+  cumulativeHours: number;
+  plannedHours: number;
+}
+
+export interface PeriodDescriptor {
+  periodType: PeriodType;
+  periodKey: string;
+  label: string;
+  labelEn: string;
+  periodStart: string;
+  periodEnd: string;
+  entryCount: number;
+  hours: number;
+  latestVersion: number | null;
+}
+
+export interface PeriodReportVersionDTO {
+  id: number;
+  periodType: PeriodType;
+  periodKey: string;
+  version: number;
+  periodStart: string;
+  periodEnd: string;
+  statusAr: 'ready' | 'failed' | 'pending';
+  statusEn: 'ready' | 'failed' | 'pending';
+  mode: string;
+  stats: PeriodReportStats;
+  createdAt: string;
+  contentAr?: PeriodReportContent | null;
+  contentEn?: PeriodReportContent | null;
 }
 
 export interface ReportProfileDTO {

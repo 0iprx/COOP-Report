@@ -4,7 +4,8 @@ import { api } from '../../services/api';
 import { saveOfflineEntry, getPendingEntries, syncPendingEntries } from '../../services/offlineSync';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
-import { ENTRY_CATEGORIES, EntryDTO, DiffChunk, inferProfessionalCategory, elevateTaskTitle } from '@coop/shared';
+import { EntryAgentInline } from './EntryAgentInline';
+import { ENTRY_CATEGORIES, EntryDTO, DiffChunk, EntryInsightDTO, inferProfessionalCategory, elevateTaskTitle } from '@coop/shared';
 import {
   Calendar,
   Clock,
@@ -295,6 +296,13 @@ export const DailyLogTab: React.FC = () => {
       return res.data;
     }
   });
+
+  // AI agent analyses of the entries (classification, goal, learning, proofread text)
+  const { data: insightsData } = useQuery<{ insights: EntryInsightDTO[] }>({
+    queryKey: ['insights'],
+    queryFn: async () => (await api.get('/insights')).data
+  });
+  const insightByEntry = new Map((insightsData?.insights || []).map((i) => [i.entryId, i]));
 
   // Fetch trash entries
   const { data: trashData } = useQuery({
@@ -1184,6 +1192,7 @@ export const DailyLogTab: React.FC = () => {
                   </div>
                   <h4 className="font-bold text-sm text-ink">{entry.title}</h4>
                   <p className="text-xs text-sub leading-relaxed whitespace-pre-wrap">{entry.description}</p>
+                  <EntryAgentInline entryId={entry.id} insight={insightByEntry.get(entry.id)} isAr={isAr} />
                 </div>
 
                 <div className="flex items-center gap-1 self-end sm:self-start pt-1 sm:pt-0 border-t border-line/40 sm:border-0 w-full sm:w-auto justify-end">

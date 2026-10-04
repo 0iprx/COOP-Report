@@ -22,6 +22,8 @@ model User {
   sessions       Session[]
   auditLogs      AuditLog[]
   aiUsageLogs    AiUsageLog[]
+  entryInsights  EntryInsight[]
+  periodReports  PeriodReport[]
   createdAt      DateTime       @default(now()) @map("created_at")
 
   @@index([tenantId])
@@ -59,6 +61,7 @@ model Entry {
   description String          @db.Text
   deletedAt   DateTime?       @map("deleted_at")
   revisions   EntryRevision[]
+  insight     EntryInsight?
   createdAt   DateTime        @default(now()) @map("created_at")
 
   @@index([userId, entryDate])
@@ -194,4 +197,68 @@ model AiUsageLog {
   @@index([tenantId, createdAt])
   @@index([userId])
   @@map("ai_usage_logs")
+}
+
+// AI agent analysis of a daily entry. Purely additive: the original entry text is
+// never overwritten by analysis — the corrected text lives here until the trainee applies it.
+model EntryInsight {
+  id              Int      @id @default(autoincrement())
+  tenantId        String   @default("default_tenant") @map("tenant_id") @db.VarChar(50)
+  entryId         Int      @unique @map("entry_id")
+  entry           Entry    @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  userId          Int      @map("user_id")
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  correctedTitle  String   @default("") @map("corrected_title") @db.VarChar(150)
+  correctedText   String   @map("corrected_text") @db.Text
+  learningStatus  String   @default("new") @map("learning_status") @db.VarChar(20)
+  rewriteStyle    String   @default("procedural") @map("rewrite_style") @db.VarChar(30)
+  goal            String   @db.Text
+  actionsDone     String   @map("actions_done") @db.Text
+  learnedWhat     String   @map("learned_what") @db.Text
+  tools           String   @default("[]") @db.Text
+  relatedEntryIds String   @default("[]") @map("related_entry_ids") @db.VarChar(500)
+  relationNote    String?  @map("relation_note") @db.Text
+  similarityScore Float    @default(0) @map("similarity_score")
+  sourceHash      String   @map("source_hash") @db.VarChar(64)
+  mode            String   @default("fallback") @db.VarChar(20)
+  // English edition, stored independently so either language keeps working if the other fails
+  titleEn         String?  @map("title_en") @db.VarChar(200)
+  textEn          String?  @map("text_en") @db.Text
+  goalEn          String?  @map("goal_en") @db.Text
+  actionsEn       String?  @map("actions_en") @db.Text
+  learnedEn       String?  @map("learned_en") @db.Text
+  relationNoteEn  String?  @map("relation_note_en") @db.Text
+  translationMode String?  @map("translation_mode") @db.VarChar(20)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([tenantId])
+  @@map("entry_insights")
+}
+
+// Weekly / monthly COOP reports. Every generation is a new version row — earlier versions are kept.
+// Arabic and English editions are stored and tracked independently.
+model PeriodReport {
+  id          Int      @id @default(autoincrement())
+  tenantId    String   @default("default_tenant") @map("tenant_id") @db.VarChar(50)
+  userId      Int      @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  periodType  String   @map("period_type") @db.VarChar(10)
+  periodKey   String   @map("period_key") @db.VarChar(20)
+  version     Int      @default(1)
+  periodStart String   @map("period_start") @db.VarChar(20)
+  periodEnd   String   @map("period_end") @db.VarChar(20)
+  contentAr   String?  @map("content_ar") @db.LongText
+  contentEn   String?  @map("content_en") @db.LongText
+  statusAr    String   @default("pending") @map("status_ar") @db.VarChar(20)
+  statusEn    String   @default("pending") @map("status_en") @db.VarChar(20)
+  mode        String   @default("fallback") @db.VarChar(20)
+  stats       String   @default("{}") @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, periodType, periodKey, version])
+  @@index([userId, periodType, periodKey])
+  @@index([tenantId])
+  @@map("period_reports")
 }

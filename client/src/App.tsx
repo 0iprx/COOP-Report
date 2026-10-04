@@ -9,12 +9,13 @@ import { AuthScreen } from './components/auth/AuthScreen';
 import { DailyLogTab } from './components/log/DailyLogTab';
 import { WeeklyTab } from './components/weekly/WeeklyTab';
 import { FinalReportTab } from './components/final/FinalReportTab';
+import { PeriodReportsTab } from './components/periodic/PeriodReportsTab';
 import { SupervisorTab } from './components/supervisor/SupervisorTab';
 import { TestDevLab } from './components/testdev/TestDevLab';
 import { LandingPage } from './components/landing/LandingPage';
 import { OnboardingModal } from './components/common/OnboardingModal';
 import { VerifyPage } from './components/verify/VerifyPage';
-import { Calendar, Clock, FileText, ShieldCheck, Layers } from 'lucide-react';
+import { Calendar, CalendarRange, Clock, FileText, ShieldCheck, Layers } from 'lucide-react';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,11 +27,12 @@ const queryClient = new QueryClient({
   }
 });
 
-type TabType = 'log' | 'weekly' | 'final' | 'supervisor' | 'testdev';
+type TabType = 'log' | 'weekly' | 'periodic' | 'final' | 'supervisor' | 'testdev';
 
 const tabs: { id: TabType; labelAr: string; labelEn: string; icon: React.ReactNode }[] = [
   { id: 'log', labelAr: 'التسجيل اليومي', labelEn: 'Daily Log', icon: <Calendar className="w-4 h-4" /> },
   { id: 'weekly', labelAr: 'التقرير الأسبوعي', labelEn: 'Weekly Report', icon: <Clock className="w-4 h-4" /> },
+  { id: 'periodic', labelAr: 'التقارير الدورية', labelEn: 'Periodic Reports', icon: <CalendarRange className="w-4 h-4" /> },
   { id: 'final', labelAr: 'التقرير النهائي', labelEn: 'Final Report', icon: <FileText className="w-4 h-4" /> },
   { id: 'supervisor', labelAr: 'بوابة المشرف', labelEn: 'Supervisor Portal', icon: <ShieldCheck className="w-4 h-4" /> },
   { id: 'testdev', labelAr: 'مختبر الفحص (/testdev)', labelEn: 'Test Lab (/testdev)', icon: <Layers className="w-4 h-4 text-accent" /> }
@@ -141,6 +143,7 @@ const MainDashboard: React.FC = () => {
         <div className="animate-fade-in" key={activeTab}>
           {activeTab === 'log' && <DailyLogTab />}
           {activeTab === 'weekly' && <WeeklyTab />}
+          {activeTab === 'periodic' && <PeriodReportsTab />}
           {activeTab === 'final' && <FinalReportTab currentLang={lang} />}
           {activeTab === 'supervisor' && user.role === 'supervisor' && <SupervisorTab />}
           {activeTab === 'testdev' && <TestDevLab />}
