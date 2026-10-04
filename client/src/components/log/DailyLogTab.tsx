@@ -5,6 +5,7 @@ import { saveOfflineEntry, getPendingEntries, syncPendingEntries } from '../../s
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 import { EntryAgentInline } from './EntryAgentInline';
+import { AgentAnalyseButton } from '../common/AgentAnalyseButton';
 import { ENTRY_CATEGORIES, EntryDTO, DiffChunk, EntryInsightDTO, inferProfessionalCategory, elevateTaskTitle } from '@coop/shared';
 import {
   Calendar,
@@ -32,7 +33,6 @@ import {
   Moon
 } from 'lucide-react';
 import { DiffModal } from '../common/DiffModal';
-import { BatchRewriteModal } from '../common/BatchRewriteModal';
 
 const DRAFT_KEY = 'coop_entry_draft_v2';
 
@@ -139,7 +139,6 @@ export const DailyLogTab: React.FC = () => {
   };
 
   // Modal States
-  const [batchModalOpen, setBatchModalOpen] = useState<boolean>(false);
   const [diffModalOpen, setDiffModalOpen] = useState<boolean>(false);
   const [diffTitle, setDiffTitle] = useState<string>('');
   const [originalText, setOriginalText] = useState<string>('');
@@ -730,15 +729,6 @@ export const DailyLogTab: React.FC = () => {
             <div className="sm:col-span-2 space-y-1">
               <div className="flex items-center justify-between">
                 <label className="block text-xs font-bold text-sub">{t('عنوان اليوم (مختصر ودقيق)', 'Task Title (Concise & Accurate)')}</label>
-                <button
-                  type="button"
-                  onClick={handleAutoElevate}
-                  className="text-[11px] font-bold text-accent hover:underline flex items-center gap-1 bg-accent/10 hover:bg-accent/20 px-2.5 py-0.5 rounded-lg border border-accent/25 transition-all shadow-2xs"
-                  title={t('اقتراح تصنيف وترقية أكاديمية فورية بناءً على محتوى اليوم', 'Auto-infer engineering domain & title')}
-                >
-                  <Sparkles className="w-3 h-3 text-accent" />
-                  <span>{t('التدقيق والترقية الأكاديمية الفورية', 'Auto-Elevate & Suggest Category')}</span>
-                </button>
               </div>
               <input
                 type="text"
@@ -1071,57 +1061,6 @@ export const DailyLogTab: React.FC = () => {
             </div>
           )}
 
-            {/* AI Enhancement Toolbar */}
-            <div className="flex flex-wrap items-center gap-2 pt-1">
-              <span className="text-xs font-bold text-sub flex items-center gap-1">
-                <Sparkles className="w-3.5 h-3.5 text-accent" />
-                <span>{t('أدوات الذكاء الاصطناعي:', 'AI Tools:')}</span>
-              </span>
-
-              <button
-                type="button"
-                disabled={aiLoading}
-                onClick={() => handleAIAction('polish')}
-                className="px-2.5 py-1 text-xs font-bold text-accent bg-accent-dim hover:bg-accent-dim/80 rounded-lg transition-colors flex items-center gap-1"
-                title={t('تحسين الأسلوب ليصبح أكاديمياً رسمياً', 'Refine text to sound professional and academic')}
-              >
-                <Sparkles className="w-3 h-3" />
-                <span>{t('تنقيح أكاديمي', 'AI Polish')}</span>
-              </button>
-
-              <button
-                type="button"
-                disabled={aiLoading}
-                onClick={() => handleAIAction('spellcheck')}
-                className="px-2.5 py-1 text-xs font-bold text-ok bg-ok-bg hover:bg-ok-bg/80 rounded-lg transition-colors flex items-center gap-1"
-                title={t('تصحيح إملائي ونحوي وتدقيق الهمزات', 'Check spelling and grammar')}
-              >
-                <CheckCircle2 className="w-3 h-3" />
-                <span>{t('تصحيح إملائي', 'Spellcheck')}</span>
-              </button>
-
-              <button
-                type="button"
-                disabled={aiLoading}
-                onClick={() => handleAIAction('summarize')}
-                className="px-2.5 py-1 text-xs font-bold text-ink bg-bg hover:bg-line rounded-lg transition-colors border border-line flex items-center gap-1"
-                title={t('اختصار وإيجاز مع حفظ الأرقام والإنجازات', 'Summarize key metrics and achievements')}
-              >
-                <FileText className="w-3 h-3" />
-                <span>{t('اختصار وإيجاز', 'Summarize')}</span>
-              </button>
-
-              <button
-                type="button"
-                disabled={aiLoading}
-                onClick={() => handleAIAction('translate')}
-                className="px-2.5 py-1 text-xs font-bold text-sub bg-bg hover:bg-line rounded-lg transition-colors border border-line flex items-center gap-1"
-                title={t('ترجمة فورية للإنجليزية', 'Translate to English')}
-              >
-                <Languages className="w-3 h-3" />
-                <span>{t('ترجمة للإنجليزية', 'Translate')}</span>
-              </button>
-            </div>
           </div>
 
           <div className="pt-2 flex justify-end">
@@ -1155,16 +1094,12 @@ export const DailyLogTab: React.FC = () => {
           </div>
 
           {entriesData?.entries && entriesData.entries.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setBatchModalOpen(true)}
-              className="px-3.5 py-1.5 text-xs font-bold text-accent bg-accent/10 hover:bg-accent/20 rounded-xl border border-accent/25 transition-all flex items-center gap-1.5 shadow-2xs hover:shadow-xs"
-              title={t('إعادة صياغة وهيكلة جميع السجلات اليومية أكاديمياً بدون اختلاق', 'Academic batch restructuring')}
-            >
-              <Sparkles className="w-3.5 h-3.5 text-accent" />
-              <span>{t('إعادة صياغة وترتيب السجلات أكاديمياً (شامل)', 'Batch Academic Rewrite')}</span>
-            </button>
+            <AgentAnalyseButton
+              size="sm"
+              pending={entriesData.entries.filter((e: any) => !insightByEntry.get(e.id) || insightByEntry.get(e.id)!.isStale).length}
+            />
           )}
+
         </div>
 
         {isLoading ? (
@@ -1238,7 +1173,7 @@ export const DailyLogTab: React.FC = () => {
 
       {/* Trash Modal */}
       {trashModalOpen && (
-        <div className="fixed inset-0 bg-ink/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-[var(--overlay)] backdrop-blur-xs flex items-center justify-center z-50 p-4">
           <div className="bg-card border border-line rounded-2xl p-6 shadow-2xl max-w-xl w-full max-h-[80vh] flex flex-col overflow-hidden text-start">
             <div className="flex items-center justify-between pb-4 border-b border-line">
               <h3 className="text-base font-extrabold text-ink flex items-center gap-2">
@@ -1290,7 +1225,7 @@ export const DailyLogTab: React.FC = () => {
 
       {/* Revisions History Modal */}
       {revisionsModalOpen && activeEntryForRevisions && (
-        <div className="fixed inset-0 bg-ink/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-[var(--overlay)] backdrop-blur-xs flex items-center justify-center z-50 p-4">
           <div className="bg-card border border-line rounded-2xl p-6 shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden text-start">
             <div className="flex items-center justify-between pb-4 border-b border-line">
               <div className="space-y-0.5">
@@ -1421,15 +1356,6 @@ export const DailyLogTab: React.FC = () => {
       />
 
       {/* Batch Academic Rewrite Modal */}
-      <BatchRewriteModal
-        isOpen={batchModalOpen}
-        onClose={() => setBatchModalOpen(false)}
-        totalEntries={entriesData?.entries?.length || 0}
-        onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ['entries'] });
-          showToast(t('تمت إعادة صياغة وترتيب السجلات أكاديمياً بنجاح!', 'Entries academically restructured successfully!'));
-        }}
-      />
 
       {/* Floating Toast Notification */}
       {toast && (

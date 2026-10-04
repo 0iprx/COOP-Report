@@ -62,7 +62,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-ink/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in no-print" dir="rtl">
+    <div className="fixed inset-0 bg-[var(--overlay)] backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in no-print" dir="rtl">
       <div className="bg-card border border-line rounded-2xl p-6 sm:p-7 shadow-2xl max-w-lg w-full space-y-5">
         <div className="flex items-start justify-between pb-3 border-b border-line">
           <div className="flex items-center gap-2.5">

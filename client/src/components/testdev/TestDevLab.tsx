@@ -160,7 +160,7 @@ export const TestDevLab: React.FC = () => {
     <div className="space-y-6" dir="rtl">
       {/* Toast Alert */}
       {toastMsg && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 bg-ink text-white px-5 py-2.5 rounded-xl shadow-2xl text-xs font-bold z-50 flex items-center gap-2 border border-line animate-fade-in">
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 bg-ink text-bg px-5 py-2.5 rounded-xl shadow-2xl text-xs font-bold z-50 flex items-center gap-2 border border-line animate-fade-in">
           <CheckCircle2 className="w-4 h-4 text-ok" />
           <span>{toastMsg}</span>
         </div>

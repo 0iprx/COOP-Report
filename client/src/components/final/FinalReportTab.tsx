@@ -52,6 +52,9 @@ import {
 import { DiffModal } from '../common/DiffModal';
 import { ProceduralNarrativeView } from '../common/ProceduralNarrativeView';
 import { ReportTOC } from './ReportTOC';
+import { printPaged } from '../../services/printPaged';
+import { ReportActionBar } from './ReportActionBar';
+import { CollapsibleSection } from '../ui/CollapsibleSection';
 import { EntryInsightPanel, EntryLocation, insightText } from './EntryInsightPanel';
 import { LearningMap } from './LearningMap';
 import { InsightAgentPanel, ReportAgentSettings } from './InsightAgentPanel';
@@ -1059,8 +1062,23 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
     }
   };
 
-  const handlePrintPDF = () => {
-    window.print();
+  // Print / Save as PDF: a paginated, always-light A4 document whose table of contents carries real
+  // page numbers and working links (see services/printPaged.ts)
+  const handlePrintPDF = async () => {
+    const el = document.getElementById('report-paper-view');
+    if (!el) {
+      window.print();
+      return;
+    }
+    try {
+      await printPaged(el, {
+        title: `${activePreviewProfile.studentName || 'COOP'} — ${isAr ? 'التقرير النهائي' : 'Final Report'}`,
+        onStatus: (m) => setSaveToast(m)
+      });
+    } catch {
+      setSaveToast('');
+      window.print(); // fall back to the browser's own print
+    }
   };
 
   const pages = reportData?.estimatedPages || 1;
@@ -1071,7 +1089,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
     <div className="space-y-6">
       {/* Toast Notification */}
       {saveToast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-ink text-white px-5 py-2.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-2 z-50 animate-fade-in max-w-[90%] text-center">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-ink text-bg px-5 py-2.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-2 z-50 animate-fade-in max-w-[90%] text-center">
           <Check className="w-4 h-4 text-ok shrink-0" />
           <span>{saveToast}</span>
         </div>
@@ -1099,6 +1117,41 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
         onChange={handleImportFile}
         accept=".json"
         className="hidden"
+      />
+
+      {/* Sticky report tools: language, weeks, export, print, versions & backups */}
+      <ReportActionBar
+        isAr={isAr}
+        previewLang={previewLang}
+        onPreviewLang={setPreviewLang}
+        pages={pages}
+        isTargetAchieved={isTargetAchieved}
+        wordCount={reportData?.wordCount || 0}
+        totalHours={reportData?.totalHours || 0}
+        courseHours={profileData.courseHours || 280}
+        showOnlyActualWeeks={showOnlyActualWeeks}
+        actualWeeksCount={actualWeeksCount}
+        plannedWeeks={weeksCount}
+        onToggleActualWeeks={() => setShowOnlyActualWeeks(!showOnlyActualWeeks)}
+        downloadingDocx={downloadingDocx}
+        downloadingHtml={downloadingHtml}
+        downloadingPptx={downloadingPptx}
+        onExportDocx={handleExportDocx}
+        onExportHtml={handleExportHTML}
+        onExportPptx={handleExportPresentation}
+        onPrint={handlePrintPDF}
+        versionsCount={versions.length}
+        canUndo={currentVersionIndex > 0}
+        canRedo={currentVersionIndex < versions.length - 1}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        onSnapshot={handleManualSnapshot}
+        onOpenVersions={() => setVersionsModalOpen(true)}
+        downloadingArchive={downloadingArchive}
+        onBackupJson={handleDownloadBackupJSON}
+        onBackupCsv={handleDownloadBackupCSV}
+        onBackupMarkdown={() => handleDownloadBackupMarkdown(previewLang)}
+        onImportBackup={() => fileInputRef.current?.click()}
       />
 
       {/* Supervisor Review & Academic Status Banner */}
@@ -1187,118 +1240,24 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
         </div>
       </div>
 
-      {/* Top Protection & Version Control Toolbar Card */}
-      <div className="bg-card border border-line rounded-2xl p-4 sm:p-5 shadow-sm no-print flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-ok-bg text-ok flex items-center justify-center font-bold">
-            <ShieldCheck className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="text-xs font-extrabold text-ink">نظام حماية البيانات والتنقل بين الإصدارات</h3>
-            <p className="text-[11px] text-sub">
-              تراجع فوري لأي تعديل سابق والعودة للحالي مع حفظ نسخ احتياطية بـ SHA-256
-            </p>
-          </div>
-        </div>
+      {/* Daily-log AI agent */}
+      {!isSampleMode && (
+        <InsightAgentPanel
+          entries={allRealEntries}
+          isAr={isAr}
+          settings={agentSettings}
+          onSettingsChange={updateAgentSettings}
+        />
+      )}
 
-        {/* Time-Travel & Version History Controls */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Undo Button */}
-          <button
-            type="button"
-            onClick={handleUndo}
-            disabled={currentVersionIndex <= 0}
-            className="px-3 py-1.5 rounded-xl text-xs font-bold text-ink bg-bg hover:bg-line border border-line disabled:opacity-30 disabled:hover:bg-bg transition-all flex items-center gap-1.5 shadow-sm"
-            title="تراجع للماضي (النسخة السابقة)"
-          >
-            <RotateCcw className="w-3.5 h-3.5 text-accent" />
-            <span>تراجع</span>
-          </button>
-
-          {/* Redo Button */}
-          <button
-            type="button"
-            onClick={handleRedo}
-            disabled={currentVersionIndex >= versions.length - 1}
-            className="px-3 py-1.5 rounded-xl text-xs font-bold text-ink bg-bg hover:bg-line border border-line disabled:opacity-30 disabled:hover:bg-bg transition-all flex items-center gap-1.5 shadow-sm"
-            title="التقدم للحالي (النسخة الأحدث)"
-          >
-            <RotateCw className="w-3.5 h-3.5 text-ok" />
-            <span>التقدم للحالي</span>
-          </button>
-
-          
-
-          {/* Version History Modal Trigger */}
-          <button
-            type="button"
-            onClick={() => setVersionsModalOpen(true)}
-            className="px-3 py-1.5 rounded-xl text-xs font-bold text-ink bg-bg hover:bg-line border border-line transition-all flex items-center gap-1.5 shadow-sm"
-            title="عرض سجل كافة الإصدارات والتنقل الفوري بينها"
-          >
-            <History className="w-3.5 h-3.5 text-sub" />
-            <span>سجل الإصدارات ({versions.length})</span>
-          </button>
-
-          {/* Pin Snapshot Button */}
-          <button
-            type="button"
-            onClick={handleManualSnapshot}
-            className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-sub hover:text-ink bg-bg hover:bg-line border border-line transition-all"
-            title="حفظ لقطة إصدار حالية"
-          >
-            <Pin className="w-3.5 h-3.5" />
-          </button>
-
-          <span className="text-line mx-1">|</span>
-
-          {/* Backup Export */}
-          <button
-            type="button"
-            onClick={handleDownloadBackupJSON}
-            disabled={!!downloadingArchive}
-            className="px-3 py-1.5 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-colors flex items-center gap-1.5"
-            title="تصدير أرشيف كامل لبياناتك بملف JSON"
-          >
-            <Download className="w-3.5 h-3.5 text-ok" />
-            <span>{downloadingArchive === 'json' ? 'جارٍ...' : 'نسخة JSON'}</span>
-          </button>
-          
-          <button
-            type="button"
-            onClick={handleDownloadBackupCSV}
-            disabled={!!downloadingArchive}
-            className="px-3 py-1.5 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-colors flex items-center gap-1.5"
-            title="تصدير السجل اليومي بملف CSV"
-          >
-            <Download className="w-3.5 h-3.5 text-ok" />
-            <span>{downloadingArchive === 'csv' ? 'جارٍ...' : 'نسخة CSV'}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleDownloadBackupMarkdown(previewLang)}
-            disabled={!!downloadingArchive}
-            className="px-3 py-1.5 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-colors flex items-center gap-1.5"
-            title="تصدير التقرير النصي بملف Markdown"
-          >
-            <Download className="w-3.5 h-3.5 text-ok" />
-            <span>{downloadingArchive === 'md-ar' ? 'جارٍ...' : 'نسخة MD'}</span>
-          </button>
-
-          {/* Backup Import */}
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="px-3 py-1.5 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-colors flex items-center gap-1.5"
-            title="استرجاع وتدقيق نسخة احتياطية سابقة"
-          >
-            <UploadCloud className="w-3.5 h-3.5 text-accent" />
-            <span>استيراد نسخة</span>
-          </button>
-        </div>
-      </div>
-
+      {/* Report data (cover, introduction, organisation, skills, conclusion) — collapsible; stays mounted so auto-save keeps working */}
+      <CollapsibleSection
+        id="final-profile"
+        icon={<FileText className="w-[18px] h-[18px]" />}
+        title={isAr ? 'بيانات الغلاف وأقسام التقرير' : 'Cover details & report sections'}
+        subtitle={isAr ? 'اسم المتدرب والجهة والقالب والمقدمة والخاتمة — تُحفظ تلقائياً' : 'Trainee, organisation, template, introduction & conclusion — saved automatically'}
+        defaultOpen={!profileData.studentName}
+      >
       {/* Profile Form Card */}
       <div className="bg-card border border-line rounded-2xl p-6 shadow-sm no-print">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 mb-4 border-b border-line">
@@ -1332,29 +1291,6 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              disabled={aiLoading}
-              onClick={handleAuditAllSections}
-              className="px-3 py-1.5 text-xs font-bold text-ok bg-ok-bg hover:bg-ok-bg/80 rounded-xl border border-ok/30 transition-colors flex items-center gap-1.5"
-              title="مراجعة وتدقيق إملائي ونحوي لكل الفقرات دفعة واحدة"
-            >
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>تدقيق شامل للفقرات</span>
-            </button>
-
-            <button
-              type="button"
-              disabled={aiLoading}
-              onClick={handleAutoTranslateReport}
-              className="px-3 py-1.5 text-xs font-bold text-accent bg-accent-dim hover:bg-accent-dim/80 rounded-xl border border-accent/20 transition-colors flex items-center gap-1.5"
-              title="ترجمة ذاتية لجميع أقسام التقرير بدون أي تدخل يدوي مع حفظ نسخة احتياطية"
-            >
-              <Languages className="w-3.5 h-3.5" />
-              <span>ترجمة التقرير كاملاً ({previewLang === 'ar' ? 'English' : 'عربي'})</span>
-            </button>
-          </div>
         </div>
 
         <form onSubmit={handleSaveProfile} className="space-y-4">
@@ -1618,15 +1554,6 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <label className="block text-xs font-bold text-sub">جهة التدريب (المؤسسة أو الشركة)</label>
-                <button
-                  type="button"
-                  onClick={() => handleOpenOrgSearchModal(profileData.entityAddress, 'all')}
-                  className="text-[11px] font-bold text-accent hover:underline flex items-center gap-1 bg-accent/10 px-2 py-0.5 rounded-lg border border-accent/20 transition-all hover:bg-accent/20"
-                  title="بحث فوري في الإنترنت والموسوعات واسترجاع الصياغة الأكاديمية"
-                >
-                  <Globe className="w-3 h-3 text-accent" />
-                  <span>بحث فوري وصياغة أكاديمية من الإنترنت</span>
-                </button>
               </div>
               <div className="relative">
                 <input
@@ -1637,16 +1564,6 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                   placeholder="اسم ومقر جهة التدريب (مثال: أرامكو السعودية، سدايا، شركة علم، وزارة الصحة...)"
                   className="w-full px-3 py-2 pl-24 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent"
                 />
-                <button
-                  type="button"
-                  disabled={orgSearching}
-                  onClick={() => handleOpenOrgSearchModal(profileData.entityAddress, 'all')}
-                  className="absolute left-1.5 top-1/2 -translate-y-1/2 px-2.5 py-1 text-xs font-bold bg-accent text-white rounded-lg hover:bg-accent/90 transition-all flex items-center gap-1 shadow-xs disabled:opacity-50"
-                  title="بحث فوري وتعبئة الأقسام"
-                >
-                  <Search className="w-3 h-3" />
-                  <span>بحث وتعبئة</span>
-                </button>
               </div>
             </div>
 
@@ -1711,57 +1628,6 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
           <div className="space-y-1.5 pt-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <label className="block text-xs font-bold text-sub">المقدمة (أهمية التدريب التعاوني وأهدافه)</label>
-              <div className="flex flex-wrap items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => handleOpenOrgSearchModal(profileData.entityAddress, 'intro')}
-                  className="text-[11px] font-bold text-blue-700 dark:text-blue-300 hover:underline flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-blue-500/10 border border-blue-500/30 shadow-xs"
-                  title="توليد مقدمة أكاديمية مخصصة لجهة التدريب وتخصصك"
-                >
-                  <Sparkles className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-                  <span>توليد من بيانات الجهة</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleAIField('introText', 'polish')}
-                  className="text-[11px] font-bold text-accent hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-accent-dim/60"
-                  title="تنقيح الصياغة لتكون بأسلوب أكاديمي رفيع"
-                >
-                  <Sparkles className="w-3 h-3" />
-                  <span>تنقيح أكاديمي</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleAIField('introText', 'summarize')}
-                  className="text-[11px] font-bold text-ink hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-bg border border-line"
-                  title="إيجاز وتلخيص علمي مكثف"
-                >
-                  <FileText className="w-3 h-3 text-sub" />
-                  <span>إيجاز وتلخيص</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleAIField('introText', 'spellcheck')}
-                  className="text-[11px] font-bold text-ok hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-ok-bg"
-                  title="تصحيح الهمزات والأخطاء الإملائية والنحوية"
-                >
-                  <CheckCircle2 className="w-3 h-3" />
-                  <span>تدقيق</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleAIField('introText', 'translate')}
-                  className="text-[11px] font-bold text-sub hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-bg border border-line"
-                  title="ترجمة فورية للإنجليزية الأكاديمية"
-                >
-                  <Languages className="w-3 h-3" />
-                  <span>ترجمة</span>
-                </button>
-              </div>
             </div>
             <textarea
               value={profileData.introText}
@@ -1775,57 +1641,6 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
           <div className="space-y-1.5">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <label className="block text-xs font-bold text-sub">التعريف بجهة التدريب وطبيعة العمل فيها</label>
-              <div className="flex flex-wrap items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => handleOpenOrgSearchModal(profileData.entityAddress, 'entity')}
-                  className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 hover:underline flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 shadow-xs"
-                  title="بحث فوري في الإنترنت والمصادر الرسمية وتوليد صياغة أكاديمية رصينة للجهة"
-                >
-                  <Globe className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                  <span>بحث وتعبئة من الإنترنت</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleAIField('entityIntroText', 'polish')}
-                  className="text-[11px] font-bold text-accent hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-accent-dim/60"
-                  title="تنقيح الصياغة أكاديمياً"
-                >
-                  <Sparkles className="w-3 h-3" />
-                  <span>تنقيح أكاديمي</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleAIField('entityIntroText', 'summarize')}
-                  className="text-[11px] font-bold text-ink hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-bg border border-line"
-                  title="إيجاز وتلخيص مهني"
-                >
-                  <FileText className="w-3 h-3 text-sub" />
-                  <span>إيجاز وتلخيص</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleAIField('entityIntroText', 'spellcheck')}
-                  className="text-[11px] font-bold text-ok hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-ok-bg"
-                  title="تدقيق إملائي ونحوي"
-                >
-                  <CheckCircle2 className="w-3 h-3" />
-                  <span>تدقيق</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleAIField('entityIntroText', 'translate')}
-                  className="text-[11px] font-bold text-sub hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-bg border border-line"
-                  title="ترجمة فورية"
-                >
-                  <Languages className="w-3 h-3" />
-                  <span>ترجمة</span>
-                </button>
-              </div>
             </div>
             <textarea
               value={profileData.entityIntroText}
@@ -1839,57 +1654,6 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
           <div className="space-y-1.5">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <label className="block text-xs font-bold text-sub">المعارف والمهارات والتجارب المكتسبة (ربطها بمقررات الكلية)</label>
-              <div className="flex flex-wrap items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => handleOpenOrgSearchModal(profileData.entityAddress, 'skills')}
-                  className="text-[11px] font-bold text-purple-700 dark:text-purple-300 hover:underline flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-purple-500/10 border border-purple-500/30 shadow-xs"
-                  title="توليد مهارات وتجارب متوافقة مع نشاط جهة التدريب وتخصصك"
-                >
-                  <Sparkles className="w-3 h-3 text-purple-600 dark:text-purple-400" />
-                  <span>توليد من بيانات الجهة</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleAIField('skillsText', 'polish')}
-                  className="text-[11px] font-bold text-accent hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-accent-dim/60"
-                  title="تنقيح الصياغة أكاديمياً"
-                >
-                  <Sparkles className="w-3 h-3" />
-                  <span>تنقيح أكاديمي</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleAIField('skillsText', 'summarize')}
-                  className="text-[11px] font-bold text-ink hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-bg border border-line"
-                  title="إيجاز وتلخيص المهارات"
-                >
-                  <FileText className="w-3 h-3 text-sub" />
-                  <span>إيجاز وتلخيص</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleAIField('skillsText', 'spellcheck')}
-                  className="text-[11px] font-bold text-ok hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-ok-bg"
-                  title="تدقيق إملائي ونحوي"
-                >
-                  <CheckCircle2 className="w-3 h-3" />
-                  <span>تدقيق</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleAIField('skillsText', 'translate')}
-                  className="text-[11px] font-bold text-sub hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-bg border border-line"
-                  title="ترجمة فورية"
-                >
-                  <Languages className="w-3 h-3" />
-                  <span>ترجمة</span>
-                </button>
-              </div>
             </div>
             <textarea
               value={profileData.skillsText}
@@ -1903,57 +1667,6 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
           <div className="space-y-1.5">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <label className="block text-xs font-bold text-sub">الخاتمة والتوصيات العامة</label>
-              <div className="flex flex-wrap items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => handleOpenOrgSearchModal(profileData.entityAddress, 'conclusion')}
-                  className="text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:underline flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/30 shadow-xs"
-                  title="توليد خاتمة وتوصيات منهجية مناسبة لبيئة الجهة والجامعة"
-                >
-                  <Sparkles className="w-3 h-3 text-amber-600 dark:text-amber-400" />
-                  <span>توليد من بيانات الجهة</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleAIField('conclusionText', 'polish')}
-                  className="text-[11px] font-bold text-accent hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-accent-dim/60"
-                  title="تنقيح الصياغة أكاديمياً"
-                >
-                  <Sparkles className="w-3 h-3" />
-                  <span>تنقيح أكاديمي</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleAIField('conclusionText', 'summarize')}
-                  className="text-[11px] font-bold text-ink hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-bg border border-line"
-                  title="إيجاز الخاتمة"
-                >
-                  <FileText className="w-3 h-3 text-sub" />
-                  <span>إيجاز وتلخيص</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleAIField('conclusionText', 'spellcheck')}
-                  className="text-[11px] font-bold text-ok hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-ok-bg"
-                  title="تدقيق إملائي ونحوي"
-                >
-                  <CheckCircle2 className="w-3 h-3" />
-                  <span>تدقيق</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleAIField('conclusionText', 'translate')}
-                  className="text-[11px] font-bold text-sub hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-bg border border-line"
-                  title="ترجمة فورية"
-                >
-                  <Languages className="w-3 h-3" />
-                  <span>ترجمة</span>
-                </button>
-              </div>
             </div>
             <textarea
               value={profileData.conclusionText}
@@ -1976,132 +1689,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
         </form>
       </div>
 
-      {/* Page Estimate and Export Toolbar */}
-      <div className="bg-card border border-line rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 no-print">
-        <div className="flex items-center gap-3">
-          <div
-            className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold ${
-              isTargetAchieved ? 'bg-ok-bg text-ok' : 'bg-accent-dim text-accent'
-            }`}
-          >
-            <FileText className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-extrabold text-ink">
-                عدد الصفحات المقدر: {pages} صفحة
-              </span>
-              {isTargetAchieved ? (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-ok-bg text-ok flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" />
-                  مستوفٍ للمعيار (20+ صفحة)
-                </span>
-              ) : (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-accent-dim text-accent flex items-center gap-1">
-                  <AlertTriangle className="w-3 h-3" />
-                  أقل من 20 صفحة
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-sub mt-0.5">
-              إجمالي الكلمات: {reportData?.wordCount || 0} كلمة | إجمالي الساعات المسجلة: {reportData?.totalHours || 0} من {profileData.courseHours || 280} ساعة ({Math.min(100, Math.round(((reportData?.totalHours || 0) / (profileData.courseHours || 280)) * 100))}%)
-            </p>
-          </div>
-        </div>
-
-        {/* Export Buttons & Preview Language Selector */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Actual Weeks Filter Toggle */}
-          <button
-            type="button"
-            onClick={() => setShowOnlyActualWeeks(!showOnlyActualWeeks)}
-            className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 ${
-              showOnlyActualWeeks
-                ? 'bg-ok-bg text-ok border-ok/30'
-                : 'bg-bg text-sub hover:text-ink border-line'
-            }`}
-            title="التبديل بين عرض وتصدير الأسابيع المنجزة فعلياً فقط أو الخطة النظرية لـ 14 أسبوعاً"
-          >
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>{showOnlyActualWeeks ? `الأسابيع المنجزة فعلياً (${actualWeeksCount})` : 'الخطة الكاملة (14 أسبوعاً)'}</span>
-          </button>
-
-          {/* Language Toggle for Export and Preview */}
-          <div className="flex items-center bg-bg border border-line rounded-xl p-1 text-xs font-bold">
-            <button
-              type="button"
-              onClick={() => setPreviewLang('ar')}
-              className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1.5 ${
-                previewLang === 'ar' ? 'bg-accent text-white shadow-sm' : 'text-sub hover:text-ink'
-              }`}
-            >
-              <Languages className="w-3.5 h-3.5" />
-              <span>العربية</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setPreviewLang('en')}
-              className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1.5 ${
-                previewLang === 'en' ? 'bg-accent text-white shadow-sm' : 'text-sub hover:text-ink'
-              }`}
-            >
-              <Languages className="w-3.5 h-3.5" />
-              <span>English</span>
-            </button>
-          </div>
-
-          <button
-            onClick={handleExportPresentation}
-            disabled={downloadingPptx}
-            className="px-3.5 py-2 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
-            title="تنزيل شرائح عرض تقديمي متكاملة للمناقشة أمام اللجنة (.pptx) متضمنة الصور التوثيقية والأسابيع"
-          >
-            <Download className={`w-4 h-4 text-accent ${downloadingPptx ? 'animate-bounce' : ''}`} />
-            <span>{downloadingPptx ? 'جارٍ تصدير PowerPoint...' : 'عرض PowerPoint (.pptx)'}</span>
-          </button>
-
-          <button
-            onClick={handleExportDocx}
-            disabled={downloadingDocx}
-            className="px-3.5 py-2 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
-            title="تنزيل مستند Word مع فهرسة ذكية ديناميكية وأرقام صفحات مرتبطة بكل أسبوع وفصل"
-          >
-            <Download className={`w-4 h-4 text-accent ${downloadingDocx ? 'animate-bounce' : ''}`} />
-            <span>{downloadingDocx ? 'جارٍ تصدير Word...' : 'تنزيل Word مع الفهرسة (.docx)'}</span>
-          </button>
-
-          <button
-            onClick={handleExportHTML}
-            disabled={downloadingHtml}
-            className="px-3.5 py-2 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
-            title="تنزيل تقرير HTML مستقل أوفلاين مع روابط تنقل سلسة"
-          >
-            <FileCode className={`w-4 h-4 text-ok ${downloadingHtml ? 'animate-bounce' : ''}`} />
-            <span>{downloadingHtml ? 'جارٍ تصدير HTML...' : 'تنزيل HTML مستقل'}</span>
-          </button>
-
-          <button
-            onClick={handlePrintPDF}
-            className="px-3.5 py-2 text-xs font-bold text-white bg-accent hover:bg-accent/90 rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
-            title="طباعة التقرير مباشرة أو حفظ كـ PDF بفواصل صفحات قياسية دون ظهور الرابط والتاريخ"
-          >
-            <Printer className="w-4 h-4" />
-            <span>طباعة / حفظ PDF</span>
-          </button>
-        </div>
-      </div>
-
-
-
-      {/* Daily-log AI agent */}
-      {!isSampleMode && (
-        <InsightAgentPanel
-          entries={allRealEntries}
-          isAr={isAr}
-          settings={agentSettings}
-          onSettingsChange={updateAgentSettings}
-        />
-      )}
+      </CollapsibleSection>
 
       {/* Sample Preview Mode Banner */}
       {isSampleMode && (
@@ -2785,7 +2373,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
       
       {/* Samples & Writing Guide Hub Modal (مركز إرشادات وقوالب التقرير التعاوني) */}
       {samplesModalOpen && (
-        <div className="fixed inset-0 bg-ink/60 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4 animate-fade-in no-print">
+        <div className="fixed inset-0 bg-[var(--overlay)] backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4 animate-fade-in no-print">
           <div className="bg-card border border-line rounded-2xl p-4 sm:p-6 shadow-2xl max-w-5xl w-full max-h-[92vh] flex flex-col overflow-hidden">
             
             {/* Modal Header */}
@@ -3335,7 +2923,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
 
       {/* Version History Modal (سجل الإصدارات الكامل والتنقل الزمني) */}
       {versionsModalOpen && (
-        <div className="fixed inset-0 bg-ink/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in no-print">
+        <div className="fixed inset-0 bg-[var(--overlay)] backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in no-print">
           <div className="bg-card border border-line rounded-2xl p-6 shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between pb-4 border-b border-line">
               <div className="flex items-center gap-2">
@@ -3407,8 +2995,6 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
         </div>
       )}
 
-      {/* ========================================================================= */}
-      {/* Organization Academic Search & Auto-Fill Modal */}
       {/* ========================================================================= */}
       {orgSearchModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">

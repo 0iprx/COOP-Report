@@ -543,7 +543,7 @@ export const SupervisorTab: React.FC = () => {
     <div className="space-y-6" dir="rtl">
       {/* Toast Notification */}
       {saveToast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-ink text-white px-5 py-2.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-2 z-50 animate-fade-in max-w-[90%] text-center">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-ink text-bg px-5 py-2.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-2 z-50 animate-fade-in max-w-[90%] text-center">
           <Check className="w-4 h-4 text-ok shrink-0" />
           <span>{saveToast}</span>
         </div>
@@ -1125,7 +1125,7 @@ export const SupervisorTab: React.FC = () => {
                                   alt={photo.caption}
                                   className="h-full w-full object-cover group-hover:scale-105 transition-transform"
                                 />
-                                <span className="absolute bottom-1 right-1 bg-ink/70 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
+                                <span className="absolute bottom-1 right-1 bg-[var(--overlay)] text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
                                   تكبير
                                 </span>
                               </div>

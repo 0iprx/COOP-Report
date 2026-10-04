@@ -18,15 +18,18 @@ export async function generatePresentationBuffer(
   const isAr = lang === 'ar';
 
   // ── Premium Executive Palette ──────────────────────────────────────
-  const BG_COLOR = '0B0F19';      // Deep Obsidian
-  const CARD_BG = '151E2E';       // Refined Slate Glass
-  const CARD_BORDER = '24334A';   // Subtle High-Tech Border
-  const TEXT_MAIN = 'F8FAFC';     // Bright Crisp White
-  const TEXT_MUTED = '94A3B8';    // Secondary Slate
-  const ACCENT_CYAN = '0EA5E9';   // Electric Sky Blue
-  const ACCENT_EMERALD = '10B981';// High-Status Emerald
-  const ACCENT_AMBER = 'F59E0B';  // Metric Gold
-  const ACCENT_RED = 'EF4444';    // Alert Rose
+  // Formal light palette: white pages, dark text, maroon accent. No filled boxes — the shapes
+  // below keep their layout positions but are drawn invisibly (same colour as the page).
+  const BG_COLOR = 'FFFFFF';
+  const CARD_BG = 'FFFFFF';
+  const CARD_BORDER = 'FFFFFF';
+  const RULE_COLOR = 'D9D4C7';    // thin dividing rules
+  const TEXT_MAIN = '1B1B18';
+  const TEXT_MUTED = '5F5B54';
+  const ACCENT_CYAN = '8B0000';   // primary accent (maroon)
+  const ACCENT_EMERALD = '2A6348';
+  const ACCENT_AMBER = 'B45309';
+  const ACCENT_RED = 'C0102A';
 
   const fontFace = isAr ? 'Arial' : 'Segoe UI';
 
@@ -68,7 +71,7 @@ export async function generatePresentationBuffer(
       y: 1.45,
       w: 11.7,
       h: 0,
-      line: { color: CARD_BORDER, width: 1 }
+      line: { color: RULE_COLOR, width: 1 }
     });
 
     // Footer
@@ -82,7 +85,7 @@ export async function generatePresentationBuffer(
         w: 11.7,
         h: 0.3,
         fontSize: 9,
-        color: '475569',
+        color: '5F5B54',
         fontFace,
         rtl: isAr,
         align: isAr ? 'right' : 'left'
@@ -744,7 +747,7 @@ export async function generatePresentationBuffer(
       y: 2.1,
       w: 3.1,
       h: 2.2,
-      fill: { color: '1A2333' },
+      fill: { color: 'FFFFFF' },
       line: { color: CARD_BORDER, width: 1 }
     });
 

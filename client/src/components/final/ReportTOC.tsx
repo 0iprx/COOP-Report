@@ -52,18 +52,24 @@ export const ReportTOC: React.FC<ReportTOCProps> = ({
   const analyzed = counts.new + counts.reinforced + counts.routine;
   const totalHours = allEntries.reduce((s, e) => s + calculateHoursBetween(e.timeFrom, e.timeTo), 0);
 
-  const Row: React.FC<{ href: string; n: string; title: React.ReactNode; trail?: React.ReactNode; level: 1 | 2 | 3 }> = ({
+  const Row: React.FC<{ href: string; n: string; title: React.ReactNode; sub?: React.ReactNode; trail?: React.ReactNode; level: 1 | 2 | 3 }> = ({
     href,
     n,
     title,
+    sub,
     trail,
     level
   }) => (
     <a href={href} className={`toc-row toc-level-${level}`}>
       <span className="toc-num">{n}</span>
-      <span className="toc-title">{title}</span>
+      <span className="toc-title">
+        {title}
+        {sub && <span className="toc-sub">{sub}</span>}
+      </span>
       <span className="toc-leader" aria-hidden="true" />
       {trail !== undefined && <span className="toc-trail">{trail}</span>}
+      {/* Page number: reserved here, filled in after the printed pages are laid out (services/printPaged.ts) */}
+      <span className="toc-pg" aria-hidden="true">00</span>
     </a>
   );
 
@@ -99,7 +105,7 @@ export const ReportTOC: React.FC<ReportTOCProps> = ({
         )}
       </div>
 
-      <nav className="toc-list max-w-3xl mx-auto">
+      <div role="navigation" className="toc-list max-w-3xl mx-auto">
         <Row href="#sec-cover" n="" level={1} title={L('صفحة الغلاف وبيانات المتدرب', 'Cover Page & Trainee Details')} />
         <Row href="#sec-intro" n={num(1)} level={1} title={L('المقدمة وأهداف التدريب', 'Introduction & Training Objectives')} />
         <Row
@@ -127,7 +133,7 @@ export const ReportTOC: React.FC<ReportTOCProps> = ({
                   <b>{weekLabel(w)}:</b> {weekTopic(w)}
                 </>
               }
-              trail={formatPeriod(w)}
+              sub={formatPeriod(w)}
             />
             {showDays &&
               (w.entries || []).map((e, di) => {
@@ -166,7 +172,7 @@ export const ReportTOC: React.FC<ReportTOCProps> = ({
         )}
         <Row href="#sec-conclusion" n={num(5)} level={1} title={L('الخاتمة والتوصيات', 'Conclusion & Recommendations')} />
         <Row href="#sec-approval" n={num(6)} level={1} title={L('استمارة تقييم المشرفين والملاحق', 'Supervisory Evaluation & Appendices')} />
-      </nav>
+      </div>
 
       {analyzed > 0 && (
         <div className="toc-legend">

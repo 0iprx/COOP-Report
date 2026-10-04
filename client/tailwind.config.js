@@ -12,6 +12,7 @@ export default {
         sub:          'var(--sub)',
         muted:        'var(--muted)',
         line:         'var(--line)',
+        'line-strong': 'var(--line-strong)',
         accent:       'var(--accent)',
         'accent-dim': 'var(--accent-dim)',
         'accent-mid': 'var(--accent-mid)',

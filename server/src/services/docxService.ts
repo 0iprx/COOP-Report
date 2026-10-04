@@ -21,6 +21,7 @@ import {
   LeaderType,
   TableOfContents,
   PageReference,
+  SimpleField,
   ImageRun
 } from 'docx';
 import { FinalReportData, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis, formatWeekPeriod, elevateTaskTitle, normalizeStudentName, polishAcademicNarrative, convertBulletsToCohesiveParagraphs } from '@coop/shared';
@@ -191,6 +192,92 @@ function createCoverLogosBlock(
   });
 }
 
+
+// ────────────────────────────────────────────────────────────
+// Table-of-contents page numbers
+//
+// Word computes page numbers itself: every entry is a PAGEREF field and the document asks Word to
+// refresh fields on open (features.updateFields), which yields the exact numbers. A field with no stored
+// value would show blank until that refresh, so each one also carries a cached estimate — the document
+// is laid out with a page break before every chapter, so the estimate is close and is replaced by
+// the exact value as soon as Word updates the fields.
+// ────────────────────────────────────────────────────────────
+let tocPageMap: Record<string, number> = {};
+
+function pageRef(anchorId: string): SimpleField | PageReference {
+  const cached = tocPageMap[anchorId];
+  return cached ? new SimpleField(`PAGEREF ${anchorId} \\h`, String(cached)) : new PageReference(anchorId);
+}
+
+function estimateTocPages(data: FinalReportData): Record<string, number> {
+  const LINES = 34; // usable lines on an A4 page at the document's body size
+  const CHARS = 62; // characters per body line
+  const pagesFor = (lines: number) => Math.max(1, Math.ceil(lines / LINES));
+  const textLines = (t?: string | null) => Math.ceil((t || '').length / CHARS);
+  const { profile, weeks } = data;
+  const map: Record<string, number> = {};
+
+  map.sec_cover = 1;
+  const tocRows = 13 + weeks.length;
+  const tocPages = pagesFor(tocRows * 1.7 + 6);
+  map.sec_toc = 2;
+
+  let page = 2 + tocPages;
+  // Chapter 1
+  map.chap_intro = page;
+  map.sec_intro_obj = page;
+  const introLines = 6 + textLines(profile.introText);
+  map.sec_intro_req = page + Math.floor(introLines / LINES);
+  page += pagesFor(introLines + 12);
+  // Chapter 2
+  map.chap_org = page;
+  map.sec_org_about = page;
+  const orgLines = 4 + 14 + textLines(profile.entityIntroText);
+  map.sec_org_plan = page + Math.floor(orgLines / LINES);
+  page += pagesFor(orgLines + 8);
+  // Chapter 3 (its heading shares a page with week 1)
+  map.chap_timeline = page;
+  let weekPage = page;
+  let firstWeek = true;
+  let usedOnPage = 4; // chapter heading
+  weeks.forEach((w, idx) => {
+    const hasContent = w.entries && w.entries.length > 0;
+    const prevEmpty = idx > 0 && (!weeks[idx - 1].entries || weeks[idx - 1].entries.length === 0);
+    const breaks = idx === 0 ? false : hasContent || !prevEmpty;
+    if (breaks) {
+      weekPage += pagesFor(usedOnPage);
+      usedOnPage = 0;
+    }
+    firstWeek = false;
+    map[`week_${w.weekIndex}`] = weekPage + Math.floor(usedOnPage / LINES);
+    let lines = 3 + 6;
+    if (hasContent) {
+      lines += 2;
+      for (const e of w.entries) lines += Math.max(3, Math.ceil(Math.min((e.description || '').length, 550) / 38) + 2);
+      lines += 16; // academic synthesis box
+      lines += (w.evidence?.length || 0) * 16;
+      lines += 9; // supervisor sign-off
+    } else {
+      lines = 8;
+    }
+    usedOnPage += lines;
+  });
+  void firstWeek;
+  page = weekPage + pagesFor(usedOnPage);
+  // Chapter 4
+  map.chap_skills = page;
+  map.sec_skills_tech = page;
+  const skillLines = 8 + textLines(profile.skillsText);
+  map.sec_skills_soft = page + Math.floor(skillLines / LINES);
+  page += pagesFor(skillLines + 6);
+  // Chapter 5 and appendices each start on a new page
+  map.chap_conclusion = page;
+  page += pagesFor(6 + textLines(profile.conclusionText));
+  map.chap_appendix_a = page;
+  map.chap_appendix_b = page + 1;
+  return map;
+}
+
 export async function generateAcademicDocx(reportData: FinalReportData, lang: 'ar' | 'en' = 'ar'): Promise<Buffer> {
   const { profile, weeks, totalHours, totalDays, totalEntries } = reportData;
   const isAr = lang === 'ar';
@@ -201,6 +288,7 @@ export async function generateAcademicDocx(reportData: FinalReportData, lang: 'a
   const courseHours = profile.courseHours || 280;
   const progressPercent = Math.min(100, Math.round((totalHours / courseHours) * 100));
   const trainingWeeksCount = profile.trainingWeeks || 14;
+  tocPageMap = estimateTocPages(reportData);
 
   const doc = new Document({
     features: {
@@ -497,7 +585,56 @@ export async function generateAcademicDocx(reportData: FinalReportData, lang: 'a
               })
             ]
           }),
+          new Paragraph({
+            heading: HeadingLevel.HEADING_2,
+            bidirectional: isAr,
+            spacing: { before: 200, after: 100 },
+            keepNext: true,
+            children: [
+              new Bookmark({
+                id: 'sec_org_about',
+                children: [
+                  new TextRun({
+                    text: isAr ? '2.1 نبذة عن جهة التدريب وهيكلها الإداري' : '2.1 Host Organization & Department',
+                    bold: true,
+                    size: 26,
+                    color: '2F6B4F'
+                  })
+                ]
+              })
+            ]
+          }),
           createOrgOverviewCard(profile, isAr),
+          new Paragraph({
+            heading: HeadingLevel.HEADING_2,
+            bidirectional: isAr,
+            spacing: { before: 300, after: 100 },
+            keepNext: true,
+            children: [
+              new Bookmark({
+                id: 'sec_org_plan',
+                children: [
+                  new TextRun({
+                    text: isAr ? `2.2 الخطة المقررة للتدريب (${trainingWeeksCount} أسبوعاً)` : `2.2 Training Plan (${trainingWeeksCount} Weeks)`,
+                    bold: true,
+                    size: 26,
+                    color: '2F6B4F'
+                  })
+                ]
+              })
+            ]
+          }),
+          new Paragraph({
+            bidirectional: isAr,
+            alignment: AlignmentType.JUSTIFIED,
+            children: [
+              new TextRun({
+                text: isAr
+                  ? `تمتد خطة التدريب ${trainingWeeksCount} أسبوعاً بإجمالي ${courseHours} ساعة تدريبية${profile.startDate ? `، بدءاً من ${formatDateArabic(profile.startDate)}` : ''}. أُنجز منها ${totalHours} ساعة (${progressPercent}%) خلال ${totalDays} يوم عمل موثق.`
+                  : `The training plan spans ${trainingWeeksCount} weeks and ${courseHours} training hours${profile.startDate ? `, starting ${formatDateEnglish(profile.startDate)}` : ''}. ${totalHours} hours (${progressPercent}%) were completed over ${totalDays} documented working days.`
+              })
+            ]
+          }),
 
           // ==========================================
           // CHAPTER 3: WEEKLY TRAINING REPORTS (14 WEEKS)
@@ -530,7 +667,7 @@ export async function generateAcademicDocx(reportData: FinalReportData, lang: 'a
             const hasContent = w.entries && w.entries.length > 0;
             const prevEmpty = idx > 0 && (!weeks[idx - 1].entries || weeks[idx - 1].entries.length === 0);
             // Only break page when: first week, or previous week had content, or current has content
-            const shouldPageBreak = idx === 0 || hasContent || !prevEmpty;
+            const shouldPageBreak = idx === 0 ? false : hasContent || !prevEmpty;
 
             return [
               new Paragraph({
@@ -769,7 +906,7 @@ function createTOCChapterItem(anchorId: string, title: string, isAr: boolean): P
         ]
       }),
       new TextRun({ children: [new Tab()] }),
-      new PageReference(anchorId)
+      pageRef(anchorId)
     ]
   });
 }
@@ -798,7 +935,7 @@ function createTOCSubItem(anchorId: string, title: string, isAr: boolean): Parag
         ]
       }),
       new TextRun({ children: [new Tab()] }),
-      new PageReference(anchorId)
+      pageRef(anchorId)
     ]
   });
 }
@@ -827,7 +964,7 @@ function createTOCWeekItem(anchorId: string, title: string, isAr: boolean): Para
         ]
       }),
       new TextRun({ children: [new Tab()] }),
-      new PageReference(anchorId)
+      pageRef(anchorId)
     ]
   });
 }
@@ -856,7 +993,7 @@ function createTOCDottedItem(anchorId: string, title: string, isAr: boolean): Pa
         ]
       }),
       new TextRun({ children: [new Tab()] }),
-      new PageReference(anchorId)
+      pageRef(anchorId)
     ]
   });
 }

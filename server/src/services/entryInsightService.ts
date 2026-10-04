@@ -799,17 +799,21 @@ export async function analyzeAllEntries(
   tenantId: string,
   scope: 'missing' | 'all',
   opts: AnalyzeOptions,
-  onProgress: (done: number, total: number, label: string) => void
+  onProgress: (done: number, total: number, label: string) => void,
+  /** Restrict the run to these entries (e.g. one week); they are analysed in chronological order */
+  onlyEntryIds?: number[]
 ): Promise<{ analyzed: number; failed: number }> {
   const entries = await prisma.entry.findMany({
     where: { userId, deletedAt: null },
     orderBy: [{ entryDate: 'asc' }, { id: 'asc' }],
     select: { id: true, entryDate: true, title: true, description: true, insight: { select: { sourceHash: true } } }
   });
+  const idFilter = onlyEntryIds && onlyEntryIds.length ? new Set(onlyEntryIds) : null;
+  const pool = idFilter ? entries.filter((e) => idFilter.has(e.id)) : entries;
   const targets =
     scope === 'all'
-      ? entries
-      : entries.filter((e) => !e.insight || e.insight.sourceHash !== hashEntrySource(e.title, e.description));
+      ? pool
+      : pool.filter((e) => !e.insight || e.insight.sourceHash !== hashEntrySource(e.title, e.description));
 
   let analyzed = 0;
   let failed = 0;

@@ -104,7 +104,7 @@ const TiltStepCard: React.FC<{
           }}
         >
           {icon}
-          <span className="absolute -top-2 -end-2 w-5 h-5 rounded-full bg-ink text-white text-[10px] font-black flex items-center justify-center border-2 border-card">
+          <span className="absolute -top-2 -end-2 w-5 h-5 rounded-full bg-ink text-bg text-[10px] font-black flex items-center justify-center border-2 border-card">
             {index}
           </span>
         </div>

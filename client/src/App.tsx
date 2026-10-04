@@ -126,10 +126,12 @@ const MainDashboard: React.FC = () => {
 
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6">
         {/* ── Tab Navigation ──────────────────────────────── */}
-        <div className="tabs-container no-scrollbar no-print flex items-center overflow-x-auto border-b border-line mb-6 gap-1 px-1 sm:px-0">
+        <div role="tablist" className="tabs-container no-scrollbar no-print sticky top-14 z-30 flex items-center overflow-x-auto border-b border-line mb-6 gap-1 px-1 -mx-4 sm:-mx-6 sm:px-6" style={{ background: "var(--glass)", backdropFilter: "blur(12px)" }}>
           {visibleTabs.map((tab) => (
             <button
               key={tab.id}
+              role="tab"
+              aria-selected={activeTab === tab.id}
               onClick={() => handleTabClick(tab.id)}
               className={`tab-item ${activeTab === tab.id ? 'active' : ''}`}
             >

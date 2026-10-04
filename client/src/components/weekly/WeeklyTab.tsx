@@ -5,6 +5,10 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 import { FinalReportData, EntryDTO, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis, formatWeekPeriod, ENTRY_CATEGORIES, elevateTaskTitle, normalizeStudentName, polishAcademicNarrative, convertBulletsToCohesiveParagraphs, isEntryStructuredQA } from '@coop/shared';
 import { WeeklyEvidenceSection } from './WeeklyEvidenceSection';
+import { Menu, MenuItem, MenuLabel, MenuSeparator } from '../ui/Menu';
+import { ConfirmDialog } from '../ui/ConfirmDialog';
+import { AgentAnalyseButton } from '../common/AgentAnalyseButton';
+import { LEARNING_STATUS_LABELS, LearningStatus } from '@coop/shared';
 import {
   Calendar,
   Clock,
@@ -14,6 +18,8 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  Loader2,
   Edit3,
   Trash2,
   Plus,
@@ -36,9 +42,7 @@ import {
   ListChecks
 } from 'lucide-react';
 import { DiffModal } from '../common/DiffModal';
-import { BatchRewriteModal } from '../common/BatchRewriteModal';
 import { ProceduralNarrativeView } from '../common/ProceduralNarrativeView';
-import { DailyFormatAuditModal } from './DailyFormatAuditModal';
 
 const CATEGORIES = ENTRY_CATEGORIES;
 
@@ -147,10 +151,9 @@ export const WeeklyTab: React.FC = () => {
   const queryClient = useQueryClient();
   const { lang, setLang, isAr, t } = useLanguage();
   const { theme, toggleTheme, isDark } = useTheme();
-  const [batchModalOpen, setBatchModalOpen] = useState<boolean>(false);
-  const [auditModalOpen, setAuditModalOpen] = useState<boolean>(false);
   const [selectedWeek, setSelectedWeek] = useState<string>('');
   const [copied, setCopied] = useState<boolean>(false);
+  const [addWeekConfirm, setAddWeekConfirm] = useState<boolean>(false);
   const [downloadingPptx, setDownloadingPptx] = useState<boolean>(false);
   const [downloadingDocx, setDownloadingDocx] = useState<boolean>(false);
   const [isAuditingWeek, setIsAuditingWeek] = useState<boolean>(false);
@@ -337,9 +340,23 @@ export const WeeklyTab: React.FC = () => {
       text += isAr ? `(لا توجد مهام مسجلة في هذه الفترة)` : `(No tasks recorded in this period)`;
     }
 
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    const done = () => {
+      setSaveToast(t('تم نسخ النص', 'Text copied'));
+      setTimeout(() => setSaveToast(''), 2000);
+    };
+    const fallback = () => {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      ok ? done() : setErrorToast(t('تعذر النسخ تلقائياً', 'Could not copy automatically'));
+    };
+    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(done, fallback);
+    else fallback();
   };
 
   const handleDownloadMarkdown = () => {
@@ -707,236 +724,197 @@ export const WeeklyTab: React.FC = () => {
       )}
 
       <div className="bg-card border border-line rounded-2xl p-4 sm:p-6 shadow-sm print:border-none print:shadow-none print:p-0 print:m-0 print:rounded-none print:bg-transparent">
-        {/* Top Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 mb-4 border-b border-line no-print">
-          <div>
+        {/* Header: title + the three actions that matter (agent · export · print) */}
+        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 pb-4 mb-4 border-b border-line no-print">
+          <div className="min-w-0">
             <h2 className="text-base font-extrabold text-ink flex items-center gap-2">
               <Calendar className="w-5 h-5 text-accent" />
-              <span>{t('سجل ومتابعة الأسبوع التدريبي', 'Weekly Training Log & Review')}</span>
+              <span>{t('التقرير الأسبوعي', 'Weekly Report')}</span>
             </h2>
-            <p className="text-xs text-sub mt-0.5">
+            <p className="text-xs text-sub mt-1 max-w-xl">
               {t(
-                'مساعدك في تدوين وتصنيف مهام الأسبوع وحفظ كافة التفاصيل لعدم نسيانها عند إعداد التقرير',
-                'Your assistant to log, classify, and track weekly tasks without forgetting details.'
+                'راجع أيام الأسبوع، أضف الصور التوثيقية، ثم دع الوكيل الذكي يحوّل يومياتك إلى تقرير واضح للقارئ قبل الطباعة أو التصدير.',
+                'Review the week, add evidence photos, then let the AI agent turn your daily notes into a clear report before printing or exporting.'
               )}
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={handleDownloadDocx}
-              disabled={downloadingDocx}
-              className="px-3.5 py-1.5 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
-              title={t('تنزيل تقرير الأسبوع كمستند Word رسمي (.docx) متضمناً جدول المهام وخانات التوقيع', 'Download weekly Word report (.docx)')}
-            >
-              <FileText className={`w-3.5 h-3.5 text-accent ${downloadingDocx ? 'animate-bounce' : ''}`} />
-              <span>{downloadingDocx ? t('جارٍ تصدير Word...', 'Exporting Word...') : t('تقرير Word (.docx)', 'Word (.docx)')}</span>
-            </button>
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <AgentAnalyseButton
+              entryIds={activeEntries.map((e) => e.id)}
+              pending={activeEntries.filter((e) => { const ins = (finalReportData?.weeks || []).flatMap((w) => w.entries).find((x) => x.id === e.id)?.insight; return !ins || ins.isStale; }).length}
+            />
 
-            <button
-              onClick={() => setBatchModalOpen(true)}
-              className="px-3.5 py-1.5 text-xs font-black text-white bg-accent hover:bg-accent/90 rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
-              title={t('إعادة صياغة وهيكلة مهام الأسبوع أكاديمياً بالذكاء الاصطناعي مع الأمانة العلمية الصارمة بدون اختلاق أو فقدان للمعلومات', 'Academic AI Restructure for Week')}
-            >
-              <Sparkles className="w-3.5 h-3.5 text-white" />
-              <span>{t('الصياغة الأكاديمية بالذكاء الاصطناعي', 'Academic AI Rewrite')}</span>
-            </button>
-
-            {/* Audit & Enforce Daily Q&A Format Button */}
-            <button
-              type="button"
-              onClick={() => setAuditModalOpen(true)}
-              className={`px-3.5 py-1.5 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 shadow-sm text-white ${
-                activeFreeformCount > 0
-                  ? 'bg-gradient-to-r from-teal-600 to-emerald-700 hover:from-teal-700 hover:to-emerald-800 ring-2 ring-amber-400/50'
-                  : 'bg-teal-700 hover:bg-teal-800'
-              }`}
-              title={t('فحص نمط تدوين مهام الأسبوع (نموذج الأسئلة vs النظام الحر) وتوحيدها بالتقرير لطباعتها', 'Audit daily logging style (Q&A vs Freeform) and format for print')}
-            >
-              <ListChecks className="w-3.5 h-3.5 text-white" />
-              <span>{t('فحص وتوحيد نمط التدوين', 'Audit & Apply Q&A Style')}</span>
-              {activeFreeformCount > 0 ? (
-                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-amber-300 text-slate-950">
-                  {activeFreeformCount} {isAr ? 'حر' : 'free'}
-                </span>
-              ) : (
-                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-white/20 text-white">
-                  ✓ {isAr ? 'منظم' : 'Q&A'}
-                </span>
+            <Menu
+              width="w-72"
+              label={t('تصدير', 'Export')}
+              trigger={({ open, triggerProps }) => (
+                <button
+                  {...triggerProps}
+                  className="px-3 py-2 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-colors flex items-center gap-1.5"
+                >
+                  {downloadingDocx || downloadingPptx ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 text-accent" />}
+                  <span>{t('تصدير', 'Export')}</span>
+                  <ChevronDown className={`w-3 h-3 text-sub transition-transform ${open ? 'rotate-180' : ''}`} />
+                </button>
               )}
-            </button>
+            >
+              {(close) => (
+                <>
+                  <MenuLabel>{reportMode === 'weekly' ? t('هذا الأسبوع', 'This week') : t('الفترة المحددة', 'Selected period')}</MenuLabel>
+                  <MenuItem
+                    icon={<FileText className="w-4 h-4" />}
+                    label={t('مستند Word (.docx)', 'Word document (.docx)')}
+                    hint={reportMode === 'weekly' ? t('جدول المهام وخانات التوقيع', 'Task table and signature boxes') : t('متاح للأسبوع المجدول فقط', 'Available for scheduled weeks only')}
+                    disabled={downloadingDocx || reportMode !== 'weekly'}
+                    onClick={handleDownloadDocx}
+                    close={close}
+                  />
+                  <MenuItem icon={<Copy className="w-4 h-4" />} label={t('نسخ النص', 'Copy as text')} hint={t('للصق في أي مستند أو رسالة', 'Paste anywhere')} onClick={handleCopyText} close={close} />
+                  <MenuItem icon={<Download className="w-4 h-4" />} label="Markdown (.md)" onClick={handleDownloadMarkdown} close={close} />
+                  <MenuSeparator />
+                  <MenuLabel>{t('التدريب كاملاً', 'Entire training')}</MenuLabel>
+                  <MenuItem
+                    icon={<Download className="w-4 h-4" />}
+                    label={t('عرض مناقشة PowerPoint (.pptx)', 'Defence slides PowerPoint (.pptx)')}
+                    hint={t('شرائح لكل التدريب وليس لهذا الأسبوع فقط', 'Covers all weeks, not only this one')}
+                    disabled={downloadingPptx}
+                    onClick={handleDownloadPresentation}
+                    close={close}
+                  />
+                </>
+              )}
+            </Menu>
 
-            {/* AI Report Translation Button (AR ⇄ EN) */}
             <button
               type="button"
-              onClick={() => handleTranslateWeekEntries(lang === 'ar' ? 'en' : 'ar')}
-              disabled={isTranslatingWeek || activeEntries.length === 0}
-              className={`px-3.5 py-1.5 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 shadow-sm text-white ${
-                isTranslatingWeek
-                  ? 'bg-purple-600 animate-pulse'
-                  : 'bg-purple-600 hover:bg-purple-700'
-              } disabled:opacity-50`}
-              title={
-                lang === 'ar'
-                  ? 'ترجمة محتوى التقرير بالكامل (عناوين، تفاصيل أنشطة، تصنيفات) إلى الإنجليزية بالذكاء الاصطناعي مع حفظ نسخة احتياطية'
-                  : 'Translate entire report content (titles, activities, categories) to Arabic via AI with automatic revision backup'
-              }
-            >
-              <Languages className={`w-3.5 h-3.5 ${isTranslatingWeek ? 'animate-spin' : ''}`} />
-              <span>
-                {isTranslatingWeek
-                  ? (lang === 'ar' ? 'جارٍ ترجمة التقرير للإنجليزية...' : 'Translating report to Arabic...')
-                  : (lang === 'ar' ? 'ترجمة محتوى التقرير (English)' : 'ترجمة محتوى التقرير (عربي)')}
-              </span>
-            </button>
-
-            <button
               onClick={handlePrintPDF}
-              className="px-3.5 py-1.5 text-xs font-bold text-white bg-ink hover:bg-ink/85 rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
-              title={t('طباعة تقرير الأسبوع مباشرة أو حفظه كـ PDF رسمي متناسق', 'Print weekly report or save as PDF')}
+              className="px-3.5 py-2 text-xs font-bold text-bg bg-ink hover:opacity-90 rounded-xl transition-opacity flex items-center gap-1.5 shadow-sm"
+              title={t('طباعة تقرير الأسبوع أو حفظه كملف PDF', 'Print the weekly report or save it as PDF')}
             >
-              <Printer className="w-3.5 h-3.5" />
-              <span>{t('طباعة / حفظ PDF', 'Print / Save PDF')}</span>
+              <Printer className="w-4 h-4" />
+              <span>{t('طباعة / PDF', 'Print / PDF')}</span>
             </button>
+          </div>
+        </div>
 
-            <button
-              onClick={handleDownloadPresentation}
-              disabled={downloadingPptx}
-              className="px-3.5 py-1.5 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
-              title={t('تصدير شرائح عرض تقديمي للمناقشة (.pptx)', 'Export defense PowerPoint slides (.pptx)')}
-            >
-              <Download className={`w-3.5 h-3.5 text-accent ${downloadingPptx ? 'animate-bounce' : ''}`} />
-              <span>{downloadingPptx ? t('جارٍ التوليد...', 'Generating...') : t('عرض PowerPoint (.pptx)', 'PowerPoint (.pptx)')}</span>
-            </button>
-
-            <button
-              onClick={handleCopyText}
-              className="px-3 py-1.5 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-colors flex items-center gap-1.5"
-            >
-              {copied ? <Check className="w-3.5 h-3.5 text-ok" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copied ? t('تم النسخ!', 'Copied!') : t('نسخ النص', 'Copy Text')}</span>
-            </button>
-
-            <button
-              onClick={handleDownloadMarkdown}
-              className="px-3 py-1.5 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-colors flex items-center gap-1.5"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Markdown</span>
-            </button>
-
-            {/* Direct Language Switcher in Weekly Tab */}
-            <div className="inline-flex p-0.5 bg-bg border border-line rounded-xl text-xs font-bold shadow-2xs shrink-0">
+        {/* Scope: scheduled week (navigator) or custom period */}
+        <div className="no-print mb-5 space-y-3">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div className="inline-flex p-0.5 bg-bg border border-line rounded-xl text-xs font-bold self-start" role="group" aria-label={t('نطاق التقرير', 'Report scope')}>
               <button
                 type="button"
-                onClick={() => handleSwitchLangWithPrompt('ar')}
-                className={`px-2.5 py-1 rounded-lg transition-all ${
-                  lang === 'ar' ? 'bg-accent text-white shadow-xs font-black' : 'text-sub hover:text-ink'
-                }`}
-                title="تحويل كامل الواجهة والتقارير إلى العربية"
+                aria-pressed={reportMode === 'weekly'}
+                onClick={() => setReportMode('weekly')}
+                className={`px-3.5 py-1.5 rounded-lg transition-colors ${reportMode === 'weekly' ? 'bg-accent text-white shadow-xs' : 'text-sub hover:text-ink'}`}
               >
-                عربي
+                {t('أسبوع مجدول', 'Scheduled week')}
               </button>
               <button
                 type="button"
-                onClick={() => handleSwitchLangWithPrompt('en')}
-                className={`px-2.5 py-1 rounded-lg transition-all ${
-                  lang === 'en' ? 'bg-accent text-white shadow-xs font-black' : 'text-sub hover:text-ink'
-                }`}
-                title="Switch entire interface and reports to English"
+                aria-pressed={reportMode === 'custom'}
+                onClick={() => {
+                  setReportMode('custom');
+                  if (!customStartDate && allDocumentedEntries.length > 0) {
+                    const sorted = [...allDocumentedEntries].sort((a, b) => a.entryDate.localeCompare(b.entryDate));
+                    setCustomStartDate(sorted[0].entryDate);
+                    setCustomEndDate(sorted[sorted.length - 1].entryDate);
+                  }
+                }}
+                className={`px-3.5 py-1.5 rounded-lg transition-colors ${reportMode === 'custom' ? 'bg-accent text-white shadow-xs' : 'text-sub hover:text-ink'}`}
               >
-                EN
+                {t('فترة مخصصة', 'Custom period')}
               </button>
             </div>
 
-            {/* Theme Toggle Button */}
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="p-2 rounded-xl border border-line bg-bg text-sub hover:text-accent hover:border-accent/40 transition-colors shrink-0 shadow-2xs"
-              title={isDark ? t('التبديل إلى الوضع النهاري', 'Switch to Light Mode') : t('التبديل إلى الوضع الليلي', 'Switch to Dark Mode')}
-              aria-label="Toggle Theme"
-            >
-              {isDark ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-ink" />}
-            </button>
-          </div>
-        </div>
+            {reportMode === 'weekly' ? (
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  disabled={!prevWeek}
+                  onClick={() => prevWeek && setSelectedWeek(prevWeek.weekStart)}
+                  className="w-9 h-9 flex items-center justify-center rounded-xl border border-line bg-bg hover:bg-line text-ink disabled:opacity-35 transition-colors"
+                  aria-label={t('الأسبوع السابق', 'Previous week')}
+                  title={prevWeek ? t(`الأسبوع ${prevWeek.weekIndex}`, `Week ${prevWeek.weekIndex}`) : ''}
+                >
+                  {isAr ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+                </button>
 
-        {/* Report Mode Selector: Weekly Scheduled vs Custom Date Range */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-2 bg-card border border-line rounded-2xl no-print mb-4 shadow-xs">
-          <div className="flex items-center gap-1.5 p-1 bg-bg rounded-xl border border-line/60">
-            <button
-              type="button"
-              onClick={() => setReportMode('weekly')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 ${
-                reportMode === 'weekly'
-                  ? 'bg-accent text-white shadow-xs'
-                  : 'text-sub hover:text-ink hover:bg-card'
-              }`}
-            >
-              <Calendar className="w-3.5 h-3.5" />
-              <span>{t('التقرير الأسبوعي المجدول', 'Weekly Scheduled')}</span>
-            </button>
+                <Menu
+                  width="w-80"
+                  align="start"
+                  label={t('اختيار الأسبوع', 'Choose week')}
+                  trigger={({ open, triggerProps }) => (
+                    <button
+                      {...triggerProps}
+                      className="min-w-[13rem] px-3.5 h-9 flex items-center justify-between gap-3 rounded-xl border border-line bg-bg hover:border-line-strong transition-colors"
+                    >
+                      <span className="text-start">
+                        <span className="block text-xs font-extrabold text-ink leading-tight">
+                          {t(`الأسبوع ${currentWeekObj?.weekIndex ?? '—'}`, `Week ${currentWeekObj?.weekIndex ?? '—'}`)}
+                        </span>
+                        <span className="block text-[10.5px] text-sub leading-tight">{weekReport ? formatWeekPeriod(weekReport, isAr) : '—'}</span>
+                      </span>
+                      <ChevronDown className={`w-3.5 h-3.5 text-sub transition-transform ${open ? 'rotate-180' : ''}`} />
+                    </button>
+                  )}
+                >
+                  {(close) => (
+                    <div className="max-h-80 overflow-y-auto">
+                      {weeksList.map((w) => {
+                        const n = w.entries?.length || 0;
+                        return (
+                          <MenuItem
+                            key={w.weekIndex}
+                            label={t(`الأسبوع ${w.weekIndex}`, `Week ${w.weekIndex}`)}
+                            hint={
+                              n
+                                ? t(`${n} مهام · ${w.totalHours} ساعة${w.evidence?.length ? ` · ${w.evidence.length} صور` : ''}`, `${n} tasks · ${w.totalHours} h${w.evidence?.length ? ` · ${w.evidence.length} photos` : ''}`)
+                                : t('فارغ', 'Empty')
+                            }
+                            checked={w.weekStart === selectedWeek}
+                            onClick={() => setSelectedWeek(w.weekStart)}
+                            close={close}
+                          />
+                        );
+                      })}
+                      <MenuSeparator />
+                      <MenuItem icon={<Plus className="w-4 h-4" />} label={t('إضافة أسبوع إلى خطة التدريب', 'Add a week to the training plan')} onClick={() => setAddWeekConfirm(true)} close={close} />
+                    </div>
+                  )}
+                </Menu>
 
-            <button
-              type="button"
-              onClick={() => {
-                setReportMode('custom');
-                if (!customStartDate && allDocumentedEntries.length > 0) {
-                  const sorted = [...allDocumentedEntries].sort((a, b) => a.entryDate.localeCompare(b.entryDate));
-                  setCustomStartDate(sorted[0].entryDate);
-                  setCustomEndDate(sorted[sorted.length - 1].entryDate);
-                }
-              }}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 ${
-                reportMode === 'custom'
-                  ? 'bg-accent text-white shadow-xs'
-                  : 'text-sub hover:text-ink hover:bg-card'
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>{t('تقرير كوستم مخصص (نطاق زمني)', 'Custom Date Range')}</span>
-            </button>
-          </div>
+                <button
+                  type="button"
+                  disabled={!nextWeek}
+                  onClick={() => nextWeek && setSelectedWeek(nextWeek.weekStart)}
+                  className="w-9 h-9 flex items-center justify-center rounded-xl border border-line bg-bg hover:bg-line text-ink disabled:opacity-35 transition-colors"
+                  aria-label={t('الأسبوع التالي', 'Next week')}
+                  title={nextWeek ? t(`الأسبوع ${nextWeek.weekIndex}`, `Week ${nextWeek.weekIndex}`) : ''}
+                >
+                  {isAr ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                </button>
 
-          <div className="text-xs font-extrabold text-sub flex items-center gap-2 px-2">
-            <span className="text-ink">{reportMode === 'weekly' ? (weekReport ? formatWeekPeriod(weekReport, isAr) : '—') : customPeriodLabel}</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-accent"></span>
-            <span className="text-accent">{activeTotalDays} {isAr ? 'أيام عمل' : 'days'}</span>
-            <span>&middot;</span>
-            <span className="text-ink">{activeTotalHours} {isAr ? 'ساعة' : 'hours'}</span>
-          </div>
-        </div>
-
-        {/* Custom Date Range Picker Bar (Only shown when reportMode === 'custom') */}
-        {reportMode === 'custom' ? (
-          <div className="p-4 bg-bg border border-line rounded-2xl no-print space-y-3 mb-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3 flex-wrap">
-                <div className="space-y-1">
-                  <label className="block text-[11px] font-black text-sub">{t('من تاريخ (البداية):', 'From Date:')}</label>
-                  <input
-                    type="date"
-                    value={customStartDate}
-                    onChange={(e) => setCustomStartDate(e.target.value)}
-                    className="px-3 py-1.5 bg-card border border-line rounded-xl text-xs font-bold text-ink focus:outline-none focus:border-accent"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="block text-[11px] font-black text-sub">{t('إلى تاريخ (النهاية):', 'To Date:')}</label>
-                  <input
-                    type="date"
-                    value={customEndDate}
-                    onChange={(e) => setCustomEndDate(e.target.value)}
-                    className="px-3 py-1.5 bg-card border border-line rounded-xl text-xs font-bold text-ink focus:outline-none focus:border-accent"
-                  />
-                </div>
+                {currentWeekObj && (
+                  <span
+                    className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                      currentWeekObj.status === 'completed' ? 'bg-ok-bg text-ok' : currentWeekObj.status === 'in_progress' ? 'bg-accent-dim text-accent' : 'bg-warn-bg text-warn'
+                    }`}
+                  >
+                    {currentWeekObj.status === 'completed' ? t('مكتمل', 'Completed') : currentWeekObj.status === 'in_progress' ? t('قيد التنفيذ', 'In progress') : t('بلا مهام', 'No tasks')}
+                  </span>
+                )}
               </div>
-
-              {/* Quick Presets */}
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[11px] font-bold text-sub">{t('فترات سريعة:', 'Presets:')}</span>
+            ) : (
+              <div className="flex items-end gap-2 flex-wrap">
+                <label className="text-[11px] font-bold text-sub space-y-1">
+                  <span className="block">{t('من', 'From')}</span>
+                  <input type="date" value={customStartDate} onChange={(e) => setCustomStartDate(e.target.value)} className="px-3 py-1.5 bg-bg border border-line rounded-xl text-xs font-bold text-ink focus:outline-none focus:border-accent" />
+                </label>
+                <label className="text-[11px] font-bold text-sub space-y-1">
+                  <span className="block">{t('إلى', 'To')}</span>
+                  <input type="date" value={customEndDate} onChange={(e) => setCustomEndDate(e.target.value)} className="px-3 py-1.5 bg-bg border border-line rounded-xl text-xs font-bold text-ink focus:outline-none focus:border-accent" />
+                </label>
                 <button
                   type="button"
                   onClick={() => {
@@ -946,330 +924,99 @@ export const WeeklyTab: React.FC = () => {
                       setCustomEndDate(sorted[sorted.length - 1].entryDate);
                     }
                   }}
-                  className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-card hover:bg-line border border-line text-ink"
+                  className="px-3 py-1.5 text-xs font-bold rounded-xl bg-bg hover:bg-line border border-line text-ink"
                 >
-                  {t('كامل فترة التدريب', 'All Logged Days')}
+                  {t('كل التدريب', 'Whole training')}
                 </button>
-                {weeksList.slice(0, 4).map((w) => (
-                  <button
-                    key={w.weekIndex}
-                    type="button"
-                    onClick={() => {
-                      setCustomStartDate(w.weekStart);
-                      setCustomEndDate(w.weekEnd);
-                    }}
-                    className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-card hover:bg-line border border-line text-ink"
-                  >
-                    {t(`الأسبوع ${w.weekIndex}`, `W${w.weekIndex}`)}
-                  </button>
-                ))}
               </div>
-            </div>
+            )}
           </div>
-        ) : (
-          /* 14 Weeks Navigation Bar with Right/Left Scrolling Buttons (Only shown when reportMode === 'weekly') */
-          <div className="space-y-2 mb-6 no-print">
-            <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-sub">
-              <div className="flex items-center gap-2">
-                <span>{t('اختر الأسبوع للمعاينة والتعديل وإرفاق الصور:', 'Select week to review, edit, or attach photos:')}</span>
-              </div>
 
-              {/* Add Week Button & Quick Dropdown Picker */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  type="button"
-                  onClick={handleAddWeek}
-                  disabled={addingWeek}
-                  className="px-2.5 py-1 text-xs font-bold rounded-lg bg-accent/10 hover:bg-accent/20 border border-accent/30 text-accent transition-all flex items-center gap-1 shadow-xs disabled:opacity-50"
-                  title={t('إضافة أسبوع تدريبي إضافي للجدول', 'Add additional training week')}
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>{addingWeek ? t('جارٍ الإضافة...', 'Adding...') : t('+ إضافة أسبوع', '+ Add Week')}</span>
-                </button>
-
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] text-sub">{t('انتقال سريع:', 'Quick Jump:')}</span>
-                  <select
-                    value={selectedWeek}
-                    onChange={(e) => setSelectedWeek(e.target.value)}
-                    className="px-2.5 py-1 text-xs bg-bg border border-line rounded-lg text-ink font-bold focus:outline-none focus:border-accent"
-                  >
-                    {weeksList.map((w) => (
-                      <option key={w.weekIndex} value={w.weekStart}>
-                        {t(`الأسبوع ${w.weekIndex} (${w.entries?.length || 0} مهام)`, `Week ${w.weekIndex} (${w.entries?.length || 0} tasks)`)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Scrolling Container with explicit Right and Left Arrow Buttons */}
-            <div className="relative flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={isAr ? scrollRight : scrollLeft}
-                className="p-2.5 rounded-xl bg-bg hover:bg-line text-ink border border-line transition-all shadow-xs shrink-0 z-10 hover:scale-105"
-                title={isAr ? 'التمرير يميناً' : 'Scroll Left'}
-              >
-                <ChevronRight className="w-4 h-4 text-ink" />
-              </button>
-
-              <div
-                ref={scrollContainerRef}
-                className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 pt-1 scroll-smooth flex-1"
-              >
-                {weeksList.map((w) => {
-                  const isSelected = selectedWeek === w.weekStart;
-                  const hasEntries = w.entries && w.entries.length > 0;
-                  const hasEvidence = w.evidence && w.evidence.length > 0;
-                  return (
-                    <button
-                      key={w.weekIndex}
-                      onClick={() => setSelectedWeek(w.weekStart)}
-                      className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex flex-col items-center gap-0.5 border shrink-0 ${
-                        isSelected
-                          ? 'bg-accent text-white border-accent shadow-md ring-2 ring-accent/20 scale-[1.02]'
-                          : hasEntries
-                            ? 'bg-bg hover:bg-line text-ink border-line'
-                            : 'bg-bg/40 text-muted border-dashed border-line'
-                      }`}
-                    >
-                      <div className="flex items-center gap-1">
-                        <span>{t(`الأسبوع ${w.weekIndex}`, `Week ${w.weekIndex}`)}</span>
-                        {hasEvidence && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-ok shrink-0" title={t('يحتوي على صور توثيقية', 'Contains evidence photos')} />
-                        )}
-                      </div>
-                      <span className="text-[10px] opacity-80">
-                        {hasEntries ? t(`${w.entries.length} مهام موثقة`, `${w.entries.length} logged tasks`) : t('مؤجل / فارغ', 'Postponed / Empty')}
-                      </span>
-                    </button>
-                  );
-                })}
-
-                {/* Additional Week Increment Pill Button */}
-                <button
-                  type="button"
-                  onClick={handleAddWeek}
-                  disabled={addingWeek}
-                  className="px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex flex-col items-center justify-center gap-0.5 border border-dashed border-accent/40 bg-accent/5 hover:bg-accent/10 text-accent shrink-0"
-                  title={t('إضافة أسبوع تدريبي إضافي', 'Add training week')}
-                >
-                  <Plus className="w-4 h-4" />
-                  <span className="text-[10px]">{t('أسبوع إضافي', 'Add Week')}</span>
-                </button>
-              </div>
-
-              <button
-                type="button"
-                onClick={isAr ? scrollLeft : scrollRight}
-                className="p-2.5 rounded-xl bg-bg hover:bg-line text-ink border border-line transition-all shadow-xs shrink-0 z-10 hover:scale-105"
-                title={isAr ? 'التمرير يساراً' : 'Scroll Right'}
-              >
-                <ChevronLeft className="w-4 h-4 text-ink" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Interactive Controls & Metric Counters (Always OUTSIDE #weekly-paper-view with no-print print:hidden) */}
-        <div className="space-y-4 mb-6 no-print print:hidden">
-          {reportMode === 'weekly' ? (
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-bg rounded-xl border border-line">
-              <div>
-                <span className="text-xs text-sub font-bold block">{t('فترة الأسبوع المحددة:', 'Selected Week Period:')}</span>
-                <span className="text-sm font-extrabold text-ink">
-                  {weekReport ? formatWeekPeriod(weekReport, isAr) : '—'}
+          {/* Summary: numbers + the agent's learning classification for this scope */}
+          {(() => {
+            const byId = new Map((finalReportData?.weeks || []).flatMap((w) => w.entries).map((e) => [e.id, e.insight]));
+            const counts: Record<LearningStatus, number> = { new: 0, reinforced: 0, routine: 0 };
+            let analysed = 0;
+            for (const e of activeEntries) {
+              const ins = byId.get(e.id);
+              if (ins) {
+                counts[ins.learningStatus]++;
+                analysed++;
+              }
+            }
+            return (
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3 rounded-xl bg-bg border border-line text-xs">
+                <span className="font-bold text-sub">
+                  <b className="text-ink text-sm">{activeTotalDays}</b> {t('أيام', 'days')}
                 </span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  disabled={!prevWeek}
-                  onClick={() => prevWeek && setSelectedWeek(prevWeek.weekStart)}
-                  className="px-3 py-1.5 rounded-xl border border-line bg-card hover:bg-line text-xs font-bold text-ink disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition-all"
-                  title={prevWeek ? t(`الانتقال للأسبوع ${prevWeek.weekIndex}`, `Go to Week ${prevWeek.weekIndex}`) : ''}
-                >
-                  <ChevronRight className="w-3.5 h-3.5" />
-                  <span>{t('الأسبوع السابق', 'Previous Week')}</span>
-                </button>
-
-                <button
-                  disabled={!nextWeek}
-                  onClick={() => nextWeek && setSelectedWeek(nextWeek.weekStart)}
-                  className="px-3 py-1.5 rounded-xl border border-line bg-card hover:bg-line text-xs font-bold text-ink disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition-all"
-                  title={nextWeek ? t(`الانتقال للأسبوع ${nextWeek.weekIndex}`, `Go to Week ${nextWeek.weekIndex}`) : ''}
-                >
-                  <span>{t('الأسبوع التالي', 'Next Week')}</span>
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                </button>
-
-                {currentWeekObj && (
-                  <span
-                    className={`px-2.5 py-1 rounded-full text-xs font-bold mx-1 ${
-                      currentWeekObj.status === 'completed'
-                        ? 'bg-ok-bg text-ok'
-                        : currentWeekObj.status === 'in_progress'
-                          ? 'bg-accent-dim text-accent'
-                          : 'bg-warn-bg text-warn'
-                    }`}
-                  >
-                    {currentWeekObj.status === 'completed'
-                      ? t('مكتمل وموثّق', 'Completed & Documented')
-                      : currentWeekObj.status === 'in_progress'
-                        ? t('قيد التنفيذ', 'In Progress')
-                        : t('مؤجل', 'Postponed')}
+                <span className="font-bold text-sub">
+                  <b className="text-ink text-sm">{activeEntries.length}</b> {t('مهمة', 'tasks')}
+                </span>
+                <span className="font-bold text-sub">
+                  <b className="text-ok text-sm">{activeTotalHours}</b> {t('ساعة', 'hours')}
+                </span>
+                {reportMode === 'custom' && <span className="text-sub">{customPeriodLabel}</span>}
+                <span className="flex-1" />
+                {analysed > 0 ? (
+                  <span className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-sub font-bold">{t('تحليل الوكيل:', 'Agent analysis:')}</span>
+                    {(['new', 'reinforced', 'routine'] as LearningStatus[]).map((st) => (
+                      <span key={st} className={`insight-badge insight-badge-${st} insight-badge-compact`}>
+                        {LEARNING_STATUS_LABELS[st][isAr ? 'ar' : 'en']}: {counts[st]}
+                      </span>
+                    ))}
+                    {analysed < activeEntries.length && <span className="text-warn font-bold">{t(`${activeEntries.length - analysed} بلا تحليل`, `${activeEntries.length - analysed} not analysed`)}</span>}
                   </span>
+                ) : (
+                  activeEntries.length > 0 && <span className="text-sub">{t('لم يحلل الوكيل هذه الأيام بعد', 'The agent has not analysed these days yet')}</span>
                 )}
               </div>
-            </div>
-          ) : (
-            <div className="p-4 bg-bg rounded-xl border border-line flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div>
-                <span className="text-xs text-sub font-bold block">{t('تقرير كوستم مخصص للفترة:', 'Custom Report Period:')}</span>
-                <span className="text-sm font-extrabold text-ink">{customPeriodLabel}</span>
-              </div>
-              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-accent/10 text-accent border border-accent/20">
-                {t('تقرير مخصص', 'Custom Scope')}
-              </span>
-            </div>
-          )}
-
-          {/* Quick Metrics */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="bg-bg border border-line rounded-xl p-4">
-              <div className="flex items-center justify-between text-sub mb-1">
-                <span className="text-xs font-bold">{t('أيام العمل المنجزة', 'Logged Work Days')}</span>
-                <Calendar className="w-4 h-4 text-accent" />
-              </div>
-              <div className="text-2xl font-black text-ink">{activeTotalDays}</div>
-              <div className="text-[11px] text-sub mt-0.5">{t('أيام موثقة في النطاق', 'Days recorded in scope')}</div>
-            </div>
-
-            <div className="bg-accent-dim/30 border border-accent/20 rounded-xl p-4">
-              <div className="flex items-center justify-between text-sub mb-1">
-                <span className="text-xs font-bold">{t('المهام الميدانية المنفذة', 'Completed Tasks')}</span>
-                <CheckCircle2 className="w-4 h-4 text-accent" />
-              </div>
-              <div className="text-2xl font-black text-accent">{activeEntries.length}</div>
-              <div className="text-[11px] text-sub mt-0.5">{t('مهمة مسجلة في هذا النطاق', 'Tasks recorded in scope')}</div>
-            </div>
-
-            <div className="bg-bg border border-line rounded-xl p-4">
-              <div className="flex items-center justify-between text-sub mb-1">
-                <span className="text-xs font-bold">{t('إجمالي الساعات الفعلية', 'Logged Hours')}</span>
-                <Clock className="w-4 h-4 text-ok" />
-              </div>
-              <div className="text-2xl font-black text-ok">{activeTotalHours} {isAr ? 'س' : 'h'}</div>
-              <div className="text-[11px] text-sub mt-0.5">{t('ساعة تدريبية منجزة', 'Completed training hours')}</div>
-            </div>
-          </div>
-
-          {/* Section Header with Add New Day/Task Button */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-            <div>
-              <h3 className="text-sm font-extrabold text-ink flex items-center gap-1.5">
-                <Edit3 className="w-4 h-4 text-accent" />
-                <span>{reportMode === 'weekly' ? t('سجل المهام والسرد اليومي للأسبوع', 'Weekly Task Log & Daily Narrative') : t('سجل المهام والسرد اليومي للفترة المحددة', 'Task Log & Daily Narrative for Period')}</span>
-              </h3>
-              <p className="text-xs text-sub mt-0.5">
-                {t('كل يوم مدون بساعاته وتصنيفه وسرده الأكاديمي التفصيلي مع إمكانية التعديل والإضافة بحرية', 'Daily logs documented with hours, categories, and detailed academic narratives.')}
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleOpenAddDay}
-              className="px-4 py-2 rounded-xl bg-accent text-white font-bold text-xs hover:bg-accent/90 transition-all flex items-center gap-1.5 shadow-sm shrink-0"
-            >
-              <Plus className="w-4 h-4" />
-              <span>{t('إضافة يوم / مهمة جديدة', '+ Add New Day / Task')}</span>
-            </button>
-          </div>
+            );
+          })()}
         </div>
+
+        {/* Tasks header + add */}
+        <div className="flex items-center justify-between gap-3 mb-5 no-print">
+          <h3 className="text-sm font-extrabold text-ink flex items-center gap-1.5">
+            <Edit3 className="w-4 h-4 text-accent" />
+            <span>{reportMode === 'weekly' ? t('مهام الأسبوع', "Week's tasks") : t('مهام الفترة', "Period's tasks")}</span>
+          </h3>
+          <button
+            type="button"
+            onClick={handleOpenAddDay}
+            className="px-3.5 py-2 rounded-xl bg-bg hover:bg-line border border-line text-ink font-bold text-xs transition-colors flex items-center gap-1.5"
+          >
+            <Plus className="w-4 h-4 text-accent" />
+            <span>{t('إضافة يوم', 'Add a day')}</span>
+          </button>
+        </div>
+
+        <ConfirmDialog
+          open={addWeekConfirm}
+          title={t('إضافة أسبوع إلى خطة التدريب؟', 'Add a week to the training plan?')}
+          confirmLabel={t('إضافة الأسبوع', 'Add week')}
+          cancelLabel={t('إلغاء', 'Cancel')}
+          tone="neutral"
+          busy={addingWeek}
+          onCancel={() => setAddWeekConfirm(false)}
+          onConfirm={async () => {
+            await handleAddWeek();
+            setAddWeekConfirm(false);
+          }}
+        >
+          <p>
+            {t(
+              `ستصبح خطة التدريب ${(finalReportData?.profile?.trainingWeeks || weeksList.length || 14) + 1} أسبوعاً. لا تتأثر يومياتك الحالية، ويمكن تقليل العدد لاحقاً من بيانات التقرير.`,
+              `The plan will become ${(finalReportData?.profile?.trainingWeeks || weeksList.length || 14) + 1} weeks. Your existing entries are not affected, and the number can be reduced later in the report details.`
+            )}
+          </p>
+        </ConfirmDialog>
 
         {/* Selected View (Screen & Print Paper View) */}
         {isLoading && reportMode === 'weekly' ? (
           <div className="text-center py-12 text-sub text-sm">{t('جارٍ تحميل تقرير الأسبوع...', 'Loading weekly log...')}</div>
         ) : (
           <>
-            {/* Dynamic Language Content Sync Banner (When content language differs from viewing language) */}
-            {!isAr && activeEntries.some((e) => /[\u0600-\u06FF]/.test(e.description || '')) && (
-              <div className="p-4 rounded-2xl bg-indigo-50/95 dark:bg-indigo-950/50 border-2 border-indigo-300 dark:border-indigo-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md no-print mb-5 text-start">
-                <div className="space-y-0.5">
-                  <div className="text-xs font-black text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5">
-                    <Globe className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-                    <span>English Report Mode Active (Headers & Titles Translated)</span>
-                  </div>
-                  <p className="text-[11.5px] text-indigo-700 dark:text-indigo-300 font-medium leading-relaxed">
-                    Task details & accomplishments are currently saved in Arabic. Click here to translate all task narratives & entries into fluent technical English using AI:
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleTranslateWeekEntries('en')}
-                  disabled={isTranslatingWeek}
-                  className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs shadow-md transition-all flex items-center justify-center gap-2 shrink-0 disabled:opacity-50"
-                >
-                  <Sparkles className={`w-3.5 h-3.5 ${isTranslatingWeek ? 'animate-spin' : ''}`} />
-                  <span>{isTranslatingWeek ? 'Translating Report...' : 'Translate All Narratives to English (AI)'}</span>
-                </button>
-              </div>
-            )}
-
-            {isAr && activeEntries.some((e) => /^[A-Za-z]/.test(e.description?.trim() || '')) && (
-              <div className="p-4 rounded-2xl bg-indigo-50/95 dark:bg-indigo-950/50 border-2 border-indigo-300 dark:border-indigo-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md no-print mb-5 text-start">
-                <div className="space-y-0.5">
-                  <div className="text-xs font-black text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5">
-                    <Globe className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-                    <span>عرض التقرير باللغة العربية مفعّل</span>
-                  </div>
-                  <p className="text-[11.5px] text-indigo-700 dark:text-indigo-300 font-medium leading-relaxed">
-                    محتوى بعض المهام والسرد مدوّن بالإنجليزية. انقر هنا لترجمة كافة عناوين ونصوص التقرير إلى لغة عربية أكاديمية بالذكاء الاصطناعي:
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleTranslateWeekEntries('ar')}
-                  disabled={isTranslatingWeek}
-                  className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs shadow-md transition-all flex items-center justify-center gap-2 shrink-0 disabled:opacity-50"
-                >
-                  <Sparkles className={`w-3.5 h-3.5 ${isTranslatingWeek ? 'animate-spin' : ''}`} />
-                  <span>{isTranslatingWeek ? 'جارٍ ترجمة التقرير...' : 'ترجمة كافة النصوص إلى العربية (AI)'}</span>
-                </button>
-              </div>
-            )}
-
-            {/* Freeform to Q&A Style Alert & Action Banner */}
-            {activeFreeformCount > 0 && (
-              <div className="p-4 rounded-2xl bg-teal-50/95 dark:bg-teal-950/50 border-2 border-teal-300 dark:border-teal-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md no-print mb-5 text-start">
-                <div className="space-y-0.5">
-                  <div className="text-xs font-black text-teal-900 dark:text-teal-200 flex items-center gap-1.5">
-                    <ListChecks className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
-                    <span>
-                      {isAr
-                        ? `تنبيه التنسيق الأكاديمي: تم رصد ${activeFreeformCount} مهام مدونة بالنظام الحر (بدون تقسيمات الأسئلة)`
-                        : `Formatting Alert: ${activeFreeformCount} tasks logged in freeform text`}
-                    </span>
-                  </div>
-                  <p className="text-[11.5px] text-teal-800 dark:text-teal-300 font-medium leading-relaxed">
-                    {isAr
-                      ? 'يمكنك فحص وهيكلة هذه المهام بنمط الأسئلة اليومي المنظم لتظهر بالتقرير ببطاقات (الموقع، الفترة، الإنجازات، التحديات، الجديد) وجاهزة للطباعة:'
-                      : 'You can audit and structure these tasks into the daily Q&A template (Location, Period, Achievements, Challenges, New Skills) for academic print:'}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setAuditModalOpen(true)}
-                  className="px-4 py-2.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-black text-xs shadow-md transition-all flex items-center justify-center gap-2 shrink-0"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>{isAr ? 'فحص وتوحيد النمط للطباعة' : 'Audit & Format for Print'}</span>
-                </button>
-              </div>
-            )}
-
             <div id="weekly-paper-view" className="printable-a4-sheet space-y-6">
             {/* Hidden File Inputs for Interactive Cover Page Logo Uploads */}
             <input
@@ -1893,50 +1640,6 @@ export const WeeklyTab: React.FC = () => {
               <div className="space-y-1.5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <label className="block font-bold text-sub">{t('التفاصيل والسرد الأكاديمي للمهمة', 'Task Details & Narrative')}</label>
-                  
-                  {/* AI Quick Actions Toolbar */}
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <button
-                      type="button"
-                      disabled={aiPolishing || !editingEntry.description}
-                      onClick={() => handleAIAction('polish')}
-                      className="text-[11px] font-bold text-accent hover:bg-accent hover:text-white transition-colors flex items-center gap-1 px-2.5 py-1 rounded-lg bg-accent-dim/60 border border-accent/20 disabled:opacity-40"
-                      title={t('تنقيح الصياغة لغوياً وتقنياً', 'Polish phrasing using AI')}
-                    >
-                      <Sparkles className="w-3 h-3" />
-                      <span>{t('تنقيح الصياغة', 'Polish')}</span>
-                    </button>
-                    <button
-                      type="button"
-                      disabled={aiPolishing || !editingEntry.description}
-                      onClick={() => handleAIAction('spellcheck')}
-                      className="text-[11px] font-bold text-ok hover:bg-ok hover:text-white transition-colors flex items-center gap-1 px-2.5 py-1 rounded-lg bg-ok-bg border border-ok/20 disabled:opacity-40"
-                      title={t('تصحيح إملائي ونحوي', 'Spell & Grammar check')}
-                    >
-                      <CheckCheck className="w-3 h-3" />
-                      <span>{t('تصحيح إملائي', 'Spellcheck')}</span>
-                    </button>
-                    <button
-                      type="button"
-                      disabled={aiPolishing || !editingEntry.description}
-                      onClick={() => handleAIAction('summarize')}
-                      className="text-[11px] font-bold text-ink hover:bg-line transition-colors flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface border border-line disabled:opacity-40"
-                      title={t('اختصار وإيجاز فني', 'Summarize')}
-                    >
-                      <FileText className="w-3 h-3" />
-                      <span>{t('إيجاز', 'Summary')}</span>
-                    </button>
-                    <button
-                      type="button"
-                      disabled={aiPolishing || !editingEntry.description}
-                      onClick={() => handleAIAction('translate')}
-                      className="text-[11px] font-bold text-ink hover:bg-line transition-colors flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface border border-line disabled:opacity-40"
-                      title={t('ترجمة فورية للإنجليزية', 'Translate to English')}
-                    >
-                      <Languages className="w-3 h-3" />
-                      <span>{isAr ? 'ترجمة EN' : 'ترجمة AR'}</span>
-                    </button>
-                  </div>
                 </div>
                 <textarea
                   rows={5}
@@ -1972,7 +1675,7 @@ export const WeeklyTab: React.FC = () => {
 
       {/* Revisions History Modal for Day Cards */}
       {revisionsModalOpen && activeEntryForRevisions && (
-        <div className="fixed inset-0 bg-ink/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 no-print">
+        <div className="fixed inset-0 bg-[var(--overlay)] backdrop-blur-xs flex items-center justify-center z-50 p-4 no-print">
           <div className="bg-card border border-line rounded-2xl p-6 shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden text-start">
             <div className="flex items-center justify-between pb-4 border-b border-line">
               <div className="space-y-0.5">
@@ -2100,33 +1803,8 @@ export const WeeklyTab: React.FC = () => {
       />
 
       {/* Batch Academic Rewrite Modal */}
-      <BatchRewriteModal
-        isOpen={batchModalOpen}
-        onClose={() => setBatchModalOpen(false)}
-        totalEntries={activeEntries.length || allDocumentedEntries.length}
-        weekNumber={reportMode === 'weekly' ? weekReport?.weekNumber : undefined}
-        onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ['finalReport'] });
-          queryClient.invalidateQueries({ queryKey: ['entries'] });
-          setSaveToast(t('تمت إعادة صياغة وترتيب السجلات أكاديمياً بنجاح!', 'Entries academically restructured successfully!'));
-          setTimeout(() => setSaveToast(''), 3000);
-        }}
-      />
 
       {/* Daily Format Audit & Q&A Structuring Modal */}
-      <DailyFormatAuditModal
-        isOpen={auditModalOpen}
-        onClose={() => setAuditModalOpen(false)}
-        entries={activeEntries}
-        weekNumber={currentWeekObj?.weekIndex || (reportMode === 'weekly' ? weekReport?.weekNumber : 1) || 1}
-        onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ['weekly', selectedWeek] });
-          queryClient.invalidateQueries({ queryKey: ['finalReport'] });
-          queryClient.invalidateQueries({ queryKey: ['entries'] });
-          setSaveToast(t('تم توحيد وهيكلة مهام الأسبوع بنمط الأسئلة اليومي بنجاح!', 'Week tasks successfully unified into daily Q&A pattern!'));
-          setTimeout(() => setSaveToast(''), 3000);
-        }}
-      />
     </div>
   );
 };

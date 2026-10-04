@@ -10,41 +10,87 @@
    ============================================================ */
 
 :root {
+  color-scheme: light;
+
   --bg:           #F3F1EC;
   --surface:      #FAFAF8;
   --card:         #FFFFFF;
   --ink:          #18181A;
   --sub:          #686560;
-  --muted:        #9E9A93;
+  --muted:        #736F68;
   --line:         #E6E2D8;
+  --line-strong:  #D2CDBF;
   --accent:       #C0102A;
+  --accent-text:  #C0102A;
   --accent-dim:   #F6DDE1;
-  --accent-mid:   #E8354D;
+  --accent-mid:   #A30D24;
   --ok:           #2A6348;
   --ok-bg:        #E3F0EA;
   --warn:         #B45309;
   --warn-bg:      #FEF3C7;
 
+  /* Surfaces that depend on the theme */
+  --glass:        rgba(255,255,255,0.80);
+  --glass-line:   rgba(210,205,191,0.75);
+  --overlay:      rgba(24,24,26,0.50);
+  --shadow-rgb:   24,24,26;
+  --menu-shadow:  0 12px 32px -8px rgba(24,24,26,0.22), 0 4px 10px -4px rgba(24,24,26,0.12);
+
   /* Subtle grain texture via SVG data URI */
   --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
 }
 
-/* ── Comprehensive Dark Mode Theme ───────────────────────── */
+/* ── Dark theme ──────────────────────────────────────────────
+   Contrast-checked (WCAG AA): ink 14.9:1, sub 7.4:1, muted 5.2:1 on cards;
+   accent text 6.5:1; white on accent fills 4.7:1. */
 html.dark, .dark {
-  --bg:           #0F1117;
-  --surface:      #181B22;
-  --card:         #1E222D;
-  --ink:          #F0F3F6;
-  --sub:          #9EA7B4;
-  --muted:        #656E7B;
-  --line:         #2D333F;
-  --accent:       #E63950;
-  --accent-dim:   #3A161E;
-  --accent-mid:   #F05268;
-  --ok:           #34D399;
-  --ok-bg:        #064E3B40;
-  --warn:         #FBBF24;
-  --warn-bg:      #78350F40;
+  color-scheme: dark;
+
+  --bg:           #0E1015;
+  --surface:      #14171E;
+  --card:         #191D26;
+  --ink:          #EEF1F5;
+  --sub:          #A3ACBA;
+  --muted:        #8590A0;
+  --line:         #2B313D;
+  --line-strong:  #3B4353;
+  --accent:       #D6334B;
+  --accent-text:  #FF7488;
+  --accent-dim:   #3A1B24;
+  --accent-mid:   #BD2A40;
+  --ok:           #4ADE9A;
+  --ok-bg:        rgba(74,222,154,0.13);
+  --warn:         #F6BE4F;
+  --warn-bg:      rgba(246,190,79,0.13);
+
+  --glass:        rgba(14,16,21,0.82);
+  --glass-line:   rgba(59,67,83,0.7);
+  --overlay:      rgba(0,0,0,0.62);
+  --shadow-rgb:   0,0,0;
+  --menu-shadow:  0 16px 40px -8px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.04);
+  --noise: none;
+}
+
+/* Accent used as text/link/icon colour must stay readable on dark surfaces
+   (the fill colour is tuned for white text on buttons instead). */
+@media screen {
+  html.dark .text-accent,
+  html.dark .hover\:text-accent:hover,
+  html.dark .group:hover .group-hover\:text-accent,
+  html.dark .text-\[\#C0102A\],
+  html.dark .text-\[\#8B0000\] { color: var(--accent-text); }
+  html.dark .border-\[\#8B0000\] { border-color: var(--accent-text); }
+  html.dark .bg-\[\#C0102A\]\/10 { background-color: var(--accent-dim); }
+}
+
+/* Printing always uses the light palette, whatever theme is active on screen */
+@media print {
+  html.dark, html.dark body {
+    color-scheme: light;
+    --bg: #FFFFFF; --surface: #FFFFFF; --card: #FFFFFF; --ink: #0F172A; --sub: #475569; --muted: #64748B;
+    --line: #CBD5E1; --line-strong: #94A3B8; --accent: #8B0000; --accent-text: #8B0000; --accent-dim: #F6DDE1;
+    --accent-mid: #8B0000; --ok: #2A6348; --ok-bg: #E3F0EA; --warn: #B45309; --warn-bg: #FEF3C7; --noise: none;
+  }
 }
 
 
@@ -117,10 +163,11 @@ input::placeholder, textarea::placeholder {
 
 @layer utilities {
   .glass {
-    background: rgba(255,255,255,0.72);
+    background: var(--glass);
     backdrop-filter: blur(16px) saturate(180%);
     -webkit-backdrop-filter: blur(16px) saturate(180%);
-    border: 1px solid rgba(230,226,216,0.7);
+    border: none;
+    border-bottom: 1px solid var(--glass-line);
   }
 
   .glass-dark {
@@ -133,14 +180,14 @@ input::placeholder, textarea::placeholder {
     background: var(--card);
     border: 1px solid var(--line);
     border-radius: 1rem;
-    box-shadow: 0 1px 3px rgba(24,24,26,0.06), 0 1px 2px -1px rgba(24,24,26,0.04);
+    box-shadow: 0 1px 3px rgba(var(--shadow-rgb),0.06), 0 1px 2px -1px rgba(var(--shadow-rgb),0.04);
   }
 
   .card-lifted {
     background: var(--card);
     border: 1px solid var(--line);
     border-radius: 1rem;
-    box-shadow: 0 4px 12px -2px rgba(24,24,26,0.08), 0 2px 6px -2px rgba(24,24,26,0.05);
+    box-shadow: 0 4px 12px -2px rgba(var(--shadow-rgb),0.12), 0 2px 6px -2px rgba(var(--shadow-rgb),0.08);
   }
 
   .input-field {
@@ -298,7 +345,8 @@ input::placeholder, textarea::placeholder {
   user-select: none;
 }
 .tab-item:hover   { color: var(--ink); }
-.tab-item.active  { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-item.active  { color: var(--accent-text); border-bottom-color: var(--accent); }
+.tab-item:focus-visible { outline-offset: -2px; }
 
 /* ── Stat Card Accent Line ───────────────────────────────── */
 
@@ -930,3 +978,79 @@ html, body {
   .period-progress { background: #e2e8f0 !important; }
   .period-progress > div { background: #2A6348 !important; }
 }
+
+/* ── Official print / PDF: plain white document, no boxes ─────────────────
+   Whatever theme is active on screen, the printed report is a formal light
+   document: no cards, no rounded frames, no tinted panels or pill badges —
+   only text, headings and thin horizontal rules. */
+@media print {
+  html, body, html.dark, html.dark body { background: #ffffff !important; color: #0f172a !important; }
+
+  #report-paper-view *,
+  #weekly-paper-view *,
+  #period-report-paper * {
+    background: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    backdrop-filter: none !important;
+  }
+
+  /* All-around frames (Tailwind `.border`) disappear; side rules like border-b / border-t stay */
+  #report-paper-view .border,
+  #weekly-paper-view .border,
+  #period-report-paper .border,
+  #report-paper-view .insight-panel,
+  #weekly-paper-view .insight-panel,
+  #report-paper-view .insight-badge,
+  #report-paper-view .tech-pill,
+  #report-paper-view .insight-tool,
+  #period-report-paper .insight-badge,
+  #period-report-paper .insight-tool {
+    border-width: 0 !important;
+  }
+  #report-paper-view .insight-panel,
+  #weekly-paper-view .insight-panel {
+    border-top: 0.75pt solid #94a3b8 !important;
+    border-inline-start: 0 !important;
+    padding: 6px 0 0 0 !important;
+  }
+
+  /* Pills become plain bold text */
+  .insight-badge, .tech-pill, .insight-tool, .insight-ref, .toc-summary span { padding: 0 !important; }
+  .insight-badge-new { color: #2A6348 !important; font-weight: 800 !important; }
+  .insight-badge-reinforced { color: #8a4a06 !important; font-weight: 800 !important; }
+  .insight-badge-routine { color: #475569 !important; font-weight: 700 !important; }
+  .insight-badge::before { content: "["; }
+  .insight-badge::after { content: "]"; }
+  .tech-pill + .tech-pill::before, .insight-tool + .insight-tool::before { content: "، "; }
+
+  /* Tables: horizontal rules only (no vertical lines, no outer frame) */
+  #report-paper-view table, #weekly-paper-view table, #period-report-paper table { border: 0 !important; }
+  #report-paper-view th, #report-paper-view td,
+  #weekly-paper-view th, #weekly-paper-view td,
+  #period-report-paper th, #period-report-paper td,
+  .learning-map-table th, .learning-map-table td, .period-info th, .period-info td, .period-table th, .period-table td {
+    border: 0 !important;
+    border-bottom: 0.5pt solid #cbd5e1 !important;
+    background: transparent !important;
+    text-transform: none !important;
+  }
+  #report-paper-view th, #weekly-paper-view th, #period-report-paper th { border-bottom: 1.25pt solid #0f172a !important; }
+
+  /* Day "cards" become flowing sections separated by a rule */
+  #report-paper-view .day-card-print, #weekly-paper-view .day-card-print { border: 0 !important; border-top: 0.75pt solid #94a3b8 !important; }
+  #report-paper-view .procedural-narrative-box, #weekly-paper-view .procedural-narrative-box { border: 0 !important; padding: 0 !important; }
+
+  /* Evidence photos: no frame around the image */
+  #report-paper-view img, #weekly-paper-view img { border: 0 !important; }
+
+  /* Never print on-screen chrome */
+  .no-print, nav[aria-label], [role="toolbar"], [role="tablist"], .tabs-container { display: none !important; }
+}
+
+/* TOC: week period on its own line; page-number slot only exists in the printed document */
+.toc-sub { display: block; font-size: 10px; font-weight: 600; color: var(--sub); margin-top: 1px; }
+.toc-pg { display: none; }
+.toc-title { white-space: normal; }
+@media print { .toc-row { align-items: flex-start; } .toc-leader { align-self: flex-end; margin-bottom: 4px; } }

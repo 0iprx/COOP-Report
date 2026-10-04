@@ -342,7 +342,7 @@ export const WeeklyEvidenceSection: React.FC<Props> = ({ weekIndex, traineeId, r
                   alt={photo.caption}
                   className="max-h-[340px] print:max-h-[190px] w-auto max-w-full object-contain group-hover:scale-105 transition-transform duration-200 print:transform-none rounded"
                 />
-                <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-ink/70 text-white text-[9px] font-bold no-print print:hidden">
+                <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-[var(--overlay)] text-white text-[9px] font-bold no-print print:hidden">
                   انقر للتكبير
                 </span>
               </div>
@@ -380,7 +380,7 @@ export const WeeklyEvidenceSection: React.FC<Props> = ({ weekIndex, traineeId, r
       {/* Lightbox / Zoom Modal */}
       {selectedImageForZoom && (
         <div
-          className="fixed inset-0 bg-ink/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-[var(--overlay)] backdrop-blur-sm z-50 flex items-center justify-center p-4"
           onClick={() => setSelectedImageForZoom(null)}
         >
           <div

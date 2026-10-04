@@ -65,13 +65,24 @@ router.post('/analyze/:entryId', insightAgentLimiter, async (req: AuthenticatedR
 // POST /api/insights/analyze-all { scope: 'missing' | 'all' } — background job over the whole log
 router.post('/analyze-all', insightAgentLimiter, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const scope = req.body?.scope === 'all' ? 'all' : 'missing';
+  const entryIds: number[] = Array.isArray(req.body?.entryIds)
+    ? req.body.entryIds.map(Number).filter((n: number) => Number.isInteger(n) && n > 0).slice(0, 500)
+    : [];
   const userId = req.user!.userId;
   const tenantId = req.user!.tenantId || 'default_tenant';
   const opts = agentOptions(req);
-  const job = startAgentJob(userId, 'insight:all', async (r) => {
-    const summary = await analyzeAllEntries(userId, tenantId, scope, opts, (done, total, label) => {
-      r.progress(total ? (done / total) * 100 : 100, total ? `${done}/${total} ${label}` : 'لا توجد يوميات تحتاج تحليلاً');
-    });
+  // A scoped run (one week) must not block, or be blocked by, the whole-log run
+  const job = startAgentJob(userId, entryIds.length ? `insight:set:${entryIds.join(',')}` : 'insight:all', async (r) => {
+    const summary = await analyzeAllEntries(
+      userId,
+      tenantId,
+      scope,
+      opts,
+      (done, total, label) => {
+        r.progress(total ? (done / total) * 100 : 100, total ? `${done}/${total} ${label}` : 'لا توجد يوميات تحتاج تحليلاً');
+      },
+      entryIds
+    );
     await recordAgentUsage(userId, tenantId, 'llm', 'entry_insight_batch', summary.analyzed * 800);
     return summary;
   });
