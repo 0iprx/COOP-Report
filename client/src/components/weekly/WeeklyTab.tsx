@@ -1316,10 +1316,14 @@ export const WeeklyTab: React.FC = () => {
                   onChange={(e) => handleLogoUpload(e, 'companyLogo')}
                 />
 
-                {/* Page 1: Standalone Weekly/Custom Academic Cover Page with Executive Summary */}
+                {/* Page 1: Academic Cover Page (Fixed general cover for weekly, enhanced for periodic) */}
                 <div
                   id="weekly-cover-page"
-                  className="text-center py-6 sm:py-10 border-b-2 border-line pb-8 sm:pb-12 break-inside-avoid print:page-break print:break-after-page print:border-none print:p-0 print:m-0"
+                  className={`text-center border-b-2 border-line break-inside-avoid print:page-break print:break-after-page print:border-none print:p-0 print:m-0 ${
+                    reportMode === 'weekly'
+                      ? 'py-8 sm:py-14 pb-10 sm:pb-16'
+                      : 'py-6 sm:py-10 pb-8 sm:pb-12'
+                  }`}
                   style={{ pageBreakAfter: 'always', breakAfter: 'page' }}
                 >
                   {/* Dual Logos & Academic Identity Header */}
@@ -1391,7 +1395,7 @@ export const WeeklyTab: React.FC = () => {
                   </div>
 
                   {/* Title & Period Badge */}
-                  <div className="my-auto py-3 print:my-auto print:py-2 space-y-1.5">
+                  <div className={`my-auto ${reportMode === 'weekly' ? 'py-6 print:py-6' : 'py-3 print:py-2'} space-y-1.5`}>
                     <div className="inline-block px-3.5 py-1 rounded-full text-xs font-extrabold bg-accent/10 text-accent border border-accent/20 mb-1 print:bg-slate-100 print:border print:border-slate-300 print:text-slate-900 print:text-xs">
                       {reportMode === 'weekly'
                         ? (isAr ? `الأسبوع التدريبي: الأسبوع ${currentWeekObj?.weekIndex || 1}` : `Training Week: Week ${currentWeekObj?.weekIndex || 1}`)
@@ -1413,9 +1417,9 @@ export const WeeklyTab: React.FC = () => {
                   </div>
 
                   {/* Trainee Information Matrix Card */}
-                  <div className="mt-4 pt-2 print:mt-3 print:pt-1">
+                  <div className={reportMode === 'weekly' ? 'mt-auto pt-6 print:mt-auto print:pt-4' : 'mt-4 pt-2 print:mt-3 print:pt-1'}>
                     <div
-                      className="max-w-2xl mx-auto bg-bg border border-line rounded-xl p-4 sm:p-5 text-start grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 text-xs trainee-matrix-print print:border print:border-slate-300 print:rounded-xl print:bg-slate-50/60 print:p-3 print:gap-x-5 print:gap-y-2 print:text-xs shadow-xs"
+                      className={`${reportMode === 'weekly' ? 'max-w-xl' : 'max-w-2xl'} mx-auto bg-bg border border-line rounded-xl p-4 sm:p-5 text-start grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 text-xs trainee-matrix-print print:border print:border-slate-300 print:rounded-xl print:bg-slate-50/60 print:p-3 print:gap-x-5 print:gap-y-2 print:text-xs shadow-xs`}
                       dir={isAr ? 'rtl' : 'ltr'}
                     >
                       <div className="flex items-center justify-between border-b border-line/50 pb-1 print:border-slate-200">
