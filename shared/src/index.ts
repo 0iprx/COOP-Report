@@ -1142,3 +1142,17 @@ export function convertFreeformNarrativeToQA(
   return parts.join('\n\n');
 }
 
+export interface SavedPeriodicReport {
+  id: string;
+  title: string;
+  startDate: string;
+  endDate: string;
+  customNarrative: string;
+  department?: string;
+  roleAssignment?: string;
+  includeDailyTasks: boolean;
+  includeEvidence: boolean;
+  includeEndorsement: boolean;
+  createdAt: string;
+  updatedAt: string;
+}

@@ -3,8 +3,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
-import { FinalReportData, EntryDTO, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis, formatWeekPeriod, ENTRY_CATEGORIES, elevateTaskTitle, normalizeStudentName, polishAcademicNarrative, convertBulletsToCohesiveParagraphs, isEntryStructuredQA } from '@coop/shared';
+import { FinalReportData, EntryDTO, SavedPeriodicReport, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis, formatWeekPeriod, ENTRY_CATEGORIES, elevateTaskTitle, normalizeStudentName, polishAcademicNarrative, convertBulletsToCohesiveParagraphs, isEntryStructuredQA } from '@coop/shared';
 import { WeeklyEvidenceSection } from './WeeklyEvidenceSection';
+import { PeriodicReportsManager } from './PeriodicReportsManager';
+import { periodicReportsService } from '../../services/periodicReportsService';
 import {
   Calendar,
   Clock,
@@ -158,8 +160,70 @@ export const WeeklyTab: React.FC = () => {
 
   // Report Mode: Weekly Scheduled vs Custom Date Range
   const [reportMode, setReportMode] = useState<'weekly' | 'custom'>('weekly');
-  const [customStartDate, setCustomStartDate] = useState<string>('');
-  const [customEndDate, setCustomEndDate] = useState<string>('');
+
+  // Saved Periodic Reports State (Offline-first persistence)
+  const [savedPeriodicReports, setSavedPeriodicReports] = useState<SavedPeriodicReport[]>(() => periodicReportsService.getSavedReports());
+  const [activePeriodicReport, setActivePeriodicReport] = useState<SavedPeriodicReport>(() => {
+    const list = periodicReportsService.getSavedReports();
+    const activeId = periodicReportsService.getActiveReportId();
+    const found = list.find((r) => r.id === activeId);
+    if (found) return found;
+    if (list.length > 0) return list[0];
+    const def = periodicReportsService.createDefaultReport();
+    periodicReportsService.saveReport(def);
+    return def;
+  });
+
+  const handleSelectPeriodicReport = (report: SavedPeriodicReport) => {
+    setActivePeriodicReport(report);
+    periodicReportsService.setActiveReportId(report.id);
+  };
+
+  const handleUpdatePeriodicReport = (updated: Partial<SavedPeriodicReport>) => {
+    setActivePeriodicReport((prev) => {
+      const next = { ...prev, ...updated };
+      return next;
+    });
+  };
+
+  const handleSaveCurrentPeriodicReport = () => {
+    const updatedList = periodicReportsService.saveReport(activePeriodicReport);
+    setSavedPeriodicReports(updatedList);
+    setSaveToast(t('تم حفظ التقرير الفتري وتحديثه بنجاح!', 'Periodic report saved successfully!'));
+    setTimeout(() => setSaveToast(''), 3000);
+  };
+
+  const handleCreateNewPeriodicReport = () => {
+    let startD = '';
+    let endD = '';
+    if (allDocumentedEntries.length > 0) {
+      const sorted = [...allDocumentedEntries].sort((a, b) => a.entryDate.localeCompare(b.entryDate));
+      startD = sorted[0].entryDate;
+      endD = sorted[sorted.length - 1].entryDate;
+    }
+    const newReport = periodicReportsService.createDefaultReport(startD, endD);
+    const updatedList = periodicReportsService.saveReport(newReport);
+    setSavedPeriodicReports(updatedList);
+    setActivePeriodicReport(newReport);
+    setSaveToast(t('تم إنشاء تقرير فتري جديد، يمكنك تخصيصه وحفظه الآن', 'New periodic report created'));
+    setTimeout(() => setSaveToast(''), 3000);
+  };
+
+  const handleDeleteCurrentPeriodicReport = () => {
+    if (!window.confirm(t('هل أنت متأكد من حذف هذا التقرير الفتري المحفوظ؟', 'Are you sure you want to delete this periodic report?'))) return;
+    const updatedList = periodicReportsService.deleteReport(activePeriodicReport.id);
+    setSavedPeriodicReports(updatedList);
+    if (updatedList.length > 0) {
+      setActivePeriodicReport(updatedList[0]);
+    } else {
+      const def = periodicReportsService.createDefaultReport();
+      periodicReportsService.saveReport(def);
+      setSavedPeriodicReports([def]);
+      setActivePeriodicReport(def);
+    }
+    setSaveToast(t('تم حذف التقرير الفتري بنجاح', 'Periodic report deleted'));
+    setTimeout(() => setSaveToast(''), 3000);
+  };
 
   // Logo file upload refs for Cover Page
   const institutionLogoInputRef = useRef<HTMLInputElement>(null);
@@ -267,11 +331,14 @@ export const WeeklyTab: React.FC = () => {
   // Aggregated entries for Custom Date Range mode vs Scheduled Weekly mode
   const allDocumentedEntries: EntryDTO[] = (finalReportData?.weeks || []).flatMap((w) => w.entries || []);
 
+  const effectiveStartDate = reportMode === 'custom' ? activePeriodicReport.startDate : '';
+  const effectiveEndDate = reportMode === 'custom' ? activePeriodicReport.endDate : '';
+
   const filteredCustomEntries = allDocumentedEntries
     .filter((e) => {
-      if (!customStartDate && !customEndDate) return true;
-      if (customStartDate && e.entryDate < customStartDate) return false;
-      if (customEndDate && e.entryDate > customEndDate) return false;
+      if (!effectiveStartDate && !effectiveEndDate) return true;
+      if (effectiveStartDate && e.entryDate < effectiveStartDate) return false;
+      if (effectiveEndDate && e.entryDate > effectiveEndDate) return false;
       return true;
     })
     .sort((a, b) => a.entryDate.localeCompare(b.entryDate));
@@ -289,17 +356,24 @@ export const WeeklyTab: React.FC = () => {
 
   const activeTotalDays = new Set(activeEntries.map((e) => e.entryDate)).size;
 
-  const customPeriodLabel = (customStartDate && customEndDate)
+  const synthesis = generateAcademicWeeklySynthesis(
+    activeEntries,
+    reportMode === 'weekly' ? (currentWeekObj?.weekIndex || 1) : 1,
+    activeTotalHours,
+    isAr
+  );
+
+  const customPeriodLabel = (effectiveStartDate && effectiveEndDate)
     ? (isAr
-        ? `من ${formatDateArabic(customStartDate)} إلى ${formatDateArabic(customEndDate)}`
-        : `From ${formatDateEnglish(customStartDate)} to ${formatDateEnglish(customEndDate)}`)
+        ? `من ${formatDateArabic(effectiveStartDate)} إلى ${formatDateArabic(effectiveEndDate)}`
+        : `From ${formatDateEnglish(effectiveStartDate)} to ${formatDateEnglish(effectiveEndDate)}`)
     : (isAr ? 'كامل الفترة التدريبية المحددة' : 'All Specified Period');
 
   const customEvidenceList = (finalReportData?.weeks || [])
     .filter((w) => {
-      if (!customStartDate && !customEndDate) return true;
-      if (customStartDate && w.weekEnd < customStartDate) return false;
-      if (customEndDate && w.weekStart > customEndDate) return false;
+      if (!effectiveStartDate && !effectiveEndDate) return true;
+      if (effectiveStartDate && w.weekEnd < effectiveStartDate) return false;
+      if (effectiveEndDate && w.weekStart > effectiveEndDate) return false;
       return true;
     })
     .flatMap((w) => w.evidence || []);
@@ -378,7 +452,10 @@ export const WeeklyTab: React.FC = () => {
   const handleDownloadDocx = async () => {
     try {
       setDownloadingDocx(true);
-      const res = await api.get(`/reports/weekly/export/docx?week=${selectedWeek}&lang=${lang}`, {
+      const exportUrl = reportMode === 'custom'
+        ? `/reports/weekly/export/docx?start=${effectiveStartDate}&end=${effectiveEndDate}&lang=${lang}`
+        : `/reports/weekly/export/docx?week=${selectedWeek}&lang=${lang}`;
+      const res = await api.get(exportUrl, {
         responseType: 'blob'
       });
       const blob = new Blob([res.data], {
@@ -387,7 +464,9 @@ export const WeeklyTab: React.FC = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Weekly_Report_${currentWeekObj ? currentWeekObj.weekIndex : selectedWeek}.docx`;
+      a.download = reportMode === 'custom'
+        ? `Periodic_Report_${effectiveStartDate}_${effectiveEndDate}.docx`
+        : `Weekly_Report_${currentWeekObj ? currentWeekObj.weekIndex : selectedWeek}.docx`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -875,19 +954,12 @@ export const WeeklyTab: React.FC = () => {
               }`}
             >
               <Calendar className="w-3.5 h-3.5" />
-              <span>{t('التقرير الأسبوعي المجدول', 'Weekly Scheduled')}</span>
+              <span>{t('التقارير الأسبوعية (الأسابيع 1 - 14)', 'Weekly Reports (Weeks 1 - 14)')}</span>
             </button>
 
             <button
               type="button"
-              onClick={() => {
-                setReportMode('custom');
-                if (!customStartDate && allDocumentedEntries.length > 0) {
-                  const sorted = [...allDocumentedEntries].sort((a, b) => a.entryDate.localeCompare(b.entryDate));
-                  setCustomStartDate(sorted[0].entryDate);
-                  setCustomEndDate(sorted[sorted.length - 1].entryDate);
-                }
-              }}
+              onClick={() => setReportMode('custom')}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 ${
                 reportMode === 'custom'
                   ? 'bg-accent text-white shadow-xs'
@@ -895,7 +967,7 @@ export const WeeklyTab: React.FC = () => {
               }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>{t('تقرير كوستم مخصص (نطاق زمني)', 'Custom Date Range')}</span>
+              <span>{t('✨ تقرير فتري مخصص (إضافي - من تاريخ إلى تاريخ)', '✨ Custom Periodic Report (Extra)')}</span>
             </button>
           </div>
 
@@ -908,64 +980,21 @@ export const WeeklyTab: React.FC = () => {
           </div>
         </div>
 
-        {/* Custom Date Range Picker Bar (Only shown when reportMode === 'custom') */}
+        {/* Saved Periodic Reports Manager (Only shown when reportMode === 'custom') */}
         {reportMode === 'custom' ? (
-          <div className="p-4 bg-bg border border-line rounded-2xl no-print space-y-3 mb-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3 flex-wrap">
-                <div className="space-y-1">
-                  <label className="block text-[11px] font-black text-sub">{t('من تاريخ (البداية):', 'From Date:')}</label>
-                  <input
-                    type="date"
-                    value={customStartDate}
-                    onChange={(e) => setCustomStartDate(e.target.value)}
-                    className="px-3 py-1.5 bg-card border border-line rounded-xl text-xs font-bold text-ink focus:outline-none focus:border-accent"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="block text-[11px] font-black text-sub">{t('إلى تاريخ (النهاية):', 'To Date:')}</label>
-                  <input
-                    type="date"
-                    value={customEndDate}
-                    onChange={(e) => setCustomEndDate(e.target.value)}
-                    className="px-3 py-1.5 bg-card border border-line rounded-xl text-xs font-bold text-ink focus:outline-none focus:border-accent"
-                  />
-                </div>
-              </div>
-
-              {/* Quick Presets */}
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[11px] font-bold text-sub">{t('فترات سريعة:', 'Presets:')}</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (allDocumentedEntries.length > 0) {
-                      const sorted = [...allDocumentedEntries].sort((a, b) => a.entryDate.localeCompare(b.entryDate));
-                      setCustomStartDate(sorted[0].entryDate);
-                      setCustomEndDate(sorted[sorted.length - 1].entryDate);
-                    }
-                  }}
-                  className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-card hover:bg-line border border-line text-ink"
-                >
-                  {t('كامل فترة التدريب', 'All Logged Days')}
-                </button>
-                {weeksList.slice(0, 4).map((w) => (
-                  <button
-                    key={w.weekIndex}
-                    type="button"
-                    onClick={() => {
-                      setCustomStartDate(w.weekStart);
-                      setCustomEndDate(w.weekEnd);
-                    }}
-                    className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-card hover:bg-line border border-line text-ink"
-                  >
-                    {t(`الأسبوع ${w.weekIndex}`, `W${w.weekIndex}`)}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
+          <PeriodicReportsManager
+            currentReport={activePeriodicReport}
+            savedReportsList={savedPeriodicReports}
+            activeEntries={activeEntries}
+            activeTotalHours={activeTotalHours}
+            activeTotalDays={activeTotalDays}
+            onSelectReport={handleSelectPeriodicReport}
+            onUpdateReport={handleUpdatePeriodicReport}
+            onSaveCurrentReport={handleSaveCurrentPeriodicReport}
+            onCreateNewReport={handleCreateNewPeriodicReport}
+            onDeleteCurrentReport={handleDeleteCurrentPeriodicReport}
+            allDocumentedEntries={allDocumentedEntries}
+          />
         ) : (
           /* 14 Weeks Navigation Bar with Right/Left Scrolling Buttons (Only shown when reportMode === 'weekly') */
           <div className="space-y-2 mb-6 no-print">
@@ -1271,295 +1300,376 @@ export const WeeklyTab: React.FC = () => {
             )}
 
             <div id="weekly-paper-view" className="printable-a4-sheet space-y-6">
-            {/* Hidden File Inputs for Interactive Cover Page Logo Uploads */}
-            <input
-              type="file"
-              ref={institutionLogoInputRef}
-              accept="image/*"
-              className="hidden no-print"
-              onChange={(e) => handleLogoUpload(e, 'institutionLogo')}
-            />
-            <input
-              type="file"
-              ref={companyLogoInputRef}
-              accept="image/*"
-              className="hidden no-print"
-              onChange={(e) => handleLogoUpload(e, 'companyLogo')}
-            />
+                {/* Hidden File Inputs for Interactive Cover Page Logo Uploads */}
+                <input
+                  type="file"
+                  ref={institutionLogoInputRef}
+                  accept="image/*"
+                  className="hidden no-print"
+                  onChange={(e) => handleLogoUpload(e, 'institutionLogo')}
+                />
+                <input
+                  type="file"
+                  ref={companyLogoInputRef}
+                  accept="image/*"
+                  className="hidden no-print"
+                  onChange={(e) => handleLogoUpload(e, 'companyLogo')}
+                />
 
-            {/* Page 1: Standalone Weekly/Custom Academic Cover Page */}
-            <div
-              id="weekly-cover-page"
-              className="text-center py-8 sm:py-14 border-b-2 border-line pb-10 sm:pb-16 break-inside-avoid print:page-break print:break-after-page print:border-none print:p-0 print:m-0"
-              style={{ pageBreakAfter: 'always', breakAfter: 'page' }}
-            >
-              {/* Dual Logos & Academic Identity Header */}
-              <div className="flex items-center justify-between gap-2 sm:gap-4 mb-6 sm:mb-8 border-b border-line/60 pb-4 sm:pb-6 print:border-b-2 print:border-slate-800 print:mb-0">
-                {/* Institution Logo (Right in RTL / Left in LTR) */}
+                {/* Page 1: Standalone Weekly/Custom Academic Cover Page with Executive Summary */}
                 <div
-                  onClick={() => institutionLogoInputRef.current?.click()}
-                  className="w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center shrink-0 cursor-pointer group relative"
-                  title={t('انقر لرفع أو تغيير شعار الكلية / المؤسسة', 'Click to upload institution logo')}
+                  id="weekly-cover-page"
+                  className="text-center py-6 sm:py-10 border-b-2 border-line pb-8 sm:pb-12 break-inside-avoid print:page-break print:break-after-page print:border-none print:p-0 print:m-0"
+                  style={{ pageBreakAfter: 'always', breakAfter: 'page' }}
                 >
-                  {finalReportData?.profile?.institutionLogo ? (
-                    <div className="relative w-full h-full flex items-center justify-center">
-                      <img
-                        src={finalReportData.profile.institutionLogo}
-                        alt="Institution Logo"
-                        className="max-w-full max-h-full object-contain"
-                      />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 rounded-lg flex items-center justify-center text-[10px] text-white font-bold transition-opacity no-print">
-                        {t('تغيير', 'Change')}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 border border-dashed border-accent/40 group-hover:border-accent group-hover:bg-accent/5 rounded-lg flex flex-col items-center justify-center text-[9px] sm:text-[10px] text-sub/70 p-1 transition-colors">
-                      <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6 mb-0.5 sm:mb-1 text-accent" />
-                      <span>{isAr ? 'رفع الشعار' : 'Upload'}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Central Academic Identity */}
-                <div className="flex-1 text-center space-y-0.5 sm:space-y-1 px-1">
-                  <div className="text-[10px] sm:text-xs font-bold text-sub uppercase tracking-wider">
-                    {isAr ? 'المملكة العربية السعودية' : 'Kingdom of Saudi Arabia'}
-                  </div>
-                  <div className="text-xs sm:text-sm font-extrabold text-ink">
-                    {finalReportData?.profile?.trainingUnit || (isAr ? 'الوحدة التدريبية / الكلية' : 'Academic Department / College')}
-                  </div>
-                  {finalReportData?.profile?.department && (
-                    <div className="text-[11px] sm:text-xs font-semibold text-sub">
-                      {finalReportData.profile.department}
-                    </div>
-                  )}
-                </div>
-
-                {/* Company Logo (Left in RTL / Right in LTR) */}
-                <div
-                  onClick={() => companyLogoInputRef.current?.click()}
-                  className="w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center shrink-0 cursor-pointer group relative"
-                  title={t('انقر لرفع أو تغيير شعار جهة التدريب / الشركة', 'Click to upload company logo')}
-                >
-                  {finalReportData?.profile?.companyLogo ? (
-                    <div className="relative w-full h-full flex items-center justify-center">
-                      <img
-                        src={finalReportData.profile.companyLogo}
-                        alt="Company Logo"
-                        className="max-w-full max-h-full object-contain"
-                      />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 rounded-lg flex items-center justify-center text-[10px] text-white font-bold transition-opacity no-print">
-                        {t('تغيير', 'Change')}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 border border-dashed border-accent/40 group-hover:border-accent group-hover:bg-accent/5 rounded-lg flex flex-col items-center justify-center text-[9px] sm:text-[10px] text-sub/70 p-1 transition-colors">
-                      <Building className="w-5 h-5 sm:w-6 sm:h-6 mb-0.5 sm:mb-1 text-accent" />
-                      <span>{isAr ? 'رفع الشعار' : 'Upload'}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Title & Period Badge (Centered in the Middle) */}
-              <div className="my-auto py-6 print:my-auto print:py-6 space-y-2">
-                <div className="inline-block px-3.5 py-1 rounded-full text-xs font-extrabold bg-accent/10 text-accent border border-accent/20 mb-1 print:bg-slate-100 print:border print:border-slate-300 print:text-slate-900 print:text-xs">
-                  {reportMode === 'weekly'
-                    ? (isAr ? `الأسبوع التدريبي: الأسبوع ${currentWeekObj?.weekIndex || 1}` : `Training Week: Week ${currentWeekObj?.weekIndex || 1}`)
-                    : (isAr ? `تقرير التدريب الميداني للفترة المحددة (${activeTotalDays} أيام عمل)` : `Field Training Report (${activeTotalDays} Days)`)}
-                </div>
-                <h1 className="text-2xl sm:text-3xl font-black text-accent mt-2 print:text-black print:text-3xl print:leading-tight">
-                  {reportMode === 'weekly'
-                    ? (isAr ? 'تقرير التدريب التعاوني الأسبوعي (Weekly Co-op Report)' : 'Weekly Cooperative Training Report')
-                    : (isAr ? 'تقرير التدريب الميداني التراكمي (Co-op Field Report)' : 'Cooperative Field Training Report')}
-                </h1>
-                <div className="text-sm sm:text-base font-bold text-sub mt-2 print:text-slate-600">
-                  {reportMode === 'weekly'
-                    ? (weekReport ? `${isAr ? 'الفترة التدريبية المنفذة: ' : 'Executed Period: '} ${formatWeekPeriod(weekReport, isAr)}` : '—')
-                    : `${isAr ? 'الفترة الزمنية المشمولة بالتقرير: ' : 'Reported Period: '} ${customPeriodLabel}`}
-                </div>
-                <div className="text-sm sm:text-base font-bold text-ink mt-2 print:text-slate-800">
-                  {isAr ? 'جهة التدريب:' : 'Host Organization:'} <span className="text-accent print:text-black font-extrabold">{entityName}</span>
-                </div>
-              </div>
-
-              {/* Trainee Information Matrix Card - Lower Placement ("نزل الجدول تحت قليلا مرتب") */}
-              <div className="mt-auto pt-6 print:mt-auto print:pt-4">
-                <div
-                  className="max-w-xl mx-auto bg-bg border border-line rounded-xl p-5 text-start grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs trainee-matrix-print print:border print:border-slate-300 print:rounded-xl print:bg-slate-50/60 print:p-4 print:gap-x-6 print:gap-y-2.5 print:text-xs shadow-xs"
-                  dir={isAr ? 'rtl' : 'ltr'}
-                >
-                  <div className="flex items-center justify-between border-b border-line/50 pb-1.5 print:border-slate-200">
-                    <span className="font-bold text-sub">{isAr ? 'اسم المتدرب:' : 'Trainee Name:'}</span>
-                    <span className="font-black text-ink">{normalizeStudentName(finalReportData?.profile?.studentName) || '—'}</span>
-                  </div>
-                  <div className="flex items-center justify-between border-b border-line/50 pb-1.5 print:border-slate-200">
-                    <span className="font-bold text-sub">{isAr ? 'الرقم التدريبي:' : 'Training ID:'}</span>
-                    <span className="font-mono font-black text-ink">{finalReportData?.profile?.trainingNumber || '—'}</span>
-                  </div>
-                  <div className="flex items-center justify-between border-b border-line/50 pb-1.5 print:border-slate-200">
-                    <span className="font-bold text-sub">{isAr ? 'القسم / التخصص:' : 'Department:'}</span>
-                    <span className="font-bold text-ink">{finalReportData?.profile?.department || '—'}</span>
-                  </div>
-                  <div className="flex items-center justify-between border-b border-line/50 pb-1.5 print:border-slate-200">
-                    <span className="font-bold text-sub">{isAr ? 'المشرف الأكاديمي:' : 'Academic Supervisor:'}</span>
-                    <span className="font-bold text-ink">{finalReportData?.profile?.supervisorName || '—'}</span>
-                  </div>
-                  <div className="flex items-center justify-between border-b border-line/50 pb-1.5 print:border-slate-200">
-                    <span className="font-bold text-sub">{isAr ? 'المشرف الميداني:' : 'Field Supervisor:'}</span>
-                    <span className="font-bold text-ink">{finalReportData?.profile?.responsibleName || '—'}</span>
-                  </div>
-                  <div className="flex items-center justify-between border-b border-line/50 pb-1.5 print:border-slate-200">
-                    <span className="font-bold text-sub">{isAr ? 'إجمالي الساعات الفعلية:' : 'Logged Hours:'}</span>
-                    <span className="font-black text-accent print:text-black">{activeTotalHours} {isAr ? 'ساعة تدريبية' : 'hrs'}</span>
-                  </div>
-                  <div className="flex items-center justify-between border-b border-line/50 pb-1.5 print:border-slate-200">
-                    <span className="font-bold text-sub">{isAr ? 'أيام العمل المنجزة:' : 'Active Days:'}</span>
-                    <span className="font-black text-ink">{activeTotalDays} {isAr ? 'أيام' : 'days'}</span>
-                  </div>
-                  <div className="flex items-center justify-between border-b border-line/50 pb-1.5 print:border-slate-200">
-                    <span className="font-bold text-sub">{isAr ? 'حالة التوثيق:' : 'Status:'}</span>
-                    <span className="font-black text-ok print:text-black">{activeEntries.length ? (isAr ? 'مكتمل التوثيق' : 'Completed') : (isAr ? 'قيد التوثيق' : 'Pending')}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Page 2: Weekly Executive Synthesis & Competencies Dossier + Matrix Table */}
-            {activeEntries.length > 0 && (() => {
-              const synthesis = generateAcademicWeeklySynthesis(
-                activeEntries,
-                reportMode === 'weekly' ? (currentWeekObj?.weekIndex || 1) : 1,
-                activeTotalHours,
-                isAr
-              );
-              return (
-                <div
-                  id="weekly-page-2-synthesis"
-                  className="space-y-6 print:pt-4"
-                  style={{ breakBefore: 'page', pageBreakBefore: 'always', breakAfter: 'page', pageBreakAfter: 'always' }}
-                >
-                  {/* Synthesis Box */}
-                  <div className="p-5 sm:p-6 bg-card border border-line rounded-2xl space-y-4 text-start break-inside-avoid shadow-xs print:border-none print:shadow-none print:p-0 print:bg-transparent synthesis-box-print">
-                    <div className="flex items-center justify-between border-b border-line pb-3 print:border-b-2 print:border-slate-800">
-                      <div className="text-sm font-black text-ink flex items-center gap-2">
-                        <Award className="w-5 h-5 text-accent" />
-                        <span>{reportMode === 'weekly' ? (isAr ? 'الموجز التنفيذي والكفايات المكتسبة للأسبوع (ملخص الأسبوع الشامل)' : 'Weekly Executive Summary & Acquired Competencies') : (isAr ? 'الموجز التنفيذي والكفايات المكتسبة للفترة المحددة' : 'Executive Summary & Acquired Competencies for Period')}</span>
-                      </div>
-                      <span className="text-[11px] font-bold text-sub">
-                        {isAr ? 'صياغة أكاديمية استشارية رفيعة' : 'Official Academic Synthesis'}
-                      </span>
-                    </div>
-
-                    {/* Executive Narrative */}
-                    <p className="text-xs sm:text-sm text-ink leading-relaxed font-medium">
-                      {synthesis.executiveSummary}
-                    </p>
-
-                    {/* Core Operational Pillars */}
-                    {synthesis.technicalPillars.length > 0 && (
-                      <div className="pt-2.5 border-t border-line/60 space-y-2 print:border-t print:border-slate-200">
-                        <div className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider">
-                          {isAr ? 'المحاور والأنشطة التشغيلية المنفذة:' : 'Core Operational Pillars:'}
+                  {/* Dual Logos & Academic Identity Header */}
+                  <div className="flex items-center justify-between gap-2 sm:gap-4 mb-4 sm:mb-6 border-b border-line/60 pb-3 sm:pb-4 print:border-b-2 print:border-slate-800 print:mb-0">
+                    {/* Institution Logo */}
+                    <div
+                      onClick={() => institutionLogoInputRef.current?.click()}
+                      className="w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center shrink-0 cursor-pointer group relative"
+                      title={t('انقر لرفع أو تغيير شعار الكلية / المؤسسة', 'Click to upload institution logo')}
+                    >
+                      {finalReportData?.profile?.institutionLogo ? (
+                        <div className="relative w-full h-full flex items-center justify-center">
+                          <img
+                            src={finalReportData.profile.institutionLogo}
+                            alt="Institution Logo"
+                            className="max-w-full max-h-full object-contain"
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 rounded-lg flex items-center justify-center text-[10px] text-white font-bold transition-opacity no-print">
+                            {t('تغيير', 'Change')}
+                          </div>
                         </div>
-                        <ul className="space-y-1.5 text-xs text-sub">
-                          {synthesis.technicalPillars.map((pillar, pIdx) => (
-                            <li key={pIdx} className="flex items-start gap-2">
-                              <span className="w-1.5 h-1.5 rounded-full bg-slate-700 dark:bg-slate-300 mt-1.5 shrink-0"></span>
-                              <span className="text-ink font-semibold">{pillar}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {/* Acquired Competencies */}
-                    {synthesis.acquiredCompetencies.length > 0 && (
-                      <div className="pt-2.5 border-t border-line/60 space-y-2 print:border-t print:border-slate-200">
-                        <div className="text-xs font-black text-ok uppercase tracking-wider flex items-center gap-1">
-                          <span>{isAr ? 'الكفايات والمعارف الهندسية المكتسبة:' : 'Acquired Engineering Competencies:'}</span>
+                      ) : (
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 border border-dashed border-accent/40 group-hover:border-accent group-hover:bg-accent/5 rounded-lg flex flex-col items-center justify-center text-[9px] sm:text-[10px] text-sub/70 p-1 transition-colors">
+                          <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6 mb-0.5 sm:mb-1 text-accent" />
+                          <span>{isAr ? 'رفع الشعار' : 'Upload'}</span>
                         </div>
-                        <ul className="space-y-1.5 text-xs text-sub">
-                          {synthesis.acquiredCompetencies.map((comp, cIdx) => (
-                            <li key={cIdx} className="flex items-start gap-2">
-                              <span className="w-1.5 h-1.5 rounded-full bg-ok mt-1.5 shrink-0"></span>
-                              <span>{comp}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                      )}
+                    </div>
 
-                    {/* Tools & Tech Badges */}
-                    {synthesis.toolsAndTech.length > 0 && (
-                      <div className="pt-2.5 border-t border-line/60 flex flex-wrap items-center gap-1.5 print:border-t print:border-slate-200" dir={isAr ? 'rtl' : 'ltr'}>
-                        <span className="text-xs font-black text-sub ml-1">
-                          {isAr ? 'التقنيات والأدوات الموظفة:' : 'Utilized Tech:'}
+                    {/* Central Academic Identity */}
+                    <div className="flex-1 text-center space-y-0.5 sm:space-y-1 px-1">
+                      <div className="text-[10px] sm:text-xs font-bold text-sub uppercase tracking-wider">
+                        {isAr ? 'المملكة العربية السعودية' : 'Kingdom of Saudi Arabia'}
+                      </div>
+                      <div className="text-xs sm:text-sm font-extrabold text-ink">
+                        {finalReportData?.profile?.trainingUnit || (isAr ? 'الوحدة التدريبية / الكلية' : 'Academic Department / College')}
+                      </div>
+                      {finalReportData?.profile?.department && (
+                        <div className="text-[11px] sm:text-xs font-semibold text-sub">
+                          {finalReportData.profile.department}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Company Logo */}
+                    <div
+                      onClick={() => companyLogoInputRef.current?.click()}
+                      className="w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center shrink-0 cursor-pointer group relative"
+                      title={t('انقر لرفع أو تغيير شعار جهة التدريب / الشركة', 'Click to upload company logo')}
+                    >
+                      {finalReportData?.profile?.companyLogo ? (
+                        <div className="relative w-full h-full flex items-center justify-center">
+                          <img
+                            src={finalReportData.profile.companyLogo}
+                            alt="Company Logo"
+                            className="max-w-full max-h-full object-contain"
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 rounded-lg flex items-center justify-center text-[10px] text-white font-bold transition-opacity no-print">
+                            {t('تغيير', 'Change')}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 border border-dashed border-accent/40 group-hover:border-accent group-hover:bg-accent/5 rounded-lg flex flex-col items-center justify-center text-[9px] sm:text-[10px] text-sub/70 p-1 transition-colors">
+                          <Building className="w-5 h-5 sm:w-6 sm:h-6 mb-0.5 sm:mb-1 text-accent" />
+                          <span>{isAr ? 'رفع الشعار' : 'Upload'}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Title & Period Badge */}
+                  <div className="my-auto py-3 print:my-auto print:py-2 space-y-1.5">
+                    <div className="inline-block px-3.5 py-1 rounded-full text-xs font-extrabold bg-accent/10 text-accent border border-accent/20 mb-1 print:bg-slate-100 print:border print:border-slate-300 print:text-slate-900 print:text-xs">
+                      {reportMode === 'weekly'
+                        ? (isAr ? `الأسبوع التدريبي: الأسبوع ${currentWeekObj?.weekIndex || 1}` : `Training Week: Week ${currentWeekObj?.weekIndex || 1}`)
+                        : (isAr ? `تقرير التدريب الميداني للفترة المحددة (${activeTotalDays} أيام عمل)` : `Field Training Report (${activeTotalDays} Days)`)}
+                    </div>
+                    <h1 className="text-2xl sm:text-3xl font-black text-accent mt-1.5 print:text-black print:text-3xl print:leading-tight">
+                      {reportMode === 'weekly'
+                        ? (isAr ? 'تقرير التدريب التعاوني الأسبوعي (Weekly Co-op Report)' : 'Weekly Cooperative Training Report')
+                        : (activePeriodicReport.title || (isAr ? 'تقرير التدريب الميداني التراكمي (Co-op Field Report)' : 'Cooperative Field Training Report'))}
+                    </h1>
+                    <div className="text-sm sm:text-base font-bold text-sub mt-1.5 print:text-slate-600">
+                      {reportMode === 'weekly'
+                        ? (weekReport ? `${isAr ? 'الفترة التدريبية المنفذة: ' : 'Executed Period: '} ${formatWeekPeriod(weekReport, isAr)}` : '—')
+                        : `${isAr ? 'الفترة الزمنية المشمولة بالتقرير: ' : 'Reported Period: '} ${customPeriodLabel}`}
+                    </div>
+                    <div className="text-sm sm:text-base font-bold text-ink mt-1.5 print:text-slate-800">
+                      {isAr ? 'جهة التدريب:' : 'Host Organization:'} <span className="text-accent print:text-black font-extrabold">{entityName}</span>
+                    </div>
+                  </div>
+
+                  {/* Trainee Information Matrix Card */}
+                  <div className="mt-4 pt-2 print:mt-3 print:pt-1">
+                    <div
+                      className="max-w-2xl mx-auto bg-bg border border-line rounded-xl p-4 sm:p-5 text-start grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 text-xs trainee-matrix-print print:border print:border-slate-300 print:rounded-xl print:bg-slate-50/60 print:p-3 print:gap-x-5 print:gap-y-2 print:text-xs shadow-xs"
+                      dir={isAr ? 'rtl' : 'ltr'}
+                    >
+                      <div className="flex items-center justify-between border-b border-line/50 pb-1 print:border-slate-200">
+                        <span className="font-bold text-sub">{isAr ? 'اسم المتدرب:' : 'Trainee Name:'}</span>
+                        <span className="font-black text-ink">{normalizeStudentName(finalReportData?.profile?.studentName) || '—'}</span>
+                      </div>
+                      <div className="flex items-center justify-between border-b border-line/50 pb-1 print:border-slate-200">
+                        <span className="font-bold text-sub">{isAr ? 'الرقم التدريبي:' : 'Training ID:'}</span>
+                        <span className="font-mono font-black text-ink">{finalReportData?.profile?.trainingNumber || '—'}</span>
+                      </div>
+                      <div className="flex items-center justify-between border-b border-line/50 pb-1 print:border-slate-200">
+                        <span className="font-bold text-sub">{isAr ? 'القسم / التخصص:' : 'Department:'}</span>
+                        <span className="font-bold text-ink">
+                          {reportMode === 'custom' && activePeriodicReport.department
+                            ? activePeriodicReport.department
+                            : (finalReportData?.profile?.department || '—')}
                         </span>
-                        {synthesis.toolsAndTech.map((tool, tIdx) => (
-                          <span
-                            key={tIdx}
-                            className="px-2.5 py-1 rounded-md text-[11px] font-mono font-extrabold bg-slate-100 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 print:bg-white print:border-slate-400 print:text-black shadow-xs tech-pill"
-                          >
-                            {tool}
-                          </span>
-                        ))}
                       </div>
-                    )}
+                      <div className="flex items-center justify-between border-b border-line/50 pb-1 print:border-slate-200">
+                        <span className="font-bold text-sub">{isAr ? 'المشرف الأكاديمي:' : 'Academic Supervisor:'}</span>
+                        <span className="font-bold text-ink">{finalReportData?.profile?.supervisorName || '—'}</span>
+                      </div>
+                      <div className="flex items-center justify-between border-b border-line/50 pb-1 print:border-slate-200">
+                        <span className="font-bold text-sub">{isAr ? 'المشرف الميداني:' : 'Field Supervisor:'}</span>
+                        <span className="font-bold text-ink">{finalReportData?.profile?.responsibleName || '—'}</span>
+                      </div>
+                      <div className="flex items-center justify-between border-b border-line/50 pb-1 print:border-slate-200">
+                        <span className="font-bold text-sub">{isAr ? 'إجمالي الساعات الفعلية:' : 'Logged Hours:'}</span>
+                        <span className="font-black text-accent print:text-black">{activeTotalHours} {isAr ? 'ساعة تدريبية' : 'hrs'}</span>
+                      </div>
+                      <div className="flex items-center justify-between border-b border-line/50 pb-1 print:border-slate-200">
+                        <span className="font-bold text-sub">{isAr ? 'أيام العمل المنجزة:' : 'Active Days:'}</span>
+                        <span className="font-black text-ink">{activeTotalDays} {isAr ? 'أيام' : 'days'}</span>
+                      </div>
+                      <div className="flex items-center justify-between border-b border-line/50 pb-1 print:border-slate-200">
+                        <span className="font-bold text-sub">{isAr ? 'حالة التوثيق:' : 'Status:'}</span>
+                        <span className="font-black text-ok print:text-black">{activeEntries.length ? (isAr ? 'مكتمل التوثيق' : 'Completed') : (isAr ? 'قيد التوثيق' : 'Pending')}</span>
+                      </div>
+                      {reportMode === 'custom' && activePeriodicReport.roleAssignment && (
+                        <div className="flex items-center justify-between border-b border-line/50 pb-1 print:border-slate-200 col-span-1 sm:col-span-2">
+                          <span className="font-bold text-sub">{isAr ? 'نطاق التكليف والصفة الميدانية:' : 'Operational Scope / Role:'}</span>
+                          <span className="font-black text-accent print:text-black">{activePeriodicReport.roleAssignment}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Executive Weekly Tasks Table Matrix */}
-                  <div className="overflow-x-auto border border-line rounded-xl my-4 bg-card print:border-line print:bg-white break-inside-avoid shadow-xs">
-                    <div className="bg-bg px-4 py-2.5 border-b border-line flex items-center justify-between text-xs font-black text-ink print:bg-slate-100">
-                      <span>{reportMode === 'weekly' ? (isAr ? 'جدول حصر وتوثيق الأنشطة والمهام الأسبوعية' : 'Weekly Tasks Executive Matrix') : (isAr ? 'جدول حصر وتوثيق أنشطة ومهام الفترة' : 'Tasks Executive Matrix')}</span>
-                      <span className="text-[11px] font-bold text-accent print:text-black">
-                        {activeTotalDays} {isAr ? 'أيام عمل' : 'days'} &middot; {activeTotalHours} {isAr ? 'ساعة فعلية' : 'hours'}
-                      </span>
+                  {/* For Custom Periodic Report: Display Executive Summary / Freehand Narrative Box directly on Page 1 */}
+                  {reportMode === 'custom' && (activeEntries.length > 0 || activePeriodicReport.customNarrative?.trim()) && (
+                    <div className="mt-5 pt-2 text-start break-inside-avoid print:mt-4 print:pt-1">
+                      <div className="max-w-2xl mx-auto p-4 sm:p-5 bg-card border border-line rounded-xl space-y-3 text-start break-inside-avoid shadow-xs print:border print:border-slate-300 print:rounded-xl print:p-3 print:bg-slate-50/50 synthesis-box-print">
+                        <div className="flex items-center justify-between border-b border-line pb-2.5 print:border-b-2 print:border-slate-800">
+                          <div className="text-xs sm:text-sm font-black text-ink flex items-center gap-2">
+                            <Award className="w-4 h-4 text-accent" />
+                            <span>{isAr ? 'الموجز التنفيذي ونطاق التكليف الميداني للفترة المحددة' : 'Field Executive Summary & Scope of Assignment'}</span>
+                          </div>
+                          <span className="text-[10.5px] font-bold text-sub">
+                            {activePeriodicReport.customNarrative?.trim()
+                              ? (isAr ? 'سرد حر معتمد' : 'Approved Freehand Narrative')
+                              : (isAr ? 'صياغة أكاديمية استشارية رفيعة' : 'Official Academic Synthesis')}
+                          </span>
+                        </div>
+
+                        {/* Freehand Narrative Paragraph */}
+                        <p className="text-xs sm:text-[13px] text-ink leading-relaxed font-medium whitespace-pre-line">
+                          {activePeriodicReport.customNarrative?.trim()
+                            ? activePeriodicReport.customNarrative
+                            : synthesis.executiveSummary}
+                        </p>
+
+                        {/* Core Operational Pillars */}
+                        {synthesis.technicalPillars.length > 0 && (
+                          <div className="pt-2 border-t border-line/60 space-y-1.5 print:border-t print:border-slate-200">
+                            <div className="text-[11px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                              {isAr ? 'المحاور والأنشطة التشغيلية المنفذة:' : 'Core Operational Pillars:'}
+                            </div>
+                            <ul className="space-y-1 text-xs text-sub">
+                              {synthesis.technicalPillars.map((pillar, pIdx) => (
+                                <li key={pIdx} className="flex items-start gap-2">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-slate-700 dark:bg-slate-300 mt-1.5 shrink-0"></span>
+                                  <span className="text-ink font-semibold">{pillar}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Acquired Engineering Competencies */}
+                        {synthesis.acquiredCompetencies.length > 0 && (
+                          <div className="pt-2 border-t border-line/60 space-y-1.5 print:border-t print:border-slate-200">
+                            <div className="text-[11px] font-black text-ok uppercase tracking-wider flex items-center gap-1">
+                              <span>{isAr ? 'الكفايات والمعارف الهندسية المكتسبة:' : 'Acquired Engineering Competencies:'}</span>
+                            </div>
+                            <ul className="space-y-1 text-xs text-sub">
+                              {synthesis.acquiredCompetencies.map((comp, cIdx) => (
+                                <li key={cIdx} className="flex items-start gap-2">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-ok mt-1.5 shrink-0"></span>
+                                  <span>{comp}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Utilized Tools & Tech Badges */}
+                        {synthesis.toolsAndTech.length > 0 && (
+                          <div className="pt-2 border-t border-line/60 flex flex-wrap items-center gap-1.5 print:border-t print:border-slate-200" dir={isAr ? 'rtl' : 'ltr'}>
+                            <span className="text-[11px] font-black text-sub ml-1">
+                              {isAr ? 'التقنيات والأدوات الموظفة:' : 'Utilized Tech:'}
+                            </span>
+                            {synthesis.toolsAndTech.map((tool, tIdx) => (
+                              <span
+                                key={tIdx}
+                                className="px-2 py-0.5 rounded-md text-[10.5px] font-mono font-extrabold bg-slate-100 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 print:bg-white print:border-slate-400 print:text-black shadow-xs tech-pill"
+                              >
+                                {tool}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <table className="w-full text-start text-xs border-collapse">
-                      <thead>
-                        <tr className="bg-bg/60 border-b border-line text-ink font-extrabold text-[11px]">
-                          <th className="p-2.5 text-start w-28">{isAr ? 'اليوم والتاريخ' : 'Day & Date'}</th>
-                          <th className="p-2.5 text-center w-24">{isAr ? 'التوقيت' : 'Time'}</th>
-                          <th className="p-2.5 text-center w-16">{isAr ? 'الساعات' : 'Hours'}</th>
-                          <th className="p-2.5 text-start w-28">{isAr ? 'التصنيف الفني' : 'Domain'}</th>
-                          <th className="p-2.5 text-start">{isAr ? 'النشاط والمهمة التشغيلية الميدانية' : 'Operational Scope & Task'}</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-line/70">
-                        {activeEntries.map((entry: EntryDTO, idx: number) => {
-                          const hours = calculateHoursBetween(entry.timeFrom || '08:00', entry.timeTo || '16:00');
-                          return (
-                            <tr key={entry.id} className="hover:bg-bg/30 transition-colors">
-                              <td className="p-2.5 font-extrabold text-ink whitespace-nowrap">
-                                <span className="text-accent ml-1 font-black print:text-black">{isAr ? `اليوم ${idx + 1}` : `D${idx + 1}`}</span>
-                                <span className="text-sub font-semibold text-[10.5px]">
-                                  ({isAr ? formatDateArabic(entry.entryDate) : formatDateEnglish(entry.entryDate)})
-                                </span>
-                              </td>
-                              <td className="p-2.5 text-center text-sub font-mono text-[11px] whitespace-nowrap" dir="ltr">
-                                {entry.timeFrom || '08:00'} - {entry.timeTo || '16:00'}
-                              </td>
-                              <td className="p-2.5 text-center font-black text-ink whitespace-nowrap">
-                                {hours} {isAr ? 'س' : 'h'}
-                              </td>
-                              <td className="p-2.5">
-                                <span className="px-2.5 py-1 rounded-md text-[10.5px] font-extrabold bg-slate-100 text-slate-800 whitespace-nowrap border border-slate-300 shadow-xs print:bg-white print:border-slate-400">
-                                  {formatCategory(entry.category, isAr)}
-                                </span>
-                              </td>
-                              <td className="p-2.5 font-bold text-ink leading-snug">
-                                {elevateTaskTitle(entry.title, entry.description, isAr)}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                  )}
                 </div>
-              );
-            })()}
+
+                {/* Page 2: Weekly Executive Synthesis & Competencies Dossier + Matrix Table */}
+                {activeEntries.length > 0 && (reportMode === 'weekly' || activePeriodicReport.includeDailyTasks !== false) && (
+                  <div
+                    id="weekly-page-2-synthesis"
+                    className="space-y-6 print:pt-4"
+                    style={{ breakBefore: 'page', pageBreakBefore: 'always', breakAfter: 'page', pageBreakAfter: 'always' }}
+                  >
+                    {/* For Weekly Mode: Synthesis Box is rendered on Page 2 as standard */}
+                    {reportMode === 'weekly' && (
+                      <div className="p-5 sm:p-6 bg-card border border-line rounded-2xl space-y-4 text-start break-inside-avoid shadow-xs print:border-none print:shadow-none print:p-0 print:bg-transparent synthesis-box-print">
+                        <div className="flex items-center justify-between border-b border-line pb-3 print:border-b-2 print:border-slate-800">
+                          <div className="text-sm font-black text-ink flex items-center gap-2">
+                            <Award className="w-5 h-5 text-accent" />
+                            <span>{isAr ? 'الموجز التنفيذي والكفايات المكتسبة للأسبوع (ملخص الأسبوع الشامل)' : 'Weekly Executive Summary & Acquired Competencies'}</span>
+                          </div>
+                          <span className="text-[11px] font-bold text-sub">
+                            {isAr ? 'صياغة أكاديمية استشارية رفيعة' : 'Official Academic Synthesis'}
+                          </span>
+                        </div>
+
+                        {/* Executive Narrative */}
+                        <p className="text-xs sm:text-sm text-ink leading-relaxed font-medium">
+                          {synthesis.executiveSummary}
+                        </p>
+
+                        {/* Core Operational Pillars */}
+                        {synthesis.technicalPillars.length > 0 && (
+                          <div className="pt-2.5 border-t border-line/60 space-y-2 print:border-t print:border-slate-200">
+                            <div className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                              {isAr ? 'المحاور والأنشطة التشغيلية المنفذة:' : 'Core Operational Pillars:'}
+                            </div>
+                            <ul className="space-y-1.5 text-xs text-sub">
+                              {synthesis.technicalPillars.map((pillar, pIdx) => (
+                                <li key={pIdx} className="flex items-start gap-2">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-slate-700 dark:bg-slate-300 mt-1.5 shrink-0"></span>
+                                  <span className="text-ink font-semibold">{pillar}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Acquired Competencies */}
+                        {synthesis.acquiredCompetencies.length > 0 && (
+                          <div className="pt-2.5 border-t border-line/60 space-y-2 print:border-t print:border-slate-200">
+                            <div className="text-xs font-black text-ok uppercase tracking-wider flex items-center gap-1">
+                              <span>{isAr ? 'الكفايات والمعارف الهندسية المكتسبة:' : 'Acquired Engineering Competencies:'}</span>
+                            </div>
+                            <ul className="space-y-1.5 text-xs text-sub">
+                              {synthesis.acquiredCompetencies.map((comp, cIdx) => (
+                                <li key={cIdx} className="flex items-start gap-2">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-ok mt-1.5 shrink-0"></span>
+                                  <span>{comp}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Tools & Tech Badges */}
+                        {synthesis.toolsAndTech.length > 0 && (
+                          <div className="pt-2.5 border-t border-line/60 flex flex-wrap items-center gap-1.5 print:border-t print:border-slate-200" dir={isAr ? 'rtl' : 'ltr'}>
+                            <span className="text-xs font-black text-sub ml-1">
+                              {isAr ? 'التقنيات والأدوات الموظفة:' : 'Utilized Tech:'}
+                            </span>
+                            {synthesis.toolsAndTech.map((tool, tIdx) => (
+                              <span
+                                key={tIdx}
+                                className="px-2.5 py-1 rounded-md text-[11px] font-mono font-extrabold bg-slate-100 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 print:bg-white print:border-slate-400 print:text-black shadow-xs tech-pill"
+                              >
+                                {tool}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Executive Tasks Table Matrix */}
+                    <div className="overflow-x-auto border border-line rounded-xl my-4 bg-card print:border-line print:bg-white break-inside-avoid shadow-xs">
+                      <div className="bg-bg px-4 py-2.5 border-b border-line flex items-center justify-between text-xs font-black text-ink print:bg-slate-100">
+                        <span>{reportMode === 'weekly' ? (isAr ? 'جدول حصر وتوثيق الأنشطة والمهام الأسبوعية' : 'Weekly Tasks Executive Matrix') : (isAr ? 'جدول حصر وتوثيق أنشطة ومهام الفترة الميدانية' : 'Field Tasks Executive Matrix')}</span>
+                        <span className="text-[11px] font-bold text-accent print:text-black">
+                          {activeTotalDays} {isAr ? 'أيام عمل' : 'days'} &middot; {activeTotalHours} {isAr ? 'ساعة فعلية' : 'hours'}
+                        </span>
+                      </div>
+                      <table className="w-full text-start text-xs border-collapse">
+                        <thead>
+                          <tr className="bg-bg/60 border-b border-line text-ink font-extrabold text-[11px]">
+                            <th className="p-2.5 text-start w-28">{isAr ? 'اليوم والتاريخ' : 'Day & Date'}</th>
+                            <th className="p-2.5 text-center w-24">{isAr ? 'التوقيت' : 'Time'}</th>
+                            <th className="p-2.5 text-center w-16">{isAr ? 'الساعات' : 'Hours'}</th>
+                            <th className="p-2.5 text-start w-28">{isAr ? 'التصنيف الفني' : 'Domain'}</th>
+                            <th className="p-2.5 text-start">{isAr ? 'النشاط والمهمة التشغيلية الميدانية' : 'Operational Scope & Task'}</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-line/70">
+                          {activeEntries.map((entry: EntryDTO, idx: number) => {
+                            const hours = calculateHoursBetween(entry.timeFrom || '08:00', entry.timeTo || '16:00');
+                            return (
+                              <tr key={entry.id} className="hover:bg-bg/30 transition-colors">
+                                <td className="p-2.5 font-extrabold text-ink whitespace-nowrap">
+                                  <span className="text-accent ml-1 font-black print:text-black">{isAr ? `اليوم ${idx + 1}` : `D${idx + 1}`}</span>
+                                  <span className="text-sub font-semibold text-[10.5px]">
+                                    ({isAr ? formatDateArabic(entry.entryDate) : formatDateEnglish(entry.entryDate)})
+                                  </span>
+                                </td>
+                                <td className="p-2.5 text-center text-sub font-mono text-[11px] whitespace-nowrap" dir="ltr">
+                                  {entry.timeFrom || '08:00'} - {entry.timeTo || '16:00'}
+                                </td>
+                                <td className="p-2.5 text-center font-black text-ink whitespace-nowrap">
+                                  {hours} {isAr ? 'س' : 'h'}
+                                </td>
+                                <td className="p-2.5">
+                                  <span className="px-2.5 py-1 rounded-md text-[10.5px] font-extrabold bg-slate-100 text-slate-800 whitespace-nowrap border border-slate-300 shadow-xs print:bg-white print:border-slate-400">
+                                    {formatCategory(entry.category, isAr)}
+                                  </span>
+                                </td>
+                                <td className="p-2.5 font-bold text-ink leading-snug">
+                                  {elevateTaskTitle(entry.title, entry.description, isAr)}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
 
             {/* Pages 3+: Day-by-day Logs (Strictly 1 page max per day in print) */}
             {activeEntries.length === 0 ? (
