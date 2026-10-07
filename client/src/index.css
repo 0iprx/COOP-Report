@@ -438,7 +438,8 @@ html, body {
   }
 
   /* Weekly & Periodic Page 1: Dedicated Full A4 Cover Page */
-  #weekly-cover-page {
+  #weekly-cover-page,
+  #periodic-cover-page {
     box-sizing: border-box !important;
     width: 100% !important;
     max-width: 100% !important;
@@ -467,7 +468,8 @@ html, body {
   }
 
   /* Weekly Page 2: Synthesis & Matrix Table Page */
-  #weekly-page-2-synthesis {
+  #weekly-page-2-synthesis,
+  #periodic-matrix-page {
     box-sizing: border-box !important;
     width: 100% !important;
     max-width: 100% !important;
@@ -511,7 +513,8 @@ html, body {
   }
 
   /* Final Page: Evidence Photos & Official Endorsement COMBINED in ONE Single Page */
-  #weekly-final-evidence-page {
+  #weekly-final-evidence-page,
+  #periodic-evidence-page {
     box-sizing: border-box !important;
     width: 100% !important;
     max-width: 100% !important;
@@ -548,7 +551,8 @@ html, body {
   .print-page-wrapper,
   .printable-a4-sheet,
   #report-paper-view,
-  #weekly-paper-view {
+  #weekly-paper-view,
+  #periodic-paper-view {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;

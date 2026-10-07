@@ -3,10 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
-import { FinalReportData, EntryDTO, SavedPeriodicReport, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis, formatWeekPeriod, ENTRY_CATEGORIES, elevateTaskTitle, normalizeStudentName, polishAcademicNarrative, convertBulletsToCohesiveParagraphs, isEntryStructuredQA } from '@coop/shared';
+import { FinalReportData, EntryDTO, formatDateArabic, formatDateEnglish, calculateHoursBetween, generateAcademicWeeklySynthesis, formatWeekPeriod, ENTRY_CATEGORIES, elevateTaskTitle, normalizeStudentName, polishAcademicNarrative, convertBulletsToCohesiveParagraphs, isEntryStructuredQA } from '@coop/shared';
 import { WeeklyEvidenceSection } from './WeeklyEvidenceSection';
-import { PeriodicReportsManager } from './PeriodicReportsManager';
-import { periodicReportsService } from '../../services/periodicReportsService';
 import {
   Calendar,
   Clock,
@@ -158,73 +156,6 @@ export const WeeklyTab: React.FC = () => {
   const [isAuditingWeek, setIsAuditingWeek] = useState<boolean>(false);
   const [isTranslatingWeek, setIsTranslatingWeek] = useState<boolean>(false);
 
-  // Report Mode: Weekly Scheduled vs Custom Date Range
-  const [reportMode, setReportMode] = useState<'weekly' | 'custom'>('weekly');
-
-  // Saved Periodic Reports State (Offline-first persistence)
-  const [savedPeriodicReports, setSavedPeriodicReports] = useState<SavedPeriodicReport[]>(() => periodicReportsService.getSavedReports());
-  const [activePeriodicReport, setActivePeriodicReport] = useState<SavedPeriodicReport>(() => {
-    const list = periodicReportsService.getSavedReports();
-    const activeId = periodicReportsService.getActiveReportId();
-    const found = list.find((r) => r.id === activeId);
-    if (found) return found;
-    if (list.length > 0) return list[0];
-    const def = periodicReportsService.createDefaultReport();
-    periodicReportsService.saveReport(def);
-    return def;
-  });
-
-  const handleSelectPeriodicReport = (report: SavedPeriodicReport) => {
-    setActivePeriodicReport(report);
-    periodicReportsService.setActiveReportId(report.id);
-  };
-
-  const handleUpdatePeriodicReport = (updated: Partial<SavedPeriodicReport>) => {
-    setActivePeriodicReport((prev) => {
-      const next = { ...prev, ...updated };
-      return next;
-    });
-  };
-
-  const handleSaveCurrentPeriodicReport = () => {
-    const updatedList = periodicReportsService.saveReport(activePeriodicReport);
-    setSavedPeriodicReports(updatedList);
-    setSaveToast(t('تم حفظ التقرير الفتري وتحديثه بنجاح!', 'Periodic report saved successfully!'));
-    setTimeout(() => setSaveToast(''), 3000);
-  };
-
-  const handleCreateNewPeriodicReport = () => {
-    let startD = '';
-    let endD = '';
-    if (allDocumentedEntries.length > 0) {
-      const sorted = [...allDocumentedEntries].sort((a, b) => a.entryDate.localeCompare(b.entryDate));
-      startD = sorted[0].entryDate;
-      endD = sorted[sorted.length - 1].entryDate;
-    }
-    const newReport = periodicReportsService.createDefaultReport(startD, endD);
-    const updatedList = periodicReportsService.saveReport(newReport);
-    setSavedPeriodicReports(updatedList);
-    setActivePeriodicReport(newReport);
-    setSaveToast(t('تم إنشاء تقرير فتري جديد، يمكنك تخصيصه وحفظه الآن', 'New periodic report created'));
-    setTimeout(() => setSaveToast(''), 3000);
-  };
-
-  const handleDeleteCurrentPeriodicReport = () => {
-    if (!window.confirm(t('هل أنت متأكد من حذف هذا التقرير الفتري المحفوظ؟', 'Are you sure you want to delete this periodic report?'))) return;
-    const updatedList = periodicReportsService.deleteReport(activePeriodicReport.id);
-    setSavedPeriodicReports(updatedList);
-    if (updatedList.length > 0) {
-      setActivePeriodicReport(updatedList[0]);
-    } else {
-      const def = periodicReportsService.createDefaultReport();
-      periodicReportsService.saveReport(def);
-      setSavedPeriodicReports([def]);
-      setActivePeriodicReport(def);
-    }
-    setSaveToast(t('تم حذف التقرير الفتري بنجاح', 'Periodic report deleted'));
-    setTimeout(() => setSaveToast(''), 3000);
-  };
-
   // Logo file upload refs for Cover Page
   const institutionLogoInputRef = useRef<HTMLInputElement>(null);
   const companyLogoInputRef = useRef<HTMLInputElement>(null);
@@ -328,24 +259,7 @@ export const WeeklyTab: React.FC = () => {
     }
   };
 
-  // Aggregated entries for Custom Date Range mode vs Scheduled Weekly mode
-  const allDocumentedEntries: EntryDTO[] = (finalReportData?.weeks || []).flatMap((w) => w.entries || []);
-
-  const effectiveStartDate = reportMode === 'custom' ? activePeriodicReport.startDate : '';
-  const effectiveEndDate = reportMode === 'custom' ? activePeriodicReport.endDate : '';
-
-  const filteredCustomEntries = allDocumentedEntries
-    .filter((e) => {
-      if (!effectiveStartDate && !effectiveEndDate) return true;
-      if (effectiveStartDate && e.entryDate < effectiveStartDate) return false;
-      if (effectiveEndDate && e.entryDate > effectiveEndDate) return false;
-      return true;
-    })
-    .sort((a, b) => a.entryDate.localeCompare(b.entryDate));
-
-  const activeEntries: EntryDTO[] = reportMode === 'custom'
-    ? filteredCustomEntries
-    : (weekReport?.entries || []);
+  const activeEntries: EntryDTO[] = weekReport?.entries || [];
 
   const activeStructuredCount = activeEntries.filter((e) => isEntryStructuredQA(e.description)).length;
   const activeFreeformCount = activeEntries.length - activeStructuredCount;
@@ -358,25 +272,10 @@ export const WeeklyTab: React.FC = () => {
 
   const synthesis = generateAcademicWeeklySynthesis(
     activeEntries,
-    reportMode === 'weekly' ? (currentWeekObj?.weekIndex || 1) : 1,
+    currentWeekObj?.weekIndex || 1,
     activeTotalHours,
     isAr
   );
-
-  const customPeriodLabel = (effectiveStartDate && effectiveEndDate)
-    ? (isAr
-        ? `من ${formatDateArabic(effectiveStartDate)} إلى ${formatDateArabic(effectiveEndDate)}`
-        : `From ${formatDateEnglish(effectiveStartDate)} to ${formatDateEnglish(effectiveEndDate)}`)
-    : (isAr ? 'كامل الفترة التدريبية المحددة' : 'All Specified Period');
-
-  const customEvidenceList = (finalReportData?.weeks || [])
-    .filter((w) => {
-      if (!effectiveStartDate && !effectiveEndDate) return true;
-      if (effectiveStartDate && w.weekEnd < effectiveStartDate) return false;
-      if (effectiveEndDate && w.weekStart > effectiveEndDate) return false;
-      return true;
-    })
-    .flatMap((w) => w.evidence || []);
 
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
@@ -391,9 +290,7 @@ export const WeeklyTab: React.FC = () => {
   };
 
   const handleCopyText = () => {
-    const periodStr = reportMode === 'custom'
-      ? customPeriodLabel
-      : (weekReport ? formatWeekPeriod(weekReport, isAr) : '—');
+    const periodStr = weekReport ? formatWeekPeriod(weekReport, isAr) : '—';
 
     let text = isAr
       ? `تقرير التدريب الميداني: ${periodStr}\nجهة التدريب: ${entityName}\n\n`
@@ -417,9 +314,7 @@ export const WeeklyTab: React.FC = () => {
   };
 
   const handleDownloadMarkdown = () => {
-    const periodStr = reportMode === 'custom'
-      ? customPeriodLabel
-      : (weekReport ? formatWeekPeriod(weekReport, isAr) : '—');
+    const periodStr = weekReport ? formatWeekPeriod(weekReport, isAr) : '—';
 
     let md = `# ${isAr ? 'تقرير التدريب الميداني' : 'Field Training Report'} (${periodStr})\n\n`;
     md += `**${isAr ? 'الجهة:' : 'Organization:'}** ${entityName}  \n`;
@@ -444,7 +339,7 @@ export const WeeklyTab: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = reportMode === 'custom' ? `Custom_Training_Report.md` : `Weekly_Report_${selectedWeek}.md`;
+    a.download = `Weekly_Report_${selectedWeek}.md`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -452,9 +347,7 @@ export const WeeklyTab: React.FC = () => {
   const handleDownloadDocx = async () => {
     try {
       setDownloadingDocx(true);
-      const exportUrl = reportMode === 'custom'
-        ? `/reports/weekly/export/docx?start=${effectiveStartDate}&end=${effectiveEndDate}&lang=${lang}`
-        : `/reports/weekly/export/docx?week=${selectedWeek}&lang=${lang}`;
+      const exportUrl = `/reports/weekly/export/docx?week=${selectedWeek}&lang=${lang}`;
       const res = await api.get(exportUrl, {
         responseType: 'blob'
       });
@@ -464,9 +357,7 @@ export const WeeklyTab: React.FC = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = reportMode === 'custom'
-        ? `Periodic_Report_${effectiveStartDate}_${effectiveEndDate}.docx`
-        : `Weekly_Report_${currentWeekObj ? currentWeekObj.weekIndex : selectedWeek}.docx`;
+      a.download = `Weekly_Report_${currentWeekObj ? currentWeekObj.weekIndex : selectedWeek}.docx`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -520,9 +411,7 @@ export const WeeklyTab: React.FC = () => {
 
     try {
       setIsTranslatingWeek(true);
-      const payload = reportMode === 'custom'
-        ? { entryIds: activeEntries.map((e) => e.id), targetLang }
-        : { week: selectedWeek, targetLang };
+      const payload = { week: selectedWeek, targetLang };
 
       const res = await api.post('/reports/weekly/translate', payload);
 
@@ -941,63 +830,8 @@ export const WeeklyTab: React.FC = () => {
           </div>
         </div>
 
-        {/* Report Mode Selector: Weekly Scheduled vs Custom Date Range */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-2 bg-card border border-line rounded-2xl no-print mb-4 shadow-xs">
-          <div className="flex items-center gap-1.5 p-1 bg-bg rounded-xl border border-line/60">
-            <button
-              type="button"
-              onClick={() => setReportMode('weekly')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 ${
-                reportMode === 'weekly'
-                  ? 'bg-accent text-white shadow-xs'
-                  : 'text-sub hover:text-ink hover:bg-card'
-              }`}
-            >
-              <Calendar className="w-3.5 h-3.5" />
-              <span>{t('التقارير الأسبوعية (الأسابيع 1 - 14)', 'Weekly Reports (Weeks 1 - 14)')}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setReportMode('custom')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 ${
-                reportMode === 'custom'
-                  ? 'bg-accent text-white shadow-xs'
-                  : 'text-sub hover:text-ink hover:bg-card'
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>{t('✨ تقرير فتري مخصص (إضافي - من تاريخ إلى تاريخ)', '✨ Custom Periodic Report (Extra)')}</span>
-            </button>
-          </div>
-
-          <div className="text-xs font-extrabold text-sub flex items-center gap-2 px-2">
-            <span className="text-ink">{reportMode === 'weekly' ? (weekReport ? formatWeekPeriod(weekReport, isAr) : '—') : customPeriodLabel}</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-accent"></span>
-            <span className="text-accent">{activeTotalDays} {isAr ? 'أيام عمل' : 'days'}</span>
-            <span>&middot;</span>
-            <span className="text-ink">{activeTotalHours} {isAr ? 'ساعة' : 'hours'}</span>
-          </div>
-        </div>
-
-        {/* Saved Periodic Reports Manager (Only shown when reportMode === 'custom') */}
-        {reportMode === 'custom' ? (
-          <PeriodicReportsManager
-            currentReport={activePeriodicReport}
-            savedReportsList={savedPeriodicReports}
-            activeEntries={activeEntries}
-            activeTotalHours={activeTotalHours}
-            activeTotalDays={activeTotalDays}
-            onSelectReport={handleSelectPeriodicReport}
-            onUpdateReport={handleUpdatePeriodicReport}
-            onSaveCurrentReport={handleSaveCurrentPeriodicReport}
-            onCreateNewReport={handleCreateNewPeriodicReport}
-            onDeleteCurrentReport={handleDeleteCurrentPeriodicReport}
-            allDocumentedEntries={allDocumentedEntries}
-          />
-        ) : (
-          /* 14 Weeks Navigation Bar with Right/Left Scrolling Buttons (Only shown when reportMode === 'weekly') */
-          <div className="space-y-2 mb-6 no-print">
+        {/* 14 Weeks Navigation Bar with Right/Left Scrolling Buttons */}
+        <div className="space-y-2 mb-6 no-print">
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-sub">
               <div className="flex items-center gap-2">
                 <span>{t('اختر الأسبوع للمعاينة والتعديل وإرفاق الصور:', 'Select week to review, edit, or attach photos:')}</span>
@@ -1100,70 +934,57 @@ export const WeeklyTab: React.FC = () => {
               </button>
             </div>
           </div>
-        )}
 
         {/* Interactive Controls & Metric Counters (Always OUTSIDE #weekly-paper-view with no-print print:hidden) */}
         <div className="space-y-4 mb-6 no-print print:hidden">
-          {reportMode === 'weekly' ? (
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-bg rounded-xl border border-line">
-              <div>
-                <span className="text-xs text-sub font-bold block">{t('فترة الأسبوع المحددة:', 'Selected Week Period:')}</span>
-                <span className="text-sm font-extrabold text-ink">
-                  {weekReport ? formatWeekPeriod(weekReport, isAr) : '—'}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  disabled={!prevWeek}
-                  onClick={() => prevWeek && setSelectedWeek(prevWeek.weekStart)}
-                  className="px-3 py-1.5 rounded-xl border border-line bg-card hover:bg-line text-xs font-bold text-ink disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition-all"
-                  title={prevWeek ? t(`الانتقال للأسبوع ${prevWeek.weekIndex}`, `Go to Week ${prevWeek.weekIndex}`) : ''}
-                >
-                  <ChevronRight className="w-3.5 h-3.5" />
-                  <span>{t('الأسبوع السابق', 'Previous Week')}</span>
-                </button>
-
-                <button
-                  disabled={!nextWeek}
-                  onClick={() => nextWeek && setSelectedWeek(nextWeek.weekStart)}
-                  className="px-3 py-1.5 rounded-xl border border-line bg-card hover:bg-line text-xs font-bold text-ink disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition-all"
-                  title={nextWeek ? t(`الانتقال للأسبوع ${nextWeek.weekIndex}`, `Go to Week ${nextWeek.weekIndex}`) : ''}
-                >
-                  <span>{t('الأسبوع التالي', 'Next Week')}</span>
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                </button>
-
-                {currentWeekObj && (
-                  <span
-                    className={`px-2.5 py-1 rounded-full text-xs font-bold mx-1 ${
-                      currentWeekObj.status === 'completed'
-                        ? 'bg-ok-bg text-ok'
-                        : currentWeekObj.status === 'in_progress'
-                          ? 'bg-accent-dim text-accent'
-                          : 'bg-warn-bg text-warn'
-                    }`}
-                  >
-                    {currentWeekObj.status === 'completed'
-                      ? t('مكتمل وموثّق', 'Completed & Documented')
-                      : currentWeekObj.status === 'in_progress'
-                        ? t('قيد التنفيذ', 'In Progress')
-                        : t('مؤجل', 'Postponed')}
-                  </span>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="p-4 bg-bg rounded-xl border border-line flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div>
-                <span className="text-xs text-sub font-bold block">{t('تقرير كوستم مخصص للفترة:', 'Custom Report Period:')}</span>
-                <span className="text-sm font-extrabold text-ink">{customPeriodLabel}</span>
-              </div>
-              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-accent/10 text-accent border border-accent/20">
-                {t('تقرير مخصص', 'Custom Scope')}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-bg rounded-xl border border-line">
+            <div>
+              <span className="text-xs text-sub font-bold block">{t('فترة الأسبوع المحددة:', 'Selected Week Period:')}</span>
+              <span className="text-sm font-extrabold text-ink">
+                {weekReport ? formatWeekPeriod(weekReport, isAr) : '—'}
               </span>
             </div>
-          )}
+
+            <div className="flex items-center gap-2">
+              <button
+                disabled={!prevWeek}
+                onClick={() => prevWeek && setSelectedWeek(prevWeek.weekStart)}
+                className="px-3 py-1.5 rounded-xl border border-line bg-card hover:bg-line text-xs font-bold text-ink disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition-all"
+                title={prevWeek ? t(`الانتقال للأسبوع ${prevWeek.weekIndex}`, `Go to Week ${prevWeek.weekIndex}`) : ''}
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+                <span>{t('الأسبوع السابق', 'Previous Week')}</span>
+              </button>
+
+              <button
+                disabled={!nextWeek}
+                onClick={() => nextWeek && setSelectedWeek(nextWeek.weekStart)}
+                className="px-3 py-1.5 rounded-xl border border-line bg-card hover:bg-line text-xs font-bold text-ink disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition-all"
+                title={nextWeek ? t(`الانتقال للأسبوع ${nextWeek.weekIndex}`, `Go to Week ${nextWeek.weekIndex}`) : ''}
+              >
+                <span>{t('الأسبوع التالي', 'Next Week')}</span>
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
+
+              {currentWeekObj && (
+                <span
+                  className={`px-2.5 py-1 rounded-full text-xs font-bold mx-1 ${
+                    currentWeekObj.status === 'completed'
+                      ? 'bg-ok-bg text-ok'
+                      : currentWeekObj.status === 'in_progress'
+                        ? 'bg-accent-dim text-accent'
+                        : 'bg-warn-bg text-warn'
+                  }`}
+                >
+                  {currentWeekObj.status === 'completed'
+                    ? t('مكتمل وموثّق', 'Completed & Documented')
+                    : currentWeekObj.status === 'in_progress'
+                      ? t('قيد التنفيذ', 'In Progress')
+                      : t('مؤجل', 'Postponed')}
+                </span>
+              )}
+            </div>
+          </div>
 
           {/* Quick Metrics */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -1200,7 +1021,7 @@ export const WeeklyTab: React.FC = () => {
             <div>
               <h3 className="text-sm font-extrabold text-ink flex items-center gap-1.5">
                 <Edit3 className="w-4 h-4 text-accent" />
-                <span>{reportMode === 'weekly' ? t('سجل المهام والسرد اليومي للأسبوع', 'Weekly Task Log & Daily Narrative') : t('سجل المهام والسرد اليومي للفترة المحددة', 'Task Log & Daily Narrative for Period')}</span>
+                <span>{t('سجل المهام والسرد اليومي للأسبوع', 'Weekly Task Log & Daily Narrative')}</span>
               </h3>
               <p className="text-xs text-sub mt-0.5">
                 {t('كل يوم مدون بساعاته وتصنيفه وسرده الأكاديمي التفصيلي مع إمكانية التعديل والإضافة بحرية', 'Daily logs documented with hours, categories, and detailed academic narratives.')}
@@ -1219,7 +1040,7 @@ export const WeeklyTab: React.FC = () => {
         </div>
 
         {/* Selected View (Screen & Print Paper View) */}
-        {isLoading && reportMode === 'weekly' ? (
+        {isLoading ? (
           <div className="text-center py-12 text-sub text-sm">{t('جارٍ تحميل تقرير الأسبوع...', 'Loading weekly log...')}</div>
         ) : (
           <>
@@ -1319,11 +1140,7 @@ export const WeeklyTab: React.FC = () => {
                 {/* Page 1: Academic Cover Page (Fixed general cover for weekly, enhanced for periodic) */}
                 <div
                   id="weekly-cover-page"
-                  className={`text-center border-b-2 border-line break-inside-avoid print:page-break print:break-after-page print:border-none print:p-0 print:m-0 ${
-                    reportMode === 'weekly'
-                      ? 'py-8 sm:py-14 pb-10 sm:pb-16'
-                      : 'py-6 sm:py-10 pb-8 sm:pb-12'
-                  }`}
+                  className="text-center border-b-2 border-line break-inside-avoid print:page-break print:break-after-page print:border-none print:p-0 print:m-0 py-8 sm:py-14 pb-10 sm:pb-16"
                   style={{ pageBreakAfter: 'always', breakAfter: 'page' }}
                 >
                   {/* Dual Logos & Academic Identity Header */}
@@ -1395,21 +1212,15 @@ export const WeeklyTab: React.FC = () => {
                   </div>
 
                   {/* Title & Period Badge */}
-                  <div className={`my-auto ${reportMode === 'weekly' ? 'py-6 print:py-6' : 'py-3 print:py-2'} space-y-1.5`}>
+                  <div className="my-auto py-6 print:py-6 space-y-1.5">
                     <div className="inline-block px-3.5 py-1 rounded-full text-xs font-extrabold bg-accent/10 text-accent border border-accent/20 mb-1 print:bg-slate-100 print:border print:border-slate-300 print:text-slate-900 print:text-xs">
-                      {reportMode === 'weekly'
-                        ? (isAr ? `الأسبوع التدريبي: الأسبوع ${currentWeekObj?.weekIndex || 1}` : `Training Week: Week ${currentWeekObj?.weekIndex || 1}`)
-                        : (isAr ? `تقرير التدريب الميداني للفترة المحددة (${activeTotalDays} أيام عمل)` : `Field Training Report (${activeTotalDays} Days)`)}
+                      {isAr ? `الأسبوع التدريبي: الأسبوع ${currentWeekObj?.weekIndex || 1}` : `Training Week: Week ${currentWeekObj?.weekIndex || 1}`}
                     </div>
                     <h1 className="text-2xl sm:text-3xl font-black text-accent mt-1.5 print:text-black print:text-3xl print:leading-tight">
-                      {reportMode === 'weekly'
-                        ? (isAr ? 'تقرير التدريب التعاوني الأسبوعي (Weekly Co-op Report)' : 'Weekly Cooperative Training Report')
-                        : (activePeriodicReport.title || (isAr ? 'تقرير التدريب الميداني التراكمي (Co-op Field Report)' : 'Cooperative Field Training Report'))}
+                      {isAr ? 'تقرير التدريب التعاوني الأسبوعي (Weekly Co-op Report)' : 'Weekly Cooperative Training Report'}
                     </h1>
                     <div className="text-sm sm:text-base font-bold text-sub mt-1.5 print:text-slate-600">
-                      {reportMode === 'weekly'
-                        ? (weekReport ? `${isAr ? 'الفترة التدريبية المنفذة: ' : 'Executed Period: '} ${formatWeekPeriod(weekReport, isAr)}` : '—')
-                        : `${isAr ? 'الفترة الزمنية المشمولة بالتقرير: ' : 'Reported Period: '} ${customPeriodLabel}`}
+                      {weekReport ? `${isAr ? 'الفترة التدريبية المنفذة: ' : 'Executed Period: '} ${formatWeekPeriod(weekReport, isAr)}` : '—'}
                     </div>
                     <div className="text-sm sm:text-base font-bold text-ink mt-1.5 print:text-slate-800">
                       {isAr ? 'جهة التدريب:' : 'Host Organization:'} <span className="text-accent print:text-black font-extrabold">{entityName}</span>
@@ -1417,9 +1228,9 @@ export const WeeklyTab: React.FC = () => {
                   </div>
 
                   {/* Trainee Information Matrix Card */}
-                  <div className={reportMode === 'weekly' ? 'mt-auto pt-6 print:mt-auto print:pt-4' : 'mt-4 pt-2 print:mt-3 print:pt-1'}>
+                  <div className="mt-auto pt-6 print:mt-auto print:pt-4">
                     <div
-                      className={`${reportMode === 'weekly' ? 'max-w-xl' : 'max-w-2xl'} mx-auto bg-bg border border-line rounded-xl p-4 sm:p-5 text-start grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 text-xs trainee-matrix-print print:border print:border-slate-300 print:rounded-xl print:bg-slate-50/60 print:p-3 print:gap-x-5 print:gap-y-2 print:text-xs shadow-xs`}
+                      className="max-w-xl mx-auto bg-bg border border-line rounded-xl p-4 sm:p-5 text-start grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 text-xs trainee-matrix-print print:border print:border-slate-300 print:rounded-xl print:bg-slate-50/60 print:p-3 print:gap-x-5 print:gap-y-2 print:text-xs shadow-xs"
                       dir={isAr ? 'rtl' : 'ltr'}
                     >
                       <div className="flex items-center justify-between border-b border-line/50 pb-1 print:border-slate-200">
@@ -1432,11 +1243,7 @@ export const WeeklyTab: React.FC = () => {
                       </div>
                       <div className="flex items-center justify-between border-b border-line/50 pb-1 print:border-slate-200">
                         <span className="font-bold text-sub">{isAr ? 'القسم / التخصص:' : 'Department:'}</span>
-                        <span className="font-bold text-ink">
-                          {reportMode === 'custom' && activePeriodicReport.department
-                            ? activePeriodicReport.department
-                            : (finalReportData?.profile?.department || '—')}
-                        </span>
+                        <span className="font-bold text-ink">{finalReportData?.profile?.department || '—'}</span>
                       </div>
                       <div className="flex items-center justify-between border-b border-line/50 pb-1 print:border-slate-200">
                         <span className="font-bold text-sub">{isAr ? 'المشرف الأكاديمي:' : 'Academic Supervisor:'}</span>
@@ -1458,175 +1265,90 @@ export const WeeklyTab: React.FC = () => {
                         <span className="font-bold text-sub">{isAr ? 'حالة التوثيق:' : 'Status:'}</span>
                         <span className="font-black text-ok print:text-black">{activeEntries.length ? (isAr ? 'مكتمل التوثيق' : 'Completed') : (isAr ? 'قيد التوثيق' : 'Pending')}</span>
                       </div>
-                      {reportMode === 'custom' && activePeriodicReport.roleAssignment && (
-                        <div className="flex items-center justify-between border-b border-line/50 pb-1 print:border-slate-200 col-span-1 sm:col-span-2">
-                          <span className="font-bold text-sub">{isAr ? 'نطاق التكليف والصفة الميدانية:' : 'Operational Scope / Role:'}</span>
-                          <span className="font-black text-accent print:text-black">{activePeriodicReport.roleAssignment}</span>
-                        </div>
-                      )}
                     </div>
                   </div>
-
-                  {/* For Custom Periodic Report: Display Executive Summary / Freehand Narrative Box directly on Page 1 */}
-                  {reportMode === 'custom' && (activeEntries.length > 0 || activePeriodicReport.customNarrative?.trim()) && (
-                    <div className="mt-5 pt-2 text-start break-inside-avoid print:mt-4 print:pt-1">
-                      <div className="max-w-2xl mx-auto p-4 sm:p-5 bg-card border border-line rounded-xl space-y-3 text-start break-inside-avoid shadow-xs print:border print:border-slate-300 print:rounded-xl print:p-3 print:bg-slate-50/50 synthesis-box-print">
-                        <div className="flex items-center justify-between border-b border-line pb-2.5 print:border-b-2 print:border-slate-800">
-                          <div className="text-xs sm:text-sm font-black text-ink flex items-center gap-2">
-                            <Award className="w-4 h-4 text-accent" />
-                            <span>{isAr ? 'الموجز التنفيذي ونطاق التكليف الميداني للفترة المحددة' : 'Field Executive Summary & Scope of Assignment'}</span>
-                          </div>
-                          <span className="text-[10.5px] font-bold text-sub">
-                            {activePeriodicReport.customNarrative?.trim()
-                              ? (isAr ? 'سرد حر معتمد' : 'Approved Freehand Narrative')
-                              : (isAr ? 'صياغة أكاديمية استشارية رفيعة' : 'Official Academic Synthesis')}
-                          </span>
-                        </div>
-
-                        {/* Freehand Narrative Paragraph */}
-                        <p className="text-xs sm:text-[13px] text-ink leading-relaxed font-medium whitespace-pre-line">
-                          {activePeriodicReport.customNarrative?.trim()
-                            ? activePeriodicReport.customNarrative
-                            : synthesis.executiveSummary}
-                        </p>
-
-                        {/* Core Operational Pillars */}
-                        {synthesis.technicalPillars.length > 0 && (
-                          <div className="pt-2 border-t border-line/60 space-y-1.5 print:border-t print:border-slate-200">
-                            <div className="text-[11px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider">
-                              {isAr ? 'المحاور والأنشطة التشغيلية المنفذة:' : 'Core Operational Pillars:'}
-                            </div>
-                            <ul className="space-y-1 text-xs text-sub">
-                              {synthesis.technicalPillars.map((pillar, pIdx) => (
-                                <li key={pIdx} className="flex items-start gap-2">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-slate-700 dark:bg-slate-300 mt-1.5 shrink-0"></span>
-                                  <span className="text-ink font-semibold">{pillar}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {/* Acquired Engineering Competencies */}
-                        {synthesis.acquiredCompetencies.length > 0 && (
-                          <div className="pt-2 border-t border-line/60 space-y-1.5 print:border-t print:border-slate-200">
-                            <div className="text-[11px] font-black text-ok uppercase tracking-wider flex items-center gap-1">
-                              <span>{isAr ? 'الكفايات والمعارف الهندسية المكتسبة:' : 'Acquired Engineering Competencies:'}</span>
-                            </div>
-                            <ul className="space-y-1 text-xs text-sub">
-                              {synthesis.acquiredCompetencies.map((comp, cIdx) => (
-                                <li key={cIdx} className="flex items-start gap-2">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-ok mt-1.5 shrink-0"></span>
-                                  <span>{comp}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {/* Utilized Tools & Tech Badges */}
-                        {synthesis.toolsAndTech.length > 0 && (
-                          <div className="pt-2 border-t border-line/60 flex flex-wrap items-center gap-1.5 print:border-t print:border-slate-200" dir={isAr ? 'rtl' : 'ltr'}>
-                            <span className="text-[11px] font-black text-sub ml-1">
-                              {isAr ? 'التقنيات والأدوات الموظفة:' : 'Utilized Tech:'}
-                            </span>
-                            {synthesis.toolsAndTech.map((tool, tIdx) => (
-                              <span
-                                key={tIdx}
-                                className="px-2 py-0.5 rounded-md text-[10.5px] font-mono font-extrabold bg-slate-100 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 print:bg-white print:border-slate-400 print:text-black shadow-xs tech-pill"
-                              >
-                                {tool}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 {/* Page 2: Weekly Executive Synthesis & Competencies Dossier + Matrix Table */}
-                {activeEntries.length > 0 && (reportMode === 'weekly' || activePeriodicReport.includeDailyTasks !== false) && (
+                {activeEntries.length > 0 && (
                   <div
                     id="weekly-page-2-synthesis"
                     className="space-y-6 print:pt-4"
                     style={{ breakBefore: 'page', pageBreakBefore: 'always', breakAfter: 'page', pageBreakAfter: 'always' }}
                   >
-                    {/* For Weekly Mode: Synthesis Box is rendered on Page 2 as standard */}
-                    {reportMode === 'weekly' && (
-                      <div className="p-5 sm:p-6 bg-card border border-line rounded-2xl space-y-4 text-start break-inside-avoid shadow-xs print:border-none print:shadow-none print:p-0 print:bg-transparent synthesis-box-print">
-                        <div className="flex items-center justify-between border-b border-line pb-3 print:border-b-2 print:border-slate-800">
-                          <div className="text-sm font-black text-ink flex items-center gap-2">
-                            <Award className="w-5 h-5 text-accent" />
-                            <span>{isAr ? 'الموجز التنفيذي والكفايات المكتسبة للأسبوع (ملخص الأسبوع الشامل)' : 'Weekly Executive Summary & Acquired Competencies'}</span>
-                          </div>
-                          <span className="text-[11px] font-bold text-sub">
-                            {isAr ? 'صياغة أكاديمية استشارية رفيعة' : 'Official Academic Synthesis'}
-                          </span>
+                    {/* Weekly Synthesis Box rendered on Page 2 */}
+                    <div className="p-5 sm:p-6 bg-card border border-line rounded-2xl space-y-4 text-start break-inside-avoid shadow-xs print:border-none print:shadow-none print:p-0 print:bg-transparent synthesis-box-print">
+                      <div className="flex items-center justify-between border-b border-line pb-3 print:border-b-2 print:border-slate-800">
+                        <div className="text-sm font-black text-ink flex items-center gap-2">
+                          <Award className="w-5 h-5 text-accent" />
+                          <span>{isAr ? 'الموجز التنفيذي والكفايات المكتسبة للأسبوع (ملخص الأسبوع الشامل)' : 'Weekly Executive Summary & Acquired Competencies'}</span>
                         </div>
-
-                        {/* Executive Narrative */}
-                        <p className="text-xs sm:text-sm text-ink leading-relaxed font-medium">
-                          {synthesis.executiveSummary}
-                        </p>
-
-                        {/* Core Operational Pillars */}
-                        {synthesis.technicalPillars.length > 0 && (
-                          <div className="pt-2.5 border-t border-line/60 space-y-2 print:border-t print:border-slate-200">
-                            <div className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider">
-                              {isAr ? 'المحاور والأنشطة التشغيلية المنفذة:' : 'Core Operational Pillars:'}
-                            </div>
-                            <ul className="space-y-1.5 text-xs text-sub">
-                              {synthesis.technicalPillars.map((pillar, pIdx) => (
-                                <li key={pIdx} className="flex items-start gap-2">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-slate-700 dark:bg-slate-300 mt-1.5 shrink-0"></span>
-                                  <span className="text-ink font-semibold">{pillar}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {/* Acquired Competencies */}
-                        {synthesis.acquiredCompetencies.length > 0 && (
-                          <div className="pt-2.5 border-t border-line/60 space-y-2 print:border-t print:border-slate-200">
-                            <div className="text-xs font-black text-ok uppercase tracking-wider flex items-center gap-1">
-                              <span>{isAr ? 'الكفايات والمعارف الهندسية المكتسبة:' : 'Acquired Engineering Competencies:'}</span>
-                            </div>
-                            <ul className="space-y-1.5 text-xs text-sub">
-                              {synthesis.acquiredCompetencies.map((comp, cIdx) => (
-                                <li key={cIdx} className="flex items-start gap-2">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-ok mt-1.5 shrink-0"></span>
-                                  <span>{comp}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {/* Tools & Tech Badges */}
-                        {synthesis.toolsAndTech.length > 0 && (
-                          <div className="pt-2.5 border-t border-line/60 flex flex-wrap items-center gap-1.5 print:border-t print:border-slate-200" dir={isAr ? 'rtl' : 'ltr'}>
-                            <span className="text-xs font-black text-sub ml-1">
-                              {isAr ? 'التقنيات والأدوات الموظفة:' : 'Utilized Tech:'}
-                            </span>
-                            {synthesis.toolsAndTech.map((tool, tIdx) => (
-                              <span
-                                key={tIdx}
-                                className="px-2.5 py-1 rounded-md text-[11px] font-mono font-extrabold bg-slate-100 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 print:bg-white print:border-slate-400 print:text-black shadow-xs tech-pill"
-                              >
-                                {tool}
-                              </span>
-                            ))}
-                          </div>
-                        )}
+                        <span className="text-[11px] font-bold text-sub">
+                          {isAr ? 'صياغة أكاديمية استشارية رفيعة' : 'Official Academic Synthesis'}
+                        </span>
                       </div>
-                    )}
+
+                      {/* Executive Narrative */}
+                      <p className="text-xs sm:text-sm text-ink leading-relaxed font-medium">
+                        {synthesis.executiveSummary}
+                      </p>
+
+                      {/* Core Operational Pillars */}
+                      {synthesis.technicalPillars.length > 0 && (
+                        <div className="pt-2.5 border-t border-line/60 space-y-2 print:border-t print:border-slate-200">
+                          <div className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                            {isAr ? 'المحاور والأنشطة التشغيلية المنفذة:' : 'Core Operational Pillars:'}
+                          </div>
+                          <ul className="space-y-1.5 text-xs text-sub">
+                            {synthesis.technicalPillars.map((pillar, pIdx) => (
+                              <li key={pIdx} className="flex items-start gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-slate-700 dark:bg-slate-300 mt-1.5 shrink-0"></span>
+                                <span className="text-ink font-semibold">{pillar}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Acquired Competencies */}
+                      {synthesis.acquiredCompetencies.length > 0 && (
+                        <div className="pt-2.5 border-t border-line/60 space-y-2 print:border-t print:border-slate-200">
+                          <div className="text-xs font-black text-ok uppercase tracking-wider flex items-center gap-1">
+                            <span>{isAr ? 'الكفايات والمعارف الهندسية المكتسبة:' : 'Acquired Engineering Competencies:'}</span>
+                          </div>
+                          <ul className="space-y-1.5 text-xs text-sub">
+                            {synthesis.acquiredCompetencies.map((comp, cIdx) => (
+                              <li key={cIdx} className="flex items-start gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-ok mt-1.5 shrink-0"></span>
+                                <span>{comp}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Tools & Tech Badges */}
+                      {synthesis.toolsAndTech.length > 0 && (
+                        <div className="pt-2.5 border-t border-line/60 flex flex-wrap items-center gap-1.5 print:border-t print:border-slate-200" dir={isAr ? 'rtl' : 'ltr'}>
+                          <span className="text-xs font-black text-sub ml-1">
+                            {isAr ? 'التقنيات والأدوات الموظفة:' : 'Utilized Tech:'}
+                          </span>
+                          {synthesis.toolsAndTech.map((tool, tIdx) => (
+                            <span
+                              key={tIdx}
+                              className="px-2.5 py-1 rounded-md text-[11px] font-mono font-extrabold bg-slate-100 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 print:bg-white print:border-slate-400 print:text-black shadow-xs tech-pill"
+                            >
+                              {tool}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
 
                     {/* Executive Tasks Table Matrix */}
                     <div className="overflow-x-auto border border-line rounded-xl my-4 bg-card print:border-line print:bg-white break-inside-avoid shadow-xs">
                       <div className="bg-bg px-4 py-2.5 border-b border-line flex items-center justify-between text-xs font-black text-ink print:bg-slate-100">
-                        <span>{reportMode === 'weekly' ? (isAr ? 'جدول حصر وتوثيق الأنشطة والمهام الأسبوعية' : 'Weekly Tasks Executive Matrix') : (isAr ? 'جدول حصر وتوثيق أنشطة ومهام الفترة الميدانية' : 'Field Tasks Executive Matrix')}</span>
+                        <span>{isAr ? 'جدول حصر وتوثيق الأنشطة والمهام الأسبوعية' : 'Weekly Tasks Executive Matrix'}</span>
                         <span className="text-[11px] font-bold text-accent print:text-black">
                           {activeTotalDays} {isAr ? 'أيام عمل' : 'days'} &middot; {activeTotalHours} {isAr ? 'ساعة فعلية' : 'hours'}
                         </span>
@@ -1804,34 +1526,8 @@ export const WeeklyTab: React.FC = () => {
               style={{ pageBreakBefore: 'always', breakBefore: 'page' }}
             >
               {/* Field Evidence Photos */}
-              {reportMode === 'weekly' && currentWeekObj ? (
+              {currentWeekObj && (
                 <WeeklyEvidenceSection weekIndex={currentWeekObj.weekIndex} />
-              ) : (
-                customEvidenceList.length > 0 && (
-                  <div className="border border-line rounded-2xl p-5 bg-card text-start space-y-4 print:border-none print:p-0 print:bg-transparent">
-                    <div className="flex items-center justify-between border-b border-line pb-3 print:border-b-2 print:border-slate-800">
-                      <div className="text-sm font-black text-ink flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-accent" />
-                        <span>{isAr ? 'الصور والشواهد التوثيقية للفترة الميدانية' : 'Field Evidence Photos for Period'}</span>
-                      </div>
-                      <span className="text-xs font-bold text-sub">
-                        {customEvidenceList.length} {isAr ? 'صور موثقة' : 'photos'}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 print:grid-cols-2 print:gap-3">
-                      {customEvidenceList.map((photo, pIdx) => (
-                        <div key={photo.id || pIdx} className="border border-line rounded-xl overflow-hidden bg-bg p-2 space-y-1 print:border-slate-300 print:bg-white print:p-1.5 flex flex-col print:break-inside-avoid">
-                          <div className="w-full min-h-[120px] max-h-[260px] print:min-h-0 print:h-[200px] overflow-hidden rounded-lg bg-slate-50 dark:bg-slate-900/40 p-1 flex items-center justify-center">
-                            <img src={photo.imageData} alt={photo.caption || ''} className="max-h-[240px] print:max-h-[190px] w-auto max-w-full object-contain rounded" />
-                          </div>
-                          {photo.caption && (
-                            <p className="text-[11px] font-bold text-ink truncate print:text-[8.5pt] print:mt-1">{photo.caption}</p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )
               )}
 
               {/* Formal Supervisory Approval & Stamp Block (For Official Print & Defense - Kept in SAME Page) */}
@@ -2217,8 +1913,8 @@ export const WeeklyTab: React.FC = () => {
       <BatchRewriteModal
         isOpen={batchModalOpen}
         onClose={() => setBatchModalOpen(false)}
-        totalEntries={activeEntries.length || allDocumentedEntries.length}
-        weekNumber={reportMode === 'weekly' ? weekReport?.weekNumber : undefined}
+        totalEntries={activeEntries.length}
+        weekNumber={currentWeekObj?.weekIndex || weekReport?.weekNumber || 1}
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ['finalReport'] });
           queryClient.invalidateQueries({ queryKey: ['entries'] });
@@ -2232,7 +1928,7 @@ export const WeeklyTab: React.FC = () => {
         isOpen={auditModalOpen}
         onClose={() => setAuditModalOpen(false)}
         entries={activeEntries}
-        weekNumber={currentWeekObj?.weekIndex || (reportMode === 'weekly' ? weekReport?.weekNumber : 1) || 1}
+        weekNumber={currentWeekObj?.weekIndex || weekReport?.weekNumber || 1}
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ['weekly', selectedWeek] });
           queryClient.invalidateQueries({ queryKey: ['finalReport'] });

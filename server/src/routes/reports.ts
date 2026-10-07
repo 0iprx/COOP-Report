@@ -384,10 +384,40 @@ router.get('/weekly/export/docx', async (req: AuthenticatedRequest, res: Respons
     }
 
     const weekParam = (req.query.week as string) || '';
+    const startParam = (req.query.start as string) || '';
+    const endParam = (req.query.end as string) || '';
     const lang = (req.query.lang as 'ar' | 'en') || 'ar';
     const reportData = await buildFinalReportData(targetUserId);
 
-    const buffer = await generateWeeklyDocx(reportData, weekParam, lang);
+    let isPeriodic = false;
+    if (startParam || endParam) {
+      isPeriodic = true;
+      const allEntries = reportData.weeks.flatMap((w) => w.entries || []);
+      const filtered = allEntries
+        .filter((e) => {
+          if (startParam && e.entryDate < startParam) return false;
+          if (endParam && e.entryDate > endParam) return false;
+          return true;
+        })
+        .sort((a, b) => a.entryDate.localeCompare(b.entryDate));
+
+      const totalH = filtered.reduce((acc, e) => acc + calculateHoursBetween(e.timeFrom || '08:00', e.timeTo || '16:00'), 0);
+      const totalD = new Set(filtered.map((e) => e.entryDate)).size;
+
+      const syntheticWeek = {
+        weekIndex: 1,
+        weekStart: startParam || (filtered[0]?.entryDate || ''),
+        weekEnd: endParam || (filtered[filtered.length - 1]?.entryDate || ''),
+        totalHours: totalH,
+        totalDays: totalD,
+        entries: filtered,
+        evidence: reportData.weeks.flatMap((w) => w.evidence || []).slice(0, 6)
+      };
+
+      reportData.weeks = [syntheticWeek as any];
+    }
+
+    const buffer = await generateWeeklyDocx(reportData, isPeriodic ? (reportData.weeks[0]?.weekStart || '') : weekParam, lang);
 
     const weekObj = reportData.weeks.find((w) => w.weekStart === weekParam) || reportData.weeks[0];
     const weekIdx = weekObj ? weekObj.weekIndex : 1;
@@ -395,9 +425,15 @@ router.get('/weekly/export/docx', async (req: AuthenticatedRequest, res: Respons
     const rawEntity = reportData.profile.entityAddress || (lang === 'en' ? 'COOP' : 'التدريب');
     const safeEntity = rawEntity.replace(/[\\/:*?"<>|\s]/g, '_').slice(0, 30);
 
-    const filename = encodeURIComponent(
-      lang === 'en' ? `Week_${weekIdx}_${safeEntity}_Report.docx` : `تقرير_الأسبوع_${weekIdx}_${safeEntity}.docx`
-    );
+    const filename = isPeriodic
+      ? encodeURIComponent(
+          lang === 'en'
+            ? `Periodic_Report_${startParam || 'start'}_${endParam || 'end'}_${safeEntity}.docx`
+            : `تقرير_فتري_${startParam || 'البداية'}_${endParam || 'النهاية'}_${safeEntity}.docx`
+        )
+      : encodeURIComponent(
+          lang === 'en' ? `Week_${weekIdx}_${safeEntity}_Report.docx` : `تقرير_الأسبوع_${weekIdx}_${safeEntity}.docx`
+        );
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${filename}`);
