@@ -36,8 +36,8 @@ interface FreshPeriodicReport {
   customNarrative: string;
 }
 
-const STORAGE_KEY_FTTH_AR = 'coop_ftth_periodic_report_v8_ar';
-const STORAGE_KEY_FTTH_EN = 'coop_ftth_periodic_report_v8_en';
+const STORAGE_KEY_FTTH_AR = 'coop_ftth_periodic_report_v9_ar';
+const STORAGE_KEY_FTTH_EN = 'coop_ftth_periodic_report_v9_en';
 const STORAGE_KEY_REPORT_LANG = 'coop_ftth_report_lang_preference_v1';
 
 // ── Master Arabic Report ──────────────────────────────────────────────
@@ -427,8 +427,6 @@ const DEFAULT_FTTH_REPORT_AR: FreshPeriodicReport = {
 ---
 
 <!-- pagebreak -->
-
-# الثامن عشر: لوحة الرسوم البيانية والإحصائيات التشغيلية (Operational Analytics Dashboard)
 
 <!-- analytics-charts -->
 
@@ -832,8 +830,6 @@ This training bridged theoretical concepts with real-world telecommunications in
 ---
 
 <!-- pagebreak -->
-
-# 18. Operational Analytics & Performance Dashboard
 
 <!-- analytics-charts -->
 

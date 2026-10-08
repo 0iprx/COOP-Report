@@ -57,7 +57,7 @@ export const AcademicMarkdownView: React.FC<AcademicMarkdownViewProps> = ({ cont
       line === '<!-- analytics -->'
     ) {
       elements.push(
-        <div key={`charts-${i}`} id="report-analytics-charts-section" className="my-6 print:my-4">
+        <div key={`charts-${i}`} className="w-full my-2 print:my-0">
           <PeriodicAnalyticsCharts isReportAr={isReportAr} />
         </div>
       );
