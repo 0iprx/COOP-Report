@@ -89,15 +89,28 @@ export const periodicReportsService = {
   createDefaultReport(startDate: string = '', endDate: string = ''): SavedPeriodicReport {
     const now = new Date();
     const id = `periodic_${now.getTime()}_${Math.random().toString(36).substring(2, 7)}`;
+    const today = now.toISOString().split('T')[0];
+    const sDate = startDate || today;
+    const eDate = endDate || today;
     return {
       id,
       title: 'تقرير التدريب الميداني للفترة المحددة',
-      startDate: startDate || now.toISOString().split('T')[0],
-      endDate: endDate || now.toISOString().split('T')[0],
+      startDate: sDate,
+      endDate: eDate,
+      intervals: [
+        {
+          id: `int_${Date.now()}_1`,
+          startDate: sDate,
+          endDate: eDate,
+          timeFrom: '08:00',
+          timeTo: '14:00',
+          label: 'الفترة الأولى'
+        }
+      ],
       customNarrative: '',
       department: '',
       roleAssignment: 'موظف رسمي في بيئة العمل الميدانية',
-      includeDailyTasks: true,
+      includeDailyTasks: false,
       includeEvidence: true,
       includeEndorsement: true,
       createdAt: now.toISOString(),

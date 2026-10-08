@@ -1142,11 +1142,21 @@ export function convertFreeformNarrativeToQA(
   return parts.join('\n\n');
 }
 
+export interface PeriodicShiftInterval {
+  id: string;
+  startDate: string;
+  endDate: string;
+  timeFrom: string;
+  timeTo: string;
+  label?: string;
+}
+
 export interface SavedPeriodicReport {
   id: string;
   title: string;
   startDate: string;
   endDate: string;
+  intervals?: PeriodicShiftInterval[];
   customNarrative: string;
   department?: string;
   roleAssignment?: string;
