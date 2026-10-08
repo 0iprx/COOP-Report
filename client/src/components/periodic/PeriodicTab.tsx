@@ -33,8 +33,8 @@ interface FreshPeriodicReport {
   customNarrative: string;
 }
 
-const STORAGE_KEY_FTTH_AR = 'coop_ftth_periodic_report_v6_ar';
-const STORAGE_KEY_FTTH_EN = 'coop_ftth_periodic_report_v6_en';
+const STORAGE_KEY_FTTH_AR = 'coop_ftth_periodic_report_v7_ar';
+const STORAGE_KEY_FTTH_EN = 'coop_ftth_periodic_report_v7_en';
 const STORAGE_KEY_REPORT_LANG = 'coop_ftth_report_lang_preference_v1';
 
 // ── Master Arabic Report ──────────────────────────────────────────────
@@ -422,6 +422,8 @@ const DEFAULT_FTTH_REPORT_AR: FreshPeriodicReport = {
 ساهمت هذه الفترة في صقل المهارات التشغيلية لشبكات الألياف الضوئية، وعززت الثقة في التعامل مع المشتركين والأنظمة المعقدة. وأثبتت التجربة أن الدعم الفني لـ FTTH يعتمد على التحليل المنطقي والبيانات الملموسة وليس مجرد الافتراضات.
 
 ---
+
+<!-- pagebreak -->
 
 # الخاتمة
 
@@ -818,6 +820,8 @@ This training bridged theoretical concepts with real-world telecommunications in
 
 ---
 
+<!-- pagebreak -->
+
 # Conclusion
 
 This cooperative training period marked a transformative milestone, synthesizing theoretical fiber optics foundations with intensive hands-on experience handling **244 unique tickets** across operational shifts.  
@@ -1191,6 +1195,26 @@ export const PeriodicTab: React.FC = () => {
           </div>
         </details>
 
+        {/* ── Print Recommendation Banner (no-print) ──────────────── */}
+        <div className="no-print max-w-[210mm] mx-auto mb-5 p-3.5 bg-accent/5 border border-accent/20 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs shadow-2xs">
+          <div className="flex items-center gap-2.5 text-ink font-bold">
+            <span className="text-lg">💡</span>
+            <span>
+              {isReportAr
+                ? 'لطباعة مثالية بحجم A4 وبدون روابط: في نافذة الطباعة (Ctrl + P) اختر A4 وألغِ تحديد خيار (الرؤوس والتذييلات / Headers and footers) من مزيد من الإعدادات.'
+                : 'For perfect A4 print without browser URLs: In the print dialog (Ctrl + P), select A4 and uncheck "Headers and footers" under More settings.'}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={handlePrintPDF}
+            className="px-4 py-1.5 bg-ink hover:bg-ink/85 text-white font-black rounded-xl text-xs shrink-0 flex items-center gap-1.5 transition-all shadow-xs"
+          >
+            <Printer className="w-3.5 h-3.5" />
+            <span>{isReportAr ? 'طباعة / حفظ PDF' : 'Print / Save PDF'}</span>
+          </button>
+        </div>
+
         {/* ── Printable Paper View: #periodic-paper-view ───────────── */}
         <div
           id="periodic-paper-view"
@@ -1435,7 +1459,10 @@ export const PeriodicTab: React.FC = () => {
             <AcademicMarkdownView content={currentReport.customNarrative} />
 
             {/* Official Supervisory Endorsement Block at the end of report */}
-            <div className="mt-8 pt-4 border-t-2 border-line/80 p-4 bg-bg border border-line rounded-xl text-start print:border print:border-slate-300 print:rounded-xl print:bg-slate-50/50 print:p-4 shadow-2xs break-inside-avoid">
+            <div
+              id="periodic-endorsement-block"
+              className="mt-6 pt-4 border-t-2 border-line/80 p-4 bg-bg border border-line rounded-xl text-start print:border print:border-slate-300 print:rounded-xl print:bg-slate-50/50 print:p-4 shadow-2xs endorsement-box-print break-inside-avoid"
+            >
               <div className="text-center font-black text-xs sm:text-sm text-ink mb-4 pb-1 border-b border-line/60">
                 {isReportAr ? 'مصادقة واعتماد التقرير الميداني الرسمي' : 'Official Supervisory Endorsements'}
               </div>

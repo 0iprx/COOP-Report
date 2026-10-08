@@ -363,7 +363,7 @@ html, body {
 @media print {
   @page {
     size: A4 portrait;
-    margin: 0 !important;
+    margin: 12mm 14mm 12mm 14mm;
   }
 
   *, *::before, *::after {
@@ -443,12 +443,13 @@ html, body {
     box-sizing: border-box !important;
     width: 100% !important;
     max-width: 100% !important;
-    min-height: 265mm !important;
-    max-height: 272mm !important;
+    height: 270mm !important;
+    min-height: 270mm !important;
+    max-height: 270mm !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: space-between !important;
-    padding: 2mm 0 4mm 0 !important;
+    padding: 0 !important;
     margin: 0 !important;
     border: none !important;
     border-radius: 0 !important;
@@ -533,14 +534,16 @@ html, body {
     break-inside: avoid !important;
   }
 
-  .endorsement-box-print {
+  .endorsement-box-print,
+  #periodic-endorsement-block {
     box-sizing: border-box !important;
     width: 100% !important;
     max-width: 100% !important;
     margin-top: 6mm !important;
-    padding-top: 0 !important;
-    border: none !important;
-    background: transparent !important;
+    padding: 10px 14px !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    background: #f8fafc !important;
     page-break-before: auto !important;
     break-before: auto !important;
     page-break-after: auto !important;
@@ -556,15 +559,44 @@ html, body {
   #weekly-paper-view,
   #periodic-paper-view {
     box-sizing: border-box !important;
-    width: 210mm !important;
-    max-width: 210mm !important;
+    width: 100% !important;
+    max-width: 100% !important;
     min-width: 0 !important;
-    margin: 0 auto !important;
-    padding: 12mm 15mm 12mm 15mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
     border: none !important;
     box-shadow: none !important;
-    background: #ffffff !important;
+    background: transparent !important;
     overflow: visible !important;
+  }
+
+  /* Headings, text flow & orphan controls */
+  h1, h2, h3, h4,
+  .break-after-avoid {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  p, li {
+    orphans: 3 !important;
+    widows: 3 !important;
+  }
+
+  .print-page-break {
+    page-break-before: always !important;
+    break-before: page !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  table, .print-table {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+  tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
   /* Multi-column grids in print */
@@ -612,10 +644,9 @@ html, body {
     margin-bottom: 8px !important;
   }
 
-  /* Trainee matrix, Synthesis & Endorsement boxes: Remove outer card frames in print */
+  /* Trainee matrix & Synthesis boxes: Remove outer card frames in print */
   .trainee-matrix-print,
   .synthesis-box-print,
-  .endorsement-box-print,
   .print-no-border,
   div[id^="week-"],
   div[id^="sec-"] {

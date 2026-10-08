@@ -38,10 +38,18 @@ export const AcademicMarkdownView: React.FC<AcademicMarkdownViewProps> = ({ cont
       continue;
     }
 
-    // 2. Horizontal divider
+    // 2. Page Break or Horizontal divider
+    if (line === '<!-- pagebreak -->' || line === '===pagebreak===' || line === '[pagebreak]') {
+      elements.push(
+        <div key={`pb-${i}`} className="print-page-break" style={{ pageBreakBefore: 'always', breakBefore: 'page' }} />
+      );
+      i++;
+      continue;
+    }
+
     if (line === '---' || line === '***' || line === '___') {
       elements.push(
-        <div key={`hr-${i}`} className="my-5 border-t-2 border-line/80 print:my-4 print:border-slate-300" />
+        <div key={`hr-${i}`} className="my-5 border-t-2 border-line/80 print:my-3 print:border-slate-300 break-after-avoid" style={{ pageBreakAfter: 'avoid', breakAfter: 'avoid' }} />
       );
       i++;
       continue;
@@ -50,9 +58,9 @@ export const AcademicMarkdownView: React.FC<AcademicMarkdownViewProps> = ({ cont
     // 3. Headings
     if (line.startsWith('# ')) {
       elements.push(
-        <div key={`h1-${i}`} className="mt-7 mb-3 pb-2 border-b-2 border-accent/40 flex items-center gap-2 print:mt-5 print:mb-2 break-after-avoid">
+        <div key={`h1-${i}`} className="mt-7 mb-3 pb-2 border-b-2 border-accent/40 flex items-center gap-2 print:mt-4 print:mb-2 break-after-avoid" style={{ pageBreakAfter: 'avoid', breakAfter: 'avoid' }}>
           <span className="w-2.5 h-6 rounded-full bg-accent shrink-0 print:bg-slate-800" />
-          <h2 className="text-base sm:text-lg font-black text-ink tracking-tight print:text-[13pt]">
+          <h2 className="text-base sm:text-lg font-black text-ink tracking-tight print:text-[12.5pt]">
             {formatInlineText(line.substring(2))}
           </h2>
         </div>
@@ -63,9 +71,9 @@ export const AcademicMarkdownView: React.FC<AcademicMarkdownViewProps> = ({ cont
 
     if (line.startsWith('## ')) {
       elements.push(
-        <div key={`h2-${i}`} className="mt-5 mb-2.5 flex items-center gap-2 print:mt-4 print:mb-2 break-after-avoid">
+        <div key={`h2-${i}`} className="mt-5 mb-2.5 flex items-center gap-2 print:mt-3 print:mb-1.5 break-after-avoid" style={{ pageBreakAfter: 'avoid', breakAfter: 'avoid' }}>
           <span className="w-1.5 h-4 rounded-full bg-accent/70 shrink-0 print:bg-slate-600" />
-          <h3 className="text-sm sm:text-base font-extrabold text-ink print:text-[11.5pt]">
+          <h3 className="text-sm sm:text-base font-extrabold text-ink print:text-[11pt]">
             {formatInlineText(line.substring(3))}
           </h3>
         </div>
@@ -76,7 +84,7 @@ export const AcademicMarkdownView: React.FC<AcademicMarkdownViewProps> = ({ cont
 
     if (line.startsWith('### ')) {
       elements.push(
-        <h4 key={`h3-${i}`} className="text-xs sm:text-sm font-black text-accent mt-3.5 mb-1.5 print:text-[10.5pt] print:mt-3 break-after-avoid">
+        <h4 key={`h3-${i}`} className="text-xs sm:text-sm font-black text-accent mt-3.5 mb-1.5 print:text-[10pt] print:mt-2.5 break-after-avoid" style={{ pageBreakAfter: 'avoid', breakAfter: 'avoid' }}>
           {formatInlineText(line.substring(4))}
         </h4>
       );
@@ -107,12 +115,12 @@ export const AcademicMarkdownView: React.FC<AcademicMarkdownViewProps> = ({ cont
         );
 
         elements.push(
-          <div key={`table-${i}`} className="my-4 overflow-x-auto print:my-3">
-            <table className="w-full text-xs text-ink border-collapse border border-line print:border-slate-300">
+          <div key={`table-${i}`} className="my-4 overflow-x-auto print:my-2.5 print-table-container">
+            <table className="w-full text-xs text-ink border-collapse border border-line print:border-slate-300 print:text-[8pt] print-table">
               <thead>
                 <tr className="bg-slate-100 dark:bg-slate-800/60 border-b border-line print:bg-slate-100">
                   {headerRow.map((h, hIdx) => (
-                    <th key={hIdx} className="p-2 text-start font-black text-[11px] print:text-[9.5pt]">
+                    <th key={hIdx} className="p-2 print:py-1 print:px-2 text-start font-black text-[11px] print:text-[8.5pt]">
                       {formatInlineText(h)}
                     </th>
                   ))}
@@ -120,9 +128,9 @@ export const AcademicMarkdownView: React.FC<AcademicMarkdownViewProps> = ({ cont
               </thead>
               <tbody className="divide-y divide-line/60 print:divide-slate-200">
                 {bodyRows.map((row, rIdx) => (
-                  <tr key={rIdx} className={rIdx % 2 === 1 ? 'bg-bg/40 print:bg-slate-50/50' : ''}>
+                  <tr key={rIdx} className={`break-inside-avoid ${rIdx % 2 === 1 ? 'bg-bg/40 print:bg-slate-50/50' : ''}`} style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
                     {row.map((cell, cIdx) => (
-                      <td key={cIdx} className="p-2 text-start font-medium text-[11px] print:text-[9pt]">
+                      <td key={cIdx} className="p-2 print:py-1 print:px-2 text-start font-medium text-[11px] print:text-[8pt] leading-snug">
                         {formatInlineText(cell)}
                       </td>
                     ))}
