@@ -9,7 +9,8 @@ import {
   GraduationCap,
   Calendar,
   Clock,
-  Edit3
+  Edit3,
+  Languages
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { api } from '../../services/api';
@@ -32,10 +33,12 @@ interface FreshPeriodicReport {
   customNarrative: string;
 }
 
-const STORAGE_KEY_FTTH = 'coop_ftth_periodic_report_v5';
+const STORAGE_KEY_FTTH_AR = 'coop_ftth_periodic_report_v6_ar';
+const STORAGE_KEY_FTTH_EN = 'coop_ftth_periodic_report_v6_en';
+const STORAGE_KEY_REPORT_LANG = 'coop_ftth_report_lang_preference_v1';
 
-// Master Comprehensive FTTH Report merging both technical depth and quantitative ticket analytics
-const DEFAULT_FTTH_REPORT: FreshPeriodicReport = {
+// ── Master Arabic Report ──────────────────────────────────────────────
+const DEFAULT_FTTH_REPORT_AR: FreshPeriodicReport = {
   title: 'تقرير التدريب التعاوني',
   majorField: 'FTTH – Fiber to the Home',
   department: 'قسم خدمات الألياف الضوئية FTTH (Technical Support / FTTH Operations)',
@@ -448,8 +451,402 @@ const DEFAULT_FTTH_REPORT: FreshPeriodicReport = {
 **إجمالي التواجد الميداني: ما بين 91 إلى 113 ساعة معتمدة، تم خلالها إنجاز 244 تذكرة فريدة.**`
 };
 
+// ── Master English Report ─────────────────────────────────────────────
+const DEFAULT_FTTH_REPORT_EN: FreshPeriodicReport = {
+  title: 'Cooperative Training Report',
+  majorField: 'FTTH – Fiber to the Home',
+  department: 'FTTH Services Department (Technical Support / FTTH Operations)',
+  roleAssignment: 'Trainee and Active Employee as FTTH',
+  periodCoverage: 'From Sep 20 to Oct 7',
+  stageOneHours: '8:30 AM – 6:00 PM',
+  stageTwoHours: 'Shift B (2:00 PM – 10:00 PM)',
+  intervals: [
+    {
+      id: 'int_1_en',
+      label: 'Stage 1: Department Induction & FTTH Fundamentals',
+      startDate: 'Sep 21',
+      endDate: 'Sep 22',
+      timeFrom: '08:30',
+      timeTo: '18:00'
+    },
+    {
+      id: 'int_2_en',
+      label: 'Stage 2: Hands-on Practical Application (Shift B)',
+      startDate: 'Sep 27',
+      endDate: 'Oct 01',
+      timeFrom: '14:00',
+      timeTo: '22:00'
+    },
+    {
+      id: 'int_3_en',
+      label: 'Stage 3: Autonomous Shift Operations (Shift B)',
+      startDate: 'Oct 04',
+      endDate: 'Oct 07',
+      timeFrom: '14:00',
+      timeTo: '22:00'
+    }
+  ],
+  customNarrative: `# Introduction
+
+During the period from Sep 20 to Oct 7 of the cooperative training program, practical training was conducted within an operational environment specialized in **FTTH – Fiber to the Home** services. This period witnessed a progressive transition from familiarization with the operational workflows, systems, and procedures to direct hands-on handling, diagnostic troubleshooting, and end-to-end ticket management.
+
+Initially, focus was placed on understanding the core responsibilities of an FTTH technical support specialist, ticket classification, and fault taxonomy. Subsequently, deep technical training was conducted covering **ONT devices**, **RX optical power levels**, and network services associated with **VLAN and CVLAN**, in addition to operational platforms such as **Huawei NCE, MOSS, and ACS**.
+
+Through continuous practical exposure, ticket handling evolved towards greater autonomy, advancing from observing diagnostic workflows to executing direct **Ticket Handling**, root-cause analysis, and routing—whether resolving tickets, reassigning to Call Centre, escalating to specialized tiers (FOPS/NOC), or dispatching field technicians. Over the documented period, **244 unique tickets** were handled at an average of **~35 tickets per shift**, demonstrating readiness as an **active employee in FTTH operations**.
+
+---
+
+# 1. Training Timeline and Shift Schedules
+
+## Sep 20 – Authorized Absence
+
+**Attendance:** Absent.  
+**Reason:** Medical condition.  
+**Action:** Formal leave request submitted and officially approved by management.
+
+---
+
+## Sep 21 – Initial Work & Introduction to FTTH Environment
+
+Operational duties commenced within the FTTH department from **8:30 AM to 6:00 PM**.  
+Familiarization was established with primary technical support responsibilities, incoming fault tickets, and preliminary review procedures before taking corrective actions.
+
+Key fault categories introduced included: **Slowness**, **Link Down**, **Frequency Disconnections**, and **Port Blocked**, focusing on understanding technical implications and general diagnostic workflows.
+
+---
+
+## Sep 22 – Practical Diagnostics & Service Data Verification
+
+Operational duties continued from **8:30 AM to 6:00 PM**, advancing into hands-on verification methodologies.  
+Emphasis was placed on grounding diagnoses on concrete device telemetry rather than user descriptions alone, notably: **ONT status**, **RX power level**, **MAC Address registration**, and mapped **VLAN services**.
+
+---
+
+# 2. Fault Categories & Diagnostic Workflows
+
+## 1. Slowness – Internet Speed Degradation
+
+For cases where both **Provider and Seeker** operate under ITC transit:
+1. Verify optical signal level (**RX Power**) against standard operational thresholds.
+2. Conduct an official **Speed Test** to benchmark real-time throughput.
+3. If test results are normal without technical defects, transfer the ticket to **Call Centre** with a detailed diagnostic **Comment**.
+4. If technical degradation is confirmed, escalate the case to **FOPS** for specialized investigation.
+
+---
+
+## 2. Link Down – Service Disconnection
+
+Complete service interruption requires holistic ONT telemetry verification:
+* Read and verify **MAC Address**.
+* Measure **RX Power level**.
+* Check connection state and mapped **VLANs**.
+* Inspect **ACS, Wi-Fi, and Voice** service parameters.
+
+Where indicators reveal complete signal loss, **Power Failure**, or fiber breaks (**Fiber Issue**), an on-site technician dispatch (**Dispatch Field Tech**) is initiated.
+
+---
+
+## 3. Frequency Disconnections – Intermittent Flapping
+
+Investigates intermittent drops and flapping connections:
+* Leverage **MOSS** to monitor flapping frequency and historical stability patterns.
+* Determine recurrence severity before initiating preventative actions or escalations.
+
+---
+
+## 4. Port Blocked – Disabled LAN Interfaces
+
+Refers to interfaces in an administratively disabled or blocked state:
+* Verify port operational status against subscription parameters and initiate unblocking or re-provisioning.
+
+---
+
+# 3. ONT Device Architecture & Vendor Classifications
+
+The **ONT (Optical Network Terminal)** serves as the subscriber demarcation unit converting optical signals into data and voice services.
+
+### Classifications:
+* **Light ONT:** Standard terminal for direct residential service delivery.
+* **Advanced ONT:** High-capacity terminal with advanced routing, Wi-Fi coverage, and multi-service interfaces.
+
+### Management Systems & Vendor Profiles:
+1. **Huawei NCE:**
+   * Light ONT profiles (e.g., **H5** series).
+   * Advanced ONT profiles (e.g., **ELS** series).
+   * Telemetry identification using model designations and Last Name conventions.
+2. **Nokia:**
+   * Light ONT: Identified by Last Names such as **F and E** (Equipped Type).
+   * Advanced ONT: Identified by Last Names such as **B and K**.
+3. **ZTE:**
+   * Vendor-specific ONT profiles, telemetry verification, and interoperability testing.
+
+---
+
+# 4. RX Optical Power Levels
+
+* **Approved Operational Range:** **-10 dBm to -26 dBm**  
+* RX power verification is a mandatory baseline across all fault diagnostics (**Slowness, Link Down, Flapping**), providing decisive telemetry on optical cable integrity.
+
+---
+
+# 5. CVLAN Architecture & Provisioned Services
+
+Understanding mapped **CVLAN** parameters to validate service delivery:
+
+| CVLAN | Service | Operational Purpose |
+| ----- | ------- | ------------------- |
+| **1501** | HSI | High-Speed Internet Access |
+| **3980** | ACS / Management | Remote Provisioning, Configuration & Maintenance |
+| **1810** | Voice | VoIP Telephony Service |
+
+---
+
+# 6. Operational Systems & Engineering Platforms
+
+* **Huawei NCE:** Querying ONT live telemetry, RX power levels, port statuses, and optical metrics.
+* **MOSS:** Tracking intermittent flapping (Frequency Disconnections) and historical uptime logs.
+* **ACS:** Centralized auto-configuration, firmware upgrades, and subscriber gateway management.
+* **FOPS:** Escalation pathway for complex fiber infrastructure and physical layer anomalies.
+* **Call Centre:** Routing cases confirmed operational with comprehensive diagnostic commentary.
+
+---
+
+# 7. FTTH Network Components
+
+* **ONT (Optical Network Terminal):** Subscriber premises equipment.
+* **ODB (Optical Distribution Box):** External passive distribution box managing fiber splicing and drop cables.
+* **HGU (Home Gateway Unit):** Integrated home gateway bridging Wi-Fi, Ethernet, and voice.
+* **Provider & Seeker:** Structural concepts designating service ownership and transit routes.
+
+---
+
+# 8. 10-Step Standard Operating Procedure for Ticket Handling
+
+A structured, 10-step troubleshooting methodology was adopted:
+1. **Read & analyze ticket** details and customer fault description.
+2. **Classify fault category** (Slowness, Link Down, Disconnections, Port Blocked).
+3. **Inspect ONT registered telemetry** via the management portal.
+4. **Measure optical RX power level**.
+5. **Verify MAC Address registration**.
+6. **Confirm VLAN and CVLAN associations**.
+7. **Audit auxiliary services** (ACS, Wi-Fi, Voice).
+8. **Execute throughput benchmarks** (Speed Test) when applicable.
+9. **Correlate findings** against technical benchmarks to isolate root cause.
+10. **Execute appropriate resolution:** Handle execution, technical commentary, Call Centre routing, FOPS escalation, or technician dispatch.
+
+---
+
+# 9. Practical Application & Shift B Operations
+
+Beginning **Sep 27**, operations transitioned to **Shift B (2:00 PM to 10:00 PM)**:
+* **Sep 27 (8h):** Advanced ONT telemetry, RX verification, and case studies.
+* **Sep 28 (8h):** Hands-on handling—**19 tickets** processed.
+* **Sep 29 (8h):** Advanced configuration and CVLAN mapping audits.
+* **Sep 30 (8h):** Autonomous ticket handling and resolution execution—**18 tickets** processed.
+* **Oct 1 (8h):** Multi-tier ticket routing and escalation—**33 tickets** processed.
+
+---
+
+# 10. Quantitative Ticket Handling Analytics (244 Tickets)
+
+Across the seven documented shifts, **244 unique tickets** were successfully processed under Shift B (2:00 PM – 10:00 PM):
+
+| Date | Shift Hours | Handled Unique Tickets |
+| ---- | ----------- | ---------------------: |
+| Sep 28 | 2:00 PM – 10:00 PM | **19** |
+| Sep 30 | 2:00 PM – 10:00 PM | **18** |
+| Oct 1 | 2:00 PM – 10:00 PM | **33** |
+| Oct 4 | 2:00 PM – 10:00 PM | **54** |
+| Oct 5 | 2:00 PM – 10:00 PM | **40** |
+| Oct 6 | 2:00 PM – 10:00 PM | **23** |
+| Oct 7 | 2:00 PM – 10:00 PM | **57** |
+| **Total** | **56 Hours Documented** | **244 Unique Tickets** |
+
+* **Shift Performance Benchmark:** Average daily throughput achieved was **34.9 tickets per shift**.
+
+---
+
+# 11. Daily Category Breakdown
+
+### Sep 28 (19 Tickets Total)
+| Category | Unique Count |
+| -------- | -----------: |
+| Call Centre | 15 |
+| CCS | 2 |
+| Open Access | 1 |
+| TLS | 1 |
+| OSS / Pending to NOC / Resolved / NAS | 0 |
+| **Total** | **19** |
+
+---
+
+### Sep 30 (18 Tickets Total)
+| Category | Unique Count |
+| -------- | -----------: |
+| Resolved | 11 |
+| Call Centre | 4 |
+| CCS | 3 |
+| Open Access / TLS / OSS / Pending to NOC / NAS | 0 |
+| **Total** | **18** |
+
+---
+
+### Oct 1 (33 Tickets Total)
+| Category | Unique Count |
+| -------- | -----------: |
+| Call Centre | 19 |
+| CCS | 8 |
+| Pending to NOC | 3 |
+| Open Access | 2 |
+| OSS | 1 |
+| TLS / Resolved / NAS | 0 |
+| **Total** | **33** |
+
+---
+
+### Oct 4 (54 Tickets Total)
+| Category | Unique Count |
+| -------- | -----------: |
+| Call Centre | 33 |
+| CCS | 12 |
+| Open Access | 7 |
+| Pending to NOC | 2 |
+| TLS / OSS / Resolved / NAS | 0 |
+| **Total** | **54** |
+
+---
+
+### Oct 5 (40 Tickets Total)
+| Category | Unique Count |
+| -------- | -----------: |
+| Call Centre | 14 |
+| CCS | 13 |
+| Open Access | 7 |
+| Pending to NOC | 5 |
+| Resolved | 1 |
+| TLS / OSS / NAS | 0 |
+| **Total** | **40** |
+
+---
+
+### Oct 6 (23 Tickets Total)
+| Category | Unique Count |
+| -------- | -----------: |
+| CCS | 10 |
+| Call Centre | 8 |
+| Open Access | 4 |
+| Pending to NOC | 1 |
+| TLS / OSS / Resolved / NAS | 0 |
+| **Total** | **23** |
+
+---
+
+### Oct 7 (57 Tickets Total – Peak Performance)
+| Category | Unique Count |
+| -------- | -----------: |
+| Call Centre | 32 |
+| CCS | 11 |
+| Open Access | 6 |
+| Pending to NOC | 5 |
+| OSS | 2 |
+| Resolved | 1 |
+| TLS / NAS | 0 |
+| **Total** | **57** |
+
+---
+
+# 12. Overall Category Distribution
+
+Consolidating the **244 unique tickets** across all seven shifts reveals the following distribution:
+
+| Category (Routing Channel) | Total Tickets | Percentage |
+| -------------------------- | ------------: | ---------: |
+| **Call Centre** | **125** | 51.2% |
+| **CCS** | **59** | 24.2% |
+| **Open Access** | **27** | 11.1% |
+| **Pending to NOC** | **16** | 6.6% |
+| **Resolved** | **13** | 5.3% |
+| **OSS** | **3** | 1.2% |
+| **TLS** | **1** | 0.4% |
+| **NAS** | **0** | 0.0% |
+| **Grand Total** | **244** | **100%** |
+
+---
+
+# 13. Advanced Autonomous Operations (Oct 4 to Oct 7)
+
+Operations under Shift B (2:00 PM – 10:00 PM) reached full operational independence:
+* Rapid telemetry diagnosis, triage, and accurate routing without direct supervision.
+* High-volume ticket processing culminated on **Oct 7** with a record **57 tickets handled** in a single shift.
+
+---
+
+# 14. Key Acquired Technical Competencies
+
+1. Rapid diagnosis and root-cause analysis of fiber connectivity faults.
+2. ONT telemetry extraction (MAC Address, optical RX power levels).
+3. CVLAN configuration and service mapping verification (1501, 3980, 1810).
+4. Auxiliary service troubleshooting (ACS, Wi-Fi, VoIP).
+5. Comprehensive Speed Test benchmarks and throughput validation.
+6. Professional technical commentary and SLA compliance documentation.
+7. End-to-end ticket lifecycle handling and closure.
+8. Escalation protocols to specialized engineering units (FOPS, NOC).
+9. Accurate field dispatch triage.
+10. Effective workload and time management under peak shift volumes.
+
+---
+
+# 15. Operational Challenges & Mitigation
+
+Initial challenges included complex technical acronyms, diverse vendor interfaces (Huawei, Nokia, ZTE), and rapid decision-making requirements under live shift constraints.  
+Through repetitive immersion and handling 244 real-world cases, diagnostic reflexes were honed into a structured, highly dependable operational workflow.
+
+---
+
+# 16. Professional Performance Trajectory
+
+A clear progression in operational efficiency was demonstrated:
+* **Initial Stage:** 19 tickets on Sep 28 with step-by-step verification.
+* **Intermediate Stage:** 33 tickets on Oct 1 with expanding multi-channel routing.
+* **Peak Maturity:** 54 tickets on Oct 4, reaching **57 tickets on Oct 7**.
+
+---
+
+# 17. Self-Assessment & Reflection
+
+This training bridged theoretical concepts with real-world telecommunications infrastructure. Technical support in FTTH requires empirical telemetry analysis and structured deductive logic rather than assumptions.
+
+---
+
+# Conclusion
+
+This cooperative training period marked a transformative milestone, synthesizing theoretical fiber optics foundations with intensive hands-on experience handling **244 unique tickets** across operational shifts.  
+The experience confirmed full operational readiness to perform as an **active employee in FTTH telecommunications and network operations**.
+
+---
+
+## Appendix: Attendance and Operational Log
+
+| Date | Shift Hours | Operational Activity |
+| ---- | ----------- | -------------------- |
+| Sep 20 | — | Authorized Leave (Approved) |
+| Sep 21 | 8:30 AM – 6:00 PM | Department Induction & FTTH Fundamentals |
+| Sep 22 | 8:30 AM – 6:00 PM | Telemetry Diagnostics & Service Verification |
+| Sep 27 | 2:00 PM – 10:00 PM | Advanced Hands-on Diagnostics (Shift B) |
+| Sep 28 | 2:00 PM – 10:00 PM | Operational Handling – 19 Tickets Processed |
+| Sep 29 | 2:00 PM – 10:00 PM | Configuration & CVLAN Deep Dive |
+| Sep 30 | 2:00 PM – 10:00 PM | Operational Handling – 18 Tickets Processed |
+| Oct 1 | 2:00 PM – 10:00 PM | Operational Handling – 33 Tickets Processed |
+| Oct 4 | 2:00 PM – 10:00 PM | Operational Handling – 54 Tickets Processed |
+| Oct 5 | 2:00 PM – 10:00 PM | Operational Handling – 40 Tickets Processed |
+| Oct 6 | 2:00 PM – 10:00 PM | Operational Handling – 23 Tickets Processed |
+| Oct 7 | 2:00 PM – 10:00 PM | Peak Shift Handling – 57 Tickets Processed |
+
+**Total Logged Presence: ~91 to 113 Certified Hours with 244 Handled Tickets.**`
+};
+
 export const PeriodicTab: React.FC = () => {
-  const { t, isAr } = useLanguage();
+  const { t, isAr: globalIsAr } = useLanguage();
   const queryClient = useQueryClient();
 
   // Toast feedback
@@ -460,30 +857,58 @@ export const PeriodicTab: React.FC = () => {
   const institutionLogoInputRef = useRef<HTMLInputElement>(null);
   const companyLogoInputRef = useRef<HTMLInputElement>(null);
 
-  // Standalone fresh periodic report (Initialized with FTTH Master report)
-  const [report, setReport] = useState<FreshPeriodicReport>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_FTTH);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed && parsed.customNarrative) {
-          return parsed;
-        }
-      }
-    } catch {
-      // ignore
-    }
-    return DEFAULT_FTTH_REPORT;
+  // Active Report Language: 'ar' | 'en'
+  const [reportLang, setReportLang] = useState<'ar' | 'en'>(() => {
+    return (localStorage.getItem(STORAGE_KEY_REPORT_LANG) as 'ar' | 'en') || 'ar';
   });
 
-  // Auto-save draft so edits persist locally
+  const isReportAr = reportLang === 'ar';
+
+  // Arabic report state
+  const [reportAr, setReportAr] = useState<FreshPeriodicReport>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_FTTH_AR);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.customNarrative) return parsed;
+      }
+    } catch {}
+    return DEFAULT_FTTH_REPORT_AR;
+  });
+
+  // English report state
+  const [reportEn, setReportEn] = useState<FreshPeriodicReport>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_FTTH_EN);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.customNarrative) return parsed;
+      }
+    } catch {}
+    return DEFAULT_FTTH_REPORT_EN;
+  });
+
+  // Currently viewed report based on reportLang
+  const currentReport = isReportAr ? reportAr : reportEn;
+  const setCurrentReport = isReportAr ? setReportAr : setReportEn;
+
+  // Persist language preference
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY_REPORT_LANG, reportLang);
+  }, [reportLang]);
+
+  // Persist drafts locally
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY_FTTH, JSON.stringify(report));
-    } catch {
-      // ignore
-    }
-  }, [report]);
+      localStorage.setItem(STORAGE_KEY_FTTH_AR, JSON.stringify(reportAr));
+    } catch {}
+  }, [reportAr]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_FTTH_EN, JSON.stringify(reportEn));
+    } catch {}
+  }, [reportEn]);
 
   // Fetch student profile for institutional cover page (university name, logos, student ID)
   const { data: finalReportData } = useQuery<FinalReportData>({
@@ -495,20 +920,27 @@ export const PeriodicTab: React.FC = () => {
   });
 
   const profile = finalReportData?.profile || ({} as any);
-  const entityName = profile?.entityAddress || (isAr ? 'جهة التدريب التعاوني' : 'Training Organization');
+  const entityName = profile?.entityAddress || (isReportAr ? 'جهة التدريب التعاوني' : 'Training Organization');
 
-  // Clear / Reset to default FTTH report
+  // Clear / Reset to default FTTH report for the active language
   const handleResetToDefault = () => {
     if (
       window.confirm(
-        isAr
+        isReportAr
           ? 'هل تريد استعادة نموذج تقرير FTTH وتحديث الحقول بكامل البيانات الجديدة؟'
-          : 'Restore default FTTH report template with full data?'
+          : 'Restore default English FTTH report template with full data?'
       )
     ) {
-      setReport(DEFAULT_FTTH_REPORT);
-      localStorage.removeItem(STORAGE_KEY_FTTH);
-      setSaveToast(t('تم استعادة تقرير FTTH المحدّث بنجاح!', 'FTTH Report updated & restored!'));
+      if (isReportAr) {
+        setReportAr(DEFAULT_FTTH_REPORT_AR);
+        localStorage.removeItem(STORAGE_KEY_FTTH_AR);
+      } else {
+        setReportEn(DEFAULT_FTTH_REPORT_EN);
+        localStorage.removeItem(STORAGE_KEY_FTTH_EN);
+      }
+      setSaveToast(
+        isReportAr ? 'تم استعادة تقرير FTTH المحدّث بنجاح!' : 'FTTH English report restored successfully!'
+      );
       setTimeout(() => setSaveToast(''), 3000);
     }
   };
@@ -545,7 +977,7 @@ export const PeriodicTab: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6" dir={isAr ? 'rtl' : 'ltr'}>
+    <div className="space-y-6" dir={isReportAr ? 'rtl' : 'ltr'}>
       {/* Save / Error Toasts */}
       {saveToast && (
         <div className="fixed bottom-5 left-5 z-50 bg-ok text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2 animate-fade-in">
@@ -562,7 +994,7 @@ export const PeriodicTab: React.FC = () => {
       {/* ── Main Container ─────────────────────────────────── */}
       <div className="bg-card border border-line rounded-2xl p-4 sm:p-6 shadow-sm print:border-none print:shadow-none print:p-0 print:m-0 print:rounded-none print:bg-transparent">
         
-        {/* ── Clean Top Header: Only Title & Print ── */}
+        {/* ── Clean Top Header with Language Switcher & Print ── */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-5 border-b border-line no-print">
           <div className="flex items-center gap-2.5">
             <span className="p-2 rounded-xl bg-accent-dim text-accent">
@@ -570,34 +1002,64 @@ export const PeriodicTab: React.FC = () => {
             </span>
             <div>
               <h2 className="text-base font-extrabold text-ink">
-                {t('تقرير التدريب التعاوني (قسم خدمات الألياف الضوئية FTTH)', 'Co-op Training Report (FTTH Operations)')}
+                {isReportAr
+                  ? 'تقرير التدريب التعاوني (قسم خدمات الألياف الضوئية FTTH)'
+                  : 'Co-op Training Report (FTTH Operations)'}
               </h2>
               <p className="text-[11px] text-sub font-bold">
-                {report.periodCoverage} • {report.roleAssignment} • إجمالي 244 تذكرة
+                {currentReport.periodCoverage} • {currentReport.roleAssignment} • {isReportAr ? 'إجمالي 244 تذكرة' : '244 Total Tickets'}
               </p>
             </div>
           </div>
 
-          {/* Action Buttons: Reset & Print/PDF */}
-          <div className="flex items-center gap-2">
+          {/* Action Buttons: Language Switcher, Reset & Print/PDF */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Version Toggle (عربي / English) */}
+            <div className="inline-flex p-1 bg-bg border border-line rounded-xl text-xs font-bold shadow-2xs">
+              <button
+                type="button"
+                onClick={() => setReportLang('ar')}
+                className={`px-3 py-1 rounded-lg transition-all flex items-center gap-1.5 ${
+                  isReportAr
+                    ? 'bg-accent text-white shadow-xs font-black'
+                    : 'text-sub hover:text-ink'
+                }`}
+                title="عرض وطباعة النسخة العربية الرسمية"
+              >
+                <span>عربي</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setReportLang('en')}
+                className={`px-3 py-1 rounded-lg transition-all flex items-center gap-1.5 ${
+                  !isReportAr
+                    ? 'bg-accent text-white shadow-xs font-black'
+                    : 'text-sub hover:text-ink'
+                }`}
+                title="View & Print English Version"
+              >
+                <span>English</span>
+              </button>
+            </div>
+
             <button
               type="button"
               onClick={handleResetToDefault}
-              className="px-3.5 py-1.5 rounded-xl bg-bg hover:bg-line border border-line text-xs font-bold text-ink flex items-center gap-1.5 transition-all shadow-2xs"
-              title={t('استعادة النموذج المحدّث لتقرير FTTH', 'Reset / Reload Updated FTTH Report')}
+              className="px-3 py-1.5 rounded-xl bg-bg hover:bg-line border border-line text-xs font-bold text-ink flex items-center gap-1.5 transition-all shadow-2xs"
+              title={isReportAr ? 'استعادة النموذج الافتراضي' : 'Reset to Default'}
             >
               <RotateCcw className="w-3.5 h-3.5 text-accent" />
-              <span>{t('استعادة التقرير المحدّث', 'Reload FTTH')}</span>
+              <span>{isReportAr ? 'استعادة' : 'Reset'}</span>
             </button>
 
             <button
               type="button"
               onClick={handlePrintPDF}
               className="px-4 py-1.5 text-xs font-bold text-white bg-ink hover:bg-ink/85 rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
-              title={t('طباعة التقرير الفتري أو حفظه كـ PDF رسمي', 'Print report or save as PDF')}
+              title={isReportAr ? 'طباعة التقرير أو حفظه كـ PDF رسمي' : 'Print report or save as PDF'}
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>{t('طباعة / حفظ PDF', 'Print / Save PDF')}</span>
+              <span>{isReportAr ? 'طباعة / حفظ PDF' : 'Print / Save PDF'}</span>
             </button>
           </div>
         </div>
@@ -607,7 +1069,11 @@ export const PeriodicTab: React.FC = () => {
           <summary className="text-xs font-black text-ink cursor-pointer list-none flex items-center justify-between select-none">
             <span className="flex items-center gap-2">
               <Edit3 className="w-4 h-4 text-accent" />
-              <span>{t('تعديل نصوص وبيانات التقرير الفتري (اضغط للإظهار / الإخفاء)', 'Edit Report Texts & Metadata')}</span>
+              <span>
+                {isReportAr
+                  ? 'تعديل نصوص وبيانات التقرير الفتري (اضغط للإظهار / الإخفاء)'
+                  : 'Edit Report Texts & Metadata (Click to expand)'}
+              </span>
             </span>
             <span className="text-[11px] text-sub font-bold group-open:rotate-180 transition-transform">▼</span>
           </summary>
@@ -616,41 +1082,49 @@ export const PeriodicTab: React.FC = () => {
             {/* Row 1: Titles & Role */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <div>
-                <label className="block text-[11px] font-black text-sub mb-1">{t('عنوان التقرير:', 'Report Title:')}</label>
+                <label className="block text-[11px] font-black text-sub mb-1">
+                  {isReportAr ? 'عنوان التقرير:' : 'Report Title:'}
+                </label>
                 <input
                   type="text"
-                  value={report.title}
-                  onChange={(e) => setReport({ ...report, title: e.target.value })}
+                  value={currentReport.title}
+                  onChange={(e) => setCurrentReport({ ...currentReport, title: e.target.value })}
                   className="w-full px-2.5 py-1.5 bg-card border border-line rounded-lg font-bold text-ink"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-black text-sub mb-1">{t('مجال التدريب:', 'Field:')}</label>
+                <label className="block text-[11px] font-black text-sub mb-1">
+                  {isReportAr ? 'مجال التدريب:' : 'Training Field:'}
+                </label>
                 <input
                   type="text"
-                  value={report.majorField}
-                  onChange={(e) => setReport({ ...report, majorField: e.target.value })}
+                  value={currentReport.majorField}
+                  onChange={(e) => setCurrentReport({ ...currentReport, majorField: e.target.value })}
                   className="w-full px-2.5 py-1.5 bg-card border border-line rounded-lg font-bold text-ink"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-black text-sub mb-1">{t('طبيعة العمل / القسم:', 'Department:')}</label>
+                <label className="block text-[11px] font-black text-sub mb-1">
+                  {isReportAr ? 'طبيعة العمل / القسم:' : 'Department:'}
+                </label>
                 <input
                   type="text"
-                  value={report.department}
-                  onChange={(e) => setReport({ ...report, department: e.target.value })}
+                  value={currentReport.department}
+                  onChange={(e) => setCurrentReport({ ...currentReport, department: e.target.value })}
                   className="w-full px-2.5 py-1.5 bg-card border border-line rounded-lg font-bold text-ink"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-black text-sub mb-1">{t('الصفة بالغلاف:', 'Role on Cover:')}</label>
+                <label className="block text-[11px] font-black text-sub mb-1">
+                  {isReportAr ? 'الصفة بالغلاف:' : 'Role on Cover:'}
+                </label>
                 <input
                   type="text"
-                  value={report.roleAssignment}
-                  onChange={(e) => setReport({ ...report, roleAssignment: e.target.value })}
+                  value={currentReport.roleAssignment}
+                  onChange={(e) => setCurrentReport({ ...currentReport, roleAssignment: e.target.value })}
                   className="w-full px-2.5 py-1.5 bg-card border border-line rounded-lg font-bold text-accent"
                 />
               </div>
@@ -659,31 +1133,37 @@ export const PeriodicTab: React.FC = () => {
             {/* Row 2: Coverage & Shifts */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-[11px] font-black text-sub mb-1">{t('الفترة التي يغطيها التقرير:', 'Coverage:')}</label>
+                <label className="block text-[11px] font-black text-sub mb-1">
+                  {isReportAr ? 'الفترة المشمولة بالتقرير:' : 'Reporting Period:'}
+                </label>
                 <input
                   type="text"
-                  value={report.periodCoverage}
-                  onChange={(e) => setReport({ ...report, periodCoverage: e.target.value })}
+                  value={currentReport.periodCoverage}
+                  onChange={(e) => setCurrentReport({ ...currentReport, periodCoverage: e.target.value })}
                   className="w-full px-2.5 py-1.5 bg-card border border-line rounded-lg font-bold text-ink"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-black text-sub mb-1">{t('دوام المرحلة الأولى:', 'Stage 1 Hours:')}</label>
+                <label className="block text-[11px] font-black text-sub mb-1">
+                  {isReportAr ? 'دوام المرحلة الأولى:' : 'Stage 1 Hours:'}
+                </label>
                 <input
                   type="text"
-                  value={report.stageOneHours}
-                  onChange={(e) => setReport({ ...report, stageOneHours: e.target.value })}
+                  value={currentReport.stageOneHours}
+                  onChange={(e) => setCurrentReport({ ...currentReport, stageOneHours: e.target.value })}
                   className="w-full px-2.5 py-1.5 bg-card border border-line rounded-lg font-bold text-ink"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-black text-sub mb-1">{t('دوام المرحلة الثانية:', 'Stage 2 Hours:')}</label>
+                <label className="block text-[11px] font-black text-sub mb-1">
+                  {isReportAr ? 'دوام المرحلة الثانية:' : 'Stage 2 Hours:'}
+                </label>
                 <input
                   type="text"
-                  value={report.stageTwoHours}
-                  onChange={(e) => setReport({ ...report, stageTwoHours: e.target.value })}
+                  value={currentReport.stageTwoHours}
+                  onChange={(e) => setCurrentReport({ ...currentReport, stageTwoHours: e.target.value })}
                   className="w-full px-2.5 py-1.5 bg-card border border-line rounded-lg font-bold text-ink"
                 />
               </div>
@@ -691,10 +1171,12 @@ export const PeriodicTab: React.FC = () => {
 
             {/* Markdown Narrative Textarea */}
             <div>
-              <label className="block text-[11px] font-black text-sub mb-1">{t('محتوى وسرد التقرير بالكامل (Markdown):', 'Report Markdown Content:')}</label>
+              <label className="block text-[11px] font-black text-sub mb-1">
+                {isReportAr ? 'محتوى وسرد التقرير بالكامل (Markdown):' : 'Report Markdown Content:'}
+              </label>
               <textarea
-                value={report.customNarrative}
-                onChange={(e) => setReport({ ...report, customNarrative: e.target.value })}
+                value={currentReport.customNarrative}
+                onChange={(e) => setCurrentReport({ ...currentReport, customNarrative: e.target.value })}
                 rows={12}
                 className="w-full p-3 bg-card border border-line rounded-xl text-xs text-ink font-mono leading-relaxed"
               />
@@ -715,8 +1197,8 @@ export const PeriodicTab: React.FC = () => {
             <div>
               {/* Header: Kingdom Header & Dual Logos */}
               <div className="flex items-center justify-between pb-4 border-b border-line gap-4">
-                {/* Right: Institution Info / Logo */}
-                <div className="text-right flex items-center gap-3">
+                {/* Right (in RTL) or Left (in LTR): Institution Info / Logo */}
+                <div className={`flex items-center gap-3 ${isReportAr ? 'text-right' : 'text-left'}`}>
                   {profile.institutionLogo ? (
                     <img
                       src={profile.institutionLogo}
@@ -729,9 +1211,16 @@ export const PeriodicTab: React.FC = () => {
                     </div>
                   )}
                   <div>
-                    <div className="text-[11px] font-black text-ink">{isAr ? 'المملكة العربية السعودية' : 'Kingdom of Saudi Arabia'}</div>
-                    <div className="text-[10px] text-sub font-bold">{isAr ? 'وزارة التعليم' : 'Ministry of Education'}</div>
-                    <div className="text-[10px] text-accent font-black">{profile.trainingUnit || (isAr ? 'الكلية / الجامعة' : 'College / University')}</div>
+                    <div className="text-[11px] font-black text-ink">
+                      {isReportAr ? 'المملكة العربية السعودية' : 'Kingdom of Saudi Arabia'}
+                    </div>
+                    <div className="text-[10px] text-sub font-bold">
+                      {isReportAr ? 'وزارة التعليم' : 'Ministry of Education'}
+                    </div>
+                    {/* Institution Name preserved in Arabic as requested */}
+                    <div className="text-[10px] text-accent font-black">
+                      {profile.trainingUnit || (isReportAr ? 'الكلية / الجامعة' : 'الجامعة / الكلية')}
+                    </div>
                   </div>
                 </div>
 
@@ -755,23 +1244,23 @@ export const PeriodicTab: React.FC = () => {
                     type="button"
                     onClick={() => institutionLogoInputRef.current?.click()}
                     className="px-2 py-1 text-[10px] font-bold text-sub hover:text-ink bg-bg rounded-lg border border-line"
-                    title="تغيير شعار الجامعة أو الكلية"
+                    title={isReportAr ? 'تغيير شعار الجامعة أو الكلية' : 'Upload University Logo'}
                   >
-                    {isAr ? 'شعار الجامعة' : 'Uni Logo'}
+                    {isReportAr ? 'شعار الجامعة' : 'Uni Logo'}
                   </button>
                   <button
                     type="button"
                     onClick={() => companyLogoInputRef.current?.click()}
                     className="px-2 py-1 text-[10px] font-bold text-sub hover:text-ink bg-bg rounded-lg border border-line"
-                    title="تغيير شعار جهة التدريب"
+                    title={isReportAr ? 'تغيير شعار جهة التدريب' : 'Upload Company Logo'}
                   >
-                    {isAr ? 'شعار الجهة' : 'Co Logo'}
+                    {isReportAr ? 'شعار الجهة' : 'Co Logo'}
                   </button>
                 </div>
 
-                {/* Left: Training Company Logo */}
-                <div className="text-left flex items-center gap-3">
-                  <div className="text-right hidden sm:block">
+                {/* Left (in RTL) or Right (in LTR): Training Company Logo */}
+                <div className={`flex items-center gap-3 ${isReportAr ? 'text-left' : 'text-right'}`}>
+                  <div className={`hidden sm:block ${isReportAr ? 'text-right' : 'text-right'}`}>
                     <div className="text-[11px] font-black text-ink">{profile.entityAddress || entityName}</div>
                     <div className="text-[10px] text-sub font-bold">FTTH Operations</div>
                   </div>
@@ -792,56 +1281,94 @@ export const PeriodicTab: React.FC = () => {
               {/* Main Report Title Banner */}
               <div className="text-center py-4 space-y-1.5">
                 <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-[11px] font-black bg-accent text-white shadow-2xs">
-                  <span>{report.periodCoverage}</span>
+                  <span>{currentReport.periodCoverage}</span>
                 </div>
                 <h1 className="text-lg sm:text-xl font-black text-ink tracking-tight pt-1">
-                  {report.title}
+                  {currentReport.title}
                 </h1>
                 <p className="text-xs text-sub font-bold">
-                  {report.department}
+                  {currentReport.department}
                 </p>
               </div>
 
               {/* Trainee & Period Information Matrix on Cover */}
               <div className="bg-bg border border-line rounded-xl p-3 sm:p-4 text-start grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs trainee-matrix-print print:border print:border-slate-300 print:rounded-xl print:bg-slate-50/60 print:p-3 print:gap-x-4 print:gap-y-2">
+                {/* 1. Trainee Name: Preserved in Arabic as requested! */}
                 <div className="flex items-center justify-between border-b border-line/60 pb-1">
-                  <span className="font-bold text-sub">{isAr ? 'اسم المتدرب:' : 'Trainee Name:'}</span>
-                  <span className="font-black text-ink">{normalizeStudentName(profile.studentName) || '—'}</span>
-                </div>
-                <div className="flex items-center justify-between border-b border-line/60 pb-1">
-                  <span className="font-bold text-sub">{isAr ? 'الرقم الأكاديمي:' : 'Student ID:'}</span>
-                  <span className="font-black text-ink">{profile.trainingNumber || '—'}</span>
-                </div>
-                <div className="flex items-center justify-between border-b border-line/60 pb-1">
-                  <span className="font-bold text-sub">{isAr ? 'مجال التدريب:' : 'Field:'}</span>
-                  <span className="font-black text-ink">{report.majorField}</span>
-                </div>
-                <div className="flex items-center justify-between border-b border-line/60 pb-1">
-                  <span className="font-bold text-sub">{isAr ? 'طبيعة العمل:' : 'Nature of Work:'}</span>
-                  <span className="font-black text-ink">{report.department}</span>
-                </div>
-                <div className="flex items-center justify-between border-b border-line/60 pb-1">
-                  <span className="font-bold text-sub">{isAr ? 'المشرف الميداني:' : 'Field Supervisor:'}</span>
-                  <span className="font-black text-ink">{profile.responsibleName || '—'}</span>
-                </div>
-                <div className="flex items-center justify-between border-b border-line/60 pb-1">
-                  <span className="font-bold text-sub">{isAr ? 'الفترة المشمولة بالتقرير:' : 'Coverage:'}</span>
-                  <span className="font-black text-accent">{report.periodCoverage}</span>
-                </div>
-                
-                {/* Specific Role Highlight requested by user: "اسم الفترة متدرب وموظف فعلي ك FTTH" */}
-                <div className="sm:col-span-2 flex items-center justify-between bg-accent-dim/40 border border-accent/20 rounded-lg p-2 print:border-slate-300 print:bg-slate-100">
-                  <span className="font-black text-ink">{isAr ? 'الصفة ونطاق التكليف بالفترة:' : 'Role Assignment:'}</span>
-                  <span className="font-black text-accent text-[12px] print:text-slate-900">{report.roleAssignment}</span>
+                  <span className="font-bold text-sub">
+                    {isReportAr ? 'اسم المتدرب:' : 'Trainee Name:'}
+                  </span>
+                  <span className="font-black text-ink">
+                    {normalizeStudentName(profile.studentName) || '—'}
+                  </span>
                 </div>
 
-                <div className="flex items-center justify-between pt-0.5">
-                  <span className="font-bold text-sub">{isAr ? 'دوام المرحلة الأولى:' : 'Stage 1:'}</span>
-                  <span className="font-bold text-ink">{report.stageOneHours}</span>
+                {/* 2. Student ID */}
+                <div className="flex items-center justify-between border-b border-line/60 pb-1">
+                  <span className="font-bold text-sub">
+                    {isReportAr ? 'الرقم الأكاديمي:' : 'Student ID:'}
+                  </span>
+                  <span className="font-black text-ink">{profile.trainingNumber || '—'}</span>
                 </div>
+
+                {/* 3. Field of Training */}
+                <div className="flex items-center justify-between border-b border-line/60 pb-1">
+                  <span className="font-bold text-sub">
+                    {isReportAr ? 'مجال التدريب:' : 'Training Field:'}
+                  </span>
+                  <span className="font-black text-ink">{currentReport.majorField}</span>
+                </div>
+
+                {/* 4. Nature of Work */}
+                <div className="flex items-center justify-between border-b border-line/60 pb-1">
+                  <span className="font-bold text-sub">
+                    {isReportAr ? 'طبيعة العمل:' : 'Nature of Work:'}
+                  </span>
+                  <span className="font-black text-ink">{currentReport.department}</span>
+                </div>
+
+                {/* 5. Field Supervisor: Preserved in Arabic as requested! */}
+                <div className="flex items-center justify-between border-b border-line/60 pb-1">
+                  <span className="font-bold text-sub">
+                    {isReportAr ? 'المشرف الميداني:' : 'Field Supervisor:'}
+                  </span>
+                  <span className="font-black text-ink">
+                    {profile.responsibleName || '—'}
+                  </span>
+                </div>
+
+                {/* 6. Period Coverage */}
+                <div className="flex items-center justify-between border-b border-line/60 pb-1">
+                  <span className="font-bold text-sub">
+                    {isReportAr ? 'الفترة المشمولة بالتقرير:' : 'Reporting Period:'}
+                  </span>
+                  <span className="font-black text-accent">{currentReport.periodCoverage}</span>
+                </div>
+                
+                {/* 7. Specific Role on Cover */}
+                <div className="sm:col-span-2 flex items-center justify-between bg-accent-dim/40 border border-accent/20 rounded-lg p-2 print:border-slate-300 print:bg-slate-100">
+                  <span className="font-black text-ink">
+                    {isReportAr ? 'الصفة ونطاق التكليف بالفترة:' : 'Role on Cover:'}
+                  </span>
+                  <span className="font-black text-accent text-[12px] print:text-slate-900">
+                    {currentReport.roleAssignment}
+                  </span>
+                </div>
+
+                {/* 8. Stage 1 Hours */}
                 <div className="flex items-center justify-between pt-0.5">
-                  <span className="font-bold text-sub">{isAr ? 'دوام المرحلة الثانية:' : 'Stage 2:'}</span>
-                  <span className="font-bold text-ink">{report.stageTwoHours}</span>
+                  <span className="font-bold text-sub">
+                    {isReportAr ? 'دوام المرحلة الأولى:' : 'Stage 1 Hours:'}
+                  </span>
+                  <span className="font-bold text-ink">{currentReport.stageOneHours}</span>
+                </div>
+
+                {/* 9. Stage 2 Hours */}
+                <div className="flex items-center justify-between pt-0.5">
+                  <span className="font-bold text-sub">
+                    {isReportAr ? 'دوام المرحلة الثانية:' : 'Stage 2 Hours:'}
+                  </span>
+                  <span className="font-bold text-ink">{currentReport.stageTwoHours}</span>
                 </div>
               </div>
 
@@ -851,25 +1378,25 @@ export const PeriodicTab: React.FC = () => {
                   <div className="flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5 text-accent" />
                     <span className="text-xs font-black text-ink">
-                      {isAr ? 'نظام وتوزيع الفترات والورديات المعتمدة:' : 'Shift & Period Distribution:'}
+                      {isReportAr ? 'نظام وتوزيع الفترات والورديات المعتمدة:' : 'Authorized Shift & Period Distribution:'}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                      {isAr ? '244 تذكرة فريدة معالجة' : '244 Handled Tickets'}
+                      {isReportAr ? '244 تذكرة فريدة معالجة' : '244 Handled Tickets'}
                     </span>
                     <span className="text-[10px] text-accent font-black">
-                      {isAr ? '91 - 113 ساعة معتمدة' : '~91-113 Hours'}
+                      {isReportAr ? '91 - 113 ساعة معتمدة' : '~91-113 Hours'}
                     </span>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-                  {report.intervals.map((int, idx) => (
+                  {currentReport.intervals.map((int, idx) => (
                     <div key={int.id || idx} className="p-2 bg-card border border-line rounded-lg print:border-slate-300">
                       <div className="font-black text-ink text-[11px] mb-1">{int.label}</div>
                       <div className="text-[10px] text-sub font-bold flex items-center justify-between">
-                        <span>من {int.startDate} إلى {int.endDate}</span>
+                        <span>{isReportAr ? `من ${int.startDate} إلى ${int.endDate}` : `${int.startDate} – ${int.endDate}`}</span>
                         <span className="font-black text-accent">{int.timeFrom} - {int.timeTo}</span>
                       </div>
                     </div>
@@ -880,8 +1407,14 @@ export const PeriodicTab: React.FC = () => {
 
             {/* Academic Page 1 Footer */}
             <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-[10px] text-sub font-bold">
-              <span>{isAr ? 'المملكة العربية السعودية — تقرير التدريب التعاوني (خدمات الألياف الضوئية FTTH)' : 'KSA — Co-op Training Report (FTTH Operations)'}</span>
-              <span className="font-black text-accent">{isAr ? 'الغلاف الرسمي المعتمد' : 'Official Cover Page'}</span>
+              <span>
+                {isReportAr
+                  ? 'المملكة العربية السعودية — تقرير التدريب التعاوني (خدمات الألياف الضوئية FTTH)'
+                  : 'KSA — Cooperative Training Report (FTTH Operations)'}
+              </span>
+              <span className="font-black text-accent">
+                {isReportAr ? 'الغلاف الرسمي المعتمد' : 'Official Cover Page'}
+              </span>
             </div>
           </section>
 
@@ -889,31 +1422,40 @@ export const PeriodicTab: React.FC = () => {
               FULL REPORT NARRATIVE: Complete Sections & Tables rendered
              ══════════════════════════════════════════════════════════════ */}
           <section className="bg-card border border-line rounded-2xl p-6 sm:p-8 print:p-0 print:border-none print:shadow-none print:rounded-none shadow-sm space-y-6">
-            <AcademicMarkdownView content={report.customNarrative} />
+            <AcademicMarkdownView content={currentReport.customNarrative} />
 
             {/* Official Supervisory Endorsement Block at the end of report */}
             <div className="mt-8 pt-4 border-t-2 border-line/80 p-4 bg-bg border border-line rounded-xl text-start print:border print:border-slate-300 print:rounded-xl print:bg-slate-50/50 print:p-4 shadow-2xs break-inside-avoid">
               <div className="text-center font-black text-xs sm:text-sm text-ink mb-4 pb-1 border-b border-line/60">
-                {isAr ? 'مصادقة واعتماد التقرير الميداني الرسمي' : 'Official Supervisory Endorsements'}
+                {isReportAr ? 'مصادقة واعتماد التقرير الميداني الرسمي' : 'Official Supervisory Endorsements'}
               </div>
               <div className="grid grid-cols-3 gap-4 text-center text-xs">
                 {/* Trainee Signature */}
                 <div className="space-y-1">
-                  <div className="font-bold text-sub text-[11px]">{isAr ? 'توقيع المتدرب' : 'Trainee Signature'}</div>
+                  <div className="font-bold text-sub text-[11px]">
+                    {isReportAr ? 'توقيع المتدرب' : 'Trainee Signature'}
+                  </div>
+                  {/* Student Name preserved in Arabic */}
                   <div className="font-black text-ink">{normalizeStudentName(profile.studentName) || '—'}</div>
                   <div className="h-10 border-b border-dashed border-line/80 print:h-8" />
                 </div>
 
                 {/* Field Supervisor */}
                 <div className="space-y-1">
-                  <div className="font-bold text-sub text-[11px]">{isAr ? 'المشرف الميداني (جهة التدريب)' : 'Field Supervisor'}</div>
+                  <div className="font-bold text-sub text-[11px]">
+                    {isReportAr ? 'المشرف الميداني (جهة التدريب)' : 'Field Supervisor'}
+                  </div>
+                  {/* Field Supervisor Name preserved in Arabic */}
                   <div className="font-black text-ink">{profile.responsibleName || '—'}</div>
                   <div className="h-10 border-b border-dashed border-line/80 print:h-8" />
                 </div>
 
                 {/* Academic Supervisor */}
                 <div className="space-y-1">
-                  <div className="font-bold text-sub text-[11px]">{isAr ? 'مشرف التدريب (الجامعة)' : 'Academic Supervisor'}</div>
+                  <div className="font-bold text-sub text-[11px]">
+                    {isReportAr ? 'مشرف التدريب (الجامعة)' : 'Academic Supervisor'}
+                  </div>
+                  {/* Academic Supervisor Name preserved in Arabic */}
                   <div className="font-black text-ink">{profile.supervisorName || '—'}</div>
                   <div className="h-10 border-b border-dashed border-line/80 print:h-8" />
                 </div>
