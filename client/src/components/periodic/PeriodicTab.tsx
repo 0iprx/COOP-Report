@@ -20,6 +20,8 @@ import {
   normalizeStudentName
 } from '@coop/shared';
 import { AcademicMarkdownView } from '../common/AcademicMarkdownView';
+import { PeriodicAnalyticsCharts } from './PeriodicAnalyticsCharts';
+import { getFTTHDailyEntries } from '../../services/ftthDailyEntriesData';
 
 interface FreshPeriodicReport {
   title: string;
@@ -975,6 +977,52 @@ export const PeriodicTab: React.FC = () => {
     }
   };
 
+  // Import 12 FTTH Daily Entries to Daily Log Tab
+  const [importingDaily, setImportingDaily] = useState<boolean>(false);
+
+  const handleImportToDailyReports = async () => {
+    if (importingDaily) return;
+    setImportingDaily(true);
+    try {
+      const entriesToImport = getFTTHDailyEntries();
+      const existingRes = await api.get('/entries');
+      const existingList: any[] = existingRes.data?.entries || [];
+      const existingKeys = new Set(existingList.map((e: any) => `${e.entryDate}_${e.title}`));
+
+      let createdCount = 0;
+      for (const entry of entriesToImport) {
+        if (!existingKeys.has(`${entry.entryDate}_${entry.title}`)) {
+          await api.post('/entries', entry);
+          createdCount++;
+        }
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ['entries'] });
+      await queryClient.invalidateQueries({ queryKey: ['weekly'] });
+      await queryClient.invalidateQueries({ queryKey: ['finalReport'] });
+
+      if (createdCount > 0) {
+        setSaveToast(
+          isReportAr
+            ? `✅ تم إدراج ${createdCount} تقرير يومي بنجاح في قسم التقارير اليومية!`
+            : `✅ Successfully imported ${createdCount} daily reports into Daily Logs!`
+        );
+      } else {
+        setSaveToast(
+          isReportAr
+            ? 'التقارير اليومية لجميع أيام الفترة موجودة بالفعل ومسجلة مسبقاً!'
+            : 'All daily reports for this period already exist in your log!'
+        );
+      }
+      setTimeout(() => setSaveToast(''), 4500);
+    } catch {
+      setErrorToast(isReportAr ? 'تعذر إدراج التقارير اليومية، يرجى المحاولة لاحقاً' : 'Failed to import daily reports');
+      setTimeout(() => setErrorToast(''), 4000);
+    } finally {
+      setImportingDaily(false);
+    }
+  };
+
   // Print PDF
   const handlePrintPDF = () => {
     setSaveToast(
@@ -1061,6 +1109,21 @@ export const PeriodicTab: React.FC = () => {
             >
               <RotateCcw className="w-3.5 h-3.5 text-accent" />
               <span>{isReportAr ? 'استعادة' : 'Reset'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleImportToDailyReports}
+              disabled={importingDaily}
+              className="px-3.5 py-1.5 rounded-xl bg-accent hover:bg-accent/90 text-xs font-black text-white flex items-center gap-1.5 transition-all shadow-xs disabled:opacity-50"
+              title={isReportAr ? 'إضافة الـ 12 يوماً كتقارير جديدة في قسم التقارير اليومية (دون حذف التقارير السابقة)' : 'Add 12 days to Daily Logs without deleting existing'}
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              <span>
+                {importingDaily
+                  ? (isReportAr ? 'جاري الإضافة...' : 'Adding...')
+                  : (isReportAr ? '+ إضافة إلى التقارير اليومية' : '+ Add to Daily Logs')}
+              </span>
             </button>
 
             <button
@@ -1467,6 +1530,9 @@ export const PeriodicTab: React.FC = () => {
                 <tr>
                   <td className="p-0 border-none print:px-[16mm] align-top space-y-6">
                     <AcademicMarkdownView content={currentReport.customNarrative} />
+
+                    {/* Executive Vector Analytics & Performance Charts Dashboard */}
+                    <PeriodicAnalyticsCharts isReportAr={isReportAr} />
 
                     {/* Official Supervisory Endorsement Block at the end of report */}
                     <div

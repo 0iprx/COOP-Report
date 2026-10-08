@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { DiffModal } from '../common/DiffModal';
 import { BatchRewriteModal } from '../common/BatchRewriteModal';
+import { getFTTHDailyEntries } from '../../services/ftthDailyEntriesData';
 
 const DRAFT_KEY = 'coop_entry_draft_v2';
 
@@ -211,6 +212,52 @@ export const DailyLogTab: React.FC = () => {
   // Offline pending entries count & syncing state
   const [pendingCount, setPendingCount] = useState<number>(0);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [importingFTTH, setImportingFTTH] = useState<boolean>(false);
+
+  const handleImportFTTHPeriod = async () => {
+    if (importingFTTH) return;
+    setImportingFTTH(true);
+    try {
+      const entriesToImport = getFTTHDailyEntries();
+      const existingRes = await api.get('/entries');
+      const existingList: any[] = existingRes.data?.entries || [];
+      const existingKeys = new Set(existingList.map((e: any) => `${e.entryDate}_${e.title}`));
+
+      let addedCount = 0;
+      for (const item of entriesToImport) {
+        if (!existingKeys.has(`${item.entryDate}_${item.title}`)) {
+          await api.post('/entries', item);
+          addedCount++;
+        }
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ['entries'] });
+      await queryClient.invalidateQueries({ queryKey: ['weekly'] });
+      await queryClient.invalidateQueries({ queryKey: ['finalReport'] });
+
+      if (addedCount > 0) {
+        showToast(
+          t(
+            `تمت إضافة ${addedCount} تقارير يومية جديدة بنجاح دون المساس بأي من تقاريرك السابقة!`,
+            `Successfully added ${addedCount} new daily reports without touching existing ones!`
+          ),
+          'success'
+        );
+      } else {
+        showToast(
+          t(
+            'جميع تقارير فترة FTTH الـ 12 مضافة وموجودة بالفعل دون تكرار!',
+            'All 12 FTTH period reports already exist without duplicates!'
+          ),
+          'success'
+        );
+      }
+    } catch {
+      showToast(t('تعذر إضافة التقارير، يرجى المحاولة مرة أخرى', 'Failed to add entries'), 'error');
+    } finally {
+      setImportingFTTH(false);
+    }
+  };
 
   const checkPending = async () => {
     const list = await getPendingEntries();
@@ -629,7 +676,23 @@ export const DailyLogTab: React.FC = () => {
               </button>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Quick Button to Add 12 FTTH Daily Entries without deleting anything */}
+            <button
+              type="button"
+              onClick={handleImportFTTHPeriod}
+              disabled={importingFTTH}
+              className="px-3 py-1.5 text-xs font-black text-white bg-accent hover:bg-accent/90 rounded-xl transition-all flex items-center gap-1.5 shadow-2xs disabled:opacity-50"
+              title={t('إضافة الـ 12 يوماً الخاصة بفترة FTTH كتقارير جديدة دون مساس بتقاريرك السابقة', 'Add 12 FTTH period reports as new entries without deleting existing ones')}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>
+                {importingFTTH
+                  ? t('جاري الإضافة...', 'Adding...')
+                  : t('+ إضافة يوميات فترة FTTH (12 يومًا جديدة)', '+ Add FTTH Period Logs (12 days)')}
+              </span>
+            </button>
+
             {trashData?.entries && trashData.entries.length > 0 && (
               <button
                 type="button"
