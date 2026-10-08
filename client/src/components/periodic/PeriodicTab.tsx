@@ -10,7 +10,8 @@ import {
   Calendar,
   Clock,
   Edit3,
-  Languages
+  Languages,
+  BarChart3
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { api } from '../../services/api';
@@ -35,8 +36,8 @@ interface FreshPeriodicReport {
   customNarrative: string;
 }
 
-const STORAGE_KEY_FTTH_AR = 'coop_ftth_periodic_report_v7_ar';
-const STORAGE_KEY_FTTH_EN = 'coop_ftth_periodic_report_v7_en';
+const STORAGE_KEY_FTTH_AR = 'coop_ftth_periodic_report_v8_ar';
+const STORAGE_KEY_FTTH_EN = 'coop_ftth_periodic_report_v8_en';
 const STORAGE_KEY_REPORT_LANG = 'coop_ftth_report_lang_preference_v1';
 
 // ── Master Arabic Report ──────────────────────────────────────────────
@@ -422,6 +423,14 @@ const DEFAULT_FTTH_REPORT_AR: FreshPeriodicReport = {
 # السابع عشر: التقييم الذاتي والتوصيات
 
 ساهمت هذه الفترة في صقل المهارات التشغيلية لشبكات الألياف الضوئية، وعززت الثقة في التعامل مع المشتركين والأنظمة المعقدة. وأثبتت التجربة أن الدعم الفني لـ FTTH يعتمد على التحليل المنطقي والبيانات الملموسة وليس مجرد الافتراضات.
+
+---
+
+<!-- pagebreak -->
+
+# الثامن عشر: لوحة الرسوم البيانية والإحصائيات التشغيلية (Operational Analytics Dashboard)
+
+<!-- analytics-charts -->
 
 ---
 
@@ -824,6 +833,14 @@ This training bridged theoretical concepts with real-world telecommunications in
 
 <!-- pagebreak -->
 
+# 18. Operational Analytics & Performance Dashboard
+
+<!-- analytics-charts -->
+
+---
+
+<!-- pagebreak -->
+
 # Conclusion
 
 This cooperative training period marked a transformative milestone, synthesizing theoretical fiber optics foundations with intensive hands-on experience handling **244 unique tickets** across operational shifts.  
@@ -1124,6 +1141,21 @@ export const PeriodicTab: React.FC = () => {
                   ? (isReportAr ? 'جاري الإضافة...' : 'Adding...')
                   : (isReportAr ? '+ إضافة إلى التقارير اليومية' : '+ Add to Daily Logs')}
               </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                const el = document.getElementById('report-analytics-charts-section');
+                if (el) {
+                  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }}
+              className="px-3.5 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 border border-teal-300 text-xs font-black text-teal-800 dark:bg-teal-950/40 dark:border-teal-700 dark:text-teal-200 dark:hover:bg-teal-900/50 flex items-center gap-1.5 transition-all shadow-2xs"
+              title={isReportAr ? 'الانتقال المباشر إلى لوحة الرسوم البيانية والإحصائيات' : 'Jump to Analytics Charts'}
+            >
+              <BarChart3 className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+              <span>{isReportAr ? '📊 لوحة الرسوم البيانية' : '📊 Analytics Charts'}</span>
             </button>
 
             <button
@@ -1529,10 +1561,15 @@ export const PeriodicTab: React.FC = () => {
               <tbody>
                 <tr>
                   <td className="p-0 border-none print:px-[16mm] align-top space-y-6">
-                    <AcademicMarkdownView content={currentReport.customNarrative} />
+                    <AcademicMarkdownView
+                      content={currentReport.customNarrative}
+                      isReportAr={isReportAr}
+                    />
 
-                    {/* Executive Vector Analytics & Performance Charts Dashboard */}
-                    <PeriodicAnalyticsCharts isReportAr={isReportAr} />
+                    {/* Executive Vector Analytics fallback if token not present in customized narrative */}
+                    {!currentReport.customNarrative?.includes('<!-- analytics-charts -->') && (
+                      <PeriodicAnalyticsCharts isReportAr={isReportAr} />
+                    )}
 
                     {/* Official Supervisory Endorsement Block at the end of report */}
                     <div

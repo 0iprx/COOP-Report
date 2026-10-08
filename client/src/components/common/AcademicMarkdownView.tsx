@@ -1,8 +1,10 @@
 import React from 'react';
+import { PeriodicAnalyticsCharts } from '../periodic/PeriodicAnalyticsCharts';
 
 interface AcademicMarkdownViewProps {
   content: string;
   className?: string;
+  isReportAr?: boolean;
 }
 
 // Inline formatting helper for **bold** text
@@ -21,7 +23,7 @@ const formatInlineText = (text: string): React.ReactNode => {
   });
 };
 
-export const AcademicMarkdownView: React.FC<AcademicMarkdownViewProps> = ({ content, className = '' }) => {
+export const AcademicMarkdownView: React.FC<AcademicMarkdownViewProps> = ({ content, className = '', isReportAr = true }) => {
   if (!content) return null;
 
   const lines = content.split('\n');
@@ -42,6 +44,22 @@ export const AcademicMarkdownView: React.FC<AcademicMarkdownViewProps> = ({ cont
     if (line === '<!-- pagebreak -->' || line === '===pagebreak===' || line === '[pagebreak]') {
       elements.push(
         <div key={`pb-${i}`} className="print-page-break" style={{ pageBreakBefore: 'always', breakBefore: 'page' }} />
+      );
+      i++;
+      continue;
+    }
+
+    // 2.1 Analytics Charts Component Token
+    if (
+      line === '<!-- analytics-charts -->' ||
+      line === '[analytics-charts]' ||
+      line === '===analytics-charts===' ||
+      line === '<!-- analytics -->'
+    ) {
+      elements.push(
+        <div key={`charts-${i}`} id="report-analytics-charts-section" className="my-6 print:my-4">
+          <PeriodicAnalyticsCharts isReportAr={isReportAr} />
+        </div>
       );
       i++;
       continue;
