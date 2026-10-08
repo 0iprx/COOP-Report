@@ -363,7 +363,7 @@ html, body {
 @media print {
   @page {
     size: A4 portrait;
-    margin: 12mm 14mm 12mm 14mm;
+    margin: 0 !important;
   }
 
   *, *::before, *::after {
@@ -441,16 +441,16 @@ html, body {
   #weekly-cover-page,
   #periodic-cover-page {
     box-sizing: border-box !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    height: 270mm !important;
-    min-height: 270mm !important;
-    max-height: 270mm !important;
+    width: 210mm !important;
+    max-width: 210mm !important;
+    height: 297mm !important;
+    min-height: 297mm !important;
+    max-height: 297mm !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: space-between !important;
-    padding: 0 !important;
-    margin: 0 !important;
+    padding: 14mm 16mm 14mm 16mm !important;
+    margin: 0 auto !important;
     border: none !important;
     border-radius: 0 !important;
     box-shadow: none !important;
@@ -597,6 +597,59 @@ html, body {
   tr {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+  }
+
+  /* Paged media table spacer rules - Eliminates browser headers while guaranteeing page margins */
+  table.print-pages-table {
+    box-sizing: border-box !important;
+    width: 210mm !important;
+    max-width: 210mm !important;
+    margin: 0 auto !important;
+    border-collapse: collapse !important;
+    border: none !important;
+  }
+
+  table.print-pages-table > thead {
+    display: table-header-group !important;
+    height: 14mm !important;
+    background: transparent !important;
+    border: none !important;
+  }
+
+  table.print-pages-table > thead > tr,
+  table.print-pages-table > thead > tr > th,
+  table.print-pages-table > thead > tr > td {
+    height: 14mm !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background: transparent !important;
+  }
+
+  table.print-pages-table > tfoot {
+    display: table-footer-group !important;
+    height: 14mm !important;
+    background: transparent !important;
+    border: none !important;
+  }
+
+  table.print-pages-table > tfoot > tr,
+  table.print-pages-table > tfoot > tr > th,
+  table.print-pages-table > tfoot > tr > td {
+    height: 14mm !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background: transparent !important;
+  }
+
+  table.print-pages-table > tbody > tr > td {
+    padding-left: 16mm !important;
+    padding-right: 16mm !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    border: none !important;
+    vertical-align: top !important;
   }
 
   /* Multi-column grids in print */

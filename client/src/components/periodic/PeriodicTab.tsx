@@ -1228,92 +1228,93 @@ export const PeriodicTab: React.FC = () => {
             id="periodic-cover-page"
             className="bg-card border border-line rounded-2xl p-6 sm:p-8 print:p-0 print:border-none print:shadow-none print:rounded-none flex flex-col justify-between"
           >
-            <div>
-              {/* Header: Kingdom Header & Dual Logos */}
-              <div className="flex items-center justify-between pb-4 border-b border-line gap-4">
-                {/* Right (in RTL) or Left (in LTR): Institution Info / Logo */}
-                <div className={`flex items-center gap-3 ${isReportAr ? 'text-right' : 'text-left'}`}>
-                  {profile.institutionLogo ? (
-                    <img
-                      src={profile.institutionLogo}
-                      alt="Institution Logo"
-                      className="w-14 h-14 sm:w-16 sm:h-16 object-contain rounded-lg border border-line print:border-none shrink-0"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 rounded-xl bg-accent-dim text-accent flex items-center justify-center font-black text-xs shrink-0 print:border print:border-slate-300">
-                      <GraduationCap className="w-6 h-6" />
-                    </div>
-                  )}
-                  <div>
-                    <div className="text-[11px] font-black text-ink">
-                      {isReportAr ? 'المملكة العربية السعودية' : 'Kingdom of Saudi Arabia'}
-                    </div>
-                    <div className="text-[10px] text-sub font-bold">
-                      {isReportAr ? 'وزارة التعليم' : 'Ministry of Education'}
-                    </div>
-                    {/* Institution Name preserved in Arabic as requested */}
-                    <div className="text-[10px] text-accent font-black">
-                      {profile.trainingUnit || (isReportAr ? 'الكلية / الجامعة' : 'الجامعة / الكلية')}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Upload logo buttons (no-print) */}
-                <div className="no-print flex items-center gap-1.5">
-                  <input
-                    type="file"
-                    ref={institutionLogoInputRef}
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => e.target.files?.[0] && handleUploadLogo('institution', e.target.files[0])}
+            {/* Header: Kingdom Header & Dual Logos - Pinned to Top */}
+            <div className="shrink-0 flex items-center justify-between pb-4 border-b border-line gap-4">
+              {/* Right (in RTL) or Left (in LTR): Institution Info / Logo */}
+              <div className={`flex items-center gap-3 ${isReportAr ? 'text-right' : 'text-left'}`}>
+                {profile.institutionLogo ? (
+                  <img
+                    src={profile.institutionLogo}
+                    alt="Institution Logo"
+                    className="w-14 h-14 sm:w-16 sm:h-16 object-contain rounded-lg border border-line print:border-none shrink-0"
                   />
-                  <input
-                    type="file"
-                    ref={companyLogoInputRef}
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => e.target.files?.[0] && handleUploadLogo('company', e.target.files[0])}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => institutionLogoInputRef.current?.click()}
-                    className="px-2 py-1 text-[10px] font-bold text-sub hover:text-ink bg-bg rounded-lg border border-line"
-                    title={isReportAr ? 'تغيير شعار الجامعة أو الكلية' : 'Upload University Logo'}
-                  >
-                    {isReportAr ? 'شعار الجامعة' : 'Uni Logo'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => companyLogoInputRef.current?.click()}
-                    className="px-2 py-1 text-[10px] font-bold text-sub hover:text-ink bg-bg rounded-lg border border-line"
-                    title={isReportAr ? 'تغيير شعار جهة التدريب' : 'Upload Company Logo'}
-                  >
-                    {isReportAr ? 'شعار الجهة' : 'Co Logo'}
-                  </button>
-                </div>
-
-                {/* Left (in RTL) or Right (in LTR): Training Company Logo */}
-                <div className={`flex items-center gap-3 ${isReportAr ? 'text-left' : 'text-right'}`}>
-                  <div className={`hidden sm:block ${isReportAr ? 'text-right' : 'text-right'}`}>
-                    <div className="text-[11px] font-black text-ink">{profile.entityAddress || entityName}</div>
-                    <div className="text-[10px] text-sub font-bold">FTTH Operations</div>
+                ) : (
+                  <div className="w-12 h-12 rounded-xl bg-accent-dim text-accent flex items-center justify-center font-black text-xs shrink-0 print:border print:border-slate-300">
+                    <GraduationCap className="w-6 h-6" />
                   </div>
-                  {profile.companyLogo ? (
-                    <img
-                      src={profile.companyLogo}
-                      alt="Company Logo"
-                      className="w-14 h-14 sm:w-16 sm:h-16 object-contain rounded-lg border border-line print:border-none shrink-0"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 rounded-xl bg-accent-dim text-accent flex items-center justify-center font-black text-xs shrink-0 print:border print:border-slate-300">
-                      <Building className="w-6 h-6" />
-                    </div>
-                  )}
+                )}
+                <div>
+                  <div className="text-[11px] font-black text-ink">
+                    {isReportAr ? 'المملكة العربية السعودية' : 'Kingdom of Saudi Arabia'}
+                  </div>
+                  <div className="text-[10px] text-sub font-bold">
+                    {isReportAr ? 'وزارة التعليم' : 'Ministry of Education'}
+                  </div>
+                  {/* Institution Name preserved in Arabic as requested */}
+                  <div className="text-[10px] text-accent font-black">
+                    {profile.trainingUnit || (isReportAr ? 'الكلية / الجامعة' : 'الجامعة / الكلية')}
+                  </div>
                 </div>
               </div>
 
+              {/* Upload logo buttons (no-print) */}
+              <div className="no-print flex items-center gap-1.5">
+                <input
+                  type="file"
+                  ref={institutionLogoInputRef}
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => e.target.files?.[0] && handleUploadLogo('institution', e.target.files[0])}
+                />
+                <input
+                  type="file"
+                  ref={companyLogoInputRef}
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => e.target.files?.[0] && handleUploadLogo('company', e.target.files[0])}
+                />
+                <button
+                  type="button"
+                  onClick={() => institutionLogoInputRef.current?.click()}
+                  className="px-2 py-1 text-[10px] font-bold text-sub hover:text-ink bg-bg rounded-lg border border-line"
+                  title={isReportAr ? 'تغيير شعار الجامعة أو الكلية' : 'Upload University Logo'}
+                >
+                  {isReportAr ? 'شعار الجامعة' : 'Uni Logo'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => companyLogoInputRef.current?.click()}
+                  className="px-2 py-1 text-[10px] font-bold text-sub hover:text-ink bg-bg rounded-lg border border-line"
+                  title={isReportAr ? 'تغيير شعار جهة التدريب' : 'Upload Company Logo'}
+                >
+                  {isReportAr ? 'شعار الجهة' : 'Co Logo'}
+                </button>
+              </div>
+
+              {/* Left (in RTL) or Right (in LTR): Training Company Logo */}
+              <div className={`flex items-center gap-3 ${isReportAr ? 'text-left' : 'text-right'}`}>
+                <div className={`hidden sm:block ${isReportAr ? 'text-right' : 'text-right'}`}>
+                  <div className="text-[11px] font-black text-ink">{profile.entityAddress || entityName}</div>
+                  <div className="text-[10px] text-sub font-bold">FTTH Operations</div>
+                </div>
+                {profile.companyLogo ? (
+                  <img
+                    src={profile.companyLogo}
+                    alt="Company Logo"
+                    className="w-14 h-14 sm:w-16 sm:h-16 object-contain rounded-lg border border-line print:border-none shrink-0"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-xl bg-accent-dim text-accent flex items-center justify-center font-black text-xs shrink-0 print:border print:border-slate-300">
+                    <Building className="w-6 h-6" />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Centered Middle Section: Title, Trainee Information Matrix & Shift Intervals */}
+            <div className="flex-1 flex flex-col justify-center my-auto py-4 sm:py-6 space-y-4 sm:space-y-5">
               {/* Main Report Title Banner */}
-              <div className="text-center py-4 space-y-1.5">
+              <div className="text-center py-2 space-y-1.5">
                 <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-[11px] font-black bg-accent text-white shadow-2xs">
                   <span>{currentReport.periodCoverage}</span>
                 </div>
@@ -1439,8 +1440,8 @@ export const PeriodicTab: React.FC = () => {
               </div>
             </div>
 
-            {/* Academic Page 1 Footer */}
-            <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-[10px] text-sub font-bold">
+            {/* Academic Page 1 Footer - Pinned to Bottom */}
+            <div className="shrink-0 mt-auto pt-3 border-t border-line flex items-center justify-between text-[10px] text-sub font-bold">
               <span>
                 {isReportAr
                   ? 'المملكة العربية السعودية — تقرير التدريب التعاوني (خدمات الألياف الضوئية FTTH)'
@@ -1455,49 +1456,67 @@ export const PeriodicTab: React.FC = () => {
           {/* ══════════════════════════════════════════════════════════════
               FULL REPORT NARRATIVE: Complete Sections & Tables rendered
              ══════════════════════════════════════════════════════════════ */}
-          <section className="bg-card border border-line rounded-2xl p-6 sm:p-8 print:p-0 print:border-none print:shadow-none print:rounded-none shadow-sm space-y-6">
-            <AcademicMarkdownView content={currentReport.customNarrative} />
+          <section className="bg-card border border-line rounded-2xl p-6 sm:p-8 print:p-0 print:border-none print:shadow-none print:rounded-none shadow-sm">
+            <table className="w-full border-collapse border-none m-0 p-0 print-pages-table">
+              <thead className="hidden print:table-header-group">
+                <tr>
+                  <th style={{ height: '14mm', border: 'none', padding: 0 }} />
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="p-0 border-none print:px-[16mm] align-top space-y-6">
+                    <AcademicMarkdownView content={currentReport.customNarrative} />
 
-            {/* Official Supervisory Endorsement Block at the end of report */}
-            <div
-              id="periodic-endorsement-block"
-              className="mt-6 pt-4 border-t-2 border-line/80 p-4 bg-bg border border-line rounded-xl text-start print:border print:border-slate-300 print:rounded-xl print:bg-slate-50/50 print:p-4 shadow-2xs endorsement-box-print break-inside-avoid"
-            >
-              <div className="text-center font-black text-xs sm:text-sm text-ink mb-4 pb-1 border-b border-line/60">
-                {isReportAr ? 'مصادقة واعتماد التقرير الميداني الرسمي' : 'Official Supervisory Endorsements'}
-              </div>
-              <div className="grid grid-cols-3 gap-4 text-center text-xs">
-                {/* Trainee Signature */}
-                <div className="space-y-1">
-                  <div className="font-bold text-sub text-[11px]">
-                    {isReportAr ? 'توقيع المتدرب' : 'Trainee Signature'}
-                  </div>
-                  {/* Student Name preserved in Arabic */}
-                  <div className="font-black text-ink">{normalizeStudentName(profile.studentName) || '—'}</div>
-                  <div className="h-10 border-b border-dashed border-line/80 print:h-8" />
-                </div>
+                    {/* Official Supervisory Endorsement Block at the end of report */}
+                    <div
+                      id="periodic-endorsement-block"
+                      className="mt-6 pt-4 border-t-2 border-line/80 p-4 bg-bg border border-line rounded-xl text-start print:border print:border-slate-300 print:rounded-xl print:bg-slate-50/50 print:p-4 shadow-2xs endorsement-box-print break-inside-avoid"
+                    >
+                      <div className="text-center font-black text-xs sm:text-sm text-ink mb-4 pb-1 border-b border-line/60">
+                        {isReportAr ? 'مصادقة واعتماد التقرير الميداني الرسمي' : 'Official Supervisory Endorsements'}
+                      </div>
+                      <div className="grid grid-cols-3 gap-4 text-center text-xs">
+                        {/* Trainee Signature */}
+                        <div className="space-y-1">
+                          <div className="font-bold text-sub text-[11px]">
+                            {isReportAr ? 'توقيع المتدرب' : 'Trainee Signature'}
+                          </div>
+                          {/* Student Name preserved in Arabic */}
+                          <div className="font-black text-ink">{normalizeStudentName(profile.studentName) || '—'}</div>
+                          <div className="h-10 border-b border-dashed border-line/80 print:h-8" />
+                        </div>
 
-                {/* Field Supervisor */}
-                <div className="space-y-1">
-                  <div className="font-bold text-sub text-[11px]">
-                    {isReportAr ? 'المشرف الميداني (جهة التدريب)' : 'Field Supervisor'}
-                  </div>
-                  {/* Field Supervisor Name preserved in Arabic */}
-                  <div className="font-black text-ink">{profile.responsibleName || '—'}</div>
-                  <div className="h-10 border-b border-dashed border-line/80 print:h-8" />
-                </div>
+                        {/* Field Supervisor */}
+                        <div className="space-y-1">
+                          <div className="font-bold text-sub text-[11px]">
+                            {isReportAr ? 'المشرف الميداني (جهة التدريب)' : 'Field Supervisor'}
+                          </div>
+                          {/* Field Supervisor Name preserved in Arabic */}
+                          <div className="font-black text-ink">{profile.responsibleName || '—'}</div>
+                          <div className="h-10 border-b border-dashed border-line/80 print:h-8" />
+                        </div>
 
-                {/* Academic Supervisor */}
-                <div className="space-y-1">
-                  <div className="font-bold text-sub text-[11px]">
-                    {isReportAr ? 'مشرف التدريب (الجامعة)' : 'Academic Supervisor'}
-                  </div>
-                  {/* Academic Supervisor Name preserved in Arabic */}
-                  <div className="font-black text-ink">{profile.supervisorName || '—'}</div>
-                  <div className="h-10 border-b border-dashed border-line/80 print:h-8" />
-                </div>
-              </div>
-            </div>
+                        {/* Academic Supervisor */}
+                        <div className="space-y-1">
+                          <div className="font-bold text-sub text-[11px]">
+                            {isReportAr ? 'مشرف التدريب (الجامعة)' : 'Academic Supervisor'}
+                          </div>
+                          {/* Academic Supervisor Name preserved in Arabic */}
+                          <div className="font-black text-ink">{profile.supervisorName || '—'}</div>
+                          <div className="h-10 border-b border-dashed border-line/80 print:h-8" />
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+              <tfoot className="hidden print:table-footer-group">
+                <tr>
+                  <th style={{ height: '14mm', border: 'none', padding: 0 }} />
+                </tr>
+              </tfoot>
+            </table>
           </section>
 
         </div>
