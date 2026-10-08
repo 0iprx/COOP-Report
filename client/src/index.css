@@ -363,7 +363,7 @@ html, body {
 @media print {
   @page {
     size: A4 portrait;
-    margin: 12mm 15mm 12mm 15mm !important;
+    margin: 0 !important;
   }
 
   *, *::before, *::after {
@@ -443,10 +443,12 @@ html, body {
     box-sizing: border-box !important;
     width: 100% !important;
     max-width: 100% !important;
-    min-height: auto !important;
+    min-height: 265mm !important;
+    max-height: 272mm !important;
     display: flex !important;
     flex-direction: column !important;
-    padding: 5mm 0 6mm 0 !important;
+    justify-content: space-between !important;
+    padding: 2mm 0 4mm 0 !important;
     margin: 0 !important;
     border: none !important;
     border-radius: 0 !important;
@@ -553,11 +555,12 @@ html, body {
   #report-paper-view,
   #weekly-paper-view,
   #periodic-paper-view {
-    width: 100% !important;
-    max-width: 100% !important;
+    box-sizing: border-box !important;
+    width: 210mm !important;
+    max-width: 210mm !important;
     min-width: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
+    margin: 0 auto !important;
+    padding: 12mm 15mm 12mm 15mm !important;
     border: none !important;
     box-shadow: none !important;
     background: #ffffff !important;

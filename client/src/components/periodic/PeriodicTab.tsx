@@ -973,7 +973,14 @@ export const PeriodicTab: React.FC = () => {
 
   // Print PDF
   const handlePrintPDF = () => {
-    window.print();
+    setSaveToast(
+      isReportAr
+        ? '💡 في نافذة الطباعة: اختر A4 وتأكد من إلغاء خيار (Headers and footers / الرؤوس والتذييلات) لطباعة نظيفة بدون روابط أو أرقام افتراضية'
+        : '💡 In print dialog: choose A4 and uncheck (Headers and footers) for clean output without URLs or browser page counts'
+    );
+    setTimeout(() => {
+      window.print();
+    }, 400);
   };
 
   return (
@@ -1185,14 +1192,17 @@ export const PeriodicTab: React.FC = () => {
         </details>
 
         {/* ── Printable Paper View: #periodic-paper-view ───────────── */}
-        <div id="periodic-paper-view" className="space-y-6">
+        <div
+          id="periodic-paper-view"
+          className="w-full max-w-[210mm] mx-auto bg-white dark:bg-card border border-line rounded-2xl p-6 sm:p-10 shadow-lg print:shadow-none print:border-none print:p-0 print:m-0 print:max-w-none print:w-full space-y-6"
+        >
 
           {/* ══════════════════════════════════════════════════════════════
               PAGE 1: Official Institutional Cover Page
              ══════════════════════════════════════════════════════════════ */}
           <section
             id="periodic-cover-page"
-            className="bg-card border border-line rounded-2xl p-6 sm:p-8 print:p-0 print:border-none print:shadow-none print:rounded-none min-h-[620px] print:min-h-[265mm] flex flex-col justify-between"
+            className="bg-card border border-line rounded-2xl p-6 sm:p-8 print:p-0 print:border-none print:shadow-none print:rounded-none flex flex-col justify-between"
           >
             <div>
               {/* Header: Kingdom Header & Dual Logos */}
