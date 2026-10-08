@@ -5,7 +5,7 @@ import {
   Printer,
   Plus,
   Trash2,
-  Save,
+  RotateCcw,
   CheckCircle,
   Building,
   GraduationCap,
@@ -15,9 +15,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { api } from '../../services/api';
-import { periodicReportsService } from '../../services/periodicReportsService';
 import {
-  SavedPeriodicReport,
   PeriodicShiftInterval,
   FinalReportData,
   formatDateArabic,
@@ -40,6 +38,33 @@ const formatTimeString = (time: string, isAr: boolean): string => {
   return `${h}:${m} ${period}`;
 };
 
+interface FreshPeriodicReport {
+  title: string;
+  department: string;
+  roleAssignment: string;
+  intervals: PeriodicShiftInterval[];
+  customNarrative: string;
+}
+
+const STORAGE_KEY_FRESH = 'coop_fresh_standalone_periodic_report_v2';
+
+const createEmptyReport = (): FreshPeriodicReport => ({
+  title: '',
+  department: '',
+  roleAssignment: '',
+  intervals: [
+    {
+      id: `int_${Date.now()}_1`,
+      label: 'الفترة الأولى',
+      startDate: '',
+      endDate: '',
+      timeFrom: '',
+      timeTo: ''
+    }
+  ],
+  customNarrative: ''
+});
+
 export const PeriodicTab: React.FC = () => {
   const { t, isAr } = useLanguage();
   const queryClient = useQueryClient();
@@ -52,23 +77,32 @@ export const PeriodicTab: React.FC = () => {
   const institutionLogoInputRef = useRef<HTMLInputElement>(null);
   const companyLogoInputRef = useRef<HTMLInputElement>(null);
 
-  // Saved Periodic Reports State
-  const [savedPeriodicReports, setSavedPeriodicReports] = useState<SavedPeriodicReport[]>(() =>
-    periodicReportsService.getSavedReports()
-  );
-
-  const [activePeriodicReport, setActivePeriodicReport] = useState<SavedPeriodicReport>(() => {
-    const list = periodicReportsService.getSavedReports();
-    const activeId = periodicReportsService.getActiveReportId();
-    const found = list.find((r) => r.id === activeId);
-    if (found) return found;
-    if (list.length > 0) return list[0];
-    const def = periodicReportsService.createDefaultReport();
-    periodicReportsService.saveReport(def);
-    return def;
+  // Standalone fresh periodic report (Completely empty and isolated)
+  const [report, setReport] = useState<FreshPeriodicReport>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_FRESH);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && Array.isArray(parsed.intervals) && parsed.intervals.length > 0) {
+          return parsed;
+        }
+      }
+    } catch {
+      // ignore parse errors
+    }
+    return createEmptyReport();
   });
 
-  // Fetch final report to get the trainee profile and logos
+  // Auto-save draft so user doesn't lose current typing on page refresh
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_FRESH, JSON.stringify(report));
+    } catch {
+      // ignore
+    }
+  }, [report]);
+
+  // Fetch student profile for institutional cover page (university name, logos, student ID)
   const { data: finalReportData } = useQuery<FinalReportData>({
     queryKey: ['finalReport'],
     queryFn: async () => {
@@ -80,27 +114,13 @@ export const PeriodicTab: React.FC = () => {
   const profile = finalReportData?.profile || ({} as any);
   const entityName = profile?.entityAddress || (isAr ? 'جهة التدريب التعاوني' : 'Training Organization');
 
-  // Normalize intervals: ensure at least one interval exists
-  const activeIntervals: PeriodicShiftInterval[] = useMemo(() => {
-    if (activePeriodicReport.intervals && activePeriodicReport.intervals.length > 0) {
-      return activePeriodicReport.intervals;
-    }
-    const today = new Date().toISOString().split('T')[0];
-    return [
-      {
-        id: 'int_1',
-        label: isAr ? 'الفترة الأولى' : 'Interval 1',
-        startDate: activePeriodicReport.startDate || today,
-        endDate: activePeriodicReport.endDate || today,
-        timeFrom: '08:00',
-        timeTo: '14:00'
-      }
-    ];
-  }, [activePeriodicReport.intervals, activePeriodicReport.startDate, activePeriodicReport.endDate, isAr]);
-
   // Overall dates bounds for display
-  const overallStartDate = activeIntervals[0]?.startDate || activePeriodicReport.startDate || '';
-  const overallEndDate = activeIntervals[activeIntervals.length - 1]?.endDate || activePeriodicReport.endDate || '';
+  const validIntervals = useMemo(
+    () => report.intervals.filter((i) => i.startDate || i.endDate),
+    [report.intervals]
+  );
+  const overallStartDate = validIntervals[0]?.startDate || '';
+  const overallEndDate = validIntervals[validIntervals.length - 1]?.endDate || '';
 
   // Format overall period label
   const customPeriodLabel = useMemo(() => {
@@ -109,23 +129,41 @@ export const PeriodicTab: React.FC = () => {
         ? `من ${formatDateArabic(overallStartDate)} إلى ${formatDateArabic(overallEndDate)}`
         : `From ${formatDateEnglish(overallStartDate)} to ${formatDateEnglish(overallEndDate)}`;
     }
-    return isAr ? 'فترة التكليف والتدريب الميداني' : 'Field Assignment Period';
+    return isAr ? 'تقرير فترة التكليف والتدريب الميداني' : 'Field Assignment Period';
   }, [overallStartDate, overallEndDate, isAr]);
 
-  // Handlers for updating active report
-  const handleUpdateReport = (updates: Partial<SavedPeriodicReport>) => {
-    setActivePeriodicReport((prev) => {
-      const next = { ...prev, ...updates, updatedAt: new Date().toISOString() };
-      // Auto-persist to storage
-      periodicReportsService.saveReport(next);
-      return next;
-    });
+  // Clear / Start completely fresh empty report
+  const handleResetToEmpty = () => {
+    const hasData =
+      report.title.trim() ||
+      report.department.trim() ||
+      report.roleAssignment.trim() ||
+      report.customNarrative.trim() ||
+      report.intervals.some((i) => i.startDate || i.timeFrom);
+
+    if (hasData) {
+      if (
+        !window.confirm(
+          isAr
+            ? 'هل أنت متأكد من تفريغ جميع الحقول وبدء تقرير جديد فارغ؟'
+            : 'Are you sure you want to clear all fields and start a new empty report?'
+        )
+      ) {
+        return;
+      }
+    }
+
+    const empty = createEmptyReport();
+    setReport(empty);
+    localStorage.removeItem(STORAGE_KEY_FRESH);
+    setSaveToast(t('تم إفراغ الحقول وبدء تقرير جديد فارغ!', 'Started a clean empty report!'));
+    setTimeout(() => setSaveToast(''), 3000);
   };
 
-  // Add interval handler
+  // Add a new interval
   const handleAddInterval = () => {
-    const last = activeIntervals[activeIntervals.length - 1];
-    let nextStartDate = new Date().toISOString().split('T')[0];
+    const last = report.intervals[report.intervals.length - 1];
+    let nextStartDate = '';
     if (last?.endDate) {
       const d = new Date(last.endDate);
       d.setDate(d.getDate() + 1);
@@ -136,88 +174,34 @@ export const PeriodicTab: React.FC = () => {
 
     const newInt: PeriodicShiftInterval = {
       id: `int_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-      label: isAr ? `الفترة ${activeIntervals.length + 1}` : `Interval ${activeIntervals.length + 1}`,
+      label: isAr ? `الفترة ${report.intervals.length + 1}` : `Interval ${report.intervals.length + 1}`,
       startDate: nextStartDate,
       endDate: nextStartDate,
-      timeFrom: last?.timeFrom || '08:00',
-      timeTo: last?.timeTo || '14:00'
+      timeFrom: last?.timeFrom || '',
+      timeTo: last?.timeTo || ''
     };
 
-    const nextIntervals = [...activeIntervals, newInt];
-    handleUpdateReport({
-      intervals: nextIntervals,
-      startDate: nextIntervals[0].startDate,
-      endDate: nextIntervals[nextIntervals.length - 1].endDate
-    });
+    setReport((prev) => ({
+      ...prev,
+      intervals: [...prev.intervals, newInt]
+    }));
   };
 
-  // Remove interval handler
+  // Remove an interval
   const handleRemoveInterval = (id: string) => {
-    if (activeIntervals.length <= 1) return;
-    const nextIntervals = activeIntervals.filter((i) => i.id !== id);
-    handleUpdateReport({
-      intervals: nextIntervals,
-      startDate: nextIntervals[0]?.startDate,
-      endDate: nextIntervals[nextIntervals.length - 1]?.endDate
-    });
+    if (report.intervals.length <= 1) return;
+    setReport((prev) => ({
+      ...prev,
+      intervals: prev.intervals.filter((i) => i.id !== id)
+    }));
   };
 
-  // Update specific interval handler
+  // Update specific interval
   const handleUpdateInterval = (id: string, updates: Partial<PeriodicShiftInterval>) => {
-    const nextIntervals = activeIntervals.map((i) => {
-      if (i.id === id) {
-        return { ...i, ...updates };
-      }
-      return i;
-    });
-    handleUpdateReport({
-      intervals: nextIntervals,
-      startDate: nextIntervals[0]?.startDate,
-      endDate: nextIntervals[nextIntervals.length - 1]?.endDate
-    });
-  };
-
-  // Save Current Report
-  const handleSaveCurrentReport = () => {
-    const updated = periodicReportsService.saveReport(activePeriodicReport);
-    setSavedPeriodicReports(updated);
-    setSaveToast(t('تم حفظ التقرير الفتري بنجاح!', 'Periodic report saved successfully!'));
-    setTimeout(() => setSaveToast(''), 3000);
-  };
-
-  // Create New Report
-  const handleCreateNewReport = () => {
-    const today = new Date().toISOString().split('T')[0];
-    const newRep = periodicReportsService.createDefaultReport(today, today);
-    newRep.title = isAr ? 'تقرير فترة التكليف' : 'Field Assignment Report';
-    newRep.roleAssignment = isAr ? 'موظف رسمي في بيئة العمل' : 'Official Employee';
-    const updated = periodicReportsService.saveReport(newRep);
-    setSavedPeriodicReports(updated);
-    setActivePeriodicReport(newRep);
-    setSaveToast(t('تم إنشاء تقرير فتري جديد!', 'New periodic report created!'));
-    setTimeout(() => setSaveToast(''), 3000);
-  };
-
-  // Delete Current Report
-  const handleDeleteCurrentReport = () => {
-    if (savedPeriodicReports.length <= 1) {
-      alert(t('لا يمكن حذف التقرير الوحيد', 'Cannot delete the only report.'));
-      return;
-    }
-    if (!window.confirm(t('هل أنت متأكد من حذف هذا التقرير الفتري؟', 'Delete this report?'))) return;
-    const updated = periodicReportsService.deleteReport(activePeriodicReport.id);
-    setSavedPeriodicReports(updated);
-    if (updated.length > 0) {
-      setActivePeriodicReport(updated[0]);
-    }
-    setSaveToast(t('تم حذف التقرير بنجاح', 'Report deleted successfully'));
-    setTimeout(() => setSaveToast(''), 3000);
-  };
-
-  // Switch Report
-  const handleSelectReport = (report: SavedPeriodicReport) => {
-    setActivePeriodicReport(report);
-    periodicReportsService.setActiveReportId(report.id);
+    setReport((prev) => ({
+      ...prev,
+      intervals: prev.intervals.map((i) => (i.id === id ? { ...i, ...updates } : i))
+    }));
   };
 
   // Logo file uploads
@@ -266,74 +250,34 @@ export const PeriodicTab: React.FC = () => {
         </div>
       )}
 
-      {/* ── Main Clean Container ─────────────────────────────────── */}
+      {/* ── Main Container ─────────────────────────────────── */}
       <div className="bg-card border border-line rounded-2xl p-4 sm:p-6 shadow-sm print:border-none print:shadow-none print:p-0 print:m-0 print:rounded-none print:bg-transparent">
         
-        {/* ── Simple, Clean Top Header (Uncluttered, No extra buttons) ── */}
+        {/* ── Clean, Simple Top Header (No extra buttons, No old reports) ── */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-5 border-b border-line no-print">
           <div className="flex items-center gap-2.5">
             <span className="p-2 rounded-xl bg-accent-dim text-accent">
               <FileSpreadsheet className="w-5 h-5" />
             </span>
-            <h2 className="text-base font-extrabold text-ink">
-              {t('التقرير الفتري', 'Periodic Report')}
-            </h2>
+            <div>
+              <h2 className="text-base font-extrabold text-ink">
+                {t('التقرير الفتري', 'Periodic Report')}
+              </h2>
+            </div>
           </div>
 
-          {/* Clean Action Controls */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Select saved report if multiple exist */}
-            {savedPeriodicReports.length > 1 && (
-              <select
-                value={activePeriodicReport.id}
-                onChange={(e) => {
-                  const target = savedPeriodicReports.find((r) => r.id === e.target.value);
-                  if (target) handleSelectReport(target);
-                }}
-                className="px-3 py-1.5 bg-bg border border-line rounded-xl text-xs font-bold text-ink focus:outline-none focus:border-accent cursor-pointer shadow-2xs"
-                title={t('اختر تقريراً فتروياً محفوظاً', 'Select saved report')}
-              >
-                {savedPeriodicReports.map((r, rIdx) => (
-                  <option key={r.id} value={r.id}>
-                    {r.title || `تقرير ${rIdx + 1}`} ({r.startDate} إلى {r.endDate})
-                  </option>
-                ))}
-              </select>
-            )}
-
-            {/* Create New Report */}
+          {/* Action Buttons: Only Reset/New & Print/PDF */}
+          <div className="flex items-center gap-2">
+            {/* Start Fresh Empty Report */}
             <button
               type="button"
-              onClick={handleCreateNewReport}
-              className="px-3 py-1.5 rounded-xl bg-bg hover:bg-line border border-line text-xs font-bold text-ink flex items-center gap-1.5 transition-all shadow-2xs"
-              title={t('إنشاء تقرير فتري جديد', 'New Periodic Report')}
+              onClick={handleResetToEmpty}
+              className="px-3.5 py-1.5 rounded-xl bg-bg hover:bg-line border border-line text-xs font-bold text-ink flex items-center gap-1.5 transition-all shadow-2xs"
+              title={t('بدء تقرير جديد وتفريغ الحقول بالكامل', 'Start a fresh empty report')}
             >
-              <Plus className="w-3.5 h-3.5 text-accent" />
-              <span>{t('تقرير جديد', 'New Report')}</span>
+              <RotateCcw className="w-3.5 h-3.5 text-accent" />
+              <span>{t('تفريغ / تقرير جديد', 'Clear / New Report')}</span>
             </button>
-
-            {/* Save Report */}
-            <button
-              type="button"
-              onClick={handleSaveCurrentReport}
-              className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs"
-              title={t('حفظ التقرير', 'Save Report')}
-            >
-              <Save className="w-3.5 h-3.5" />
-              <span>{t('حفظ', 'Save')}</span>
-            </button>
-
-            {/* Delete Report (if > 1) */}
-            {savedPeriodicReports.length > 1 && (
-              <button
-                type="button"
-                onClick={handleDeleteCurrentReport}
-                className="p-2 rounded-xl bg-bg hover:bg-warn-bg text-sub hover:text-warn border border-line transition-all shadow-2xs"
-                title={t('حذف هذا التقرير', 'Delete Report')}
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            )}
 
             {/* Print / Save PDF */}
             <button
@@ -348,10 +292,10 @@ export const PeriodicTab: React.FC = () => {
           </div>
         </div>
 
-        {/* ── Editor Form (Hidden in Print: no-print) ──────────────── */}
+        {/* ── Fresh Input Form (Hidden in Print: no-print) ─────────── */}
         <div className="space-y-4 no-print mb-8">
           
-          {/* Card 1: General Info */}
+          {/* Card 1: General Info (Empty by default) */}
           <div className="p-4 bg-bg border border-line rounded-xl space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
               <div className="space-y-1">
@@ -360,9 +304,9 @@ export const PeriodicTab: React.FC = () => {
                 </label>
                 <input
                   type="text"
-                  value={activePeriodicReport.title}
-                  onChange={(e) => handleUpdateReport({ title: e.target.value })}
-                  placeholder="تقرير فترة التكليف بالقسم"
+                  value={report.title}
+                  onChange={(e) => setReport({ ...report, title: e.target.value })}
+                  placeholder={isAr ? 'مثال: تقرير فترة التكليف بالقسم' : 'e.g. Field Assignment Report'}
                   className="w-full px-3 py-1.5 bg-card border border-line rounded-lg font-bold text-ink focus:outline-none focus:border-accent"
                 />
               </div>
@@ -373,9 +317,9 @@ export const PeriodicTab: React.FC = () => {
                 </label>
                 <input
                   type="text"
-                  value={activePeriodicReport.department || ''}
-                  onChange={(e) => handleUpdateReport({ department: e.target.value })}
-                  placeholder="قسم الدعم الفني / الشبكات"
+                  value={report.department}
+                  onChange={(e) => setReport({ ...report, department: e.target.value })}
+                  placeholder={isAr ? 'مثال: قسم الدعم الفني / الشبكات' : 'e.g. Technical Support Dept'}
                   className="w-full px-3 py-1.5 bg-card border border-line rounded-lg font-bold text-ink focus:outline-none focus:border-accent"
                 />
               </div>
@@ -386,16 +330,16 @@ export const PeriodicTab: React.FC = () => {
                 </label>
                 <input
                   type="text"
-                  value={activePeriodicReport.roleAssignment || ''}
-                  onChange={(e) => handleUpdateReport({ roleAssignment: e.target.value })}
-                  placeholder="موظف رسمي في بيئة العمل"
+                  value={report.roleAssignment}
+                  onChange={(e) => setReport({ ...report, roleAssignment: e.target.value })}
+                  placeholder={isAr ? 'مثال: موظف رسمي في بيئة العمل' : 'e.g. Official Employee'}
                   className="w-full px-3 py-1.5 bg-card border border-line rounded-lg font-bold text-ink focus:outline-none focus:border-accent"
                 />
               </div>
             </div>
           </div>
 
-          {/* Card 2: Work Periods / Intervals (من يوم كذا إلى كذا ومن الساعة كم إلى كم) */}
+          {/* Card 2: Work Intervals & Shift Times */}
           <div className="p-4 bg-bg border border-line rounded-xl space-y-3">
             <div className="flex items-center justify-between pb-2 border-b border-line">
               <div className="flex items-center gap-2">
@@ -404,7 +348,7 @@ export const PeriodicTab: React.FC = () => {
                   {t('فترات ومواعيد الدوام والتكليف:', 'Scheduled Work Intervals & Shifts:')}
                 </h3>
                 <span className="text-[10px] text-sub font-bold">
-                  ({t('حدد الفترات: من يوم كذا إلى كذا ومن الساعة كم إلى كم', 'Specify dates and hours for each period')})
+                  ({t('من يوم كذا إلى كذا، ومن الساعة كم إلى كم', 'From date to date, and from time to time')})
                 </span>
               </div>
 
@@ -420,8 +364,12 @@ export const PeriodicTab: React.FC = () => {
 
             {/* Intervals List */}
             <div className="space-y-2.5">
-              {activeIntervals.map((interval, index) => {
-                const hours = calculateHoursBetween(interval.timeFrom || '08:00', interval.timeTo || '14:00');
+              {report.intervals.map((interval, index) => {
+                const hours =
+                  interval.timeFrom && interval.timeTo
+                    ? calculateHoursBetween(interval.timeFrom, interval.timeTo)
+                    : 0;
+
                 return (
                   <div
                     key={interval.id || index}
@@ -438,7 +386,7 @@ export const PeriodicTab: React.FC = () => {
                       />
                     </div>
 
-                    {/* From Date to Date */}
+                    {/* Dates: From & To */}
                     <div className="flex items-center gap-1.5 flex-1">
                       <div className="flex items-center gap-1">
                         <span className="text-[11px] font-bold text-sub">{t('من:', 'From:')}</span>
@@ -461,14 +409,14 @@ export const PeriodicTab: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Time From to Time To */}
+                    {/* Times: From & To */}
                     <div className="flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5 text-sub shrink-0" />
                       <div className="flex items-center gap-1">
                         <span className="text-[11px] font-bold text-sub">{t('الساعة:', 'Time:')}</span>
                         <input
                           type="time"
-                          value={interval.timeFrom || '08:00'}
+                          value={interval.timeFrom}
                           onChange={(e) => handleUpdateInterval(interval.id, { timeFrom: e.target.value })}
                           className="px-2 py-1 bg-bg border border-line rounded-lg font-bold text-ink text-xs"
                         />
@@ -476,19 +424,21 @@ export const PeriodicTab: React.FC = () => {
                       <span className="text-sub">-</span>
                       <input
                         type="time"
-                        value={interval.timeTo || '14:00'}
+                        value={interval.timeTo}
                         onChange={(e) => handleUpdateInterval(interval.id, { timeTo: e.target.value })}
                         className="px-2 py-1 bg-bg border border-line rounded-lg font-bold text-ink text-xs"
                       />
                     </div>
 
-                    {/* Hours Badge & Delete */}
+                    {/* Daily Hours & Remove */}
                     <div className="flex items-center gap-2 justify-end">
-                      <span className="text-[10px] font-bold px-2 py-1 rounded-md bg-accent-dim text-accent shrink-0">
-                        {hours} {isAr ? 'ساعات يومياً' : 'hrs/day'}
-                      </span>
+                      {hours > 0 && (
+                        <span className="text-[10px] font-bold px-2 py-1 rounded-md bg-accent-dim text-accent shrink-0">
+                          {hours} {isAr ? 'ساعات يومياً' : 'hrs/day'}
+                        </span>
+                      )}
 
-                      {activeIntervals.length > 1 && (
+                      {report.intervals.length > 1 && (
                         <button
                           type="button"
                           onClick={() => handleRemoveInterval(interval.id)}
@@ -513,18 +463,18 @@ export const PeriodicTab: React.FC = () => {
                 <span>{t('سرد وتفاصيل التقرير للفترة كاملة (وش سويت بالضبط بالفترة):', 'Comprehensive Period Report Narrative:')}</span>
               </label>
               <span className="text-[10px] text-sub font-bold">
-                {activePeriodicReport.customNarrative?.trim().length || 0} {isAr ? 'حرف' : 'chars'}
+                {report.customNarrative.trim().length} {isAr ? 'حرف' : 'chars'}
               </span>
             </div>
 
             <textarea
-              value={activePeriodicReport.customNarrative}
-              onChange={(e) => handleUpdateReport({ customNarrative: e.target.value })}
+              value={report.customNarrative}
+              onChange={(e) => setReport({ ...report, customNarrative: e.target.value })}
               rows={5}
               placeholder={
                 isAr
-                  ? `اكتب هنا سرد التقرير للفترة كاملة... مثلاً:\nخلال هذه الفترات من التكليف، تم العمل كموظف رسمي في قسم ... وتوليت المهام والمسؤوليات التالية:\n1. ...\n2. ...\nوقد تم إنجاز الأعمال التشغيلية وتطبيق المهارات المكتسبة بنجاح.`
-                  : `Write the comprehensive narrative for the entire period here... e.g.:\nDuring these periods, assigned as an official employee in the department, executing the following core responsibilities and tasks...`
+                  ? `اكتب هنا سرد وتفاصيل التقرير للفترة كاملة... مثلاً:\nخلال هذه الفترات، تم التكليف بالعمل كموظف رسمي في قسم ... وتوليت المهام والمسؤوليات التالية:\n1. ...\n2. ...\nوقد تم إنجاز الأعمال التشغيلية وتطبيق المهارات المكتسبة بنجاح.`
+                  : `Write your comprehensive narrative for the entire period here... e.g.:\nDuring these periods, assigned as an official employee in the department, executing the following responsibilities...`
               }
               className="w-full p-3.5 bg-card border border-line rounded-xl text-xs sm:text-sm text-ink leading-relaxed font-normal focus:outline-none focus:border-accent transition-colors resize-y shadow-inner"
             />
@@ -602,7 +552,7 @@ export const PeriodicTab: React.FC = () => {
                 <div className="text-left flex items-center gap-3">
                   <div className="text-right hidden sm:block">
                     <div className="text-[11px] font-black text-ink">{profile.entityAddress || entityName}</div>
-                    <div className="text-[10px] text-sub font-bold">{activePeriodicReport.department || (isAr ? 'الإدارة المعنية' : 'Department')}</div>
+                    <div className="text-[10px] text-sub font-bold">{report.department || (isAr ? 'الإدارة المعنية' : 'Department')}</div>
                   </div>
                   {profile.companyLogo ? (
                     <img
@@ -624,7 +574,7 @@ export const PeriodicTab: React.FC = () => {
                   <span>{customPeriodLabel}</span>
                 </div>
                 <h1 className="text-lg sm:text-xl font-black text-ink tracking-tight pt-1">
-                  {activePeriodicReport.title || (isAr ? 'تقرير التدريب الميداني للفترة المحددة' : 'Periodic Field Report')}
+                  {report.title || (isAr ? 'تقرير التدريب الميداني للفترة المحددة' : 'Periodic Field Report')}
                 </h1>
                 <p className="text-xs text-sub font-bold">
                   {isAr
@@ -653,11 +603,11 @@ export const PeriodicTab: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-between border-b border-line/60 pb-1">
                   <span className="font-bold text-sub">{isAr ? 'الإدارة / القسم الميداني:' : 'Field Department:'}</span>
-                  <span className="font-black text-accent">{activePeriodicReport.department || profile.entityAddress || '—'}</span>
+                  <span className="font-black text-accent">{report.department || profile.entityAddress || '—'}</span>
                 </div>
                 <div className="flex items-center justify-between border-b border-line/60 pb-1">
                   <span className="font-bold text-sub">{isAr ? 'الصفة ونطاق التكليف:' : 'Operational Role:'}</span>
-                  <span className="font-black text-ink">{activePeriodicReport.roleAssignment || (isAr ? 'موظف رسمي في بيئة العمل' : 'Official Employee')}</span>
+                  <span className="font-black text-ink">{report.roleAssignment || (isAr ? 'موظف رسمي في بيئة العمل' : 'Official Employee')}</span>
                 </div>
               </div>
 
@@ -671,7 +621,7 @@ export const PeriodicTab: React.FC = () => {
                     </span>
                   </div>
                   <span className="text-[10px] text-accent font-bold px-2 py-0.5 rounded-md bg-accent-dim">
-                    {activeIntervals.length} {isAr ? 'فترات محددة' : 'intervals'}
+                    {report.intervals.length} {isAr ? 'فترات محددة' : 'intervals'}
                   </span>
                 </div>
 
@@ -688,18 +638,30 @@ export const PeriodicTab: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-line/40">
-                      {activeIntervals.map((interval, iIdx) => {
-                        const h = calculateHoursBetween(interval.timeFrom || '08:00', interval.timeTo || '14:00');
+                      {report.intervals.map((interval, iIdx) => {
+                        const h =
+                          interval.timeFrom && interval.timeTo
+                            ? calculateHoursBetween(interval.timeFrom, interval.timeTo)
+                            : 0;
+
                         return (
                           <tr key={interval.id || iIdx} className="hover:bg-line/20">
                             <td className="py-2 px-2 font-bold text-sub">{iIdx + 1}</td>
                             <td className="py-2 px-2 font-black text-ink">{interval.label || `الفترة ${iIdx + 1}`}</td>
-                            <td className="py-2 px-2 font-bold text-ink">{isAr ? formatDateArabic(interval.startDate) : formatDateEnglish(interval.startDate)}</td>
-                            <td className="py-2 px-2 font-bold text-ink">{isAr ? formatDateArabic(interval.endDate) : formatDateEnglish(interval.endDate)}</td>
-                            <td className="py-2 px-2 font-bold text-sub">
-                              {formatTimeString(interval.timeFrom || '08:00', isAr)} - {formatTimeString(interval.timeTo || '14:00', isAr)}
+                            <td className="py-2 px-2 font-bold text-ink">
+                              {interval.startDate ? (isAr ? formatDateArabic(interval.startDate) : formatDateEnglish(interval.startDate)) : '—'}
                             </td>
-                            <td className="py-2 px-2 text-center font-black text-accent">{h} {isAr ? 'ساعات' : 'hrs'}</td>
+                            <td className="py-2 px-2 font-bold text-ink">
+                              {interval.endDate ? (isAr ? formatDateArabic(interval.endDate) : formatDateEnglish(interval.endDate)) : '—'}
+                            </td>
+                            <td className="py-2 px-2 font-bold text-sub">
+                              {interval.timeFrom && interval.timeTo
+                                ? `${formatTimeString(interval.timeFrom, isAr)} - ${formatTimeString(interval.timeTo, isAr)}`
+                                : '—'}
+                            </td>
+                            <td className="py-2 px-2 text-center font-black text-accent">
+                              {h > 0 ? `${h} ${isAr ? 'ساعات' : 'hrs'}` : '—'}
+                            </td>
                           </tr>
                         );
                       })}
@@ -723,11 +685,11 @@ export const PeriodicTab: React.FC = () => {
                 </div>
 
                 <div className="text-xs font-medium text-ink leading-relaxed whitespace-pre-line text-justify print:text-[10pt] print:leading-[1.75]">
-                  {activePeriodicReport.customNarrative?.trim() || (
+                  {report.customNarrative?.trim() || (
                     <span className="text-sub italic">
                       {isAr
-                        ? `خلال هذه الفترات الممتدة من ${customPeriodLabel}، تم التكليف بالعمل الميداني كـ ${activePeriodicReport.roleAssignment || 'موظف رسمي في بيئة العمل'} في ${activePeriodicReport.department || entityName}، حيث تم إنجاز حزمة من المهام التشغيلية والهندسية المتخصصة وحضور اللقاءات التنسيقية وتطبيق أعلى معايير الجودة والسلامة المهنية.`
-                        : `During these periods (${customPeriodLabel}), assigned as ${activePeriodicReport.roleAssignment || 'Official Employee'} at ${activePeriodicReport.department || entityName}, successfully accomplishing operational and technical tasks.`}
+                        ? `(لم يتم تدوين السرد بعد. يمكنك كتابة ما قمت به خلال الفترة في صندوق السرد بالأعلى ليظهر هنا رسمياً).`
+                        : `(No narrative logged yet. Write your period narrative in the editor above to appear here).`}
                     </span>
                   )}
                 </div>
