@@ -20,8 +20,15 @@ export function resolveDatabaseUrl(): string {
     return `mysql://${encodedUser}:${encodedPassword}@${host}:${port}/${database}`;
   }
 
-  // Fallback to DATABASE_URL
-  let rawUrl = (process.env.DATABASE_URL || '').trim().replace(/^["']|["']$/g, '');
+  // Fallback to DATABASE_URL or cloud provider variables (MYSQL_URL, etc.)
+  let rawUrl = (
+    process.env.DATABASE_URL ||
+    process.env.MYSQL_URL ||
+    process.env.MYSQL_PUBLIC_URL ||
+    process.env.DATABASE_PRIVATE_URL ||
+    process.env.DATABASE_PUBLIC_URL ||
+    ''
+  ).trim().replace(/^["']|["']$/g, '');
   if (rawUrl.includes('@localhost:3306')) {
     rawUrl = rawUrl.replace('@localhost:3306', '@127.0.0.1:3306');
   }
