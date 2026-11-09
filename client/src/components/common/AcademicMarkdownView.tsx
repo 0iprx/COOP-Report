@@ -5,6 +5,7 @@ interface AcademicMarkdownViewProps {
   content: string;
   className?: string;
   isReportAr?: boolean;
+  period?: 'p1' | 'p2';
 }
 
 // Inline formatting helper for **bold** text
@@ -23,7 +24,12 @@ const formatInlineText = (text: string): React.ReactNode => {
   });
 };
 
-export const AcademicMarkdownView: React.FC<AcademicMarkdownViewProps> = ({ content, className = '', isReportAr = true }) => {
+export const AcademicMarkdownView: React.FC<AcademicMarkdownViewProps> = ({
+  content,
+  className = '',
+  isReportAr = true,
+  period = 'p1'
+}) => {
   if (!content) return null;
 
   const lines = content.split('\n');
@@ -49,16 +55,19 @@ export const AcademicMarkdownView: React.FC<AcademicMarkdownViewProps> = ({ cont
       continue;
     }
 
-    // 2.1 Analytics Charts Component Token
+    // 2.1 Analytics Charts Component Token (P1 or P2)
     if (
       line === '<!-- analytics-charts -->' ||
       line === '[analytics-charts]' ||
       line === '===analytics-charts===' ||
-      line === '<!-- analytics -->'
+      line === '<!-- analytics -->' ||
+      line === '<!-- analytics-charts-p2 -->' ||
+      line === '<!-- analytics-charts-p1 -->'
     ) {
+      const chartPeriod = line.includes('p2') ? 'p2' : (period || 'p1');
       elements.push(
         <div key={`charts-${i}`} className="w-full my-2 print:my-0">
-          <PeriodicAnalyticsCharts isReportAr={isReportAr} />
+          <PeriodicAnalyticsCharts isReportAr={isReportAr} period={chartPeriod} />
         </div>
       );
       i++;

@@ -22,23 +22,19 @@ import {
 } from '@coop/shared';
 import { AcademicMarkdownView } from '../common/AcademicMarkdownView';
 import { PeriodicAnalyticsCharts } from './PeriodicAnalyticsCharts';
-import { getFTTHDailyEntries } from '../../services/ftthDailyEntriesData';
-
-interface FreshPeriodicReport {
-  title: string;
-  majorField: string;
-  department: string;
-  roleAssignment: string;
-  periodCoverage: string;
-  stageOneHours: string;
-  stageTwoHours: string;
-  intervals: PeriodicShiftInterval[];
-  customNarrative: string;
-}
+import { getFTTHDailyEntries, getPeriod2DailyEntries } from '../../services/ftthDailyEntriesData';
+import {
+  DEFAULT_REPORT_P2_AR,
+  DEFAULT_REPORT_P2_EN,
+  FreshPeriodicReport
+} from './periodicP2Templates';
 
 const STORAGE_KEY_FTTH_AR = 'coop_ftth_periodic_report_v9_ar';
 const STORAGE_KEY_FTTH_EN = 'coop_ftth_periodic_report_v9_en';
+const STORAGE_KEY_P2_AR = 'coop_periodic_report_p2_v1_ar';
+const STORAGE_KEY_P2_EN = 'coop_periodic_report_p2_v1_en';
 const STORAGE_KEY_REPORT_LANG = 'coop_ftth_report_lang_preference_v1';
+const STORAGE_KEY_SELECTED_PERIOD = 'coop_selected_periodic_report_v1';
 
 // ── Master Arabic Report ──────────────────────────────────────────────
 const DEFAULT_FTTH_REPORT_AR: FreshPeriodicReport = {
@@ -883,8 +879,13 @@ export const PeriodicTab: React.FC = () => {
 
   const isReportAr = reportLang === 'ar';
 
-  // Arabic report state
-  const [reportAr, setReportAr] = useState<FreshPeriodicReport>(() => {
+  // Active Periodic Period: 'p1' | 'p2' (defaults to p2 so new period is instantly active!)
+  const [selectedPeriod, setSelectedPeriod] = useState<'p1' | 'p2'>(() => {
+    return (localStorage.getItem(STORAGE_KEY_SELECTED_PERIOD) as 'p1' | 'p2') || 'p2';
+  });
+
+  // Arabic report state for Period 1
+  const [reportP1Ar, setReportP1Ar] = useState<FreshPeriodicReport>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_FTTH_AR);
       if (saved) {
@@ -895,8 +896,8 @@ export const PeriodicTab: React.FC = () => {
     return DEFAULT_FTTH_REPORT_AR;
   });
 
-  // English report state
-  const [reportEn, setReportEn] = useState<FreshPeriodicReport>(() => {
+  // English report state for Period 1
+  const [reportP1En, setReportP1En] = useState<FreshPeriodicReport>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_FTTH_EN);
       if (saved) {
@@ -907,27 +908,79 @@ export const PeriodicTab: React.FC = () => {
     return DEFAULT_FTTH_REPORT_EN;
   });
 
-  // Currently viewed report based on reportLang
-  const currentReport = isReportAr ? reportAr : reportEn;
-  const setCurrentReport = isReportAr ? setReportAr : setReportEn;
+  // Arabic report state for Period 2
+  const [reportP2Ar, setReportP2Ar] = useState<FreshPeriodicReport>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_P2_AR);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.customNarrative) return parsed;
+      }
+    } catch {}
+    return DEFAULT_REPORT_P2_AR;
+  });
 
-  // Persist language preference
+  // English report state for Period 2
+  const [reportP2En, setReportP2En] = useState<FreshPeriodicReport>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_P2_EN);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.customNarrative) return parsed;
+      }
+    } catch {}
+    return DEFAULT_REPORT_P2_EN;
+  });
+
+  // Currently viewed report based on selectedPeriod & reportLang
+  const currentReport = selectedPeriod === 'p1'
+    ? (isReportAr ? reportP1Ar : reportP1En)
+    : (isReportAr ? reportP2Ar : reportP2En);
+
+  const setCurrentReport = (updater: React.SetStateAction<FreshPeriodicReport>) => {
+    if (selectedPeriod === 'p1') {
+      if (isReportAr) setReportP1Ar(updater);
+      else setReportP1En(updater);
+    } else {
+      if (isReportAr) setReportP2Ar(updater);
+      else setReportP2En(updater);
+    }
+  };
+
+  // Persist language preference and selected period
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY_REPORT_LANG, reportLang);
   }, [reportLang]);
 
-  // Persist drafts locally
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY_SELECTED_PERIOD, selectedPeriod);
+  }, [selectedPeriod]);
+
+  // Persist drafts locally for P1
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY_FTTH_AR, JSON.stringify(reportAr));
+      localStorage.setItem(STORAGE_KEY_FTTH_AR, JSON.stringify(reportP1Ar));
     } catch {}
-  }, [reportAr]);
+  }, [reportP1Ar]);
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY_FTTH_EN, JSON.stringify(reportEn));
+      localStorage.setItem(STORAGE_KEY_FTTH_EN, JSON.stringify(reportP1En));
     } catch {}
-  }, [reportEn]);
+  }, [reportP1En]);
+
+  // Persist drafts locally for P2
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_P2_AR, JSON.stringify(reportP2Ar));
+    } catch {}
+  }, [reportP2Ar]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_P2_EN, JSON.stringify(reportP2En));
+    } catch {}
+  }, [reportP2En]);
 
   // Fetch student profile for institutional cover page (university name, logos, student ID)
   const { data: finalReportData } = useQuery<FinalReportData>({
@@ -941,24 +994,39 @@ export const PeriodicTab: React.FC = () => {
   const profile = finalReportData?.profile || ({} as any);
   const entityName = profile?.entityAddress || (isReportAr ? 'جهة التدريب التعاوني' : 'Training Organization');
 
-  // Clear / Reset to default FTTH report for the active language
+  // Clear / Reset to default report for the active language & selected period
   const handleResetToDefault = () => {
+    const isP1 = selectedPeriod === 'p1';
+    const periodName = isP1
+      ? (isReportAr ? 'التقرير الفتري الأول (FTTH)' : 'Periodic Report 1 (FTTH)')
+      : (isReportAr ? 'التقرير الفتري الثاني (FTTH & Transport)' : 'Periodic Report 2 (FTTH & Transport)');
+
     if (
       window.confirm(
         isReportAr
-          ? 'هل تريد استعادة نموذج تقرير FTTH وتحديث الحقول بكامل البيانات الجديدة؟'
-          : 'Restore default English FTTH report template with full data?'
+          ? `هل تريد استعادة نموذج ${periodName} وتحديث الحقول بالبيانات الافتراضية؟`
+          : `Restore default ${periodName} template with full data?`
       )
     ) {
-      if (isReportAr) {
-        setReportAr(DEFAULT_FTTH_REPORT_AR);
-        localStorage.removeItem(STORAGE_KEY_FTTH_AR);
+      if (isP1) {
+        if (isReportAr) {
+          setReportP1Ar(DEFAULT_FTTH_REPORT_AR);
+          localStorage.removeItem(STORAGE_KEY_FTTH_AR);
+        } else {
+          setReportP1En(DEFAULT_FTTH_REPORT_EN);
+          localStorage.removeItem(STORAGE_KEY_FTTH_EN);
+        }
       } else {
-        setReportEn(DEFAULT_FTTH_REPORT_EN);
-        localStorage.removeItem(STORAGE_KEY_FTTH_EN);
+        if (isReportAr) {
+          setReportP2Ar(DEFAULT_REPORT_P2_AR);
+          localStorage.removeItem(STORAGE_KEY_P2_AR);
+        } else {
+          setReportP2En(DEFAULT_REPORT_P2_EN);
+          localStorage.removeItem(STORAGE_KEY_P2_EN);
+        }
       }
       setSaveToast(
-        isReportAr ? 'تم استعادة تقرير FTTH المحدّث بنجاح!' : 'FTTH English report restored successfully!'
+        isReportAr ? `تم استعادة ${periodName} المحدّث بنجاح!` : `${periodName} restored successfully!`
       );
       setTimeout(() => setSaveToast(''), 3000);
     }
@@ -990,14 +1058,15 @@ export const PeriodicTab: React.FC = () => {
     }
   };
 
-  // Import 12 FTTH Daily Entries to Daily Log Tab
+  // Import Daily Entries for the selected period to Daily Log Tab (STRICTLY NON-DESTRUCTIVE)
   const [importingDaily, setImportingDaily] = useState<boolean>(false);
 
   const handleImportToDailyReports = async () => {
     if (importingDaily) return;
     setImportingDaily(true);
     try {
-      const entriesToImport = getFTTHDailyEntries();
+      const isP1 = selectedPeriod === 'p1';
+      const entriesToImport = isP1 ? getFTTHDailyEntries() : getPeriod2DailyEntries();
       const existingRes = await api.get('/entries');
       const existingList: any[] = existingRes.data?.entries || [];
       const existingKeys = new Set(existingList.map((e: any) => `${e.entryDate}_${e.title}`));
@@ -1017,13 +1086,13 @@ export const PeriodicTab: React.FC = () => {
       if (createdCount > 0) {
         setSaveToast(
           isReportAr
-            ? `✅ تم إدراج ${createdCount} تقرير يومي بنجاح في قسم التقارير اليومية!`
-            : `✅ Successfully imported ${createdCount} daily reports into Daily Logs!`
+            ? `✅ تم إدراج ${createdCount} تقرير يومي بنجاح في قسم التقارير اليومية دون حذف أي تقرير سابق!`
+            : `✅ Successfully imported ${createdCount} daily reports into Daily Logs without deleting existing entries!`
         );
       } else {
         setSaveToast(
           isReportAr
-            ? 'التقارير اليومية لجميع أيام الفترة موجودة بالفعل ومسجلة مسبقاً!'
+            ? 'التقارير اليومية لجميع أيام هذه الفترة موجودة بالفعل ومسجلة مسبقاً!'
             : 'All daily reports for this period already exist in your log!'
         );
       }
@@ -1066,6 +1135,48 @@ export const PeriodicTab: React.FC = () => {
       {/* ── Main Container ─────────────────────────────────── */}
       <div className="bg-card border border-line rounded-2xl p-4 sm:p-6 shadow-sm print:border-none print:shadow-none print:p-0 print:m-0 print:rounded-none print:bg-transparent">
         
+        {/* ── Period Selector Navigation (الفترة الأولى / الفترة الثانية) ── */}
+        <div className="no-print mb-4 pb-3 border-b border-line flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="flex items-center gap-1.5 text-xs font-black text-ink">
+            <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+            <span>{isReportAr ? 'اختر التقرير الفتري المطلوب:' : 'Select Target Periodic Report:'}</span>
+          </div>
+
+          <div className="inline-flex p-1 bg-bg border border-line rounded-xl text-xs font-bold shadow-2xs gap-1">
+            <button
+              type="button"
+              onClick={() => setSelectedPeriod('p1')}
+              className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-2 ${
+                selectedPeriod === 'p1'
+                  ? 'bg-ink text-white font-black shadow-xs'
+                  : 'text-sub hover:text-ink hover:bg-line/60'
+              }`}
+              title={isReportAr ? 'عرض وطباعة التقرير الفتري الأول' : 'View Period 1 Report'}
+            >
+              <span>{isReportAr ? 'التقرير الفتري الأول (20/9 – 7/10)' : 'Periodic Report 1 (Sep 20 – Oct 07)'}</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-accent/20 text-accent font-black">
+                {isReportAr ? '244 تذكرة' : '244'}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedPeriod('p2')}
+              className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-2 ${
+                selectedPeriod === 'p2'
+                  ? 'bg-accent text-white font-black shadow-xs'
+                  : 'text-sub hover:text-ink hover:bg-line/60'
+              }`}
+              title={isReportAr ? 'عرض وطباعة التقرير الفتري الثاني المحدث' : 'View Period 2 Report'}
+            >
+              <span>{isReportAr ? 'التقرير الفتري الثاني (11/10 – 5/11)' : 'Periodic Report 2 (Oct 11 – Nov 05)'}</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 font-black">
+                {isReportAr ? '482 تذكرة ومهمة' : '482'}
+              </span>
+            </button>
+          </div>
+        </div>
+
         {/* ── Clean Top Header with Language Switcher & Print ── */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-5 border-b border-line no-print">
           <div className="flex items-center gap-2.5">
@@ -1074,12 +1185,10 @@ export const PeriodicTab: React.FC = () => {
             </span>
             <div>
               <h2 className="text-base font-extrabold text-ink">
-                {isReportAr
-                  ? 'تقرير التدريب التعاوني (قسم خدمات الألياف الضوئية FTTH)'
-                  : 'Co-op Training Report (FTTH Operations)'}
+                {currentReport.title}
               </h2>
               <p className="text-[11px] text-sub font-bold">
-                {currentReport.periodCoverage} • {currentReport.roleAssignment} • {isReportAr ? 'إجمالي 244 تذكرة' : '244 Total Tickets'}
+                {currentReport.periodCoverage} • {currentReport.roleAssignment} • {selectedPeriod === 'p2' ? (isReportAr ? 'إجمالي 482 تذكرة ومهمة' : '482 Total Tasks') : (isReportAr ? 'إجمالي 244 تذكرة' : '244 Total Tickets')}
               </p>
             </div>
           </div>
@@ -1118,7 +1227,7 @@ export const PeriodicTab: React.FC = () => {
               type="button"
               onClick={handleResetToDefault}
               className="px-3 py-1.5 rounded-xl bg-bg hover:bg-line border border-line text-xs font-bold text-ink flex items-center gap-1.5 transition-all shadow-2xs"
-              title={isReportAr ? 'استعادة النموذج الافتراضي' : 'Reset to Default'}
+              title={isReportAr ? 'استعادة النموذج الافتراضي للفترة المحددة' : 'Reset Selected Period Template'}
             >
               <RotateCcw className="w-3.5 h-3.5 text-accent" />
               <span>{isReportAr ? 'استعادة' : 'Reset'}</span>
@@ -1129,13 +1238,21 @@ export const PeriodicTab: React.FC = () => {
               onClick={handleImportToDailyReports}
               disabled={importingDaily}
               className="px-3.5 py-1.5 rounded-xl bg-accent hover:bg-accent/90 text-xs font-black text-white flex items-center gap-1.5 transition-all shadow-xs disabled:opacity-50"
-              title={isReportAr ? 'إضافة الـ 12 يوماً كتقارير جديدة في قسم التقارير اليومية (دون حذف التقارير السابقة)' : 'Add 12 days to Daily Logs without deleting existing'}
+              title={
+                isReportAr
+                  ? (selectedPeriod === 'p2'
+                      ? 'إضافة الـ 14 يوماً للفترة الثانية كتقارير جديدة في قسم التقارير اليومية دون حذف أي تقرير سابق'
+                      : 'إضافة الـ 12 يوماً للفترة الأولى كتقارير جديدة في قسم التقارير اليومية دون حذف أي تقرير سابق')
+                  : 'Add period days to Daily Logs without deleting existing'
+              }
             >
               <Calendar className="w-3.5 h-3.5" />
               <span>
                 {importingDaily
                   ? (isReportAr ? 'جاري الإضافة...' : 'Adding...')
-                  : (isReportAr ? '+ إضافة إلى التقارير اليومية' : '+ Add to Daily Logs')}
+                  : (isReportAr
+                      ? (selectedPeriod === 'p2' ? '+ إضافة يوميات الفترة 2 (14 يوماً)' : '+ إضافة يوميات الفترة 1 (12 يوماً)')
+                      : '+ Add to Daily Logs')}
               </span>
             </button>
 
@@ -1386,7 +1503,9 @@ export const PeriodicTab: React.FC = () => {
               <div className={`flex items-center gap-3 ${isReportAr ? 'text-left' : 'text-right'}`}>
                 <div className={`hidden sm:block ${isReportAr ? 'text-right' : 'text-right'}`}>
                   <div className="text-[11px] font-black text-ink">{profile.entityAddress || entityName}</div>
-                  <div className="text-[10px] text-sub font-bold">FTTH Operations</div>
+                  <div className="text-[10px] text-sub font-bold">
+                    {selectedPeriod === 'p2' ? 'FTTH & Transport Operations' : 'FTTH Operations'}
+                  </div>
                 </div>
                 {profile.companyLogo ? (
                   <img
@@ -1509,10 +1628,14 @@ export const PeriodicTab: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                      {isReportAr ? '244 تذكرة فريدة معالجة' : '244 Handled Tickets'}
+                      {selectedPeriod === 'p2'
+                        ? (isReportAr ? '482 تذكرة وبلاغ تشغيلي' : '482 Handled Tickets')
+                        : (isReportAr ? '244 تذكرة فريدة معالجة' : '244 Handled Tickets')}
                     </span>
                     <span className="text-[10px] text-accent font-black">
-                      {isReportAr ? '91 - 113 ساعة معتمدة' : '~91-113 Hours'}
+                      {selectedPeriod === 'p2'
+                        ? (isReportAr ? '128 - 146 ساعة معتمدة' : '~128-146 Hours')
+                        : (isReportAr ? '91 - 113 ساعة معتمدة' : '~91-113 Hours')}
                     </span>
                   </div>
                 </div>
@@ -1535,8 +1658,12 @@ export const PeriodicTab: React.FC = () => {
             <div className="shrink-0 mt-auto pt-3 border-t border-line flex items-center justify-between text-[10px] text-sub font-bold">
               <span>
                 {isReportAr
-                  ? 'المملكة العربية السعودية — تقرير التدريب التعاوني (خدمات الألياف الضوئية FTTH)'
-                  : 'KSA — Cooperative Training Report (FTTH Operations)'}
+                  ? (selectedPeriod === 'p2'
+                      ? 'المملكة العربية السعودية — تقرير التدريب التعاوني الفتري الثاني (عمليات FTTH وشبكات النقل التراسلي)'
+                      : 'المملكة العربية السعودية — تقرير التدريب التعاوني (خدمات الألياف الضوئية FTTH)')
+                  : (selectedPeriod === 'p2'
+                      ? 'KSA — Second Periodic Cooperative Training Report (FTTH Operations & Transport Networks)'
+                      : 'KSA — Cooperative Training Report (FTTH Operations)')}
               </span>
               <span className="font-black text-accent">
                 {isReportAr ? 'الغلاف الرسمي المعتمد' : 'Official Cover Page'}
@@ -1560,11 +1687,14 @@ export const PeriodicTab: React.FC = () => {
                     <AcademicMarkdownView
                       content={currentReport.customNarrative}
                       isReportAr={isReportAr}
+                      period={selectedPeriod}
                     />
 
                     {/* Executive Vector Analytics fallback if token not present in customized narrative */}
-                    {!currentReport.customNarrative?.includes('<!-- analytics-charts -->') && (
-                      <PeriodicAnalyticsCharts isReportAr={isReportAr} />
+                    {!currentReport.customNarrative?.includes('<!-- analytics-charts -->') &&
+                     !currentReport.customNarrative?.includes('<!-- analytics-charts-p1 -->') &&
+                     !currentReport.customNarrative?.includes('<!-- analytics-charts-p2 -->') && (
+                      <PeriodicAnalyticsCharts isReportAr={isReportAr} period={selectedPeriod} />
                     )}
 
                     {/* Official Supervisory Endorsement Block at the end of report */}
