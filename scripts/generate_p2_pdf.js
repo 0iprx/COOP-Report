@@ -429,8 +429,8 @@ const htmlContent = `<!DOCTYPE html>
     <!-- Centered Middle Section -->
     <div style="margin: auto 0; text-align: center;">
       <div class="cover-title-badge">من 11/10 إلى 5/11</div>
-      <h1 class="cover-title" style="border: none;">التقرير الفتري الثاني</h1>
-      <p class="cover-subtitle">قسم خدمات الألياف FTTH وقسم شبكات النقل والتراسل (Transport Domain)</p>
+      <h1 class="cover-title" style="border: none;">التقرير الفتري الثاني — التقرير الفني الأكاديمي الشامل</h1>
+      <p class="cover-subtitle">شركة سلام للاتصالات — إدارة عمليات الألياف (FTTH) وإدارة شبكات النقل ومراقبة الإنترنت (NOC)</p>
 
       <!-- Trainee Matrix (Clean: No Stage Hours) -->
       <div class="matrix-grid" style="text-align: right;">
@@ -444,11 +444,11 @@ const htmlContent = `<!DOCTYPE html>
         </div>
         <div class="matrix-row">
           <span class="matrix-label">مجال التدريب:</span>
-          <span class="matrix-val">FTTH Operations & Transport Networks</span>
+          <span class="matrix-val">عمليات الألياف (FTTH) وشبكات النقل (Transport) وعمليات NOC</span>
         </div>
         <div class="matrix-row">
           <span class="matrix-label">طبيعة العمل:</span>
-          <span class="matrix-val">Technical Support & Transmission Engineering</span>
+          <span class="matrix-val">التشغيل الميداني وهندسة التراسل والأتمتة</span>
         </div>
         <div class="matrix-row">
           <span class="matrix-label">المشرف الميداني:</span>
@@ -461,50 +461,50 @@ const htmlContent = `<!DOCTYPE html>
 
         <div class="matrix-full">
           <span style="font-weight: 900; color: #18181A;">الصفة ونطاق التكليف بالفترة:</span>
-          <span style="font-weight: 900; color: #C0102A; font-size: 12.5px;">موظف فعلي في FTTH (الأسابيع 7-8) ومتدرب في شبكات الترانزبورت (الأسابيع 9-10)</span>
+          <span style="font-weight: 900; color: #C0102A; font-size: 12px;">موظف فعلي في FTTH (الأسابيع 7–8) ومتدرب هندسي في قسم النقل وبوابة المعرفة (الأسابيع 9–10)</span>
         </div>
       </div>
 
       <!-- Technical Scope Summary (No Hours, No Shift Times) -->
       <div class="intervals-container" style="text-align: right;">
         <div class="intervals-header">
-          <span style="font-weight: 900; font-size: 12px; color: #18181A;">المحاور الفنية ونطاق الإنجاز في الفترة:</span>
+          <span style="font-weight: 900; font-size: 12px; color: #18181A;">الهيكلية العلمية ونطاق الفصول المعتمدة:</span>
           <div>
-            <span style="background: #E3F0EA; color: #2A6348; padding: 2px 9px; border-radius: 999px; font-weight: 800; font-size: 10.5px; border: 1px solid #2A634830;">482 تذكرة وبلاغ تشغيلي</span>
+            <span style="background: #E3F0EA; color: #2A6348; padding: 2px 9px; border-radius: 999px; font-weight: 800; font-size: 10.5px; border: 1px solid #2A634830;">482 تذكرة | 97.4% SLA</span>
             <span style="color: #C0102A; font-weight: 900; font-size: 11px; margin-right: 6px;">من 11/10 إلى 5/11</span>
           </div>
         </div>
 
         <div class="intervals-grid">
           <div class="interval-card">
-            <div class="interval-card-title">المرحلة الأولى: إدارة تذاكر FTTH الفعلي ومعالجة الأعطال</div>
+            <div class="interval-card-title">الفصل الأول: التشغيل الفعلي لخدمات الألياف الضوئية (FTTH)</div>
             <div class="interval-card-meta">
-              <span>تشغيل وحل البلاغات</span>
-              <span style="color: #C0102A; font-weight: 800;">CCS / Call Centre</span>
+              <span>الأسابيع 7 و 8</span>
+              <span style="color: #C0102A; font-weight: 800;">482 تذكرة | التزام 97.4%</span>
             </div>
           </div>
 
           <div class="interval-card">
-            <div class="interval-card-title">المرحلة الثانية: ذروة المعالجة التشغيلية (97 تذكرة بالهاند أوفر)</div>
+            <div class="interval-card-title">الفصل الثاني: إجراءات التشغيل القياسية لقطاع النقل (TS-01 – TS-04)</div>
             <div class="interval-card-meta">
-              <span>تشخيص وفحص متقدم</span>
-              <span style="color: #C0102A; font-weight: 800;">482 تذكرة إجمالاً</span>
+              <span>الأسابيع 9 و 10</span>
+              <span style="color: #C0102A; font-weight: 800;">BGP / IGW / DIA / Spider</span>
             </div>
           </div>
 
           <div class="interval-card">
-            <div class="interval-card-title">المرحلة الثالثة: مراقبة إنذارات النقل (TS-01 إلى TS-04)</div>
+            <div class="interval-card-title">الفصل الثالث: البنية الضوئية (DWDM/OTN) والنواة والأتمتة</div>
             <div class="interval-card-meta">
-              <span>BGP / IGW / DIA</span>
-              <span style="color: #C0102A; font-weight: 800;">CA / Spider / Cacti</span>
+              <span>TR / HW / AL / AU</span>
+              <span style="color: #C0102A; font-weight: 800;">MPLS / Python / NBI</span>
             </div>
           </div>
 
           <div class="interval-card">
-            <div class="interval-card-title">المرحلة الرابعة: البنية الضوئية (DWDM/OTN) وبوابة المعرفة (NOC Portal)</div>
+            <div class="interval-card-title">المشروع التكميلي: بوابة المعرفة التفاعلية لعمليات الشبكة والميدان</div>
             <div class="interval-card-meta">
-              <span>MPLS / Alarm Storm</span>
-              <span style="color: #C0102A; font-weight: 800;">Python / Netmiko</span>
+              <span>NOC Knowledge Portal</span>
+              <span style="color: #C0102A; font-weight: 800;">22 وحدة | 5 محاكاة | 162 سؤالاً</span>
             </div>
           </div>
         </div>
@@ -513,95 +513,227 @@ const htmlContent = `<!DOCTYPE html>
 
     <!-- Cover Footer -->
     <div class="cover-footer">
-      <span>المملكة العربية السعودية — التقرير الفتري الثاني للتدريب التعاوني (عمليات FTTH وشبكات النقل التراسلي)</span>
+      <span>المملكة العربية السعودية — التقرير الفتري الثاني للتدريب التعاوني (النسخة الأكاديمية الشاملة)</span>
       <span style="color: #C0102A; font-weight: 900;">الغلاف الرسمي المعتمد</span>
     </div>
   </div>
 
   <!-- ══════════════════════════════════════════════════════════
-       REPORT NARRATIVE
+       REPORT NARRATIVE (UNIVERSITY ACADEMIC STYLE)
        ══════════════════════════════════════════════════════════ -->
   <div class="page-break"></div>
   <div class="content-body">
-    <h1>مقدمة التقرير الفتري الثاني (من 11/10 إلى 5/11)</h1>
+    <h1>الملخص التنفيذي ونطاق التقرير (من 11/10 إلى 5/11)</h1>
     <p>
-      يغطي هذا <strong>التقرير الفتري الثاني</strong> أربعة أسابيع تدريبية وتشغيلية متقدمة ممتدة <strong>من 11 أكتوبر إلى 5 نوفمبر</strong> (الأسابيع: 7، 8، 9، 10). وتميزت هذه الفترة بالجمع بين مسارين عمليين وهندسيين متكاملين في قطاع الاتصالات:
+      يُقدّم هذا التقرير التوثيق الأكاديمي والهندسي النهائي للفترة التدريبية الممتدة <strong>من 11 أكتوبر إلى 5 نوفمبر</strong> (الأسابيع: السابع، الثامن، التاسع، والعاشر) ضمن متطلبات التدريب التعاوني. صُمّم هذا التقرير وفق منهجية تقارير الهندسة الجامعية ليربط بين <strong>الممارسة التشغيلية الميدانية المباشرة</strong> و<strong>التأصيل النظري والمعماري</strong> في بيئة شبكات الاتصالات الحديثة، عبر مسارين متكاملين ومشروع معرفي تطبيقي:
     </p>
     <ol>
       <li>
-        <strong>المحور الأول — قسم خدمات الألياف الضوئية (FTTH Operations) [الأسابيع 7 و 8]:</strong><br>
-        العمل كـ <strong>موظف فعلي</strong> متمكن من التعامل المباشر والمستقل مع بلاغات المشتركين وأنظمة تسليم المهام (Handover Tools)، مما أثمر عن معالجة وتوثيق <strong>482 تذكرة وبلاغاً تشغيلياً</strong> وصلت ذروتها التاريخية إلى <strong>97 تذكرة في مرحلة واحدة</strong> بمعدل التزام باتفاقية مستوى الخدمة (SLA) بلغ <strong>97.4%</strong>.
+        <strong>المسار التشغيلي الأول — عمليات الألياف الضوئية (<code>FTTH Operations</code>) خلال الأسبوعين 7 و 8:</strong> الاستمرار في أداء مهام الموظف الفعلي المستقل في إدارة البلاغات الحية، وتحليل قياسات الإشارة الضوئية، والتعامل مع أنظمة الدعم والتسليم (<code>Handover Tools</code>)، مما أثمر عن معالجة <strong>482 تذكرة تشغيلية فريدة</strong> وصولاً إلى ذروة إنتاجية قدرها <strong>97 تذكرة في مرحلة واحدة</strong> مع تحقيق معدل التزام باتفاقية مستوى الخدمة (<code>SLA</code>) بلغ <strong>97.4%</strong>.
       </li>
       <li>
-        <strong>المحور الثاني — قسم شبكات النقل والتراسل (Transport Domain &amp; NOC) [الأسابيع 9 و 10]:</strong><br>
-        الانتقال التخصصي كـ <strong>متدرب في شبكات النقل</strong>؛ حيث تم التدرب على إجراءات التشغيل القياسية (SOPs) لمركز عمليات الشبكة (NOC) للتعامل مع إنذارات النواة (BGP, Device Stopped, FAN/Power)، وبوابة الإنترنت الدولية (IP Transit / Peering)، وحالات العملاء المؤسسيين والدوائر المخصصة (DIA, GCX, KAUST, VSAT, Dark Fiber)، إضافة إلى معمارية النقل البصري (DWDM/OTN) وربط الأعطال (Alarm Correlation)، وتطوير <strong>بوابة معرفية تفاعلية (NOC Knowledge Portal)</strong> لجمع وتوثيق كافة إجراءات النقل والشبكة في مرجع هندسي موحد.
+        <strong>المسار الهندسي الثاني — قطاع شبكات النقل والتراسل (<code>Transport Domain &amp; NOC</code>) خلال الأسبوعين 9 و 10:</strong> الانتقال التخصصي إلى مركز مراقبة شبكات النقل؛ لاكتساب منظومة إجراءات التشغيل القياسية (<code>SOPs</code>) لمعالجة إنذارات العمود الفقري (<code>BGP Down</code>، توقف عناصر الشبكة، إنذارات المراوح والكهرباء)، وبوابات الإنترنت الدولية (<code>IGW: IP Transit &amp; Peering</code>)، والدوائر المؤسسية المخصصة (<code>DIA, GCX, KAUST, VSAT, Dark Fiber</code>)، ومراقبة أعطال الألياف المغذية، إلى جانب التوسع في طبقات النقل الضوئي (<code>DWDM/OTN</code>) وتوجيه النواة (<code>MPLS</code>) وأتمتة العمليات بلغة <code>Python</code>.
+      </li>
+      <li>
+        <strong>المخرج الابتكاري المصاحب — بوابة المعرفة التفاعلية لعمليات الشبكة والميدان (<code>NOC Knowledge Portal</code>):</strong> تطوير تطبيق ويب هندسي ثنائي اللغة (عربي/إنجليزي) يجمع <strong>22 وحدة معرفية</strong> و<strong>5 سيناريوهات محاكاة تفاعلية (26 خطوة قرار)</strong> و<strong>بنكاً من 162 سؤالاً تقنياً</strong> لتوحيد المرجعية التشغيلية في أقسام <code>FTTH</code> و<code>Transport</code> والأتمتة والوصول والمرافق وشبكات الجيل الخامس <code>5G</code>.
       </li>
     </ol>
 
-    <h1>أولاً: المحور الأول — عمليات قسم الألياف الضوئية (FTTH)</h1>
-    <h2>1. توزيع وتصنيف التذاكر المعالجة (482 تذكرة موثقة)</h2>
+    <h1>الفصل الأول: العمليات الميدانية والتشغيلية في قسم الألياف الضوئية (<code>FTTH</code>)</h1>
+    <p>ارتكز العمل خلال الأسبوعين السابع والثامن على الجمع بين التحليل الإحصائي اليومي لتوزيع البلاغات وتطبيق إجراءات المعالجة القياسية (<code>FT-01</code> إلى <code>FT-04</code>) لضمان دقة التشخيص قبل التصعيد أو الإغلاق.</p>
+
+    <h2>1.1 التحليل الكمي والتوزيع الإحصائي للتذاكر المعالجة (482 تذكرة)</h2>
+    <p>تم رصد وتصنيف <strong>482 تذكرة وبلاغاً</strong> عبر منظومة التسليم (<code>Handover Dashboard</code>)، ويوضح <strong>الجدول رقم (1)</strong> التوزيع العددي والنسبي حسب المسار التشغيلي:</p>
+    <table>
+      <thead>
+        <tr>
+          <th>م</th>
+          <th>القناة أو التصنيف التشغيلي</th>
+          <th>العدد</th>
+          <th>النسبة</th>
+          <th>الوصف الهندسي والدور التشغيلي المنفذ</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td><strong>نظام خدمة العملاء والدعم (<code>CCS</code>)</strong></td>
+          <td>176</td>
+          <td>36.5%</td>
+          <td>متابعة البلاغات المركزية ومطابقة بيانات الاشتراك وحالة المنفذ في الأنظمة.</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td><strong>إحالات مركز الاتصال (<code>Call Centre</code>)</strong></td>
+          <td>117</td>
+          <td>24.3%</td>
+          <td>تشخيص الأعطال الواردة وتوجيهها بالوصف الفني الدقيق (<code>Diagnostic Comment</code>).</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td><strong>النفاذ المفتوح والمشغلين (<code>Open Access</code>)</strong></td>
+          <td>70</td>
+          <td>14.5%</td>
+          <td>تنسيق البلاغات المشتركة بين سلام والشركات الطالبة (<code>STC, Zain, Mobily, GO</code>).</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td><strong>المعالجة والإغلاق الفوري (<code>Resolved Direct</code>)</strong></td>
+          <td>57</td>
+          <td>11.8%</td>
+          <td>حسم البلاغات مباشرة بعد فحص القراءات الضوئية واستقرار جلسة <code>ACS / PPPoE</code>.</td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td><strong>الدعم التخصصي (<code>TLS</code>)</strong></td>
+          <td>31</td>
+          <td>6.4%</td>
+          <td>تصعيد الحالات المعقدة التي تتطلب تدخلاً تقنياً متخصصاً على الشبكة.</td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td><strong>مركز العمليات والأنظمة (<code>NOC &amp; OSS</code>)</strong></td>
+          <td>31</td>
+          <td>6.5%</td>
+          <td>معالجة حالات البنية المشتركة أو نقص المزامنة في قواعد البيانات والأنظمة.</td>
+        </tr>
+        <tr>
+          <td>—</td>
+          <td><strong>الإجمالي الموثق للفترة</strong></td>
+          <td><strong>482</strong></td>
+          <td><strong>100%</strong></td>
+          <td><strong>التزام تشغيلي بمستوى الخدمة (<code>SLA</code>) بلغ 97.4% دون أخطاء تصعيد.</strong></td>
+        </tr>
+      </tbody>
+    </table>
+    <p>وقد سُجّلت <strong>الذروة التشغيلية في تاريخ 20 أكتوبر</strong> بإنجاز <strong>97 تذكرة</strong> في نوبة عمل واحدة (توزعت بين <code>CCS: 34</code>، <code>Call Centre: 30</code>، <code>Resolved: 16</code>، <code>Open Access: 9</code>، <code>TLS: 3</code>، <code>NOC: 2</code>، <code>NAS: 2</code>، <code>OSS: 1</code>)، تلتها مراحل مرتفعة الإنتاجية مثل (<code>45</code>، <code>40</code>، <code>38</code>، <code>35</code>، <code>34</code>، <code>32</code>، <code>31</code> تذكرة).</p>
+
+    <h2>1.2 المنهجية القياسية للتشخيص ومعالجة الأعطال (<code>FT-01</code> إلى <code>FT-04</code>)</h2>
     <ul>
-      <li><strong>نظام خدمة العملاء والدعم المركزي (CCS):</strong> استحوذ على النسبة الأكبر بمعدل <strong>36.5% (176 تذكرة)</strong> لمتابعة البلاغات الفنية المركزية ومطابقة بيانات الخدمة.</li>
-      <li><strong>إحالات الكول سنتر (Call Centre):</strong> بنسبة <strong>24.3% (117 تذكرة)</strong> لإعادة التوجيه الفني الدقيق بعد التحقق من سلامة الخدمة مع تدوين تعليق تشخيصي واضح (Diagnostic Comment).</li>
-      <li><strong>النفاذ المفتوح والمشغلين (Open Access):</strong> بنسبة <strong>14.5% (70 تذكرة)</strong> لمعالجة أعطال البنية المشتركة ونقاط الربط مع المشغلين.</li>
-      <li><strong>المعالجة والإغلاق الفوري (Resolved Direct):</strong> بنسبة <strong>11.8% (57 تذكرة)</strong> تم إغلاقها مباشرة بعد استقرار الإشارة وضبط المنافذ عبر ACS.</li>
-      <li><strong>الدعم التخصصي والتصعيد (TLS &amp; NOC &amp; OSS):</strong> بنسبة <strong>12.9% (62 تذكرة)</strong> شملت التصعيد للفرق الهندسية المتقدمة ومراقبة الأنظمة.</li>
+      <li><strong>فرز الحالة المرجعية في <code>Remedy</code> و<code>MOSS</code> (<code>FT-02</code>):</strong> البدء بالتحقق من حقل <code>Provider Name</code> وتصنيف <code>Tier 3</code>؛ فحالات <code>ITC</code> تخضع لإجراءات <code>Link Down / Slowness / Browsing / Landline</code>، وحالات النفاذ المفتوح بين سلام والمشغلين تُوجّه لمسار <code>Open Access</code>، أما المجمعات السكنية (<code>Product = ZoomComp</code>) فتُفحص عبر منصتي <code>Zooom</code> و<code>AAA</code>، مع التأكد من عدم وجود إيقاف مالي (<code>Suspended</code>) في <code>MOSS</code> والبحث بـ <code>Service ID</code> أو <code>ONU SN</code> أو <code>LOID</code>، وتصعيد حالات انعدام البيانات إلى <code>OSS App Support</code>.</li>
+      <li><strong>المعايير الضوئية وربط الخدمات (<code>FT-01</code> &amp; <code>FT-03</code>):</strong> الالتزام بفحص القدرة الضوئية المستقبلة (<code>RX Power</code>) ضمن النطاق الآمن المعتاد <code>-10 dBm</code> إلى <code>-26 dBm</code> عبر منصة <code>Huawei NCE</code> أو <code>Nokia AMS</code>، والتحقق من مطابقة خدمات الـ <code>CVLAN</code> القياسية: خدمة الإنترنت (<code>1501 - HSI</code>)، خدمة الإدارة التلقائية (<code>3980 - ACS / TR-069</code>)، والخدمة الصوتية (<code>1810 - VoIP</code>).</li>
+      <li><strong>تجهيز واستبدال أجهزة المشتركين (<code>ONT Replacement</code>):</strong> عند ثبوت عطل عدم استقرار المنفذ (<code>PON not stable</code>) على <code>Huawei NCE</code>، يتم تطبيق قاعدة الأمان الصارمة: توثيق <code>Line/Service Profile</code> وكافة <code>Service Port VLANs</code> ومطابقة الموقع الفيزيائي (<code>OLT/Slot/Port</code>) مع <code>MOSS</code> قبل حذف الـ <code>ONT</code> القديم، ثم اعتماد الجديد وإعادة بناء الـ <code>VLANs</code> وتسميته برقم <code>Service ID</code>.</li>
+      <li><strong>إدارة إعلانات الصيانة المجدولة (<code>MDT — FT-04</code>):</strong> متابعة طلبات التغيير الواردة من <code>NMC Change Management</code> (<code>REQUEST || CRQ...</code>)، واستخراج العقد والمواقع المتأثرة ومدة الانقطاع من نظام <code>SDM</code>، ثم تصفية ملف الأثر (<code>Impact list</code>) لكل مشغل طالب (<code>_STC</code>، <code>_Zain</code>، <code>_Mobily</code>، <code>_GO</code>) وإرسال إشعار بريد منفصل لكل جهة عبر <code>FTTH-NOC@tls.sa</code> لضمان السرية وعدم خلط بيانات المشغلين.</li>
     </ul>
 
-    <h2>2. المعايير الفنية والمنصات المستخدمة في FTTH</h2>
+    <h1>الفصل الثاني: إجراءات التشغيل القياسية في قطاع النقل (<code>Transport Domain SOPs</code>)</h1>
+    <p>خلال الأسبوعين التاسع والعاشر، انتقل التركيز الهندسي إلى بيئة مركز عمليات الشبكة (<code>NOC</code>) لقطاع النقل والتراسل، وتم استيعاب وتطبيق أربع منظومات تشغيلية رئيسية (<code>TS-01</code> إلى <code>TS-04</code>):</p>
+
+    <h2>2.1 مصفوفة معالجة إنذارات النقل الأساسية (<code>TS-01</code>)</h2>
+    <p>يوضح <strong>الجدول رقم (2)</strong> بروتوكول الاستجابة القياسي لأنواع الإنذارات الحرجة في شبكة النقل:</p>
+    <table>
+      <thead>
+        <tr>
+          <th>نوع الإنذار</th>
+          <th>أدوات التشخيص والأوامر المعتمدة</th>
+          <th>قاعدة القرار والتصعيد القياسي (<code>SOP</code>)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>توقف الجهاز<br>(<code>Device has stopped</code>)</strong></td>
+          <td>منصة <code>CA Performance → Health → IfAlias</code> + قاعدة بيانات <code>Spider</code></td>
+          <td><strong>عميل واحد:</strong> التنسيق مع <code>B-care</code> لفتح <code>CTT</code> ومراجعة الكهرباء.<br><strong>عدة عملاء:</strong> فتح تذكرة شبكة <code>NTT</code> + إرسال إشعار <code>Sudden Outage Notice</code> + التواصل مع فريقي الدعم والكهرباء.</td>
+        </tr>
+        <tr>
+          <td><strong>سقوط جلسة توجيه<br>(<code>BGP down</code>)</strong></td>
+          <td>الدخول عبر SSH (<code>Cisco IOS XR</code>) وتنفيذ <code>show route &lt;IP&gt;</code> و<code>show interfaces</code> وقراءة وصف الواجهة</td>
+          <td><strong>جلسة عميل:</strong> يُتجاهل الإنذار حسب الإجراء. <strong>عنصر شبكة (<code>NE</code>):</strong> فتح <code>Critical NTT</code> فوراً، إسنادها والاتصال بـ <code>Back Office (BO)</code> ومراسلة المزود. التمييز الدقيق بين <code>Active / Idle</code> (سقوط) و<code>Established</code> (عمل).</td>
+        </tr>
+        <tr>
+          <td><strong>إنذار المراوح والكهرباء<br>(<code>Faulty FAN / Power</code>)</strong></td>
+          <td>الدخول إلى الجهاز عبر SSH وتنفيذ <code>show env fan</code> و<code>show env all</code></td>
+          <td>إذا كانت القراءات طبيعية يُغلق الإنذار كـ <strong>إنذار كاذب (<code>False Alarm</code>)</strong>؛ وإذا ثبت العطل تُفتح تذكرة <code>NTT</code> لفريق <code>Back Office</code> مع إرسال الفريق الميداني.</td>
+        </tr>
+        <tr>
+          <td><strong>أنظمة النواة الحساسة<br>(<code>DPI / Sandvine / Voice / Wirefilter / DNS</code>)</strong></td>
+          <td>رصد الحدث على لوحة الإنذارات والتحقق من تأثير المنصة</td>
+          <td>فتح تذكرة <code>NTT</code> فورية، إسنادها إلى فريق <code>NAS</code>، والاتصال الهاتفي المباشر بالمناوب في <code>Back Office</code>.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>2.2 إدارة بوابة الإنترنت الدولية (<code>TS-02 — IGW: IP Transit &amp; Peering</code>)</h2>
     <ul>
-      <li>التحقق الصارم من <strong>نطاق القدرة الضوئية المستقبلة (RX Power)</strong> المعتمد بين <code>-10 dBm</code> إلى <code>-26 dBm</code> عبر منصة <strong>Huawei NCE</strong>.</li>
-      <li>فحص خدمات الـ <strong>CVLAN</strong>: خدمة الإنترنت (<strong>1501 - HSI</strong>)، خدمة الإدارة (<strong>3980 - ACS / TR-069</strong>)، والخدمة الصوتية (<strong>1810 - VoIP</strong>).</li>
-      <li>توثيق الحالات القياسية التي بلغت في ذروتها <strong>97 تذكرة</strong> (CCS: 34، Call Centre: 30، Resolved: 16، Open Access: 9، TLS: 3، NOC: 2، NAS: 2، OSS: 1)، وحالات أخرى مسجلة بمجاميع (40، 45، 31، 16 تذكرة).</li>
+      <li><strong>توحيد تذاكر الانقطاع الدولي:</strong> عند سقوط رابط عبور دولي (<code>IP Transit</code>) مع مزودين مثل <code>TATA</code> أو <code>STC</code> أو <code>Mobily</code> أو رابط تبادل (<code>Peering</code>)، تُفتح <strong>تذكرة <code>Critical NTT</code> واحدة موحدة</strong> في صندوق <code>NOC</code> تشمل جميع المزودين المعنيين مع إرسال بريد جماعي لكافة المزودين لمتابعة الحادثة.</li>
+      <li><strong>عتبة الازدحام التشغيلي (<code>85% Utilisation Rule</code>):</strong> مراقبة استهلاك الروابط العاملة المتبقية عبر نظام <code>Cacti</code>؛ وعند تجاوز التحميل نسبة <strong>85%</strong> تُفتح تذكرة <code>Major NTT</code> وتُسند فوراً إلى فريق <code>NAS</code> مع الاتصال بمناوب <code>BO</code> والإبلاغ في مجموعة العمل.</li>
+      <li><strong>قاعدة التصعيد الحرج (<code>P0 &gt; 200G</code>):</strong> في حال تجاوز الأثر الإجمالي للسعات المفقودة <strong>200 Gbps</strong>، يجب إبلاغ قائد المناوبة (<code>Shift Lead</code>) فوراً وتفعيل مصفوفة تصعيد الطوارئ <strong><code>P0</code></strong>.</li>
+      <li><strong>تفسير تشخيصات <code>SNFN</code>:</strong> استيعاب الدلالة الهندسية لرسالة فريق <code>SNFN</code> (<em>"observing local fault alarm at ITCJ from client port"</em>)، والتي تثبت سلامة البنية والمسار الوطني وحصر الخلل في الجانب الدولي لمتابعته مع المزودين الدوليين.</li>
     </ul>
 
-    <h1>ثانياً: المحور الثاني — إجراءات وتقنيات شبكات النقل (Transport Domain)</h1>
-    <p>مثّل الانتقال إلى <strong>قسم الترانزبورت (Transport Networks)</strong> نقلة هندسية شاملة لاكتساب مهارات مركز عمليات الشبكة (NOC) والتعامل مع العمود الفقري للشبكة:</p>
+    <h2>2.3 تتبع الدوائر المخصصة والعملاء المؤسسيين (<code>TS-03 — DIA, GCX, KAUST, VSAT, Dark Fiber</code>)</h2>
+    <ol>
+      <li><strong>الاستخراج المرجعي:</strong> نسخ معرّف الخدمة (<code>Service ID</code>) من نظام تذاكر <code>SDM</code>.</li>
+      <li><strong>مطابقة الدائرة في <code>B-care Spider</code>:</strong> استخدام اختصار البحث (<code>F11</code> ← لصق المعرّف ← <code>Ctrl+F11</code>) ثم الانتقال إلى <code>Metro Ethernet</code> لاستخلاص: <code>Partner Circuit ID</code>، و<code>Partner Name</code>، ورقم الـ <code>VLAN</code>، واسم نقطة التواجد (<code>Pop Name</code>).</li>
+      <li><strong>التشخيص العملي على موجهات <code>Huawei NE40E</code> (عبر <code>SecureCRT / PuTTY</code>):</strong> تنفيذ <code>display current-configuration interface Vlanif &lt;VLAN&gt;</code> لاستخراج اسم الشبكة الافتراضية (<code>vpn-instance</code>) وعنوان الـ IP من قناع <code>/30</code>، ثم استنتاج عنوان الجار وفحص الجلسة عبر <code>display bgp vpnv4 vpn-instance &lt;VRF&gt; peer</code> (<code>Established</code> أم <code>Active / Idle</code>)، ومراجعة <code>display logbuffer</code> ورسوم <code>Cacti</code> ومخاطبة المزودين (<code>STC, APTech, Mobily, Mawarid</code>) مع إرفاق رقم الحادثة.</li>
+      <li><strong>الحالات الخاصة المؤسسية:</strong> إرسال إقرار استلام فوري (<code>Acknowledgement</code>) لعملاء <code>KAUST</code> قبل فحص معرّفات <code>SNFN</code> أو منافذ الموجهات في المخططات الهندسية؛ وإسناد تذاكر <code>VSAT</code> الواردة من الدعم إلى فريق <code>VSAT</code> مع إنشاء أمر عمل ميداني (<code>WO</code>) عند الحاجة؛ ومعالجة انقطاعات الألياف المظلمة (<code>Dark Fiber</code>) مع <code>Zain</code> بفتح <code>NTT</code> وإرفاق صورة الموقع من وثيقة التصميم إلى <code>SNFN</code>.</li>
+    </ol>
 
-    <h2>1. معالجة إنذارات النقل الأساسية (Transport Alarm Handling)</h2>
+    <h2>2.4 مراقبة إنذارات الـ FTTH من منظور شبكة النقل (<code>TS-04</code>)</h2>
     <ul>
-      <li><strong>إنذار توقف الجهاز (<code>Device has stopped</code>):</strong> التحقق من عدد العملاء المتأثرين عبر <strong>CA Performance → Health → IfAlias</strong> وقاعدة بيانات <strong>Spider</strong>. لعميل واحد يتم التنسيق مع B-care لفتح CTT والتواصل مع العميل، ولعدة عملاء تُفتح تذكرة <strong>NTT</strong> مع إشعار انقطاع مفاجئ (<strong>Sudden Outage Notice</strong>) ومراجعة الدعم والكهرباء.</li>
-      <li><strong>إنذار سقوط جلسة BGP (<code>BGP down</code>):</strong> الاتصال بعنصر الشبكة (NE) وتنفيذ <code>show bgp summary</code> و <code>show route</code> وقراءة وصف الواجهة؛ تُتجاهل جلسات العملاء، أما جلسات عناصر الشبكة فتستوجب فتح <strong>Critical NTT</strong> وإسنادها إلى Back Office والاتصال بهم ومراسلة المزود، مع التفريق بين حالة السقوط (<code>Active / Idle</code>) والمستقرة (<code>Established</code>).</li>
-      <li><strong>إنذارات المراوح والكهرباء (<code>Faulty FAN Detected</code>):</strong> الفحص أولاً عبر SSH باستخدام <code>show env fan</code> و <code>show env all</code> لفرز الإنذارات الوهمية عن الحقيقية قبل التصعيد.</li>
-      <li><strong>عناصر الشبكة الحساسة (<code>DPI / Sandvine / Voice / Wirefilter / DNS</code>):</strong> فتح NTT وإسنادها مباشرة إلى فريق <strong>NAS</strong> والاتصال بالمناوب في Back Office.</li>
+      <li><strong>تمييز انقطاع الكابل المغذي (<code>Feeder fiber broken</code>):</strong> التحقق عبر <code>Huawei NCE</code> (أو <code>Nokia AMS</code> الحصري للمنطقة الشرقية)؛ حيث يُتجاهل إنذار الطاقة لمستخدم مفرد، بينما سقوط عدة منافذ <code>PON</code> متجاورة يؤكد قطعاً حقيقياً يستوجب فتح <code>NTT</code> وإرسال الفريق الميداني.</li>
+      <li><strong>فرز فقدان الإشارة (<code>Loss of signal</code>) وحساب أثر <code>OLT</code>:</strong> قراءة حقل <code>Current Reporting Status</code> لتجاهل حالات <code>Dying gasp</code>، وتصدير قوائم المشتركين المتأثرين بصيغة <code>CSV</code> عبر <code>Huawei NCE</code> (<code>GPON ONU → Find → Ctrl+A → Save As</code>) أو <code>Nokia AMS</code> (<code>Inventory → Query → Object Type = ONT</code>) وتصفيتها برقم المنفذ.</li>
     </ul>
 
-    <h2>2. بوابة الإنترنت الدولية (IGW: IP Transit &amp; Peering)</h2>
+    <h1>الفصل الثالث: البنية الضوئية، ربط الإنذارات، الأتمتة وبوابة المعرفة الشاملة</h1>
+    <p>انطلاقاً من أن منظومة العمل الهندسي في مراكز العمليات (<code>NOC</code>) تتجاوز مجرد تنفيذ الإجراءات اليومية لتشمل فهم الطبقات الفيزيائية والأتمتة والتكامل بين جميع أقسام الشبكة، تم توسيع المعرفة المكتسبة وتوثيقها في الأطر التالية:</p>
+
+    <h2>3.1 النقل البصري (<code>DWDM / OTN</code>) وتوجيه النواة (<code>MPLS</code>) ومنصات المصنّعين (<code>TR-01–02, HW-01–04, AL-01</code>)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>المجال الهندسي</th>
+          <th>المفاهيم والمكونات الفنية المستوعبة</th>
+          <th>التطبيق التشغيلي في عزل الأعطال</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>النقل الضوئي<br>(<code>DWDM &amp; OTN</code>)</strong></td>
+          <td>طبقات <code>OTS, OMS, OCh, OTUk, ODUk, OPUk</code>؛ قناة الإشراف الضوئي <code>OSC</code>؛ معاملات <code>Span Loss, OSNR, CD/PMD</code>.</td>
+          <td>استخدام ارتفاع <code>Pre-FEC BER</code> كمؤشر إنذار مبكر لتدهور المسار الضوئي مع بقاء <code>Post-FEC = 0</code> قبل حدوث انقطاع فعلي.</td>
+        </tr>
+        <tr>
+          <td><strong>أجهزة التراسل متعددة المصنّعين</strong></td>
+          <td>منصات <code>Cisco NCS 1000 / NCS 2000</code> (<code>EPNM</code>)، و<code>Huawei OptiX OSN</code> (<code>NCE</code>)، و<code>Nokia 1830 PSS</code> (<code>NFM-T</code>).</td>
+          <td>توحيد قراءة المستويات والإنذارات والتحقق من إصدارات البرمجيات (<code>show hw-module fpd</code>) وتنسيق إجراءات الفحص الوقائي.</td>
+        </tr>
+        <tr>
+          <td><strong>عزل عواصف الإنذارات (<code>AL-01</code>)</strong></td>
+          <td>تتبع التسلسل الزمني للإنذارات عند انقطاع وصلة ليفية عالية السعة وعزل السبب الجذري (<code>Root Cause</code>).</td>
+          <td>التمييز بين <strong>الإنذار الجذري الأقدم</strong> (<code>R_LOS / LOS-P / OTUK_LOF</code>) والإنذارات التابعة للمصب (<code>MS_AIS / ODUk_PM_AIS</code>) أو المنبع (<code>BDI / RDI</code>) لفتح تذكرة جذرية واحدة فقط.</td>
+        </tr>
+        <tr>
+          <td><strong>توجيه النواة<br>(<code>MPLS &amp; SR</code>)</strong></td>
+          <td>مقارنة بروتوكولات <code>LDP</code> و<code>RSVP-TE</code> و<code>Segment Routing (SR-MPLS)</code> وتقنية الحماية الفائقة <code>TI-LFA</code>.</td>
+          <td>ضمان تعافي المسار (<code>&lt; 50ms</code>) بتغطية 100%، وتشخيص أعطال عدم تطابق حجم الحزمة (<code>MTU Mismatch</code>) بأوامر <code>ping mpls</code> و<code>tracert lsp</code>.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>3.2 أتمتة مركز العمليات وتحليل واجهات الأنظمة (<code>AU-01</code> &amp; <code>AU-02</code>)</h2>
     <ul>
-      <li>فتح <strong>Critical NTT واحدة</strong> في سلة <code>NOC</code> ومراسلة جميع المزودين الدوليين (TATA، STC، Mobily) عند سقوط روابط IP Transit أو Peering.</li>
-      <li><strong>قاعدة حد الازدحام (<code>&gt; 85% Utilisation</code>):</strong> مراقبة الروابط المتبقية عبر <strong>Cacti</strong>؛ وتجاوز 85% يستدعي فتح <strong>Major NTT</strong> لفريق NAS والتواصل مع Back Office.</li>
-      <li><strong>قاعدة الأثر الحرج (<code>&gt; 200G Impact / P0 Matrix</code>):</strong> إبلاغ Shift Lead فوراً وتطبيق مصفوفة تصعيد <strong>P0</strong> عند تجاوز الأثر 200 جيجابت/ثانية.</li>
-      <li><strong>تفسير ردود SNFN:</strong> فهم دلالة رسالة <em>"observing local fault alarm at ITCJ from client port"</em> بأن المسار الوطني سليم والعطل دولي.</li>
+      <li><strong>الأتمتة الآمنة بلغة <code>Python</code> (<code>AU-01</code>):</strong> تطبيق منهجية تطوير سكربتات <strong>قراءة فقط (<code>Read-Only</code>)</strong> عبر مكتبات <code>Netmiko</code> و<code>NETCONF</code> و<code>RESTCONF</code> و<code>TextFSM</code> و<code>pandas</code> لأتمتة فحص حالة جلسات <code>BGP/DIA</code>، والتحقق من روابط <code>LDP</code>، وحساب عدد المشتركين المتأثرين تلقائياً من ملفات <code>CSV</code> المصدرة من <code>NCE/AMS</code>.</li>
+      <li><strong>تحليل معمارية التطبيقات الداخلية (<code>AU-02</code>):</strong> استيعاب أولوية استخدام الواجهات البرمجية الرسمية الشمالية (<code>NBI / REST API</code>) في أنظمة التشغيل المركزية (<code>Huawei NCE NBI</code>، <code>Nokia AMS REST/NETCONF</code>، <code>Cisco EPNM REST /webacs/api</code>، <code>BMC Remedy/SDM REST /api/jwt/login</code>، وبوابات <code>MOSS / ACS / Spider</code>) مع الالتزام الصارم بضوابط التفويض وحسابات الخدمة وعدم مشاركة ملفات الجلسات (<code>HAR</code>) حفاظاً على أمن الشبكة وبيانات العملاء.</li>
     </ul>
 
-    <h2>3. الدوائر المخصصة والعملاء المؤسسيين (<code>DIA / GCX / KAUST / VSAT / Dark Fiber</code>)</h2>
-    <ul>
-      <li><strong>تشخيص DIA &amp; GCX (لمزودي STC, APTech, Mobily, Mawarid):</strong> نسخ Service ID من <strong>SDM</strong> ← البحث في <strong>Spider</strong> (<code>F11</code> ثم <code>Ctrl+F11</code>) لاستخراج بيانات Metro Ethernet ← الدخول إلى <strong>Huawei NE40E</strong> وفحص <code>display current-configuration interface Vlanif</code> لاستخراج <code>vpn-instance</code> وعنوان <code>/30</code> ← حساب عنوان الجار وفحص حالة BGP (<code>display bgp vpnv4 vpn-instance peer</code>) و<code>display logbuffer</code> و Cacti.</li>
-      <li><strong>حالات KAUST و VSAT والألياف المظلمة:</strong> إرسال إقرار استلام لـ KAUST والتحقق من معرّف SNFN، وإسناد تذاكر VSAT دون بريد مع إنشاء WO للميدان عند اللزوم، وإرسال صور المواقع من وثائق التصميم إلى SNFN في حالات Dark Fiber مع Zain.</li>
-    </ul>
-
-    <h2>4. مراقبة إنذارات FTTH من مركز النقل (Transport Monitoring)</h2>
-    <ul>
-      <li>التمييز في إنذارات <code>Feeder fiber broken</code> و <code>Loss of signal</code> عبر <strong>Huawei NCE</strong> و <strong>Nokia AMS</strong> (بالشرقية فقط)؛ حيث يُتجاهل إنذار <code>Dying gasp</code> أو قدرة المستخدم الواحد، بينما سقوط عدة منافذ PON يعني قطعاً حقيقياً يوجب إرسال الميدان، مع استخراج ملفات CSV لحساب أثر سقوط OLT.</li>
-    </ul>
-
-    <h2>5. المعمارية الضوئية، ربط الإنذارات، والأتمتة (<code>DWDM / OTN / MPLS / Python</code>)</h2>
-    <ul>
-      <li><strong>DWDM و OTN:</strong> طبقات (OTS, OMS, OCh, OTUk, ODUk) وقناة الإشراف (OSC)، ومراقبة المعوقات الضوئية (Span loss, OSNR, CD/PMD) وتتبع <strong>Pre-FEC BER</strong>.</li>
-      <li><strong>إدارة عواصف الإنذارات:</strong> عزل أقدم إنذار جذري (<code>R_LOS</code> / <code>OTUK_LOF</code>) عن النتائج (<code>MS_AIS</code>, <code>BDI/RDI</code>) عبر أجهزة Huawei OptiX OSN و Cisco NCS 1000/2000 و Nokia 1830 PSS.</li>
-      <li><strong>MPLS &amp; Segment Routing:</strong> المقارنة بين LDP و RSVP-TE و SR-MPLS (وحماية <strong>TI-LFA</strong>) وكشف عدم تطابق MTU.</li>
-      <li><strong>بوابة المعرفة والأتمتة (NOC Portal &amp; Python):</strong> تطوير بوابة ويب معرفية تفاعلية متكاملة (22 وحدة معرفية و5 سيناريوهات محاكاة حوادث) وتطبيق أتمتة قراءة البيانات عبر Python و Netmiko.</li>
-    </ul>
+    <h2>3.3 المشروع التكميلي: بوابة المعرفة التفاعلية (<code>NOC Knowledge Portal</code>) والتكامل المعرفي</h2>
+    <p>لترسيخ جميع الإجراءات والعلوم المكتسبة في صيغة هندسية مستدامة، تم تصميم وبرمجة تطبيق ويب تفاعلي ثنائي اللغة (<strong>React 18 + Vite 6 + Tailwind CSS 4</strong>) بعنوان <strong>«بوابة المعرفة لعمليات الشبكة والميدان»</strong> يشتمل على ثلاث بيئات تعليمية وتشغيلية:</p>
+    <ol>
+      <li><strong>مساحة العمل التفاعلية (22 وحدة معرفية):</strong> بطاقات مرجعية قابلة للسحب والفحص بأربعة تبويبات لكل وحدة (الإجراء والمعمارية، الأوامر، الأتمتة، الاختبار)، شاملةً وحدات <code>FTTH</code> و<code>Transport</code> والأتمتة، بالإضافة إلى توثيق مرجعي عام لتكامل أقسام المركز الأخرى: <strong>فريق الوصول والمرافق (<code>AC-01, AC-02</code>: إنذارات الكهرباء والتكييف والحريق والأبواب وسجلات الدخول في <code>SDM</code>)</strong> و<strong>شبكات الجيل الخامس (<code>G5-01, G5-02</code>: معمارية <code>NG-RAN CU/DU/RU</code> والنواة <code>5GC</code> ومؤشرات الأداء)</strong>.</li>
+      <li><strong>محاكي الحوادث الواقعية (5 سيناريوهات — 26 خطوة قرار):</strong> يحاكي حوادث عملية خطوة بخطوة مع التمييز الصريح بين <strong>إجراءات سلام المعتمدة (<code>SOP</code>)</strong> و<strong>الممارسة التشغيلية العامة</strong> (<code>SIM-01</code> إلى <code>SIM-05</code>).</li>
+      <li><strong>بنك الأسئلة التقييمي (162 سؤالاً):</strong> مصنف عبر 9 مجالات و3 مستويات صعوبة مع وضعي التدريب والمراجعة والطباعة.</li>
+    </ol>
   </div>
 
   <!-- ══════════════════════════════════════════════════════════
-       ANALYTICS & CHARTS DASHBOARD
+       CHAPTER 4: ANALYTICS & CHARTS DASHBOARD
        ══════════════════════════════════════════════════════════ -->
   <div class="page-break"></div>
   <div class="content-body">
     <div style="border-bottom: 2px solid #C0102A; padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
       <div>
-        <h1 style="border: none; margin: 0; padding: 0;">لوحة الرسوم البيانية والإحصائيات التشغيلية (FTTH &amp; Transport)</h1>
+        <h1 style="border: none; margin: 0; padding: 0;">الفصل الرابع: التحليل البياني ومؤشرات الأداء التشغيلية (FTTH &amp; Transport)</h1>
         <p style="font-size: 11px; color: #64748B; font-weight: 700; margin: 2px 0 0 0;">
           تحليل بياني متكامل لأداء المعالجة، تصنيف التذاكر، وأنظمة التراسل (من 11/10 إلى 5/11)
         </p>
@@ -784,15 +916,29 @@ const htmlContent = `<!DOCTYPE html>
       </div>
     </div>
 
-    <h1>الخاتمة والتوصيات</h1>
+    <div class="page-break"></div>
+    <h1>الفصل الخامس: التحديات الهندسية، الدروس المستفادة، والخاتمة والتوصيات</h1>
+    <h2>5.1 التحديات التشغيلية ومعالجتها</h2>
+    <ul>
+      <li><strong>الضغط العالي في ذروة البلاغات (97 تذكرة):</strong> تم التغلب على تكدس البلاغات بتوحيد قوالب الفحص الاستباقي (<code>Pre-Checks</code>) في <code>NCE</code> و<code>MOSS</code> و<code>ACS</code>، مما منع التصعيدات المكررة وحافظ على التزام <code>SLA</code> بنسبة <strong>97.4%</strong>.</li>
+      <li><strong>تعدد الأنظمة غير المترابطة في تتبع الدوائر المؤسسية (<code>TS-03</code>):</strong> جرى ربط المعرّفات المتفرقة بين <code>SDM</code> و<code>Spider</code> وموجهات <code>Huawei NE40E</code> عبر خريطة تشخيص ذهنية وبرمجية موحدة اختصرت زمن تحديد خلل الجار (<code>BGP Peer</code>) ومخاطبة المزود.</li>
+      <li><strong>تشتت الإنذارات أثناء الانقطاعات الضوئية (<code>Alarm Storms</code>):</strong> تم تجاوز الارتباك الناتج عن توالي الإنذارات بتطبيق مبدأ البحث عن أقدم إنذار جذري (<code>R_LOS / OTUK_LOF</code>) قبل التعامل مع إنذارات المصب (<code>AIS</code>) أو المنبع (<code>BDI</code>).</li>
+    </ul>
+
+    <h2>5.2 الخاتمة والتوصيات</h2>
     <p>
-      يمثل هذا <strong>التقرير الفتري الثاني (من 11/10 إلى 5/11)</strong> خلاصة مرحلة مهنية استثنائية جمعت بين الكفاءة التشغيلية الميدانية والعمق الهندسي؛ فمن إنجاز <strong>482 تذكرة ومهمة في خدمات FTTH</strong> وتحقيق رقم قياسي بلغ <strong>97 تذكرة</strong>، إلى استيعاب منظومة <strong>شبكات النقل والـ NOC</strong> بكل تفاصيلها من إنذارات الـ BGP والعبور الدولي IGW، ودوائر الـ DIA و Spider، وصولاً إلى شبكات DWDM/OTN وبناء بوابة معرفية متكاملة تُسهم في رفع سرعة ودقة الاستجابة للحوادث.
+      تؤكد مخرجات هذه الفترة التدريبية (<strong>من 11/10 إلى 5/11</strong>) الانتقال الناجح من مرحلة التنفيذ التشغيلي الميداني إلى مرحلة النضج الهندسي الشامل في مراكز عمليات الشبكات (<code>NOC</code>). وبناءً على التجربة العملية والمشروع المعرفي المنجز، يوصى بما يلي:
     </p>
+    <ol>
+      <li><strong>اعتماد مراجع معرفية تفاعلية (<code>NOC Knowledge Portal</code>)</strong> ضمن برامج تهيئة المتدربين والمهندسين الجدد لتسريع استيعاب إجراءات <code>FTTH</code> و<code>Transport</code> وتوحيد جودة التشخيص.</li>
+      <li><strong>توسيع أتمتة الفحوصات المبدئية للقراءة فقط (<code>Read-Only Python Diagnostics</code>)</strong> في استعلامات <code>Vlanif/BGP</code> وتصدير قوائم <code>OLT CSV</code> لتقليص زمن الاستجابة للحوادث الحرجة (<code>MTTR</code>).</li>
+      <li><strong>الاستمرار في التكامل البيني بين فرق الوصول (<code>FTTH</code>) والنقل (<code>Transport</code>)</strong> عند التعامل مع انقطاعات الألياف المغذية والـ <code>MDT</code> بما يعزز موثوقية الشبكة وجودة تجربة المشترك.</li>
+    </ol>
 
     <!-- Endorsements Block -->
     <div class="endorsement-box">
       <div style="text-align: center; font-weight: 900; font-size: 13px; color: #18181A; border-bottom: 1px solid #CBD5E1; padding-bottom: 6px;">
-        مصادقة واعتماد التقرير الميداني الرسمي
+        مصادقة واعتماد التقرير الأكاديمي والميداني الرسمي
       </div>
       <div class="endorsement-grid">
         <div>
@@ -833,6 +979,10 @@ const proc = spawnSync(edgePath, [
   `--print-to-pdf=${outputPdfDownload}`,
   tempHtmlPath
 ], { stdio: 'inherit' });
+
+if (fs.existsSync(tempHtmlPath)) {
+  fs.unlinkSync(tempHtmlPath);
+}
 
 if (fs.existsSync(outputPdfDownload)) {
   fs.copyFileSync(outputPdfDownload, outputPdfDesktop);

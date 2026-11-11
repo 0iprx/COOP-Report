@@ -8,16 +8,27 @@ interface AcademicMarkdownViewProps {
   period?: 'p1' | 'p2';
 }
 
-// Inline formatting helper for **bold** text
+// Inline formatting helper for **bold** and `code` text
 const formatInlineText = (text: string): React.ReactNode => {
   if (!text) return null;
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
   return parts.map((part, index) => {
     if (part.startsWith('**') && part.endsWith('**')) {
       return (
         <strong key={index} className="font-black text-ink">
-          {part.slice(2, -2)}
+          {formatInlineText(part.slice(2, -2))}
         </strong>
+      );
+    }
+    if (part.startsWith('`') && part.endsWith('`')) {
+      return (
+        <code
+          key={index}
+          dir="ltr"
+          className="inline-block px-1.5 py-0.5 mx-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[10.5px] print:text-[8.5pt] font-bold text-ink"
+        >
+          {part.slice(1, -1)}
+        </code>
       );
     }
     return part;
