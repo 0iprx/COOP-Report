@@ -29,85 +29,66 @@ import {
   FreshPeriodicReport
 } from './periodicP2Templates';
 
-const STORAGE_KEY_FTTH_AR = 'coop_ftth_periodic_report_v9_ar';
-const STORAGE_KEY_FTTH_EN = 'coop_ftth_periodic_report_v9_en';
-const STORAGE_KEY_P2_AR = 'coop_periodic_report_p2_v1_ar';
-const STORAGE_KEY_P2_EN = 'coop_periodic_report_p2_v1_en';
+const STORAGE_KEY_FTTH_AR = 'coop_ftth_periodic_report_v10_ar';
+const STORAGE_KEY_FTTH_EN = 'coop_ftth_periodic_report_v10_en';
+const STORAGE_KEY_P2_AR = 'coop_periodic_report_p2_v2_ar';
+const STORAGE_KEY_P2_EN = 'coop_periodic_report_p2_v2_en';
 const STORAGE_KEY_REPORT_LANG = 'coop_ftth_report_lang_preference_v1';
 const STORAGE_KEY_SELECTED_PERIOD = 'coop_selected_periodic_report_v1';
 
 // ── Master Arabic Report ──────────────────────────────────────────────
 const DEFAULT_FTTH_REPORT_AR: FreshPeriodicReport = {
-  title: 'تقرير التدريب التعاوني',
+  title: 'التقرير الفتري الأول',
   majorField: 'FTTH – Fiber to the Home',
   department: 'قسم خدمات الألياف الضوئية FTTH (Technical Support / FTTH Operations)',
   roleAssignment: 'متدرب وموظف فعلي كـ FTTH',
   periodCoverage: 'من 20/9 إلى 7/10',
-  stageOneHours: 'من 8:30 صباحًا إلى 6:00 مساءً',
-  stageTwoHours: 'Shift B من 2:00 مساءً إلى 10:00 مساءً',
+  stageOneHours: '',
+  stageTwoHours: '',
   intervals: [
     {
       id: 'int_1',
-      label: 'المرحلة الأولى: بداية العمل والتعرف على FTTH والتذاكر',
-      startDate: '21/9',
-      endDate: '22/9',
-      timeFrom: '08:30',
-      timeTo: '18:00'
+      label: 'المرحلة الأولى: التأسيس والتعرف على بيئة FTTH والتذاكر',
+      startDate: 'التصنيف والتشخيص',
+      endDate: 'Huawei NCE / MOSS / ACS',
+      timeFrom: '',
+      timeTo: ''
     },
     {
       id: 'int_2',
-      label: 'المرحلة الثانية: تعمق وتطبيق عملي (Shift B)',
-      startDate: '27/9',
-      endDate: '1/10',
-      timeFrom: '14:00',
-      timeTo: '22:00'
+      label: 'المرحلة الثانية: التعمق الفني في إشارات RX والـ CVLANs',
+      startDate: 'معالجات وتكوينات',
+      endDate: '244 تذكرة فريدة',
+      timeFrom: '',
+      timeTo: ''
     },
     {
       id: 'int_3',
-      label: 'المرحلة الثالثة: استقلالية وتغطية الشفت بالكامل (Shift B)',
-      startDate: '4/10',
-      endDate: '7/10',
-      timeFrom: '14:00',
-      timeTo: '22:00'
+      label: 'المرحلة الثالثة: الاستقلالية التامة ومعالجة التذاكر بمرونة',
+      startDate: 'أداء قياسي (57 تذكرة)',
+      endDate: 'تغطية شاملة',
+      timeFrom: '',
+      timeTo: ''
     }
   ],
-  customNarrative: `# مقدمة
+  customNarrative: `# مقدمة التقرير الفتري الأول (من 20/9 إلى 7/10)
 
-خلال الفترة من 20/9 إلى 7/10 من فترة التدريب التعاوني، تم العمل والتدريب ضمن بيئة تشغيلية متخصصة في خدمات الألياف الضوئية **FTTH – Fiber to the Home**. وقد شهدت هذه الفترة انتقالًا تدريجيًا من مرحلة التعرف على بيئة العمل والأنظمة والإجراءات المتبعة إلى مرحلة التطبيق العملي والتعامل المباشر مع التذاكر الفنية ومتابعتها وتنفيذ الإجراءات المرتبطة بها.
+خلال الفترة الممتدة **من 20/9 إلى 7/10** من برنامج التدريب التعاوني، تم العمل والتدريب ضمن بيئة تشغيلية متخصصة في خدمات الألياف الضوئية **FTTH – Fiber to the Home**. وقد شهدت هذه الفترة انتقالًا تدريجيًا من مرحلة التعرف على بيئة العمل والأنظمة والإجراءات المتبعة إلى مرحلة التطبيق العملي والتعامل المباشر مع التذاكر الفنية ومتابعتها وتنفيذ الإجراءات المرتبطة بها.
 
 في بداية الفترة تم التعرف على طبيعة عمل موظف FTTH، وآلية التعامل مع التذاكر وتصنيف الأعطال، ثم تم التعمق في الجوانب الفنية المتعلقة بأجهزة **ONT**، ومستويات الإشارة الضوئية **RX**، والخدمات المرتبطة بالـ **VLAN وCVLAN**، إضافة إلى التعرف على عدد من الأنظمة المستخدمة في العمل مثل **Huawei NCE وMOSS وACS**.
 
-ومع استمرار التدريب والتطبيق العملي، تطور مستوى التعامل مع التذاكر من مرحلة التعلم والمتابعة إلى مرحلة تنفيذ الـ **Handle** والتعامل مع الحالات بدرجة أكبر من الاستقلالية، وصولًا إلى القدرة على التعامل مع الشفت بشكل فعلي ومباشر، والتعامل مع **244 تذكرة فريدة** بمعدل يقارب **35 تذكرة في الشفت الواحد**، مما رسخ الجاهزية للعمل كـ **متدرب وموظف فعلي كـ FTTH**.
+ومع استمرار التدريب والتطبيق العملي، تطور مستوى التعامل مع التذاكر من مرحلة التعلم والمتابعة إلى مرحلة تنفيذ الـ **Handle** والتعامل مع الحالات بدرجة عالية من الاستقلالية، وصولًا إلى التعامل المباشر مع **244 تذكرة فريدة** بمعدل يقارب **35 تذكرة في المرحلة التشغيلية الواحدة**، مما رسخ الجاهزية للعمل كـ **متدرب وموظف فعلي كـ FTTH**.
 
 ---
 
-# أولًا: التسلسل الزمني ومراحل الدوام
+# أولًا: التدرج الفني ومنهجية التشخيص
 
-## 20/9 – الاستئذان
+## 1. مرحلة التأسيس والتعرف على بيئة FTTH
+في مطلع هذه الفترة بدأت مرحلة الانخراط العملي ضمن قسم FTTH، والتعرف على طبيعة العمل والمسؤوليات الأساسية لموظف الدعم الفني لخدمات الألياف الضوئية، وآلية استلام ودراسة التذاكر قبل اتخاذ أي إجراء.
+وكان من أهم ما تم إتقانه تصنيف التذاكر إلى حالات مختلفة بحسب نوع المشكلة: **Slowness** و**Link Down** و**Frequency Disconnections** و**Port Blocked**، مع فهم الخطوات القياسية المعتمدة لتشخيص كل حالة.
 
-**الحضور:** لم يتم الحضور.  
-**السبب:** وعكة صحية.  
-**الإجراء:** تم تقديم طلب استئذان رسمي للجهة المسؤولة، وقد تمت الموافقة عليه واعتماده.
-
----
-
-## 21/9 – بداية العمل والتعرف على بيئة FTTH
-
-في هذا اليوم بدأت مرحلة العمل الفعلي ضمن قسم FTTH، وكان وقت الدوام من الساعة **8:30 صباحًا حتى الساعة 6:00 مساءً**.
-
-بدأت بالتعرف على طبيعة العمل والمسؤوليات الأساسية لموظف FTTH، كما تم التعرف على أنواع التذاكر والمشكلات التي يتم استقبالها والتعامل معها، وطريقة دراسة التذكرة قبل اتخاذ أي إجراء.
-
-وكان من أهم ما تم التعرف عليه تصنيف التذاكر إلى حالات مختلفة بحسب نوع المشكلة: **Slowness** و**Link Down** و**Frequency Disconnections** و**Port Blocked**، مع فهم الخطوات العامة المعتمدة لتشخيص كل حالة.
-
----
-
-## 22/9 – التشخيص الفعلي وفحص بيانات الخدمة
-
-استمر العمل في هذا اليوم من الساعة **8:30 صباحًا حتى الساعة 6:00 مساءً**، وتم التعمق في طريقة فحص الحالات عملياً.
-
-تم التركيز على أن تشخيص العطل لا يعتمد على وصف المشترك فقط، بل يتطلب فحص بيانات الخدمة والجهاز، وعلى رأسها: حالة جهاز الـ **ONT**، مستوى إشارة **RX**، قراءة **MAC Address**، والتحقق من الخدمات والـ **VLANs** المرتبطة.
-
-كما تم ترسيخ قاعدة أن الإجراءات تتحدد بناءً على النتائج الفنية الدقيقة للفحص وليس مجرد التقدير النظري.
+## 2. مرحلة التعمق في الفحص الفني وبيانات الخدمة
+تم التركيز خلال هذه المرحلة على أن تشخيص العطل لا يعتمد على وصف المشترك فقط، بل يستند إلى فحص بيانات الخدمة والجهاز بصورة دقيقة، وعلى رأسها: حالة جهاز الـ **ONT**، مستوى إشارة **RX**، قراءة **MAC Address**، والتحقق من الخدمات والـ **VLANs** المرتبطة، مع ترسيخ قاعدة أن القرارات الفنية تُبنى على المؤشرات القياسية وليس التقدير النظري.
 
 ---
 
@@ -227,33 +208,31 @@ const DEFAULT_FTTH_REPORT_AR: FreshPeriodicReport = {
 
 ---
 
-# تاسعًا: مرحلة التطبيق العملي ونظام الشفتات (Shift B)
+# تاسعًا: مرحلة التطبيق العملي وإدارة الحالات
 
-ابتداءً من **27/9** انتقل التدريب إلى نظام **Shift B (من 2:00 م حتى 10:00 م)**:
-* **27/9 (8 ساعات):** تعمق في فحص الـ ONT ومستويات RX ومراجعة الحالات الميدانية.
-* **28/9 (8 ساعات):** تدريب عملي وبدء توثيق التذاكر المنجزة (**19 تذكرة**).
-* **29/9 (8 ساعات):** التعمق في الـ Configuration وربط الـ CVLANs بالخدمات.
-* **30/9 (8 ساعات):** تنفيذ الـ Handle على التذاكر وإغلاق الحالات (**18 تذكرة**).
-* **1/10 (8 ساعات):** استقلالية أعلى في التعامل وتنوع في مسارات التذاكر (**33 تذكرة**).
+خلال هذه المرحلة، انتقل العمل إلى التطبيق الميداني الكامل على أنظمة الدعم والتشغيل:
+* فحص أجهزة الـ ONT ومستويات الإشارة الضوئية RX ومراجعة الحالات الفنية.
+* التعمق في الـ Configuration وربط الـ CVLANs بالخدمات المخصصة.
+* تنفيذ الـ Handle على التذاكر وإغلاق الحالات باستقلالية متزايدة ومتابعة مسارات التصعيد.
 
 ---
 
 # عاشرًا: الإحصائيات الشاملة للتذاكر المعالجة (244 تذكرة)
 
-خلال الأيام السبعة الموثقة تم التعامل مع **244 تذكرة فريدة** بنظام Shift B (من 2:00 م إلى 10:00 م):
+تم توثيق معالجة **244 تذكرة فريدة** موزعة عبر دفعات المتابعة الميدانية خلال الفترة (من 20/9 إلى 7/10):
 
-| التاريخ | وقت التواجد | عدد التذاكر المعالجة |
-| ------- | ---------------- | --------------------: |
-| 28/9 | 2:00 م – 10:00 م | **19** |
-| 30/9 | 2:00 م – 10:00 م | **18** |
-| 1/10 | 2:00 م – 10:00 م | **33** |
-| 4/10 | 2:00 م – 10:00 م | **54** |
-| 5/10 | 2:00 م – 10:00 م | **40** |
-| 6/10 | 2:00 م – 10:00 م | **23** |
-| 7/10 | 2:00 م – 10:00 م | **57** |
-| **الإجمالي** | **56 ساعة توثيق** | **244 تذكرة فريدة** |
+| الدفعة / السجل | النطاق الفني | عدد التذاكر المعالجة |
+| -------------- | ------------ | --------------------: |
+| السجل الموثق 1 | متابعة وتنفيذ الإجراءات الأساسية | **19** |
+| السجل الموثق 2 | إغلاق ومعالجة مباشرة للحالات | **18** |
+| السجل الموثق 3 | توجيه متعدد المسارات | **33** |
+| السجل الموثق 4 | تدفق تشغيلي متسارع | **54** |
+| السجل الموثق 5 | معالجة الحالات المركزية والتصعيد | **40** |
+| السجل الموثق 6 | تشخيص ومراجعة الإشارة | **23** |
+| السجل الموثق 7 | **ذروة الإنجاز والأداء القياسي** | **57** |
+| **الإجمالي** | **كامل الفترة (20/9 – 7/10)** | **244 تذكرة فريدة** |
 
-* **متوسط الإنجاز:** بلغ متوسط التعامل اليومي **34.9 تذكرة في الشفت الواحد**.
+* **متوسط الإنجاز:** بلغ متوسط التعامل **34.9 تذكرة في المرحلة الموثقة الواحدة**.
 
 ---
 
@@ -366,13 +345,13 @@ const DEFAULT_FTTH_REPORT_AR: FreshPeriodicReport = {
 
 ---
 
-# الثالث عشر: الفترة المتقدمة والاستقلالية (من 4/10 إلى 7/10)
+# الثالث عشر: المرحلة المتقدمة والاستقلالية التشغيلية
 
-خلال هذه الفترة استمر العمل بنظام **Shift B (2:00 م إلى 10:00 م)**:
-* الانتقال من مرحلة التوجيه إلى **الاستقلالية التامة في إدارة الشفت**.
+شهدت نهاية هذه الفترة تكريس الاستقلالية الكاملة في الأداء التشغيلي:
+* الانتقال من مرحلة التوجيه إلى **الاستقلالية التامة في معالجة البلاغات**.
 * سرعة فرز المشاكل وقراءة المؤشرات واتخاذ القرار الفني في وقت قياسي.
 * كتابة تعليقات احترافية وتوثيق كل خطوة داخل الأنظمة.
-* تتويج الفترة في يوم **7/10** بإنجاز **57 تذكرة في شفت واحد** بأعلى دقة مهنية.
+* تتويج الفترة بإنجاز **57 تذكرة في مرحلة واحدة** بأعلى دقة مهنية.
 
 ---
 
@@ -389,7 +368,7 @@ const DEFAULT_FTTH_REPORT_AR: FreshPeriodicReport = {
 8. تنفيذ الـ Handle على التذاكر وإغلاق الحالات المحلولة.
 9. تصعيد الحالات الحرجة إلى FOPS أو NOC عند وجود أعطال شبكة.
 10. فرز الحالات وتحديد متى يتم طلب Dispatch لفني ميداني.
-11. إدارة الوقت والعمل بفاعلية تحت ضغط حجم التذاكر المرتفع أثناء الشفت.
+11. إدارة الضغط والعمل بفاعلية تحت حجم التذاكر المرتفع.
 
 ---
 
@@ -398,21 +377,21 @@ const DEFAULT_FTTH_REPORT_AR: FreshPeriodicReport = {
 في بداية التدريب ظهرت تحديات طبيعية نتيجة الانتقال إلى بيئة عمل حقيقية:
 * كثرة المصطلحات والاختصارات الفنية وتعدد الأنظمة (Huawei NCE, MOSS, ACS).
 * اختلاف خطوات التشخيص بين موديلات أجهزة الـ ONT والشركات المصنعة.
-* الحاجة لسرعة اتخاذ القرار خلال الشفت.
+* الحاجة لسرعة اتخاذ القرار ودقة التشخيص.
 
 **طريقة التغلب عليها:**
-بالممارسة اليومية والتعرض لـ 244 حالة حقيقية، تم إنشاء مسار ذهني منظم للتشخيص، وأصبح ربط الأعراض بنتائج الفحص يتم بمرونة وسرعة دون تردد.
+بالممارسة المستمرة والتعرض لـ 244 حالة حقيقية، تم بناء منهجية ذهنية منظمة للتشخيص، وأصبح ربط الأعراض بنتائج الفحص يتم بمرونة وسرعة دون تردد.
 
 ---
 
 # السادس عشر: التطور المهني ومستوى الأداء
 
 يظهر التطور المهني بشكل جلي في تصاعد حجم الإنتاجية والكفاءة:
-* **البداية:** 19 تذكرة في 28/9 مع مراجعة كل خطوة.
-* **المنتصف:** 33 تذكرة في 1/10 مع بدء الاستقلالية وتنوع مسارات التذاكر.
-* **الذروة:** 54 تذكرة في 4/10، وصولاً إلى **57 تذكرة في 7/10**.
+* **البداية:** 19 تذكرة مع مراجعة كل خطوة.
+* **المنتصف:** 33 تذكرة مع بدء الاستقلالية وتنوع مسارات التذاكر.
+* **الذروة:** 54 تذكرة وصولاً إلى **57 تذكرة** في أعلى مراحل الإنجاز.
 
-يعكس هذا التدرج تحولاً حقيقياً من مستوى متدرب يحتاج إلى إشراف مباشر إلى **موظف فعلي قادر على تغطية الشفت بكفاءة وثقة**.
+يعكس هذا التدرج تحولاً حقيقياً من مستوى متدرب يحتاج إلى إشراف مباشر إلى **موظف فعلي قادر على قيادة المهام التشغيلية بكفاءة وثقة**.
 
 ---
 
@@ -432,100 +411,63 @@ const DEFAULT_FTTH_REPORT_AR: FreshPeriodicReport = {
 
 # الخاتمة
 
-شكّلت هذه الفترة محطة فارقة في مسيرة التدريب التعاوني؛ حيث تم الدمج بين الفهم النظري العميق لخدمات الألياف الضوئية FTTH وأجهزة ONT ومستويات الإشارة والـ CVLANs، وبين التطبيق العملي المكثف عبر معالجة **244 تذكرة فريدة** وتغطية الشفتات الميدانية بنجاح.
+شكّلت هذه الفترة (من 20/9 إلى 7/10) محطة فارقة في مسيرة التدريب التعاوني؛ حيث تم الدمج بين الفهم النظري العميق لخدمات الألياف الضوئية FTTH وأجهزة ONT ومستويات الإشارة والـ CVLANs، وبين التطبيق العملي المكثف عبر معالجة **244 تذكرة فريدة** بنجاح.
 
-وقد حققت هذه التجربة أهدافها التعليمية والمهنية بالكامل، مؤكدة الجاهزية التامة للانخراط في سوق العمل كـ **متدرب وموظف فعلي في قطاع الاتصالات وشبكات FTTH**.
-
----
-
-## ملحق: سجل الحضور ومراحل الدوام
-
-| التاريخ | وقت الدوام | الحالة / النشاط الميداني |
-| ------- | ---------------- | ------------------------------------- |
-| 20/9 | — | استئذان بموافقة رسمية من الجهة المسؤولة |
-| 21/9 | 8:30 ص – 6:00 م | بداية العمل والتعرف على FTTH والتذاكر |
-| 22/9 | 8:30 ص – 6:00 م | التعمق في التشخيص وفحص الخدمة |
-| 27/9 | 2:00 م – 10:00 م | تعمق وتطبيق عملي (Shift B) |
-| 28/9 | 2:00 م – 10:00 م | تطبيق عملي – إنجاز 19 تذكرة |
-| 29/9 | 2:00 م – 10:00 م | تعمق في Configuration والـ CVLANs |
-| 30/9 | 2:00 م – 10:00 م | تطبيق عملي – إنجاز 18 تذكرة |
-| 1/10 | 2:00 م – 10:00 م | تطبيق عملي – إنجاز 33 تذكرة |
-| 4/10 | 2:00 م – 10:00 م | تطبيق عملي – إنجاز 54 تذكرة |
-| 5/10 | 2:00 م – 10:00 م | تطبيق عملي – إنجاز 40 تذكرة |
-| 6/10 | 2:00 م – 10:00 م | تطبيق عملي – إنجاز 23 تذكرة |
-| 7/10 | 2:00 م – 10:00 م | تطبيق عملي – إنجاز 57 تذكرة (ذروة الإنجاز) |
-
-**إجمالي التواجد الميداني: ما بين 91 إلى 113 ساعة معتمدة، تم خلالها إنجاز 244 تذكرة فريدة.**`
+وقد حققت هذه التجربة أهدافها التعليمية والمهنية بالكامل، مؤكدة الجاهزية التامة للانخراط في سوق العمل كـ **متدرب وموظف فعلي في قطاع الاتصالات وشبكات FTTH**.`
 };
 
 // ── Master English Report ─────────────────────────────────────────────
 const DEFAULT_FTTH_REPORT_EN: FreshPeriodicReport = {
-  title: 'Cooperative Training Report',
+  title: 'First Periodic Report',
   majorField: 'FTTH – Fiber to the Home',
   department: 'FTTH Services Department (Technical Support / FTTH Operations)',
   roleAssignment: 'Trainee and Active Employee as FTTH',
-  periodCoverage: 'From Sep 20 to Oct 7',
-  stageOneHours: '8:30 AM – 6:00 PM',
-  stageTwoHours: 'Shift B (2:00 PM – 10:00 PM)',
+  periodCoverage: 'From Sep 20 to Oct 07',
+  stageOneHours: '',
+  stageTwoHours: '',
   intervals: [
     {
       id: 'int_1_en',
-      label: 'Stage 1: Department Induction & FTTH Fundamentals',
-      startDate: 'Sep 21',
-      endDate: 'Sep 22',
-      timeFrom: '08:30',
-      timeTo: '18:00'
+      label: 'Phase 1: Department Induction & FTTH Fundamentals',
+      startDate: 'Fault Triage',
+      endDate: 'Huawei NCE / MOSS / ACS',
+      timeFrom: '',
+      timeTo: ''
     },
     {
       id: 'int_2_en',
-      label: 'Stage 2: Hands-on Practical Application (Shift B)',
-      startDate: 'Sep 27',
-      endDate: 'Oct 01',
-      timeFrom: '14:00',
-      timeTo: '22:00'
+      label: 'Phase 2: Deep RX Signal & CVLAN Diagnostics',
+      startDate: 'Hands-on Execution',
+      endDate: '244 Unique Tickets',
+      timeFrom: '',
+      timeTo: ''
     },
     {
       id: 'int_3_en',
-      label: 'Stage 3: Autonomous Shift Operations (Shift B)',
-      startDate: 'Oct 04',
-      endDate: 'Oct 07',
-      timeFrom: '14:00',
-      timeTo: '22:00'
+      label: 'Phase 3: Autonomous Ticket Operations & Routing',
+      startDate: 'Peak Velocity (57 Cases)',
+      endDate: 'Full Coverage',
+      timeFrom: '',
+      timeTo: ''
     }
   ],
-  customNarrative: `# Introduction
+  customNarrative: `# Introduction — First Periodic Report (Sep 20 – Oct 07)
 
-During the period from Sep 20 to Oct 7 of the cooperative training program, practical training was conducted within an operational environment specialized in **FTTH – Fiber to the Home** services. This period witnessed a progressive transition from familiarization with the operational workflows, systems, and procedures to direct hands-on handling, diagnostic troubleshooting, and end-to-end ticket management.
+During the period from **Sep 20 to Oct 07** of the cooperative training program, practical training was conducted within an operational environment specialized in **FTTH – Fiber to the Home** services. This period witnessed a progressive transition from familiarization with the operational workflows, systems, and procedures to direct hands-on handling, diagnostic troubleshooting, and end-to-end ticket management.
 
 Initially, focus was placed on understanding the core responsibilities of an FTTH technical support specialist, ticket classification, and fault taxonomy. Subsequently, deep technical training was conducted covering **ONT devices**, **RX optical power levels**, and network services associated with **VLAN and CVLAN**, in addition to operational platforms such as **Huawei NCE, MOSS, and ACS**.
 
-Through continuous practical exposure, ticket handling evolved towards greater autonomy, advancing from observing diagnostic workflows to executing direct **Ticket Handling**, root-cause analysis, and routing—whether resolving tickets, reassigning to Call Centre, escalating to specialized tiers (FOPS/NOC), or dispatching field technicians. Over the documented period, **244 unique tickets** were handled at an average of **~35 tickets per shift**, demonstrating readiness as an **active employee in FTTH operations**.
+Through continuous practical exposure, ticket handling evolved towards greater autonomy, advancing from observing diagnostic workflows to executing direct **Ticket Handling**, root-cause analysis, and routing—whether resolving tickets, reassigning to Call Centre, escalating to specialized tiers (FOPS/NOC), or dispatching field technicians. Over this period, **244 unique tickets** were handled at an average of **~35 tickets per cycle**, demonstrating readiness as an **active employee in FTTH operations**.
 
 ---
 
-# 1. Training Timeline and Shift Schedules
+# 1. Operational Progression & Diagnostic Methodology
 
-## Sep 20 – Authorized Absence
+## Phase 1 – Initial Work & Introduction to FTTH Environment
+Operational immersion commenced within the FTTH department, establishing mastery of primary technical support responsibilities, incoming fault queues, and systematic review procedures prior to corrective routing. Key fault categories mastered include: **Slowness**, **Link Down**, **Frequency Disconnections**, and **Port Blocked**.
 
-**Attendance:** Absent.  
-**Reason:** Medical condition.  
-**Action:** Formal leave request submitted and officially approved by management.
-
----
-
-## Sep 21 – Initial Work & Introduction to FTTH Environment
-
-Operational duties commenced within the FTTH department from **8:30 AM to 6:00 PM**.  
-Familiarization was established with primary technical support responsibilities, incoming fault tickets, and preliminary review procedures before taking corrective actions.
-
-Key fault categories introduced included: **Slowness**, **Link Down**, **Frequency Disconnections**, and **Port Blocked**, focusing on understanding technical implications and general diagnostic workflows.
-
----
-
-## Sep 22 – Practical Diagnostics & Service Data Verification
-
-Operational duties continued from **8:30 AM to 6:00 PM**, advancing into hands-on verification methodologies.  
-Emphasis was placed on grounding diagnoses on concrete device telemetry rather than user descriptions alone, notably: **ONT status**, **RX power level**, **MAC Address registration**, and mapped **VLAN services**.
+## Phase 2 – Practical Diagnostics & Telemetry Verification
+Diagnostics focused strictly on empirical device telemetry rather than subjective user reports—examining **ONT status**, **RX power levels**, **MAC Address registration**, and mapped **VLAN / CVLAN services**.
 
 ---
 
@@ -643,39 +585,37 @@ A structured, 10-step troubleshooting methodology was adopted:
 
 ---
 
-# 9. Practical Application & Shift B Operations
+# 9. Practical Application & Operational Handling
 
-Beginning **Sep 27**, operations transitioned to **Shift B (2:00 PM to 10:00 PM)**:
-* **Sep 27 (8h):** Advanced ONT telemetry, RX verification, and case studies.
-* **Sep 28 (8h):** Hands-on handling—**19 tickets** processed.
-* **Sep 29 (8h):** Advanced configuration and CVLAN mapping audits.
-* **Sep 30 (8h):** Autonomous ticket handling and resolution execution—**18 tickets** processed.
-* **Oct 1 (8h):** Multi-tier ticket routing and escalation—**33 tickets** processed.
+During this phase, work transitioned into full hands-on execution across support and operations systems:
+* Comprehensive ONT telemetry diagnostics, RX signal validation, and fault review.
+* Advanced configuration audits and CVLAN mapping verification.
+* Autonomous ticket handling, resolution execution, and multi-tier escalation routing.
 
 ---
 
 # 10. Quantitative Ticket Handling Analytics (244 Tickets)
 
-Across the seven documented shifts, **244 unique tickets** were successfully processed under Shift B (2:00 PM – 10:00 PM):
+Across documented operational batches during the reporting period (Sep 20 – Oct 07), **244 unique tickets** were successfully processed:
 
-| Date | Shift Hours | Handled Unique Tickets |
-| ---- | ----------- | ---------------------: |
-| Sep 28 | 2:00 PM – 10:00 PM | **19** |
-| Sep 30 | 2:00 PM – 10:00 PM | **18** |
-| Oct 1 | 2:00 PM – 10:00 PM | **33** |
-| Oct 4 | 2:00 PM – 10:00 PM | **54** |
-| Oct 5 | 2:00 PM – 10:00 PM | **40** |
-| Oct 6 | 2:00 PM – 10:00 PM | **23** |
-| Oct 7 | 2:00 PM – 10:00 PM | **57** |
-| **Total** | **56 Hours Documented** | **244 Unique Tickets** |
+| Batch / Record | Operational Focus | Handled Unique Tickets |
+| -------------- | ----------------- | ---------------------: |
+| Cycle 1 | Baseline triage & diagnostic validation | **19** |
+| Cycle 2 | Direct handling & resolution closure | **18** |
+| Cycle 3 | Multi-tier routing & escalation | **33** |
+| Cycle 4 | High-velocity operational handling | **54** |
+| Cycle 5 | Central ticket queue & FOPS coordination | **40** |
+| Cycle 6 | Signal diagnostics & quality audits | **23** |
+| Cycle 7 | **Peak operational record throughput** | **57** |
+| **Total** | **Full Period (Sep 20 – Oct 07)** | **244 Unique Tickets** |
 
-* **Shift Performance Benchmark:** Average daily throughput achieved was **34.9 tickets per shift**.
+* **Performance Benchmark:** Average throughput achieved was **34.9 tickets per documented cycle**.
 
 ---
 
-# 11. Daily Category Breakdown
+# 11. Category Breakdown Across Batches
 
-### Sep 28 (19 Tickets Total)
+### Cycle 1 (19 Tickets Total)
 | Category | Unique Count |
 | -------- | -----------: |
 | Call Centre | 15 |
@@ -687,7 +627,7 @@ Across the seven documented shifts, **244 unique tickets** were successfully pro
 
 ---
 
-### Sep 30 (18 Tickets Total)
+### Cycle 2 (18 Tickets Total)
 | Category | Unique Count |
 | -------- | -----------: |
 | Resolved | 11 |
@@ -698,7 +638,7 @@ Across the seven documented shifts, **244 unique tickets** were successfully pro
 
 ---
 
-### Oct 1 (33 Tickets Total)
+### Cycle 3 (33 Tickets Total)
 | Category | Unique Count |
 | -------- | -----------: |
 | Call Centre | 19 |
@@ -711,7 +651,7 @@ Across the seven documented shifts, **244 unique tickets** were successfully pro
 
 ---
 
-### Oct 4 (54 Tickets Total)
+### Cycle 4 (54 Tickets Total)
 | Category | Unique Count |
 | -------- | -----------: |
 | Call Centre | 33 |
@@ -723,7 +663,7 @@ Across the seven documented shifts, **244 unique tickets** were successfully pro
 
 ---
 
-### Oct 5 (40 Tickets Total)
+### Cycle 5 (40 Tickets Total)
 | Category | Unique Count |
 | -------- | -----------: |
 | Call Centre | 14 |
@@ -736,7 +676,7 @@ Across the seven documented shifts, **244 unique tickets** were successfully pro
 
 ---
 
-### Oct 6 (23 Tickets Total)
+### Cycle 6 (23 Tickets Total)
 | Category | Unique Count |
 | -------- | -----------: |
 | CCS | 10 |
@@ -748,7 +688,7 @@ Across the seven documented shifts, **244 unique tickets** were successfully pro
 
 ---
 
-### Oct 7 (57 Tickets Total – Peak Performance)
+### Cycle 7 (57 Tickets Total – Peak Performance)
 | Category | Unique Count |
 | -------- | -----------: |
 | Call Centre | 32 |
@@ -764,7 +704,7 @@ Across the seven documented shifts, **244 unique tickets** were successfully pro
 
 # 12. Overall Category Distribution
 
-Consolidating the **244 unique tickets** across all seven shifts reveals the following distribution:
+Consolidating the **244 unique tickets** across all documented cycles reveals the following distribution:
 
 | Category (Routing Channel) | Total Tickets | Percentage |
 | -------------------------- | ------------: | ---------: |
@@ -780,11 +720,11 @@ Consolidating the **244 unique tickets** across all seven shifts reveals the fol
 
 ---
 
-# 13. Advanced Autonomous Operations (Oct 4 to Oct 7)
+# 13. Advanced Autonomous Operations
 
-Operations under Shift B (2:00 PM – 10:00 PM) reached full operational independence:
+Operations reached full independence:
 * Rapid telemetry diagnosis, triage, and accurate routing without direct supervision.
-* High-volume ticket processing culminated on **Oct 7** with a record **57 tickets handled** in a single shift.
+* High-volume ticket processing culminating in a record **57 tickets handled** in a single cycle.
 
 ---
 
@@ -799,13 +739,13 @@ Operations under Shift B (2:00 PM – 10:00 PM) reached full operational indepen
 7. End-to-end ticket lifecycle handling and closure.
 8. Escalation protocols to specialized engineering units (FOPS, NOC).
 9. Accurate field dispatch triage.
-10. Effective workload and time management under peak shift volumes.
+10. Effective workload management under peak case volumes.
 
 ---
 
 # 15. Operational Challenges & Mitigation
 
-Initial challenges included complex technical acronyms, diverse vendor interfaces (Huawei, Nokia, ZTE), and rapid decision-making requirements under live shift constraints.  
+Initial challenges included complex technical acronyms, diverse vendor interfaces (Huawei, Nokia, ZTE), and rapid decision-making requirements under live operational constraints.  
 Through repetitive immersion and handling 244 real-world cases, diagnostic reflexes were honed into a structured, highly dependable operational workflow.
 
 ---
@@ -813,9 +753,9 @@ Through repetitive immersion and handling 244 real-world cases, diagnostic refle
 # 16. Professional Performance Trajectory
 
 A clear progression in operational efficiency was demonstrated:
-* **Initial Stage:** 19 tickets on Sep 28 with step-by-step verification.
-* **Intermediate Stage:** 33 tickets on Oct 1 with expanding multi-channel routing.
-* **Peak Maturity:** 54 tickets on Oct 4, reaching **57 tickets on Oct 7**.
+* **Initial Stage:** 19 tickets with step-by-step verification.
+* **Intermediate Stage:** 33 tickets with expanding multi-channel routing.
+* **Peak Maturity:** 54 tickets, reaching **57 tickets** at peak output.
 
 ---
 
@@ -835,29 +775,8 @@ This training bridged theoretical concepts with real-world telecommunications in
 
 # Conclusion
 
-This cooperative training period marked a transformative milestone, synthesizing theoretical fiber optics foundations with intensive hands-on experience handling **244 unique tickets** across operational shifts.  
-The experience confirmed full operational readiness to perform as an **active employee in FTTH telecommunications and network operations**.
-
----
-
-## Appendix: Attendance and Operational Log
-
-| Date | Shift Hours | Operational Activity |
-| ---- | ----------- | -------------------- |
-| Sep 20 | — | Authorized Leave (Approved) |
-| Sep 21 | 8:30 AM – 6:00 PM | Department Induction & FTTH Fundamentals |
-| Sep 22 | 8:30 AM – 6:00 PM | Telemetry Diagnostics & Service Verification |
-| Sep 27 | 2:00 PM – 10:00 PM | Advanced Hands-on Diagnostics (Shift B) |
-| Sep 28 | 2:00 PM – 10:00 PM | Operational Handling – 19 Tickets Processed |
-| Sep 29 | 2:00 PM – 10:00 PM | Configuration & CVLAN Deep Dive |
-| Sep 30 | 2:00 PM – 10:00 PM | Operational Handling – 18 Tickets Processed |
-| Oct 1 | 2:00 PM – 10:00 PM | Operational Handling – 33 Tickets Processed |
-| Oct 4 | 2:00 PM – 10:00 PM | Operational Handling – 54 Tickets Processed |
-| Oct 5 | 2:00 PM – 10:00 PM | Operational Handling – 40 Tickets Processed |
-| Oct 6 | 2:00 PM – 10:00 PM | Operational Handling – 23 Tickets Processed |
-| Oct 7 | 2:00 PM – 10:00 PM | Peak Shift Handling – 57 Tickets Processed |
-
-**Total Logged Presence: ~91 to 113 Certified Hours with 244 Handled Tickets.**`
+This first cooperative training period (Sep 20 – Oct 07) marked a transformative milestone, synthesizing theoretical fiber optics foundations with intensive hands-on experience handling **244 unique tickets**.  
+The experience confirmed full operational readiness to perform as an **active employee in FTTH telecommunications and network operations**.`
 };
 
 export const PeriodicTab: React.FC = () => {
@@ -1349,43 +1268,17 @@ export const PeriodicTab: React.FC = () => {
               </div>
             </div>
 
-            {/* Row 2: Coverage & Shifts */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="block text-[11px] font-black text-sub mb-1">
-                  {isReportAr ? 'الفترة المشمولة بالتقرير:' : 'Reporting Period:'}
-                </label>
-                <input
-                  type="text"
-                  value={currentReport.periodCoverage}
-                  onChange={(e) => setCurrentReport({ ...currentReport, periodCoverage: e.target.value })}
-                  className="w-full px-2.5 py-1.5 bg-card border border-line rounded-lg font-bold text-ink"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-black text-sub mb-1">
-                  {isReportAr ? 'دوام المرحلة الأولى:' : 'Stage 1 Hours:'}
-                </label>
-                <input
-                  type="text"
-                  value={currentReport.stageOneHours}
-                  onChange={(e) => setCurrentReport({ ...currentReport, stageOneHours: e.target.value })}
-                  className="w-full px-2.5 py-1.5 bg-card border border-line rounded-lg font-bold text-ink"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-black text-sub mb-1">
-                  {isReportAr ? 'دوام المرحلة الثانية:' : 'Stage 2 Hours:'}
-                </label>
-                <input
-                  type="text"
-                  value={currentReport.stageTwoHours}
-                  onChange={(e) => setCurrentReport({ ...currentReport, stageTwoHours: e.target.value })}
-                  className="w-full px-2.5 py-1.5 bg-card border border-line rounded-lg font-bold text-ink"
-                />
-              </div>
+            {/* Row 2: Period Coverage Only */}
+            <div>
+              <label className="block text-[11px] font-black text-sub mb-1">
+                {isReportAr ? 'الفترة المشمولة بالتقرير (من تاريخ - إلى تاريخ):' : 'Reporting Period (From Date – To Date):'}
+              </label>
+              <input
+                type="text"
+                value={currentReport.periodCoverage}
+                onChange={(e) => setCurrentReport({ ...currentReport, periodCoverage: e.target.value })}
+                className="w-full px-2.5 py-1.5 bg-card border border-line rounded-lg font-bold text-ink"
+              />
             </div>
 
             {/* Markdown Narrative Textarea */}
@@ -1599,31 +1492,15 @@ export const PeriodicTab: React.FC = () => {
                     {currentReport.roleAssignment}
                   </span>
                 </div>
-
-                {/* 8. Stage 1 Hours */}
-                <div className="flex items-center justify-between pt-0.5">
-                  <span className="font-bold text-sub">
-                    {isReportAr ? 'دوام المرحلة الأولى:' : 'Stage 1 Hours:'}
-                  </span>
-                  <span className="font-bold text-ink">{currentReport.stageOneHours}</span>
-                </div>
-
-                {/* 9. Stage 2 Hours */}
-                <div className="flex items-center justify-between pt-0.5">
-                  <span className="font-bold text-sub">
-                    {isReportAr ? 'دوام المرحلة الثانية:' : 'Stage 2 Hours:'}
-                  </span>
-                  <span className="font-bold text-ink">{currentReport.stageTwoHours}</span>
-                </div>
               </div>
 
-              {/* Work Intervals Summary & Total Metric on Cover */}
+              {/* Technical Scope & Pillars Summary on Cover (No Shift Times / Hours) */}
               <div className="mt-4 p-3 bg-bg border border-line rounded-xl space-y-2 text-start print:border print:border-slate-300 print:rounded-xl print:bg-slate-50/40 print:p-2.5 shadow-2xs">
                 <div className="flex items-center justify-between pb-1 border-b border-line/60">
                   <div className="flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5 text-accent" />
                     <span className="text-xs font-black text-ink">
-                      {isReportAr ? 'نظام وتوزيع الفترات والورديات المعتمدة:' : 'Authorized Shift & Period Distribution:'}
+                      {isReportAr ? 'المحاور الفنية ونطاق الإنجاز في الفترة:' : 'Periodic Technical Scope & Milestones:'}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1633,20 +1510,18 @@ export const PeriodicTab: React.FC = () => {
                         : (isReportAr ? '244 تذكرة فريدة معالجة' : '244 Handled Tickets')}
                     </span>
                     <span className="text-[10px] text-accent font-black">
-                      {selectedPeriod === 'p2'
-                        ? (isReportAr ? '128 - 146 ساعة معتمدة' : '~128-146 Hours')
-                        : (isReportAr ? '91 - 113 ساعة معتمدة' : '~91-113 Hours')}
+                      {currentReport.periodCoverage}
                     </span>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                <div className={`grid grid-cols-1 ${currentReport.intervals.length === 4 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-2 text-xs`}>
                   {currentReport.intervals.map((int, idx) => (
                     <div key={int.id || idx} className="p-2 bg-card border border-line rounded-lg print:border-slate-300">
                       <div className="font-black text-ink text-[11px] mb-1">{int.label}</div>
-                      <div className="text-[10px] text-sub font-bold flex items-center justify-between">
-                        <span>{isReportAr ? `من ${int.startDate} إلى ${int.endDate}` : `${int.startDate} – ${int.endDate}`}</span>
-                        <span className="font-black text-accent">{int.timeFrom} - {int.timeTo}</span>
+                      <div className="text-[10px] text-sub font-bold flex items-center justify-between gap-2">
+                        <span>{int.startDate}</span>
+                        <span className="font-black text-accent">{int.endDate}</span>
                       </div>
                     </div>
                   ))}

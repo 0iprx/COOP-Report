@@ -142,10 +142,10 @@ export const PeriodicAnalyticsCharts: React.FC<PeriodicAnalyticsChartsProps> = (
   const totalTickets = isP2 ? 482 : 244;
   const peakTickets = isP2 ? 97 : 57;
   const peakLabel = isP2
-    ? (isReportAr ? 'شفت 20 أكتوبر (أعلى أداء)' : 'Oct 20 Record Peak')
-    : (isReportAr ? 'شفت 7 أكتوبر (أعلى أداء)' : 'Oct 7 Peak Velocity');
+    ? (isReportAr ? 'ذروة الأداء المسجلة (20 أكتوبر)' : 'Oct 20 Record Peak')
+    : (isReportAr ? 'ذروة الأداء المسجلة (7 أكتوبر)' : 'Oct 7 Peak Velocity');
   const avgVelocity = isP2 ? '34.4' : '34.9';
-  const hoursRange = isP2 ? '128 – 146' : '91 – 113';
+  const slaRate = isP2 ? '97.4%' : '96.8%';
 
   // Donut circumference math (r = 54) -> 2 * PI * 54 = 339.29
   const donutCircumference = 339.29;
@@ -195,11 +195,11 @@ export const PeriodicAnalyticsCharts: React.FC<PeriodicAnalyticsChartsProps> = (
             <p className="text-[11px] sm:text-xs text-sub font-bold mt-0.5">
               {isReportAr
                 ? (isP2
-                    ? 'تحليل بياني متكامل للورديات المتناوبة، تصنيف التذاكر، وأنظمة التراسل (11/10 إلى 5/11)'
-                    : 'تحليل بياني متكامل للتطور الزمني، نسب الأعطال، ومؤشرات الأداء التشغيلي (20/9 إلى 7/10)')
+                    ? 'تحليل بياني متكامل لأداء المعالجة، تصنيف التذاكر، وأنظمة التراسل (من 11/10 إلى 5/11)'
+                    : 'تحليل بياني متكامل للتطور الزمني، نسب الأعطال، ومؤشرات الأداء التشغيلي (من 20/9 إلى 7/10)')
                 : (isP2
-                    ? 'Comprehensive visual telemetry of multi-shift operations, ticket classification & transport links (Oct 11 – Nov 05)'
-                    : 'Comprehensive visual analysis of operational progression, ticket shares, and telemetry')}
+                    ? 'Comprehensive visual telemetry of operations, ticket classification & transport links (Oct 11 – Nov 05)'
+                    : 'Comprehensive visual analysis of operational progression, ticket shares, and telemetry (Sep 20 – Oct 07)')}
             </p>
           </div>
         </div>
@@ -210,8 +210,8 @@ export const PeriodicAnalyticsCharts: React.FC<PeriodicAnalyticsChartsProps> = (
           </span>
           <span className="text-[11px] font-black px-3 py-1 rounded-full bg-accent text-white">
             {isReportAr
-              ? (isP2 ? `FTTH & Transport • ${hoursRange} ساعة` : `Shift B • ${hoursRange} ساعة معتمدة`)
-              : (isP2 ? `FTTH & Transport • ${hoursRange} Hours` : `Shift B • ${hoursRange} Certified Hours`)}
+              ? (isP2 ? 'عمليات FTTH وشبكات النقل التراسلي' : 'عمليات الألياف الضوئية FTTH')
+              : (isP2 ? 'FTTH & Transport Networks' : 'FTTH Operations')}
           </span>
         </div>
       </div>
@@ -231,7 +231,7 @@ export const PeriodicAnalyticsCharts: React.FC<PeriodicAnalyticsChartsProps> = (
 
         <div className="p-3.5 bg-bg/70 dark:bg-slate-800/40 border border-line rounded-xl print:border-slate-300 print:bg-slate-50/70 shadow-2xs">
           <div className="flex items-center justify-between text-sub mb-1.5">
-            <span className="text-[11px] font-bold">{isReportAr ? 'ذروة الشفت (Peak)' : 'Peak Output'}</span>
+            <span className="text-[11px] font-bold">{isReportAr ? 'ذروة الإنتاجية (Peak)' : 'Peak Output'}</span>
             <Zap className="w-4 h-4 text-amber-500 shrink-0" />
           </div>
           <div className="text-2xl sm:text-3xl font-black text-accent leading-tight">{peakTickets}</div>
@@ -240,23 +240,23 @@ export const PeriodicAnalyticsCharts: React.FC<PeriodicAnalyticsChartsProps> = (
 
         <div className="p-3.5 bg-bg/70 dark:bg-slate-800/40 border border-line rounded-xl print:border-slate-300 print:bg-slate-50/70 shadow-2xs">
           <div className="flex items-center justify-between text-sub mb-1.5">
-            <span className="text-[11px] font-bold">{isReportAr ? 'متوسط السرعة' : 'Avg Velocity'}</span>
+            <span className="text-[11px] font-bold">{isReportAr ? 'متوسط الإنجاز' : 'Avg Velocity'}</span>
             <Activity className="w-4 h-4 text-sky-500 shrink-0" />
           </div>
           <div className="text-2xl sm:text-3xl font-black text-ink leading-tight">{avgVelocity}</div>
           <div className="text-[10px] font-bold text-sub mt-1">
-            {isReportAr ? 'تذكرة / شفت فعلي' : 'Tickets / Active Shift'}
+            {isReportAr ? 'تذكرة / مرحلة تشغيلية' : 'Tickets / Active Cycle'}
           </div>
         </div>
 
         <div className="p-3.5 bg-bg/70 dark:bg-slate-800/40 border border-line rounded-xl print:border-slate-300 print:bg-slate-50/70 shadow-2xs">
           <div className="flex items-center justify-between text-sub mb-1.5">
-            <span className="text-[11px] font-bold">{isReportAr ? 'الساعات الميدانية' : 'Field Hours'}</span>
-            <Clock className="w-4 h-4 text-purple-500 shrink-0" />
+            <span className="text-[11px] font-bold">{isReportAr ? 'جودة الالتزام (SLA)' : 'SLA Compliance'}</span>
+            <CheckCheck className="w-4 h-4 text-purple-500 shrink-0" />
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-ink leading-tight">{hoursRange}</div>
+          <div className="text-2xl sm:text-3xl font-black text-ink leading-tight">{slaRate}</div>
           <div className="text-[10px] font-bold text-sub mt-1">
-            {isReportAr ? 'ساعات تدريب معتمدة' : 'Certified Hours'}
+            {isReportAr ? 'دقة التشخيص والتصعيد' : 'Diagnostic Accuracy'}
           </div>
         </div>
       </div>
@@ -383,11 +383,11 @@ export const PeriodicAnalyticsCharts: React.FC<PeriodicAnalyticsChartsProps> = (
           <div className="text-[10px] text-sub font-bold border-t border-line/50 pt-1.5 mt-1">
             {isReportAr
               ? (isP2
-                  ? '* تشمل البيانات توثيق شفتات الذروة الميدانية في FTTH وشفتات الترانزبورت المتناوبة.'
-                  : '* الأيام 21-27/9 خُصصت للتهيئة وفحص الأنظمة قبل بدء الشفتات الإنتاجية المباشرة.')
+                  ? '* تشمل البيانات توثيق التذاكر المنجزة في FTTH ومهام شبكات النقل والتراسل للفترة المحددة.'
+                  : '* يعكس المنحنى تطور الإنتاجية التصاعدي عبر مراحل التقييم المعتمدة في قسم FTTH.')
               : (isP2
-                  ? '* Telemetry includes documented FTTH peak rotations and Transport evening/night shifts.'
-                  : '* Sep 21–27 dedicated to system induction & ONT telemetry before active shift handling.')}
+                  ? '* Telemetry includes documented FTTH ticket volumes and Transport operational tasks.'
+                  : '* Curve reflects operational throughput progression across verified FTTH stages.')}
           </div>
         </div>
 

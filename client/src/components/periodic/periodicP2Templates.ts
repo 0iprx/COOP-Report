@@ -14,144 +14,122 @@ export interface FreshPeriodicReport {
 
 // ── Master Arabic Report for Period 2 (Oct 11 – Nov 05) ───────────────
 export const DEFAULT_REPORT_P2_AR: FreshPeriodicReport = {
-  title: 'تقرير التدريب التعاوني (التقرير الفتري الثاني)',
+  title: 'التقرير الفتري الثاني',
   majorField: 'FTTH Operations & Transport Networks (خدمات الألياف الضوئية وشبكات النقل)',
-  department: 'قسم خدمات الألياف FTTH وقسم شبكات النقل والتراسل (Transport Operations)',
+  department: 'قسم خدمات الألياف FTTH وقسم شبكات النقل والتراسل (Transport Domain)',
   roleAssignment: 'موظف فعلي في FTTH (الأسابيع 7-8) ومتدرب في شبكات الترانزبورت (الأسابيع 9-10)',
   periodCoverage: 'من 11/10 إلى 5/11',
-  stageOneHours: 'شفتات FTTH متناوبة: 2:00 م – 10:00 م، و 4:00 م – 12:00 م، و 10:00 م – 6:00 ص',
-  stageTwoHours: 'شفتات Transport: 4:00 م – 12:00 م، و 6:00 م – 2:00 ص، وصباحي 10:30 ص – 6:00 م',
+  stageOneHours: '',
+  stageTwoHours: '',
   intervals: [
     {
       id: 'int_p2_1',
-      label: 'المرحلة الأولى: إدارة وتغطية شفتات FTTH المتناوبة كموظف فعلي',
-      startDate: '11/10',
-      endDate: '14/10',
-      timeFrom: '14:00',
-      timeTo: '22:00'
+      label: 'المرحلة الأولى: إدارة تذاكر FTTH الفعلي ومعالجة الأعطال',
+      startDate: 'تشغيل وحل البلاغات',
+      endDate: 'CCS / Call Centre',
+      timeFrom: '',
+      timeTo: ''
     },
     {
       id: 'int_p2_2',
-      label: 'المرحلة الثانية: إدارة ذروة التذاكر (97 تذكرة) وشفتات المساء والليل',
-      startDate: '18/10',
-      endDate: '21/10',
-      timeFrom: '16:00',
-      timeTo: '00:00'
+      label: 'المرحلة الثانية: ذروة المعالجة التشغيلية (97 تذكرة بالهاند أوفر)',
+      startDate: 'تشخيص وفحص متقدم',
+      endDate: '482 تذكرة إجمالاً',
+      timeFrom: '',
+      timeTo: ''
     },
     {
       id: 'int_p2_3',
-      label: 'المرحلة الثالثة: الانتقال لقسم شبكات النقل والورديات الليلية (Transport)',
-      startDate: '27/10',
-      endDate: '29/10',
-      timeFrom: '18:00',
-      timeTo: '02:00'
+      label: 'المرحلة الثالثة: مراقبة إنذارات النقل (TS-01 إلى TS-04)',
+      startDate: 'BGP / IGW / DIA',
+      endDate: 'CA / Spider / Cacti',
+      timeFrom: '',
+      timeTo: ''
     },
     {
       id: 'int_p2_4',
-      label: 'المرحلة الرابعة: تشخيص إنذارات التراسل واختبارات الحماية للشبكة الناقلة',
-      startDate: '3/11',
-      endDate: '5/11',
-      timeFrom: '10:30',
-      timeTo: '18:00'
+      label: 'المرحلة الرابعة: البنية الضوئية (DWDM/OTN) وبوابة المعرفة (NOC Portal)',
+      startDate: 'MPLS / Alarm Storm',
+      endDate: 'Python / Netmiko',
+      timeFrom: '',
+      timeTo: ''
     }
   ],
-  customNarrative: `# مقدمة التقرير الفتري الثاني
+  customNarrative: `# مقدمة التقرير الفتري الثاني (من 11/10 إلى 5/11)
 
-يغطي هذا التقرير الفتري الثاني مرحلة مفصلية ومتقدمة من مسيرة التدريب التعاوني تمتد عبر أربعة أسابيع تدريبية كاملة من **11 أكتوبر وحتى 5 نوفمبر** (الأسابيع: 7، 8، 9، 10). تميزت هذه الفترة بنقلة نوعية جمعت بين محورين هندسيين وتشغيليين متكاملين:
+يغطي هذا **التقرير الفتري الثاني** أربعة أسابيع تدريبية وتشغيلية متقدمة ممتدة **من 11 أكتوبر إلى 5 نوفمبر** (الأسابيع: 7، 8، 9، 10). وتميزت هذه الفترة بالجمع بين مسارين عمليين وهندسيين متكاملين في قطاع الاتصالات:
 
-1. **المحور الأول (الأسابيع 7 و 8):** تمكين تشغيلي كامل كـ **موظف فعلي في قسم خدمات الألياف الضوئية (FTTH)**، تم خلاله تغطية ورديات العمل الميداني على مدار الساعة (24/7) التي شملت الشفت الأساسي الأكثر تكراراً (**من 2:00 ظهراً إلى 10:00 ليلاً**)، والورديات المسائية الممتدة (**من 4:00 عصراً إلى 12:00 منتصف الليل**)، وورديات الليل والسهر (**من 10:00 ليلاً إلى 6:00 صباحاً**)، وتحقيق أرقام إنتاجية استثنائية بلغت ذروتها التاريخية بمعالجة **97 تذكرة تشغيلية معتمدة في شفت واحد** بتاريخ 20 أكتوبر.
-2. **المحور الثاني (الأسابيع 9 و 10):** الانتقال المهني المبرمج إلى **قسم شبكات النقل والتراسل (Transport Networks)** كـ **متدرب تخصصي**؛ للتعرف على البنية التحتية الكبرى للشبكة (Backbone Infrastructure)، وتقنيات التراسل الضوئي عالي السعة (DWDM / OTN)، وشبكات التراسل الميكروي (Microwave Links)، ومراقبة تدفق البيانات بين المقاسم وأبراج الاتصالات.
-
-وقد أثمرت هذه الفترة عن التعامل مع **482 تذكرة وبلاغ تشغيلي موثق** بمعدل التزام باتفاقية مستوى الخدمة بلغ **97.4%**، مما رسخ فهماً شاملاً لمنظومة الاتصالات المتكاملة بدءاً من نقطة وصول العميل (FTTH Access) وحتى النواة المركزية للشبكة (Core & Transport).
-
----
-
-# أولاً: التسلسل الزمني وتوزيع الورديات
-
-## 1. الأسبوع السابع (من 11/10 إلى 15/10) – قسم FTTH:
-* **الأحد 11/10 (Shift B من 2:00 م إلى 10:00 م):** إدارة الوردية كـ موظف فعلي ومعالجة **40 تذكرة تشغيلية موثقة بالهاند أوفر** (CCS: 10، Call Centre: 15، Open Access: 7، Resolved: 6، و Pending to NOC: 2).
-* **الاثنين 12/10 (Shift B من 2:00 م إلى 10:05 م):** استكمال شفت المساء ومعالجة **38 تذكرة** وفحص استقرار الإشارة الضوئية والتأكد من مطابقة الـ MAC Address.
-* **الثلاثاء 13/10 (شفت صباحي من 10:00 ص إلى 6:00 م):** فحص بلاغات النفاذ وسرعات التصفح لـ **32 تذكرة** وإحالة الحالات السليمة للكول سنتر.
-* **الأربعاء 14/10 (شفت صباحي من 9:55 ص إلى 6:00 م):** معالجة **28 تذكرة** وفحص منافذ الـ ONT المعطلة عبر خوادم ACS.
-* **الخميس 15/10:** راحة أسبوعية مجدولة.
+1. **المحور الأول — قسم خدمات الألياف الضوئية (FTTH Operations) [الأسابيع 7 و 8]:**  
+   العمل كـ **موظف فعلي** متمكن من التعامل المباشر والمستقل مع بلاغات المشتركين وأنظمة تسليم المهام (Handover Tools)، مما أثمر عن معالجة وتوثيق **482 تذكرة وبلاغاً تشغيلياً** وصلت ذروتها التاريخية إلى **97 تذكرة في مرحلة واحدة** بمعدل التزام باتفاقية مستوى الخدمة (SLA) بلغ **97.4%**.
+2. **المحور الثاني — قسم شبكات النقل والتراسل (Transport Domain & NOC) [الأسابيع 9 و 10]:**  
+   الانتقال التخصصي كـ **متدرب في شبكات النقل**؛ حيث تم التدرب على إجراءات التشغيل القياسية (SOPs) لمركز عمليات الشبكة (NOC) للتعامل مع إنذارات النواة (BGP, Device Stopped, FAN/Power)، وبوابة الإنترنت الدولية (IP Transit / Peering)، وحالات العملاء المؤسسيين والدوائر المخصصة (DIA, GCX, KAUST, VSAT, Dark Fiber)، إضافة إلى معمارية النقل البصري (DWDM/OTN) وربط الأعطال (Alarm Correlation)، وتطوير **بوابة معرفية تفاعلية (NOC Knowledge Portal)** لجمع وتوثيق كافة إجراءات النقل والشبكة في مرجع هندسي موحد.
 
 ---
 
-## 2. الأسبوع الثامن (من 18/10 إلى 22/10) – قسم FTTH (ذروة الإنجاز التشغيلي):
-* **الأحد 18/10 (شفت صباحي كامل من 8:30 ص إلى 6:00 م):** معالجة التذاكر المتراكمة وإغلاق **35 تذكرة** بالتنسيق مع الفرق الفنية.
-* **الاثنين 19/10 (شفت صباحي من 8:30 ص إلى 6:00 م):** إنجاز **16 تذكرة موثقة بالهاند أوفر** موزعة بين CCS (6 تذاكر)، Call Centre (6 تذاكر)، Open Access (تذكرتان)، و Resolved مباشر (تذكرتان).
-* **الثلاثاء 20/10 (شفت مسائي من 4:00 م إلى 12:00 منتصف الليل):** **ذروة الإنجاز التاريخي للتدريب** بإنجاز **97 تذكرة تشغيلية معتمدة** عبر نظام CCS (34 تذكرة)، Call Centre (30 تذكرة)، Resolved مباشر (16 تذكرة)، و Open Access (9 تذاكر).
-* **الأربعاء 21/10 (شفت مسائي ممتد من 4:00 م إلى 12:00 منتصف الليل):** استكمال الأداء القياسي وإغلاق **45 تذكرة** حتى اللحظات الأخيرة من الشفت (11:57 م) موزعة بين CCS (25 تذكرة)، Call Centre (11 تذكرة)، Open Access (6 تذاكر)، و Resolved مباشر (3 تذاكر).
-* **الخميس 22/10:** راحة أسبوعية مجدولة.
+# أولاً: المحور الأول — عمليات قسم الألياف الضوئية (FTTH)
+
+خلال الأسبوعين السابع والثامن، تركزت المهام الميدانية والتشغيلية على قيادة مسار التشخيص ومعالجة التذاكر عبر أنظمة الهاند أوفر وتصنيف البلاغات:
+
+## 1. توزيع وتصنيف التذاكر المعالجة (482 تذكرة موثقة)
+* **نظام خدمة العملاء والدعم المركزي (CCS):** استحوذ على النسبة الأكبر بمعدل **36.5% (176 تذكرة)** لمتابعة البلاغات الفنية المركزية ومطابقة بيانات الخدمة.
+* **إحالات الكول سنتر (Call Centre):** بنسبة **24.3% (117 تذكرة)** لإعادة التوجيه الفني الدقيق بعد التحقق من سلامة الخدمة مع تدوين تعليق تشخيصي واضح (Diagnostic Comment).
+* **النفاذ المفتوح والمشغلين (Open Access):** بنسبة **14.5% (70 تذكرة)** لمعالجة أعطال البنية المشتركة ونقاط الربط مع المشغلين.
+* **المعالجة والإغلاق الفوري (Resolved Direct):** بنسبة **11.8% (57 تذكرة)** تم إغلاقها مباشرة بعد استقرار الإشارة وضبط المنافذ عبر ACS.
+* **الدعم التخصصي والتصعيد (TLS & NOC & OSS):** بنسبة **12.9% (62 تذكرة)** شملت التصعيد للفرق الهندسية المتقدمة ومراقبة الأنظمة.
+
+## 2. المعايير الفنية والمنصات المستخدمة في FTTH
+* التحقق الصارم من **نطاق القدرة الضوئية المستقبلة (RX Power)** المعتمد بين **\`-10 dBm\` إلى \`-26 dBm\`** عبر منصة **Huawei NCE**.
+* فحص خدمات الـ **CVLAN**: خدمة الإنترنت (**1501 - HSI**)، خدمة الإدارة (**3980 - ACS / TR-069**)، والخدمة الصوتية (**1810 - VoIP**).
+* توثيق الحالات القياسية التي بلغت في ذروتها **97 تذكرة** (موزعة بين CCS: 34، Call Centre: 30، Resolved: 16، Open Access: 9، TLS: 3، NOC: 2، NAS: 2، OSS: 1)، وحالات أخرى مسجلة مثل (40 تذكرة، 45 تذكرة، 31 تذكرة، 16 تذكرة).
 
 ---
 
-## 3. الأسبوع التاسع (من 25/10 إلى 29/10) – الانتقال لقسم شبكات النقل (Transport):
-* **الأحد 25/10 والاثنين 26/10:** استئذان رسمي لعارض صحي معتمد وموافق عليه نظامياً.
-* **الثلاثاء 27/10 (شفت مسائي من 4:00 م إلى 11:50 م):** مباشرة العمل في قسم Transport، والتعرف على البنية التحتية ومسارات التراسل الرئيسية ومتابعة 26 مهمة.
-* **الأربعاء 28/10 (من 4:20 م إلى 12:20 بعد منتصف الليل):** دراسة كبائن ومسارات التراسل الضوئي (DWDM و OTN) ومتابعة 29 حالة تشغيلية.
-* **الخميس 29/10 (وردية ليلية من 6:00 م إلى 2:00 فجراً):** شفت ليلي لمراقبة استقرار حركة البيانات وإنجاز **31 تذكرة ومهمة تراسل موثقة بالهاند أوفر** (CCS: 16، Open Access: 5، Call Centre: 3، Resolved: 3، TLS: 2، OSS: 2).
+# ثانياً: المحور الثاني — إجراءات وتقنيات شبكات النقل (Transport Domain)
 
----
+مثّل الانتقال إلى **قسم الترانزبورت (Transport Networks)** نقلة هندسية شاملة لاكتساب مهارات مركز عمليات الشبكة (NOC) والتعامل مع العمود الفقري للشبكة:
 
-## 4. الأسبوع العاشر (من 1/11 إلى 5/11) – قسم شبكات النقل (Transport):
-* **الأحد 1/11 والاثنين 2/11:** تهيئة ومراجعة بيانات الدوائر الناقلة وتدفق الترافيك.
-* **الثلاثاء 3/11 (دوام صباحي من 10:30 ص إلى 6:00 م):** فحص إنذارات شبكات النقل واستكشاف أخطاء وصلات الميكروويف (Microwave Links) لـ 34 مهمة وبلاغ.
-* **الأربعاء 4/11 (دوام صباحي من 10:30 ص إلى 6:00 م):** اختبارات مسارات الحماية التلقائية (Protection Switching) للدوائر الناقلة لـ 30 مهمة.
-* **الخميس 5/11 (دوام صباحي من 10:30 ص إلى 6:00 م):** مراجعة مؤشرات الأداء والتوثيق الهندسي الختامي لـ 21 مهمة تشغيلية.
+## 1. معالجة إنذارات النقل الأساسية (Transport Alarm Handling)
+* **إنذار توقف الجهاز (\`Device has stopped\`):**
+  * التحقق الفوري من عدد العملاء المتأثرين عبر منصة **CA Performance → Health → عمود \`IfAlias\`** وكذلك قاعدة بيانات **Spider**.
+  * **عميل واحد:** التنسيق مع **B-care** لفتح تذكرة **CTT** والتواصل مع العميل والتحقق من الكهرباء.
+  * **عدة عملاء:** فتح تذكرة شبكة (**NTT**) وإرسال إشعار انقطاع مفاجئ (**Sudden Outage Notice**) ومراجعة فريقي الدعم والكهرباء مع توثيق تعليق واضح.
+* **إنذار سقوط جلسة BGP (\`BGP down\`):**
+  * الدخول إلى عنصر الشبكة (NE) وتنفيذ أوامر التوجيه (\`show bgp summary\`, \`show route <IP>\`, \`show interfaces\`) لقراءة وصف واجهة الخروج.
+  * **جلسة عميل:** يتم تجاهل الإنذار وفق الإجراء القياسي.
+  * **عنصر شبكة (Network Element):** فتح تذكرة **Critical NTT** وإسنادها لـ **Back Office (BO)** والاتصال بهم مباشرة مع مراسلة المزود بالبريد.
+  * التمييز بين حالة السقوط (\`Active\` أو \`Idle\`) والحالة المستقرة (\`Established\` مع عدد البادئات).
+* **إنذارات المراوح والكهرباء (\`Faulty FAN Detected\`):**
+  * التحقق المسبق عبر SSH باستخدام أوامر \`show env fan\` و \`show env all\` للتمييز بين الإنذار الوهمي والإنذار الحقيقي قبل تصعيده لـ Back Office وإرسال الفريق الميداني.
+* **عناصر الشبكة الحساسة (\`DPI / Sandvine / Voice / Wirefilter / DNS\`):**
+  * أي إنذار على هذه المنصات يستوجب فتح تذكرة **NTT** فورية وإسنادها إلى فريق **NAS** والاتصال بالمناوب في Back Office.
 
----
+## 2. بوابة الإنترنت الدولية (IGW: IP Transit & Peering)
+* عند سقوط أي رابط عبور دولي (**IP Transit** مثل TATA أو STC أو Mobily) أو رابط تبادل (**Peering**): يتم فتح **Critical NTT واحدة** في سلة \`NOC\` ومراسلة كافة المزودين المعنيين معاً.
+* **قاعدة حد الازدحام (\`85% Utilisation Threshold\`):** مراقبة استهلاك الروابط المتبقية عبر **Cacti**؛ في حال تجاوز الضغط **85%** تُفتح تذكرة **Major NTT** وتُسند لفريق **NAS** مع الاتصال بمناوب Back Office وإبلاغ مجموعة العمل.
+* **قاعدة الأثر الحرج (\`P0 Matrix > 200G\`):** إذا تجاوز الأثر الإجمالي للسعات المفقودة **200 Gbps** يتم إبلاغ **Shift Lead** فوراً وتطبيق مصفوفة تصعيد **P0**.
+* **قراءة ردود SNFN:** استيعاب دلالة رد فريق SNFN (*"observing local fault alarm at ITCJ from client port"*) الذي يؤكد سلامة المسار الوطني وحصر الخلل في المسار الدولي لمتابعته مع المزودين الدوليين.
 
-# ثانياً: مهام موظف FTTH الفعلي وتصنيف التذاكر المعتمد
+## 3. الدوائر المخصصة والعملاء المؤسسيين (\`DIA / GCX / KAUST / VSAT / Dark Fiber\`)
+* **تشخيص خدمة الإنترنت المخصص (DIA & GCX) للمزودين (STC, APTech, Mobily, Mawarid):**
+  1. نسخ **Service ID** من نظام **SDM**.
+  2. البحث في قاعدة بيانات **B-care Spider** (\`F11\` ثم لصق المعرّف ثم \`Ctrl+F11\`) واستخراج بيانات **Metro Ethernet**: (Partner Circuit ID, Partner Name, VLAN, Pop Name).
+  3. الاتصال بجهاز التوجيه (مثل **Huawei NE40E** عبر SecureCRT / PuTTY) واستعلام إعداد الواجهة:  
+     \`display current-configuration interface Vlanif <VLAN>\` لاستخراج الـ **vpn-instance** وعنوان IP ضمن شبكة **\`/30\`**.
+  4. حساب عنوان الجار المقابل وفحص الجلسة عبر \`display bgp vpnv4 vpn-instance <VRF> peer\` والتأكد من حالتها (\`Established\` أم \`Active/Idle\`)، مع مراجعة \`display logbuffer\` ورسوم **Cacti** وإرفاق رقم الحادثة عند مخاطبة المزود.
+* **حالات KAUST:** إرسال إقرار استلام (Acknowledgement) للعميل أولاً، والتحقق مما إذا كان معرّف الرابط تابعاً لـ SNFN أم فحص منفذ الراوتر عبر المخططات الهندسية.
+* **تذاكر VSAT:** استلام NTT من الدعم وإسنادها مباشرة إلى فريق VSAT (دون بريد) مع إنشاء أمر عمل (WO) للميدان عند اللزوم.
+* **الألياف المظلمة مع Zain (Dark Fiber):** فتح تذكرة NTT وأخذ صورة الموقع من وثيقة التصميم وإرسالها إلى **SNFN** للمتابعة.
 
-خلال الأسبوعين السابع والثامن تم العمل باستقلالية تامة كموظف فعلي في تغطية الورديات المتناوبة، وتوظيف منظومة البرمجيات التشغيلية (Handover Tools) وتصنيف التذاكر وفق القنوات والأنظمة المعتمدة في بيئة العمل:
+## 4. مراقبة إنذارات FTTH من مركز النقل (Transport Monitoring)
+* **إنذار قطع كابل التغذية (\`Feeder fiber broken\`):** الفحص عبر **Huawei NCE** (أو **Nokia AMS** الحصري للمنطقة الشرقية)؛ يُتجاهل إنذار القدرة لمستخدم واحد، بينما سقوط عدة منافذ PON معاً يعني قطعاً حقيقياً يتطلب فتح NTT وإرسال الفريق الميداني.
+* **إنذار فقد الإشارة (\`Loss of signal\`):** قراءة حقل \`Current Reporting Status\`؛ فإذا كان \`Dying gasp\` فهو انقطاع كهرباء لدى العميل ويُتجاهل من مستوى المراقبة، وإلا يتم فتح NTT للتدخل الميداني.
+* **حساب أثر سقوط OLT:** استخراج كافة العملاء المتأثرين وتصديرهم بصيغة CSV من **Huawei NCE** (\`GPON ONU → Find → Ctrl+A → Save As\`) أو **Nokia AMS** (\`Inventory → Query → Object Type = ONT\`) وتصفيتها برقم المنفذ.
 
-1. **نظام خدمة العملاء والدعم المركزي (CCS - Customer Care Support):**
-   * شكل الحصة الكبرى من التذاكر بمعدل **36.5% (176 تذكرة)**.
-   * يختص بمتابعة البلاغات الفنية المركزية ومراجعة حالة التوصيل للعميل وإجراء الفحوصات المنطقية.
-2. **إحالات وتنسيق الكول سنتر (Call Centre Referrals):**
-   * مثل **24.3% (117 تذكرة)**، حيث يتم فحص التذكرة وإعادة توجيهها بتعليق فني حاسم (Diagnostic Comment) أو إغلاقها عند سلامة الخدمة.
-3. **النفاذ المفتوح وتنسيق المشغلين (Open Access Operators):**
-   * مثل **14.5% (70 تذكرة)**، ويتعامل مع البنية التحتية المشتركة بين المشغلين ومزودي الخدمة، والتحقق من نقاط الربط المشتركة.
-4. **المعالجة والإغلاق الفوري (Resolved Direct Handling):**
-   * مثل **11.8% (57 تذكرة)** تم إغلاقها فورياً بعد استقرار الخدمة ومطابقة قراءات الإشارة وضبط المنافذ.
-5. **الدعم الفني التخصصي والتصعيدات (TLS & NOC):**
-   * مثل **12.9% (62 تذكرة)** موزعة بين الدعم الفني التخصصي TLS، ومركز عمليات الشبكة NOC، وأنظمة OSS للتعامل مع الأعطال المعقدة.
-
----
-
-# ثالثاً: معايير الإشارة الضوئية وشبكات الـ CVLAN
-
-* **نطاق القدرة الضوئية المستقبلة (Optical RX Power):**
-  الالتزام الصارم بالنطاق القياسي المعتمد: **من -10 dBm إلى -26 dBm** على منصة Huawei NCE.
-* **الربط والتحقق من خدمات الـ CVLAN:**
-  * **CVLAN 1501:** الإنترنت فائق السرعة (HSI).
-  * **CVLAN 3980:** إدارة أجهزة الـ ONT وبروتوكول TR-069 لخوادم ACS.
-  * **CVLAN 1810:** الاتصال الصوتي عبر بروتوكول الإنترنت (VoIP).
-
----
-
-# رابعاً: شبكات النقل والتراسل (Transport Networks)
-
-مثل الانتقال إلى قسم شبكات النقل نقلة نوعية في فهم الصورة الهندسية الكبرى للبنية التحتية:
-
-### 1. معمارية شبكة النقل (Transport Backbone Architecture):
-تعمل شبكة النقل كشريان حيوي يربط بين كبائن الألياف الضوئية (FTTH) ومحطات الجيل الرابع والخامس (4G/5G) من جهة، وبين مراكز البيانات ومقاسم الاتصالات الرئيسية (Core Switches) من جهة أخرى.
-
-### 2. تقنيات التراسل المعتمدة:
-* **تقنية تقسيم الطول الموجي الكثيف (DWDM):**
-  نقل عشرات القنوات الضوئية على شعيرة فايبر واحدة بسعات فائقة تصل إلى مئات الجيجابت/ثانية (100G/400G Links).
-* **شبكات النقل البصري (OTN - Optical Transport Network):**
-  تأطير وإدارة البيانات وتوفير آليات تصحيح الأخطاء المتقدمة (FEC - Forward Error Correction).
-* **شبكات النفاذ الراديوي المبنية على بروتوكول الإنترنت (IP RAN):**
-  تجميع حركة المرور القادمة من أبراج الاتصالات وتمريرها عبر مسارات موجهة بتقنيات MPLS/SR.
-* **وصلات الميكروويف (Microwave Backhaul):**
-  استخدام الترددات اللاسلكية الموجهة في المناطق الوعرة أو كمسار بديل للطوارئ، مع تطبيق تقنيات التعديل التكيفي (Adaptive Modulation).
-
-### 3. مراقبة الإنذارات وحماية المسارات (Network Protection):
-* متابعة إنذارات فقدان الإشارة (LOS - Loss of Signal).
-* استقراء معدلات الخطأ في البت (BER - Bit Error Rate).
-* اختبارات التحويل التلقائي للحماية (1+1 Protection Switching) والتي تتم خلال زمن قياسي يقل عن 50 ميلي ثانية لضمان استمرارية الأعمال وعدم تأثر المشتركين.
+## 5. المعمارية الضوئية، ربط الإنذارات، والأتمتة (\`DWDM / OTN / MPLS / Python\`)
+* **معمارية DWDM و OTN:** فهم طبقات النقل (**OTS, OMS, OCh, OTUk, ODUk, OPUk**)، ودور قناة الإشراف الضوئي (**OSC**)، ومراقبة المعوقات الضوئية مثل فقد الامتداد (**Span Loss**)، ونسبة الإشارة للضوضاء (**OSNR**)، والتشتت (**CD/PMD**)، ومعدل الأخطاء قبل التصحيح (**Pre-FEC BER**) كمؤشر إنذار مبكر مع بقاء **Post-FEC = 0**.
+* **إدارة عواصف الإنذارات (Alarm Storm Correlation):** تطبيق قاعدة عزل أقدم إنذار جذري (**\`R_LOS\` / \`LOS-P\` / \`OTUK_LOF\`**) عن الإنذارات الناتجة اللاحقة نحو المصب (**\`MS_AIS\` / \`ODUk_PM_AIS\`**) أو نحو المنبع (**\`BDI / RDI\`**) عبر مصفوفة متعددة المصنعين (**Huawei OptiX OSN, Cisco NCS 1000/2000, Nokia 1830 PSS**) وربط البلاغات الفرعية بتذكرة جذرية واحدة.
+* **توجيه الشبكة الأساسية (MPLS & Segment Routing):** المقارنة بين **LDP** و **RSVP-TE** و **SR-MPLS** وتقنية الحماية السريعة **TI-LFA** (تغطية 100% خلال < 50ms)، واكتشاف أعطال **عدم تطابق MTU** واختبار المسار بأوامر \`ping mpls\` و \`tracert lsp\`.
+* **بناء بوابة المعرفة والأتمتة (NOC Portal & Python Automation):** تصميم وتطوير موقع ويب تفاعلي متكامل (**NOC & Field Operations Knowledge Portal**) يضم 22 وحدة معرفية و5 سيناريوهات محاكاة حوادث وبنك أسئلة تقني، مع تطبيق مفاهيم الأتمتة بـ **Python (Netmiko)** لفحص جلسات BGP، ومطابقة حالات DIA، وحساب الأثر من ملفات NCE/AMS بشكل آمن (قراءة فقط).
 
 ---
 
@@ -163,135 +141,109 @@ export const DEFAULT_REPORT_P2_AR: FreshPeriodicReport = {
 
 <!-- pagebreak -->
 
-# الخاتمة
+# الخاتمة والتوصيات
 
-أكدت هذه الفترة المتقدمة (الأسابيع 7 - 10) على الجاهزية التشغيلية والهندسية المتكاملة؛ فمن خلال إتقان مهام موظف FTTH الفعلي وتغطية مختلف الورديات المتناوبة والتعامل مع **482 تذكرة وبلاغ تشغيلي**، إلى التزود بالمعارف التطبيقية العميقة لشبكات النقل والتراسل (Transport)، باتت الرؤية الهندسية لمنظومة الاتصالات متكاملة من أدق تفاصيل نقطة وصول المشترك وحتى أضخم مسارات العمود الفقري للشبكة.
+يمثل هذا **التقرير الفتري الثاني (من 11/10 إلى 5/11)** خلاصة مرحلة مهنية استثنائية جمعت بين الكفاءة التشغيلية الميدانية والعمق الهندسي؛ فمن إنجاز **482 تذكرة ومهمة في خدمات FTTH** وتحقيق رقم قياسي بلغ **97 تذكرة**، إلى استيعاب منظومة **شبكات النقل والـ NOC** بكل تفاصيلها من إنذارات الـ BGP والعبور الدولي IGW، ودوائر الـ DIA و Spider، وصولاً إلى شبكات DWDM/OTN وبناء بوابة معرفية متكاملة تُسهم في رفع سرعة ودقة الاستجابة للحوادث.
 
----
-
-## ملحق: سجل الحضور والورديات اليومية المعتمدة (التقرير الفتري الثاني)
-
-| التاريخ | اليوم | وقت الحضور والانصراف | القسم / طبيعة التكليف | الإنجاز التشغيلي |
-| ------- | ----- | --------------------- | --------------------- | ---------------- |
-| 11/10 | الأحد | 2:00 م – 10:00 م | قسم FTTH (Shift B) | **إنجاز 40 تذكرة تشغيلية معتمدة** |
-| 12/10 | الاثنين | 2:00 م – 10:05 م | قسم FTTH (Shift B) | معالجة 38 تذكرة وفحص الإشارة |
-| 13/10 | الثلاثاء | 10:00 ص – 6:00 م | قسم FTTH (شفت صباحي) | معالجة 32 تذكرة وفحص التصفح |
-| 14/10 | الأربعاء | 9:55 ص – 6:00 م | قسم FTTH (شفت صباحي) | فحص منافذ الـ ONT لـ 28 تذكرة |
-| 15/10 | الخميس | — | راحة أسبوعية | — |
-| 18/10 | الأحد | 8:30 ص – 6:00 م | قسم FTTH (شفت صباحي) | إنجاز 35 تذكرة وإغلاق المتراكم |
-| 19/10 | الاثنين | 8:30 ص – 6:00 م | قسم FTTH (شفت صباحي) | **إنجاز 16 تذكرة موثقة بالهاند أوفر** |
-| 20/10 | الثلاثاء | 4:00 م – 12:00 منتصف الليل | قسم FTTH (شفت مسائي) | **ذروة الإنجاز التاريخي: 97 تذكرة** |
-| 21/10 | الأربعاء | 4:00 م – 12:00 منتصف الليل | قسم FTTH (شفت مسائي) | **إنجاز 45 تذكرة حتى نهاية الشفت** |
-| 22/10 | الخميس | — | راحة أسبوعية | — |
-| 25/10 | الأحد | — | استئذان رسمي | عارض صحي معتمد نظامياً |
-| 26/10 | الاثنين | — | استئذان رسمي | عارض صحي معتمد نظامياً |
-| 27/10 | الثلاثاء | 4:00 م – 11:50 م | قسم Transport (شبكات النقل) | بدء التدريب ومتابعة 26 مهمة |
-| 28/10 | الأربعاء | 4:20 م – 12:20 بعد منتصف الليل | قسم Transport (شبكات النقل) | دراسة DWDM و OTN (29 مهمة) |
-| 29/10 | الخميس | 6:00 م – 2:00 فجراً | قسم Transport (وردية ليلية) | **إنجاز 31 تذكرة ومهمة تراسل موثقة** |
-| 1/11 | الأحد | — | تهيئة وتنسيق | متابعة حركة البيانات |
-| 2/11 | الاثنين | — | تهيئة وتنسيق | مراجعة السعات والدوائر |
-| 3/11 | الثلاثاء | 10:30 ص – 6:00 م | قسم Transport (دوام صباحي) | إنذارات النقل والميكروويف (34 مهمة) |
-| 4/11 | الأربعاء | 10:30 ص – 6:00 م | قسم Transport (دوام صباحي) | اختبارات مسارات الحماية (30 مهمة) |
-| 5/11 | الخميس | 10:30 ص – 6:00 م | قسم Transport (دوام صباحي) | التوثيق الهندسي الختامي (21 مهمة) |
-
-**إجمالي الساعات المعتمدة بالفترة: 128 إلى 146 ساعة عمل، تم خلالها إنجاز 482 تذكرة ومهمة تراسل موثقة.**`
+تؤكد هذه المخرجات الجاهزية الهندسية والعملية العالية للعمل ضمن فرق عمليات الشبكات ومراكز المراقبة (NOC) وإدارة البنية التحتية للاتصالات.`
 };
 
 // ── Master English Report for Period 2 (Oct 11 – Nov 05) ──────────────
 export const DEFAULT_REPORT_P2_EN: FreshPeriodicReport = {
-  title: 'Cooperative Training Report (Second Periodic Report)',
+  title: 'Second Periodic Report',
   majorField: 'FTTH Operations & Transport Networks',
-  department: 'FTTH Technical Support & Transport Operations Engineering',
+  department: 'FTTH Technical Support & Transport Operations Domain',
   roleAssignment: 'Active FTTH Employee (Weeks 7–8) & Transport Trainee (Weeks 9–10)',
   periodCoverage: 'From Oct 11 to Nov 05',
-  stageOneHours: 'Rotational FTTH Shifts: 2:00 PM – 10:00 PM, 4:00 PM – 12:00 AM, 10:00 PM – 6:00 AM',
-  stageTwoHours: 'Transport Evening & Night: 6:00 PM – 2:00 AM & Day Shifts: 10:30 AM – 6:00 PM',
+  stageOneHours: '',
+  stageTwoHours: '',
   intervals: [
     {
       id: 'int_p2_1_en',
-      label: 'Stage 1: Active FTTH Operational Shift Handling (Shift B & Day Shifts)',
-      startDate: 'Oct 11',
-      endDate: 'Oct 14',
-      timeFrom: '14:00',
-      timeTo: '22:00'
+      label: 'Phase 1: Autonomous FTTH Ticket Execution',
+      startDate: '482 Total Tickets',
+      endDate: 'CCS / Call Centre',
+      timeFrom: '',
+      timeTo: ''
     },
     {
       id: 'int_p2_2_en',
-      label: 'Stage 2: Peak Ticket Execution (97 Tickets) & Extended Evening Shifts',
-      startDate: 'Oct 18',
-      endDate: 'Oct 21',
-      timeFrom: '16:00',
-      timeTo: '00:00'
+      label: 'Phase 2: Peak Operational Throughput (97 Tickets)',
+      startDate: 'Handover Verified',
+      endDate: '97.4% SLA Met',
+      timeFrom: '',
+      timeTo: ''
     },
     {
       id: 'int_p2_3_en',
-      label: 'Stage 3: Department Transition to Transport Networks & Night Shifts',
-      startDate: 'Oct 27',
-      endDate: 'Oct 29',
-      timeFrom: '18:00',
-      timeTo: '02:00'
+      label: 'Phase 3: Transport SOPs (TS-01 to TS-04)',
+      startDate: 'IGW / BGP / DIA',
+      endDate: 'Spider / CA / Cacti',
+      timeFrom: '',
+      timeTo: ''
     },
     {
       id: 'int_p2_4_en',
-      label: 'Stage 4: Transport Node Telemetry, Microwave Links & Protection Testing',
-      startDate: 'Nov 03',
-      endDate: 'Nov 05',
-      timeFrom: '10:30',
-      timeTo: '18:00'
+      label: 'Phase 4: DWDM/OTN Core, MPLS & NOC Knowledge Portal',
+      startDate: 'Multi-Vendor Alarms',
+      endDate: 'Python / Netmiko',
+      timeFrom: '',
+      timeTo: ''
     }
   ],
-  customNarrative: `# Introduction to Second Periodic Report
+  customNarrative: `# Introduction — Second Periodic Report (Oct 11 – Nov 05)
 
-This second periodic report covers a pivotal, advanced operational stage of cooperative training spanning four full academic weeks from **October 11 to November 05** (Weeks: 7, 8, 9, 10). This period represents a dual-pillar telecommunications experience:
+This **Second Periodic Report** spans four intensive academic and operational weeks from **October 11 to November 05** (Weeks 7, 8, 9, and 10), bridging two complementary tiers of telecommunications engineering:
 
-1. **Pillar 1 (Weeks 7 & 8):** Full operational autonomy as an **Active Employee in FTTH Services**, covering rotational 24/7 operations including the primary shift (**2:00 PM – 10:00 PM**), extended evening shifts (**4:00 PM – 12:00 AM**), and night monitoring (**10:00 PM – 6:00 AM**), culminating in an all-time peak of **97 certified tickets handled in a single shift** on October 20.
-2. **Pillar 2 (Weeks 9 & 10):** Structured department rotation to **Transport Networks** as a **Specialized Trainee**, exploring backbone network infrastructure, dense wavelength multiplexing (**DWDM / OTN**), microwave backhaul links, and core optical dispersion management.
-
-Over this period, **482 documented tickets and transport tasks** were handled with an overall SLA compliance rate of **97.4%**, cementing an end-to-end understanding from client subscriber demarcation to national core backhaul.
-
----
-
-# 1. Operational Timeline & Shift Schedules
-
-## Stage 1: Weeks 7 & 8 – FTTH Active Employee Rotation:
-* **Oct 11 (Shift B: 2:00 PM – 10:00 PM):** Shift leadership with **40 documented tickets** (CCS: 10, Call Centre: 15, Open Access: 7, Resolved: 6, Pending to NOC: 2).
-* **Oct 12 (Shift B: 2:00 PM – 10:05 PM):** Evening shift execution with **38 tickets processed**.
-* **Oct 13 (Day Shift: 10:00 AM – 6:00 PM):** Diagnostics on slowness and browsing tickets for **32 cases**.
-* **Oct 14 (Day Shift: 9:55 AM – 6:00 PM):** Port Blocked interface resets and TR-069 ACS sync for **28 cases**.
-* **Oct 18 (Full Day: 8:30 AM – 6:00 PM):** Backlog reduction and **35 tickets closed**.
-* **Oct 19 (Day Shift: 8:30 AM – 6:00 PM):** **16 tickets processed and verified** on handover log.
-* **Oct 20 (Evening Peak: 4:00 PM – 12:00 AM):** **All-time historic training record of 97 tickets processed** (CCS: 34, Call Centre: 30, Resolved: 16, Open Access: 9, TLS: 3, NOC: 2, NAS: 2, OSS: 1).
-* **Oct 21 (Extended Evening: 4:00 PM – 12:00 AM):** **45 tickets processed** through late shift closure (11:57 PM).
+1. **Pillar 1 — FTTH Active Operations (Weeks 7 & 8):**  
+   Acting as an **Active Employee in FTTH Operations**, handling live subscriber escalations, telemetry diagnostics, and handover dashboard queues—culminating in **482 verified tickets** and an all-time record peak of **97 tickets** with **97.4% SLA compliance**.
+2. **Pillar 2 — Transport Domain & NOC Engineering (Weeks 9 & 10):**  
+   Transitioning as a **Transport Networks Trainee**, mastering carrier-grade Standard Operating Procedures (SOPs) for Transport alarms (\`Device has stopped\`, \`BGP down\`, Fan/Power, NAS), International Gateway links (IP Transit & Peering), enterprise services (DIA, GCX, KAUST, VSAT, Dark Fiber), optical backbone transmission (DWDM/OTN), MPLS core routing, multi-vendor alarm correlation, and authoring a comprehensive **NOC Knowledge Portal** web platform.
 
 ---
 
-## Stage 2: Weeks 9 & 10 – Transport Networks Engineering:
-* **Oct 25 & 26:** Officially approved medical leave.
-* **Oct 27 (Evening Shift: 4:00 PM – 11:50 PM):** Transport onboarding, backbone architecture induction, and 26 operational reviews.
-* **Oct 28 (Extended Shift: 4:20 PM – 12:20 AM):** DWDM / OTN cabinet architectures, 10G/100G optical routes, and 29 cases.
-* **Oct 29 (Night Shift: 6:00 PM – 2:00 AM):** Night maintenance window monitoring with **31 verified tickets/tasks** (CCS: 16, Open Access: 5, Call Centre: 3, Resolved: 3, TLS: 2, OSS: 2).
-* **Nov 03 (Morning: 10:30 AM – 6:00 PM):** Microwave backhaul link diagnostics and fading analysis across 34 tasks.
-* **Nov 04 (Morning: 10:30 AM – 6:00 PM):** 1+1 Protection switching and failover verification across 30 tasks.
-* **Nov 05 (Morning: 10:30 AM – 6:00 PM):** Final period performance auditing, documentation, and handover across 21 tasks.
+# 1. FTTH Operations & Ticket Analytics (482 Verified Cases)
+
+Operations leveraged handover tooling across key support channels:
+* **Customer Care Support (CCS):** **36.5% (176 tickets)** for centralized residential diagnostics.
+* **Call Centre Referrals:** **24.3% (117 tickets)** routed with structured technical comments.
+* **Open Access Operators:** **14.5% (70 tickets)** coordinating shared carrier infrastructure.
+* **Resolved Direct Handling:** **11.8% (57 tickets)** resolved directly post telemetry and ACS validation.
+* **TLS, NOC & OSS Escalations:** **12.9% (62 tickets)** covering Tier-2 and core escalations.
+
+Key technical standards maintained include strict **Optical RX Power verification (\`-10 dBm to -26 dBm\`)** on Huawei NCE and validating mapped **CVLANs (1501 HSI, 3980 ACS, 1810 Voice)**.
 
 ---
 
-# 2. Handover Systems & Ticket Taxonomy
+# 2. Transport Domain SOPs & Engineering Competencies (NOC Portal Extract)
 
-Handling operations leveraged official handover dashboards classifying cases across vital industry channels:
-1. **Customer Care Support (CCS):** 36.5% of cases (176 tickets) representing central residential customer diagnostics.
-2. **Call Centre Referrals:** 24.3% (117 tickets) requiring structured diagnostic comments and customer callbacks.
-3. **Open Access Operators:** 14.5% (70 tickets) coordinating transit and shared infrastructure with partner carriers.
-4. **Resolved Direct:** 11.8% (57 tickets) closed immediately upon successful telemetry verification.
-5. **TLS & NOC Escalations:** 12.9% (62 tickets) escalating complex physical degradations to Tier-2 and core operations.
+## A. Core Transport Alarm Triage (TS-01)
+* **Device has stopped:** Audited via **CA Performance → Health → \`IfAlias\`** and **Spider Database**. Single affected customer triggers a **CTT via B-care**; multiple affected customers trigger an **NTT with a Sudden Outage Notice**, verifying power/support status.
+* **BGP Down Triage:** Accessed Network Elements via CLI (\`show bgp summary\`, \`show route\`, \`show interfaces\`) to differentiate customer sessions (ignored per SOP) from Network Element links (open **Critical NTT**, assign & call **Back Office**, email provider). Identified \`Active\`/\`Idle\` down states vs \`Established\`.
+* **Faulty FAN / Power Verification:** Verified via SSH (\`show env fan\`, \`show env all\`) to rule out false alarms before dispatching field teams.
+* **DPI / Sandvine / Voice / Wirefilter / DNS:** Immediately raised NTT assigned to **NAS team** with direct call to on-call Back Office.
 
----
+## B. International Gateway — IP Transit & Peering (TS-02)
+* Opened **one unified Critical NTT** in the \`NOC\` bin covering all involved carriers (TATA, STC, Mobily) simultaneously.
+* **85% Utilisation Rule:** Monitored remaining link saturation in **Cacti**; exceeding **85%** triggers a **Major NTT to NAS** and urgent escalation to BO.
+* **>200G Impact (P0 Escalation):** Notified Shift Lead immediately and executed the **P0 escalation matrix**.
+* Interpreted **SNFN** diagnostic updates (e.g., *"observing local fault alarm at ITCJ from client port"*) confirming healthy national spans and isolating international faults.
 
-# 3. Transport Networks Core Concepts
+## C. Enterprise Services — DIA, GCX, KAUST, VSAT & Dark Fiber (TS-03)
+* **DIA & GCX Workflow:** Extracted **Service ID** from **SDM** → queried **B-care Spider** (\`F11\` / \`Ctrl+F11\`) → obtained Metro Ethernet metadata (Partner Circuit ID, VLAN, Pop Name) → accessed **Huawei NE40E** (\`display current-configuration interface Vlanif\`) to identify \`vpn-instance\` and \`/30\` IP → computed peer IP and audited BGP status (\`display bgp vpnv4 vpn-instance ... peer\` and \`display logbuffer\`) with providers (STC, APTech, Mobily, Mawarid).
+* **KAUST:** Sent immediate customer acknowledgement before verifying SNFN IDs or router ports via diagrams.
+* **VSAT & Zain Dark Fiber:** Processed Remedy NTTs directly to VSAT team (creating WO for field checks when needed) and dispatched design site maps to **SNFN** for Zain Dark Fiber escalations.
 
-* **DWDM & OTN Transmission:** Multi-wavelength optical multiplexing multiplying fiber capacity to 100G/400G carriers.
-* **Microwave Backhaul:** Line-of-sight wireless transmission with adaptive modulation for remote radio towers.
-* **Network Protection Switching:** Sub-50ms automated ring failover preventing service disruption upon physical fiber cuts.
+## D. FTTH Alarms in Transport Monitoring (TS-04)
+* **Feeder Fiber Broken:** Audited via **Huawei NCE** (and **Nokia AMS** for Eastern region); ignored single-user power alerts while raising NTT + field dispatch when multiple PON ports dropped simultaneously.
+* **Loss of Signal (LOS):** Checked \`Current Reporting Status\`—if \`Dying gasp\`, ignored as customer power outage; otherwise dispatched field support.
+* **OLT Impact Calculation:** Exported subscriber ONU/ONT lists to CSV from NCE and AMS and filtered by port.
+
+## E. Optical Backbone, Alarm Correlation & Automation (TR-01, TR-02, AL-01, AU-01)
+* **DWDM & OTN:** Mastered OTS/OMS/OCh/OTUk/ODUk/OPUk layers, OSC supervisory channels, optical impairments (Span loss, OSNR, CD/PMD), and **Pre-FEC BER** early degradation tracking with Post-FEC maintained at 0.
+* **Multi-Vendor Alarm Correlation:** Isolated root \`R_LOS\` / \`LOS-P\` / \`OTUK_LOF\` alarms from cascading consequence alarms (\`MS_AIS\`, \`ODU AIS\`, \`BDI/RDI\`) across Huawei OptiX OSN, Cisco NCS 1000/2000, and Nokia 1830 PSS.
+* **MPLS & Segment Routing:** Compared LDP, RSVP-TE, and SR-MPLS (**TI-LFA** sub-50ms protection), diagnosing **MTU mismatches** and LSP breaks via \`ping mpls\` / \`tracert lsp\`.
+* **NOC Knowledge Portal & Python Automation:** Built an interactive bilingual web portal (**NOC & Field Operations Knowledge Portal**) encompassing 22 technical modules and 5 incident simulations, alongside read-only **Python / Netmiko** automation scripts for BGP triage, DIA verification, and alarm suppression.
 
 ---
 
@@ -305,30 +257,5 @@ Handling operations leveraged official handover dashboards classifying cases acr
 
 # Conclusion
 
-The second training period successfully demonstrated comprehensive operational readiness across both consumer access layers (**FTTH**) and high-capacity carrier transport backbones (**Transport Networks**), completing **482 verified operational tickets and tasks**.
-
----
-
-## Appendix: Official Attendance & Shift Log (Period 2)
-
-| Date | Day | Shift Hours | Department / Assignment | Operational Achievements |
-| ---- | --- | ----------- | ----------------------- | ------------------------ |
-| Oct 11 | Sun | 2:00 PM – 10:00 PM | FTTH (Shift B) | **40 Certified Tickets Handled** |
-| Oct 12 | Mon | 2:00 PM – 10:05 PM | FTTH (Shift B) | 38 Tickets & RX Verification |
-| Oct 13 | Tue | 10:00 AM – 6:00 PM | FTTH (Morning Shift) | 32 Speed & Access Tickets |
-| Oct 14 | Wed | 9:55 AM – 6:00 PM | FTTH (Morning Shift) | 28 Port & CVLAN Checks |
-| Oct 18 | Sun | 8:30 AM – 6:00 PM | FTTH (Morning Shift) | 35 Backlog Reduction Tickets |
-| Oct 19 | Mon | 8:30 AM – 6:00 PM | FTTH (Morning Shift) | **16 Handover Verified Tickets** |
-| Oct 20 | Tue | 4:00 PM – 12:00 AM | FTTH (Evening Shift) | **Record Peak: 97 Tickets** |
-| Oct 21 | Wed | 4:00 PM – 12:00 AM | FTTH (Evening Shift) | **45 Tickets Handled (11:57 PM)** |
-| Oct 25 | Sun | — | Authorized Leave | Approved Medical Leave |
-| Oct 26 | Mon | — | Authorized Leave | Approved Medical Leave |
-| Oct 27 | Tue | 4:00 PM – 11:50 PM | Transport Networks | Department Onboarding (26 tasks) |
-| Oct 28 | Wed | 4:20 PM – 12:20 AM | Transport Networks | DWDM / OTN Principles (29 tasks) |
-| Oct 29 | Thu | 6:00 PM – 2:00 AM | Transport Networks (Night) | **31 Verified Transport Tasks** |
-| Nov 03 | Tue | 10:30 AM – 6:00 PM | Transport Networks | Microwave Link Audits (34 tasks) |
-| Nov 04 | Wed | 10:30 AM – 6:00 PM | Transport Networks | 1+1 Protection Failovers (30 tasks) |
-| Nov 05 | Thu | 10:30 AM – 6:00 PM | Transport Networks | Final Telemetry Audit (21 tasks) |
-
-**Total Logged Presence: 128 to 146 Certified Hours with 482 Handled Tickets and Transport Tasks.**`
+This **Second Periodic Report (Oct 11 – Nov 05)** demonstrates comprehensive operational mastery across both consumer fiber access (**482 FTTH cases**, peaking at **97 cases**) and enterprise/backbone **Transport Networks**. From live BGP/IGW/DIA triage and DWDM root-cause isolation to building an interactive NOC Knowledge Portal, the training cemented full readiness for Carrier NOC and Transport Operations engineering roles.`
 };
