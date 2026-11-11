@@ -31,8 +31,8 @@ import {
 
 const STORAGE_KEY_FTTH_AR = 'coop_ftth_periodic_report_v10_ar';
 const STORAGE_KEY_FTTH_EN = 'coop_ftth_periodic_report_v10_en';
-const STORAGE_KEY_P2_AR = 'coop_periodic_report_p2_v3_ar';
-const STORAGE_KEY_P2_EN = 'coop_periodic_report_p2_v3_en';
+const STORAGE_KEY_P2_AR = 'coop_periodic_report_p2_v4_ar';
+const STORAGE_KEY_P2_EN = 'coop_periodic_report_p2_v4_en';
 const STORAGE_KEY_REPORT_LANG = 'coop_ftth_report_lang_preference_v1';
 const STORAGE_KEY_SELECTED_PERIOD = 'coop_selected_periodic_report_v1';
 
