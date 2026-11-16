@@ -322,6 +322,12 @@ router.post(
         return;
       }
 
+      const isLinked = await prisma.user.findFirst({ where: { id: traineeId, supervisorId: req.user!.userId } });
+      if (!isLinked) {
+        res.status(403).json({ error: 'غير مصرح: هذا المتدرب غير مرتبط بإشرافك' });
+        return;
+      }
+
       const created = await prisma.reportSectionComment.create({
         data: {
           reportId: traineeId,

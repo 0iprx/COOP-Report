@@ -18,11 +18,13 @@ export default {
         ok:           'var(--ok)',
         'ok-bg':      'var(--ok-bg)',
         warn:         'var(--warn)',
-        'warn-bg':    'var(--warn-bg)'
+        'warn-bg':    'var(--warn-bg)',
+        info:         'var(--info)',
+        'info-bg':    'var(--info-bg)'
       },
       fontFamily: {
-        tajawal: ['Tajawal', 'sans-serif'],
-        body: ['Tajawal', 'sans-serif']
+        tajawal: ['IBM Plex Sans Arabic', 'system-ui', 'sans-serif'],
+        body: ['IBM Plex Sans Arabic', 'system-ui', 'sans-serif']
       },
       borderRadius: {
         '3xl': '1.5rem',

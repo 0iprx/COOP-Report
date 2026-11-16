@@ -334,9 +334,8 @@ ${rawFacts}
       const AnthropicPkg = (await import('@anthropic-ai/sdk')).default;
       const client = new AnthropicPkg({ apiKey: anthropicKey });
       const res = await client.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: process.env.ANTHROPIC_MODEL?.trim() || 'claude-opus-5-5',
         max_tokens: 2200,
-        temperature: 0.25,
         system: systemPrompt,
         messages: [{ role: 'user', content: userPrompt }]
       });

@@ -42,22 +42,35 @@ export async function syncDatabaseSchema(): Promise<void> {
       }
     }
 
-    // 2. Automatically sync schema
+    // 2. Schema changes go through reviewed migrations only.
+    //    `prisma db push --accept-data-loss` used to run here on every boot and could
+    //    drop columns in production. Now nothing changes the schema unless
+    //    DB_AUTO_MIGRATE=true, and even then only `migrate deploy` runs, which applies
+    //    the committed, additive migration files and never drops data on its own.
     const schemaPath = path.resolve(process.cwd(), 'server/prisma/schema.prisma');
     const altSchemaPath = path.resolve(process.cwd(), 'prisma/schema.prisma');
     const targetSchema = fs.existsSync(schemaPath) ? schemaPath : altSchemaPath;
 
-    if (fs.existsSync(targetSchema)) {
-      logger.info({ targetSchema }, 'Running automatic prisma db push...');
-      execSync(`npx prisma db push --schema="${targetSchema}" --skip-generate --accept-data-loss`, {
+    if (process.env.DB_AUTO_MIGRATE === 'true' && fs.existsSync(targetSchema)) {
+      const prismaEnv = { ...process.env, DATABASE_URL: dbUrl };
+      // An existing database created by the old `db push` has tables but no migration
+      // history. Mark the baseline (0_init, identical to that schema) as already applied
+      // so `migrate deploy` only runs the newer, additive migrations.
+      const [hist] = await prisma.$queryRaw<{ n: bigint }[]>`SELECT COUNT(*) AS n FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = '_prisma_migrations'`;
+      const [users] = await prisma.$queryRaw<{ n: bigint }[]>`SELECT COUNT(*) AS n FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'users'`;
+      if (Number(hist?.n ?? 0) === 0 && Number(users?.n ?? 0) > 0) {
+        logger.info('Existing database without migration history: marking baseline 0_init as applied.');
+        execSync(`npx prisma migrate resolve --applied 0_init --schema="${targetSchema}"`, { stdio: 'inherit', timeout: 60000, env: prismaEnv });
+      }
+      logger.info({ targetSchema }, 'DB_AUTO_MIGRATE=true: applying committed migrations (prisma migrate deploy)');
+      execSync(`npx prisma migrate deploy --schema="${targetSchema}"`, {
         stdio: 'inherit',
-        timeout: 30000,
-        env: {
-          ...process.env,
-          DATABASE_URL: dbUrl
-        }
+        timeout: 60000,
+        env: { ...process.env, DATABASE_URL: dbUrl }
       });
-      logger.info('Database schema synchronized successfully (all tables are ready).');
+      logger.info('Migrations applied.');
+    } else {
+      logger.info('Schema is not modified at startup (set DB_AUTO_MIGRATE=true to run prisma migrate deploy).');
     }
   } catch (err: any) {
     logger.warn({ err: err?.message }, 'Database connection test or schema sync skipped. The server will continue running.');

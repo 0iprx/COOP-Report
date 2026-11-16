@@ -119,6 +119,7 @@ export const SupervisorTab: React.FC = () => {
   const [newUsername, setNewUsername] = useState<string>(user?.username || '');
   const [newPassword, setNewPassword] = useState<string>('');
   const [confirmPassword, setConfirmPassword] = useState<string>('');
+  const [currentPassword, setCurrentPassword] = useState<string>('');
   const [accountSaving, setAccountSaving] = useState<boolean>(false);
   const [accountError, setAccountError] = useState<string>('');
   const [accountSuccess, setAccountSuccess] = useState<string>('');
@@ -257,14 +258,20 @@ export const SupervisorTab: React.FC = () => {
       return;
     }
 
-    if (newPassword && newPassword.length < 6) {
-      setAccountError('كلمة المرور يجب ألا تقل عن 6 أحرف أو أرقام');
+    if (newPassword && newPassword.length < 8) {
+      setAccountError('كلمة المرور يجب ألا تقل عن 8 أحرف');
+      return;
+    }
+
+    if (newPassword && !currentPassword) {
+      setAccountError('أدخل كلمة المرور الحالية لتغييرها');
       return;
     }
 
     setAccountSaving(true);
     try {
-      const payload: { username?: string; password?: string } = {};
+      const payload: { username?: string; password?: string; currentPassword?: string } = {};
+      if (newPassword.trim()) payload.currentPassword = currentPassword;
       if (newUsername.trim() && newUsername.trim() !== user?.username) {
         payload.username = newUsername.trim();
       }
@@ -282,6 +289,7 @@ export const SupervisorTab: React.FC = () => {
       setAccountSuccess(res.data.message || 'تم تحديث بيانات الحساب بنجاح');
       setNewPassword('');
       setConfirmPassword('');
+      setCurrentPassword('');
       await refreshUser();
       setTimeout(() => {
         setAccountSuccess('');
@@ -1701,6 +1709,23 @@ export const SupervisorTab: React.FC = () => {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="أعد إدخال الرمز السري الجديد..."
+                      className="w-full pr-9 pl-3 py-2.5 bg-bg border border-line rounded-xl text-ink font-medium focus:outline-none focus:border-accent"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {newPassword.trim() && (
+                <div className="space-y-1.5">
+                  <label htmlFor="current-password" className="block font-bold text-sub">كلمة المرور الحالية:</label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-sub absolute right-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      id="current-password"
+                      type="password"
+                      autoComplete="current-password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
                       className="w-full pr-9 pl-3 py-2.5 bg-bg border border-line rounded-xl text-ink font-medium focus:outline-none focus:border-accent"
                     />
                   </div>

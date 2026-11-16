@@ -206,6 +206,10 @@ router.delete('/:id', async (req: AuthenticatedRequest, res: Response): Promise<
   try {
     const userId = req.user!.userId;
     const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      res.status(400).json({ error: 'معرّف الصورة غير صالح' });
+      return;
+    }
 
     // Ensure the photo belongs to this user and is not already deleted
     const existing = await prisma.weeklyEvidence.findFirst({

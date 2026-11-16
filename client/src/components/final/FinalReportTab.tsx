@@ -47,10 +47,16 @@ import {
   HelpCircle,
   ListChecks,
   Send,
-  ExternalLink
+  ExternalLink,
+  Presentation
 } from 'lucide-react';
 import { DiffModal } from '../common/DiffModal';
 import { ProceduralNarrativeView } from '../common/ProceduralNarrativeView';
+import { FinalReportDocument } from './FinalReportDocument';
+import { ActionMenu } from '../ui/ActionMenu';
+import { AssistantPanel } from '../ai/AssistantPanel';
+import { AssistantMemory } from '../ai/AssistantMemory';
+import { WritingHints } from '../ai/WritingHints';
 
 const PROFILE_DRAFT_KEY = 'coop_profile_draft_v2';
 const PROFILE_HISTORY_KEY = 'coop_profile_history_v2';
@@ -243,6 +249,8 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
   const [modalSubTab, setModalSubTab] = useState<'guide' | 'samples'>('guide');
   const [guideSection, setGuideSection] = useState<'overview' | 'executive' | 'daily' | 'star' | 'verbs' | 'universities'>('overview');
   const [isSampleMode, setIsSampleMode] = useState<boolean>(false);
+  const [assistantField, setAssistantField] = useState<'introText' | 'entityIntroText' | 'skillsText' | 'conclusionText' | null>(null);
+  const [memoryOpen, setMemoryOpen] = useState<boolean>(false);
 
   // Preview Language State (Can be toggled in-app or synced with top bar)
   const [previewLang, setPreviewLang] = useState<'ar' | 'en'>(currentLang);
@@ -1071,203 +1079,129 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
         className="hidden"
       />
 
-      {/* Supervisor Review & Academic Status Banner */}
-      <div className="bg-card border border-line rounded-2xl p-4 sm:p-5 shadow-sm no-print flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold ${
-            reportData?.profile?.status === 'approved'
-              ? 'bg-ok-bg text-ok'
-              : reportData?.profile?.status === 'changes_requested'
-              ? 'bg-amber-500/10 text-amber-500'
-              : reportData?.profile?.status === 'submitted' || reportData?.profile?.status === 'under_review'
-              ? 'bg-blue-500/10 text-blue-500'
-              : 'bg-accent-dim text-accent'
-          }`}>
-            {reportData?.profile?.status === 'approved' ? (
-              <CheckCircle2 className="w-5 h-5" />
-            ) : reportData?.profile?.status === 'changes_requested' ? (
-              <AlertTriangle className="w-5 h-5" />
-            ) : (
-              <ShieldCheck className="w-5 h-5" />
-            )}
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-xs font-black text-ink">
-                حالة التقرير الأكاديمي:
-              </h3>
-              <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold ${
-                reportData?.profile?.status === 'approved'
-                  ? 'bg-ok text-white'
-                  : reportData?.profile?.status === 'changes_requested'
-                  ? 'bg-amber-500 text-white'
-                  : reportData?.profile?.status === 'submitted' || reportData?.profile?.status === 'under_review'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-line text-sub'
-              }`}>
-                {reportData?.profile?.status === 'approved'
-                  ? 'مكتمل وموقع رقمياً'
-                  : reportData?.profile?.status === 'changes_requested'
-                  ? 'مطلوب تعديلات وإعادة تقديم'
-                  : reportData?.profile?.status === 'submitted' || reportData?.profile?.status === 'under_review'
-                  ? 'تم الرفع — قيد الفحص والمراجعة الإشرافية'
-                  : 'مسودة — قيد الإعداد والمراجعة'}
-              </span>
+      {/* ── Command bar: status, versions and export in one row ── */}
+      {(() => {
+        const st = reportData?.profile?.status || 'draft';
+        const statusMeta: Record<string, { label: string; hint: string; tone: string }> = {
+          draft: { label: 'مسودة', hint: 'عند اكتمال الفصول ارفع التقرير للمشرف للمراجعة.', tone: 'is-draft' },
+          submitted: { label: 'مرفوع للمراجعة', hint: 'التقرير معروض الآن لدى المشرف.', tone: 'is-review' },
+          under_review: { label: 'قيد المراجعة', hint: 'التقرير معروض الآن لدى المشرف.', tone: 'is-review' },
+          changes_requested: { label: 'مطلوب تعديلات', hint: 'اقرأ ملاحظات المشرف وعدّل الأقسام ثم أعد الإرسال.', tone: 'is-warn' },
+          approved: {
+            label: 'معتمد',
+            hint: `اعتمده المشرف${reportData?.profile?.supervisorName ? `: ${reportData.profile.supervisorName}` : ''}.`,
+            tone: 'is-ok'
+          }
+        };
+        const meta = statusMeta[st] || statusMeta.draft;
+        const plannedHours = profileData.courseHours || 0;
+        const loggedHours = reportData?.totalHours || 0;
+        return (
+          <div className="fr-bar no-print">
+            <div className="fr-bar-status">
+              <span className={`fr-status ${meta.tone}`}>{meta.label}</span>
+              <span className="fr-bar-hint">{meta.hint}</span>
             </div>
-            <p className="text-[11px] text-sub mt-0.5">
-              {reportData?.profile?.status === 'approved'
-                ? `تم التوقيع الإلكتروني من المشرف: ${reportData.profile.supervisorName || 'المشرف المسؤول'}`
-                : reportData?.profile?.status === 'changes_requested'
-                ? 'يرجى قراءة ملاحظات المشرف وتعديل الأقسام ثم إعادة الإرسال للمراجعة.'
-                : reportData?.profile?.status === 'submitted' || reportData?.profile?.status === 'under_review'
-                ? 'تقريرك الآن معروض في بوابة المشرف الميداني للتدقيق والمصادقة.'
-                : 'عند الانتهاء من استكمال الفصول، ارفع التقرير للمشرف الأكاديمي للمراجعة والتقييم.'}
-            </p>
-          </div>
-        </div>
 
-        <div className="flex items-center gap-2">
-          {reportData?.profile?.status === 'approved' && reportData?.profile?.verificationHash ? (
-            <a
-              href={`/verify/${(reportData.profile as any).id || user?.id || 1}/${reportData.profile.verificationHash}`}
-              target="_blank"
-              rel="noreferrer"
-              className="px-4 py-2 bg-ok hover:bg-ok/90 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors shadow-sm"
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-              <span>عرض شهادة التحقق الرقمي</span>
-            </a>
-          ) : (
-            <button
-              type="button"
-              disabled={submitReportMutation.isPending || reportData?.profile?.status === 'submitted' || reportData?.profile?.status === 'under_review'}
-              onClick={() => submitReportMutation.mutate()}
-              className="px-4 py-2 bg-accent hover:bg-accent/90 disabled:opacity-50 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors shadow-sm"
-            >
-              <Send className="w-3.5 h-3.5" />
+            <div className="fr-bar-actions">
+              <ActionMenu
+                label="الإصدارات والنسخ"
+                icon={<History className="w-4 h-4" aria-hidden="true" />}
+                groups={[
+                  {
+                    label: 'الإصدارات',
+                    items: [
+                      { id: 'undo', label: 'تراجع', hint: 'العودة إلى الإصدار السابق', icon: <RotateCcw className="w-4 h-4" />, disabled: currentVersionIndex <= 0, onSelect: handleUndo },
+                      { id: 'redo', label: 'إعادة', hint: 'التقدم إلى الإصدار الأحدث', icon: <RotateCw className="w-4 h-4" />, disabled: currentVersionIndex >= versions.length - 1, onSelect: handleRedo },
+                      { id: 'history', label: 'سجل الإصدارات', icon: <History className="w-4 h-4" />, badge: String(versions.length), onSelect: () => setVersionsModalOpen(true) },
+                      { id: 'pin', label: 'حفظ لقطة الآن', icon: <Pin className="w-4 h-4" />, onSelect: handleManualSnapshot }
+                    ]
+                  },
+                  {
+                    label: 'النسخ الاحتياطية',
+                    items: [
+                      { id: 'json', label: 'تنزيل نسخة كاملة (JSON)', hint: 'قابلة للاستيراد لاحقاً', icon: <Download className="w-4 h-4" />, disabled: !!downloadingArchive, onSelect: handleDownloadBackupJSON },
+                      { id: 'csv', label: 'تنزيل السجل اليومي (CSV)', icon: <Download className="w-4 h-4" />, disabled: !!downloadingArchive, onSelect: handleDownloadBackupCSV },
+                      { id: 'md', label: 'تنزيل نص التقرير (Markdown)', icon: <Download className="w-4 h-4" />, disabled: !!downloadingArchive, onSelect: () => handleDownloadBackupMarkdown(previewLang) },
+                      { id: 'import', label: 'استيراد نسخة احتياطية', icon: <UploadCloud className="w-4 h-4" />, onSelect: () => fileInputRef.current?.click() }
+                    ]
+                  }
+                ]}
+              />
+
+              <ActionMenu
+                label="تصدير"
+                icon={<Download className="w-4 h-4" aria-hidden="true" />}
+                busy={downloadingDocx || downloadingPptx || downloadingHtml}
+                groups={[
+                  {
+                    label: 'الصيغة',
+                    items: [
+                      { id: 'pdf', label: 'طباعة أو حفظ PDF', hint: 'نسخة الطباعة الرسمية', icon: <Printer className="w-4 h-4" />, onSelect: handlePrintPDF },
+                      { id: 'docx', label: 'Word (.docx)', hint: downloadingDocx ? 'جارٍ التصدير...' : 'مستند قابل للتعديل مع فهرس', icon: <FileText className="w-4 h-4" />, disabled: downloadingDocx, onSelect: handleExportDocx },
+                      { id: 'pptx', label: 'PowerPoint (.pptx)', hint: downloadingPptx ? 'جارٍ التصدير...' : 'شرائح المناقشة', icon: <Presentation className="w-4 h-4" />, disabled: downloadingPptx, onSelect: handleExportPresentation },
+                      { id: 'html', label: 'صفحة HTML مستقلة', hint: downloadingHtml ? 'جارٍ التصدير...' : 'تعمل دون اتصال', icon: <FileCode className="w-4 h-4" />, disabled: downloadingHtml, onSelect: handleExportHTML }
+                    ]
+                  },
+                  {
+                    label: 'الخيارات',
+                    items: [
+                      {
+                        id: 'lang',
+                        label: previewLang === 'ar' ? 'لغة التقرير: العربية' : 'Report language: English',
+                        hint: previewLang === 'ar' ? 'التبديل إلى الإنجليزية' : 'Switch to Arabic',
+                        icon: <Languages className="w-4 h-4" />,
+                        onSelect: () => setPreviewLang(previewLang === 'ar' ? 'en' : 'ar')
+                      },
+                      {
+                        id: 'weeks',
+                        label: showOnlyActualWeeks ? `الأسابيع الموثقة فقط (${actualWeeksCount})` : `كل أسابيع الخطة (${weeksCount})`,
+                        hint: showOnlyActualWeeks ? 'إظهار كل أسابيع الخطة' : 'إظهار الأسابيع الموثقة فقط',
+                        icon: <CheckCircle2 className="w-4 h-4" />,
+                        onSelect: () => setShowOnlyActualWeeks(!showOnlyActualWeeks)
+                      }
+                    ]
+                  }
+                ]}
+              />
+
+              {st === 'approved' && reportData?.profile?.verificationHash ? (
+                <a
+                  className="btn-primary"
+                  href={`/verify/${(reportData.profile as any).id || user?.id || 1}/${reportData.profile.verificationHash}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <ExternalLink className="w-4 h-4" aria-hidden="true" />
+                  <span>رابط التحقق</span>
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  className="btn-primary"
+                  disabled={submitReportMutation.isPending || st === 'submitted' || st === 'under_review'}
+                  onClick={() => submitReportMutation.mutate()}
+                >
+                  <Send className="w-4 h-4" aria-hidden="true" />
+                  <span>
+                    {submitReportMutation.isPending ? 'جارٍ الإرسال...' : st === 'changes_requested' ? 'إعادة الإرسال للمشرف' : 'إرسال للمشرف'}
+                  </span>
+                </button>
+              )}
+            </div>
+
+            <p className="fr-bar-stats">
+              <span>{reportData?.wordCount || 0} كلمة</span>
+              <span aria-hidden="true">·</span>
               <span>
-                {submitReportMutation.isPending
-                  ? 'جارٍ الإرسال...'
-                  : reportData?.profile?.status === 'changes_requested'
-                  ? 'إعادة تقديم التقرير للمشرف'
-                  : 'رفع التقرير للمشرف للاعتماد'}
+                {loggedHours} ساعة مسجلة{plannedHours > 0 ? ` من ${plannedHours}` : ''}
               </span>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Top Protection & Version Control Toolbar Card */}
-      <div className="bg-card border border-line rounded-2xl p-4 sm:p-5 shadow-sm no-print flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-ok-bg text-ok flex items-center justify-center font-bold">
-            <ShieldCheck className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="text-xs font-extrabold text-ink">نظام حماية البيانات والتنقل بين الإصدارات</h3>
-            <p className="text-[11px] text-sub">
-              تراجع فوري لأي تعديل سابق والعودة للحالي مع حفظ نسخ احتياطية بـ SHA-256
+              <span aria-hidden="true">·</span>
+              <span>{actualWeeksCount} من {weeksCount} أسبوعاً موثقاً</span>
             </p>
           </div>
-        </div>
-
-        {/* Time-Travel & Version History Controls */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Undo Button */}
-          <button
-            type="button"
-            onClick={handleUndo}
-            disabled={currentVersionIndex <= 0}
-            className="px-3 py-1.5 rounded-xl text-xs font-bold text-ink bg-bg hover:bg-line border border-line disabled:opacity-30 disabled:hover:bg-bg transition-all flex items-center gap-1.5 shadow-sm"
-            title="تراجع للماضي (النسخة السابقة)"
-          >
-            <RotateCcw className="w-3.5 h-3.5 text-accent" />
-            <span>تراجع</span>
-          </button>
-
-          {/* Redo Button */}
-          <button
-            type="button"
-            onClick={handleRedo}
-            disabled={currentVersionIndex >= versions.length - 1}
-            className="px-3 py-1.5 rounded-xl text-xs font-bold text-ink bg-bg hover:bg-line border border-line disabled:opacity-30 disabled:hover:bg-bg transition-all flex items-center gap-1.5 shadow-sm"
-            title="التقدم للحالي (النسخة الأحدث)"
-          >
-            <RotateCw className="w-3.5 h-3.5 text-ok" />
-            <span>التقدم للحالي</span>
-          </button>
-
-          
-
-          {/* Version History Modal Trigger */}
-          <button
-            type="button"
-            onClick={() => setVersionsModalOpen(true)}
-            className="px-3 py-1.5 rounded-xl text-xs font-bold text-ink bg-bg hover:bg-line border border-line transition-all flex items-center gap-1.5 shadow-sm"
-            title="عرض سجل كافة الإصدارات والتنقل الفوري بينها"
-          >
-            <History className="w-3.5 h-3.5 text-sub" />
-            <span>سجل الإصدارات ({versions.length})</span>
-          </button>
-
-          {/* Pin Snapshot Button */}
-          <button
-            type="button"
-            onClick={handleManualSnapshot}
-            className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-sub hover:text-ink bg-bg hover:bg-line border border-line transition-all"
-            title="حفظ لقطة إصدار حالية"
-          >
-            <Pin className="w-3.5 h-3.5" />
-          </button>
-
-          <span className="text-line mx-1">|</span>
-
-          {/* Backup Export */}
-          <button
-            type="button"
-            onClick={handleDownloadBackupJSON}
-            disabled={!!downloadingArchive}
-            className="px-3 py-1.5 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-colors flex items-center gap-1.5"
-            title="تصدير أرشيف كامل لبياناتك بملف JSON"
-          >
-            <Download className="w-3.5 h-3.5 text-ok" />
-            <span>{downloadingArchive === 'json' ? 'جارٍ...' : 'نسخة JSON'}</span>
-          </button>
-          
-          <button
-            type="button"
-            onClick={handleDownloadBackupCSV}
-            disabled={!!downloadingArchive}
-            className="px-3 py-1.5 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-colors flex items-center gap-1.5"
-            title="تصدير السجل اليومي بملف CSV"
-          >
-            <Download className="w-3.5 h-3.5 text-ok" />
-            <span>{downloadingArchive === 'csv' ? 'جارٍ...' : 'نسخة CSV'}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleDownloadBackupMarkdown(previewLang)}
-            disabled={!!downloadingArchive}
-            className="px-3 py-1.5 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-colors flex items-center gap-1.5"
-            title="تصدير التقرير النصي بملف Markdown"
-          >
-            <Download className="w-3.5 h-3.5 text-ok" />
-            <span>{downloadingArchive === 'md-ar' ? 'جارٍ...' : 'نسخة MD'}</span>
-          </button>
-
-          {/* Backup Import */}
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="px-3 py-1.5 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-colors flex items-center gap-1.5"
-            title="استرجاع وتدقيق نسخة احتياطية سابقة"
-          >
-            <UploadCloud className="w-3.5 h-3.5 text-accent" />
-            <span>استيراد نسخة</span>
-          </button>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* Profile Form Card */}
       <div className="bg-card border border-line rounded-2xl p-6 shadow-sm no-print">
@@ -1302,29 +1236,33 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              disabled={aiLoading}
-              onClick={handleAuditAllSections}
-              className="px-3 py-1.5 text-xs font-bold text-ok bg-ok-bg hover:bg-ok-bg/80 rounded-xl border border-ok/30 transition-colors flex items-center gap-1.5"
-              title="مراجعة وتدقيق إملائي ونحوي لكل الفقرات دفعة واحدة"
-            >
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>تدقيق شامل للفقرات</span>
-            </button>
-
-            <button
-              type="button"
-              disabled={aiLoading}
-              onClick={handleAutoTranslateReport}
-              className="px-3 py-1.5 text-xs font-bold text-accent bg-accent-dim hover:bg-accent-dim/80 rounded-xl border border-accent/20 transition-colors flex items-center gap-1.5"
-              title="ترجمة ذاتية لجميع أقسام التقرير بدون أي تدخل يدوي مع حفظ نسخة احتياطية"
-            >
-              <Languages className="w-3.5 h-3.5" />
-              <span>ترجمة التقرير كاملاً ({previewLang === 'ar' ? 'English' : 'عربي'})</span>
-            </button>
-          </div>
+          <ActionMenu
+            label="مساعد الكتابة"
+            icon={<Sparkles className="w-4 h-4" aria-hidden="true" />}
+            busy={aiLoading}
+            groups={[
+              {
+                items: [
+                  {
+                    id: 'audit',
+                    label: 'تدقيق كل الفقرات',
+                    hint: 'إملاء ونحو للأقسام الأربعة دفعة واحدة',
+                    icon: <CheckCircle2 className="w-4 h-4" />,
+                    disabled: aiLoading,
+                    onSelect: handleAuditAllSections
+                  },
+                  {
+                    id: 'translate',
+                    label: previewLang === 'ar' ? 'ترجمة الأقسام إلى الإنجليزية' : 'ترجمة الأقسام إلى العربية',
+                    hint: 'تُحفظ نسخة من النص قبل الترجمة',
+                    icon: <Languages className="w-4 h-4" />,
+                    disabled: aiLoading,
+                    onSelect: handleAutoTranslateReport
+                  }
+                ]
+              }
+            ]}
+          />
         </div>
 
         <form onSubmit={handleSaveProfile} className="space-y-4">
@@ -1693,43 +1631,11 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                 </button>
                 <button
                   type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleAIField('introText', 'polish')}
-                  className="text-[11px] font-bold text-accent hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-accent-dim/60"
-                  title="تنقيح الصياغة لتكون بأسلوب أكاديمي رفيع"
+                  onClick={() => setAssistantField('introText')}
+                  className="btn-ghost btn-sm"
                 >
-                  <Sparkles className="w-3 h-3" />
-                  <span>تنقيح أكاديمي</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleAIField('introText', 'summarize')}
-                  className="text-[11px] font-bold text-ink hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-bg border border-line"
-                  title="إيجاز وتلخيص علمي مكثف"
-                >
-                  <FileText className="w-3 h-3 text-sub" />
-                  <span>إيجاز وتلخيص</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleAIField('introText', 'spellcheck')}
-                  className="text-[11px] font-bold text-ok hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-ok-bg"
-                  title="تصحيح الهمزات والأخطاء الإملائية والنحوية"
-                >
-                  <CheckCircle2 className="w-3 h-3" />
-                  <span>تدقيق</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleAIField('introText', 'translate')}
-                  className="text-[11px] font-bold text-sub hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-bg border border-line"
-                  title="ترجمة فورية للإنجليزية الأكاديمية"
-                >
-                  <Languages className="w-3 h-3" />
-                  <span>ترجمة</span>
+                  <Sparkles className="w-4 h-4" aria-hidden="true" />
+                  <span>مساعد الكتابة</span>
                 </button>
               </div>
             </div>
@@ -1739,6 +1645,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
               rows={3}
               className="w-full p-3 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent leading-relaxed"
             />
+            <WritingHints text={String(profileData.introText || '')} kind="section" onApplyFixes={(fixed) => handleProfileChange('introText', fixed)} />
           </div>
 
           {/* Section 2: Entity */}
@@ -1757,43 +1664,11 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                 </button>
                 <button
                   type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleAIField('entityIntroText', 'polish')}
-                  className="text-[11px] font-bold text-accent hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-accent-dim/60"
-                  title="تنقيح الصياغة أكاديمياً"
+                  onClick={() => setAssistantField('entityIntroText')}
+                  className="btn-ghost btn-sm"
                 >
-                  <Sparkles className="w-3 h-3" />
-                  <span>تنقيح أكاديمي</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleAIField('entityIntroText', 'summarize')}
-                  className="text-[11px] font-bold text-ink hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-bg border border-line"
-                  title="إيجاز وتلخيص مهني"
-                >
-                  <FileText className="w-3 h-3 text-sub" />
-                  <span>إيجاز وتلخيص</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleAIField('entityIntroText', 'spellcheck')}
-                  className="text-[11px] font-bold text-ok hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-ok-bg"
-                  title="تدقيق إملائي ونحوي"
-                >
-                  <CheckCircle2 className="w-3 h-3" />
-                  <span>تدقيق</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleAIField('entityIntroText', 'translate')}
-                  className="text-[11px] font-bold text-sub hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-bg border border-line"
-                  title="ترجمة فورية"
-                >
-                  <Languages className="w-3 h-3" />
-                  <span>ترجمة</span>
+                  <Sparkles className="w-4 h-4" aria-hidden="true" />
+                  <span>مساعد الكتابة</span>
                 </button>
               </div>
             </div>
@@ -1803,6 +1678,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
               rows={3}
               className="w-full p-3 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent leading-relaxed"
             />
+            <WritingHints text={String(profileData.entityIntroText || '')} kind="section" onApplyFixes={(fixed) => handleProfileChange('entityIntroText', fixed)} />
           </div>
 
           {/* Section 3: Skills */}
@@ -1821,43 +1697,11 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                 </button>
                 <button
                   type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleAIField('skillsText', 'polish')}
-                  className="text-[11px] font-bold text-accent hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-accent-dim/60"
-                  title="تنقيح الصياغة أكاديمياً"
+                  onClick={() => setAssistantField('skillsText')}
+                  className="btn-ghost btn-sm"
                 >
-                  <Sparkles className="w-3 h-3" />
-                  <span>تنقيح أكاديمي</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleAIField('skillsText', 'summarize')}
-                  className="text-[11px] font-bold text-ink hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-bg border border-line"
-                  title="إيجاز وتلخيص المهارات"
-                >
-                  <FileText className="w-3 h-3 text-sub" />
-                  <span>إيجاز وتلخيص</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleAIField('skillsText', 'spellcheck')}
-                  className="text-[11px] font-bold text-ok hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-ok-bg"
-                  title="تدقيق إملائي ونحوي"
-                >
-                  <CheckCircle2 className="w-3 h-3" />
-                  <span>تدقيق</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleAIField('skillsText', 'translate')}
-                  className="text-[11px] font-bold text-sub hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-bg border border-line"
-                  title="ترجمة فورية"
-                >
-                  <Languages className="w-3 h-3" />
-                  <span>ترجمة</span>
+                  <Sparkles className="w-4 h-4" aria-hidden="true" />
+                  <span>مساعد الكتابة</span>
                 </button>
               </div>
             </div>
@@ -1867,6 +1711,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
               rows={3}
               className="w-full p-3 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent leading-relaxed"
             />
+            <WritingHints text={String(profileData.skillsText || '')} kind="section" onApplyFixes={(fixed) => handleProfileChange('skillsText', fixed)} />
           </div>
 
           {/* Section 4: Conclusion */}
@@ -1885,43 +1730,11 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
                 </button>
                 <button
                   type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleAIField('conclusionText', 'polish')}
-                  className="text-[11px] font-bold text-accent hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-accent-dim/60"
-                  title="تنقيح الصياغة أكاديمياً"
+                  onClick={() => setAssistantField('conclusionText')}
+                  className="btn-ghost btn-sm"
                 >
-                  <Sparkles className="w-3 h-3" />
-                  <span>تنقيح أكاديمي</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleAIField('conclusionText', 'summarize')}
-                  className="text-[11px] font-bold text-ink hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-bg border border-line"
-                  title="إيجاز الخاتمة"
-                >
-                  <FileText className="w-3 h-3 text-sub" />
-                  <span>إيجاز وتلخيص</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleAIField('conclusionText', 'spellcheck')}
-                  className="text-[11px] font-bold text-ok hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-ok-bg"
-                  title="تدقيق إملائي ونحوي"
-                >
-                  <CheckCircle2 className="w-3 h-3" />
-                  <span>تدقيق</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleAIField('conclusionText', 'translate')}
-                  className="text-[11px] font-bold text-sub hover:underline flex items-center gap-1 px-2 py-0.5 rounded-lg bg-bg border border-line"
-                  title="ترجمة فورية"
-                >
-                  <Languages className="w-3 h-3" />
-                  <span>ترجمة</span>
+                  <Sparkles className="w-4 h-4" aria-hidden="true" />
+                  <span>مساعد الكتابة</span>
                 </button>
               </div>
             </div>
@@ -1931,6 +1744,7 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
               rows={2}
               className="w-full p-3 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent leading-relaxed"
             />
+            <WritingHints text={String(profileData.conclusionText || '')} kind="section" onApplyFixes={(fixed) => handleProfileChange('conclusionText', fixed)} />
           </div>
 
           <div className="pt-2 flex justify-end">
@@ -1945,123 +1759,6 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
           </div>
         </form>
       </div>
-
-      {/* Page Estimate and Export Toolbar */}
-      <div className="bg-card border border-line rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 no-print">
-        <div className="flex items-center gap-3">
-          <div
-            className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold ${
-              isTargetAchieved ? 'bg-ok-bg text-ok' : 'bg-accent-dim text-accent'
-            }`}
-          >
-            <FileText className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-extrabold text-ink">
-                عدد الصفحات المقدر: {pages} صفحة
-              </span>
-              {isTargetAchieved ? (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-ok-bg text-ok flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" />
-                  مستوفٍ للمعيار (20+ صفحة)
-                </span>
-              ) : (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-accent-dim text-accent flex items-center gap-1">
-                  <AlertTriangle className="w-3 h-3" />
-                  أقل من 20 صفحة
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-sub mt-0.5">
-              إجمالي الكلمات: {reportData?.wordCount || 0} كلمة | إجمالي الساعات المسجلة: {reportData?.totalHours || 0} من {profileData.courseHours || 280} ساعة ({Math.min(100, Math.round(((reportData?.totalHours || 0) / (profileData.courseHours || 280)) * 100))}%)
-            </p>
-          </div>
-        </div>
-
-        {/* Export Buttons & Preview Language Selector */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Actual Weeks Filter Toggle */}
-          <button
-            type="button"
-            onClick={() => setShowOnlyActualWeeks(!showOnlyActualWeeks)}
-            className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 ${
-              showOnlyActualWeeks
-                ? 'bg-ok-bg text-ok border-ok/30'
-                : 'bg-bg text-sub hover:text-ink border-line'
-            }`}
-            title="التبديل بين عرض وتصدير الأسابيع المنجزة فعلياً فقط أو الخطة النظرية لـ 14 أسبوعاً"
-          >
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>{showOnlyActualWeeks ? `الأسابيع المنجزة فعلياً (${actualWeeksCount})` : 'الخطة الكاملة (14 أسبوعاً)'}</span>
-          </button>
-
-          {/* Language Toggle for Export and Preview */}
-          <div className="flex items-center bg-bg border border-line rounded-xl p-1 text-xs font-bold">
-            <button
-              type="button"
-              onClick={() => setPreviewLang('ar')}
-              className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1.5 ${
-                previewLang === 'ar' ? 'bg-accent text-white shadow-sm' : 'text-sub hover:text-ink'
-              }`}
-            >
-              <Languages className="w-3.5 h-3.5" />
-              <span>العربية</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setPreviewLang('en')}
-              className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1.5 ${
-                previewLang === 'en' ? 'bg-accent text-white shadow-sm' : 'text-sub hover:text-ink'
-              }`}
-            >
-              <Languages className="w-3.5 h-3.5" />
-              <span>English</span>
-            </button>
-          </div>
-
-          <button
-            onClick={handleExportPresentation}
-            disabled={downloadingPptx}
-            className="px-3.5 py-2 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
-            title="تنزيل شرائح عرض تقديمي متكاملة للمناقشة أمام اللجنة (.pptx) متضمنة الصور التوثيقية والأسابيع"
-          >
-            <Download className={`w-4 h-4 text-accent ${downloadingPptx ? 'animate-bounce' : ''}`} />
-            <span>{downloadingPptx ? 'جارٍ تصدير PowerPoint...' : 'عرض PowerPoint (.pptx)'}</span>
-          </button>
-
-          <button
-            onClick={handleExportDocx}
-            disabled={downloadingDocx}
-            className="px-3.5 py-2 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
-            title="تنزيل مستند Word مع فهرسة ذكية ديناميكية وأرقام صفحات مرتبطة بكل أسبوع وفصل"
-          >
-            <Download className={`w-4 h-4 text-accent ${downloadingDocx ? 'animate-bounce' : ''}`} />
-            <span>{downloadingDocx ? 'جارٍ تصدير Word...' : 'تنزيل Word مع الفهرسة (.docx)'}</span>
-          </button>
-
-          <button
-            onClick={handleExportHTML}
-            disabled={downloadingHtml}
-            className="px-3.5 py-2 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
-            title="تنزيل تقرير HTML مستقل أوفلاين مع روابط تنقل سلسة"
-          >
-            <FileCode className={`w-4 h-4 text-ok ${downloadingHtml ? 'animate-bounce' : ''}`} />
-            <span>{downloadingHtml ? 'جارٍ تصدير HTML...' : 'تنزيل HTML مستقل'}</span>
-          </button>
-
-          <button
-            onClick={handlePrintPDF}
-            className="px-3.5 py-2 text-xs font-bold text-white bg-accent hover:bg-accent/90 rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
-            title="طباعة التقرير مباشرة أو حفظ كـ PDF بفواصل صفحات قياسية دون ظهور الرابط والتاريخ"
-          >
-            <Printer className="w-4 h-4" />
-            <span>طباعة / حفظ PDF</span>
-          </button>
-        </div>
-      </div>
-
-
 
       {/* Sample Preview Mode Banner */}
       {isSampleMode && (
@@ -2084,729 +1781,39 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
         </div>
       )}
 
-      {/* Report Paper Preview Container (Printable Document with Dual-Language Rendering) */}
-      <div
-        id="report-paper-view"
-        dir={isAr ? 'rtl' : 'ltr'}
-        className="bg-card border border-line rounded-2xl p-4 sm:p-8 md:p-12 shadow-sm leading-relaxed text-ink space-y-8 print-only-container print-page-wrapper overflow-x-auto print:border-none print:shadow-none print:p-0 print:m-0 print:rounded-none print:bg-transparent print:space-y-0"
-      >
-        {/* Cover Page */}
-        <div id="sec-cover" className="scroll-mt-24 text-center pb-10 border-b-2 border-line space-y-6">
-          {/* Symmetrical Dual-Logo Header */}
-          <div className="flex items-center justify-between gap-2 sm:gap-4 pb-4 border-b border-line/60">
-            {/* Institution Logo (Right in RTL / Left in LTR) */}
-            <div className="w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center shrink-0">
-              {activePreviewProfile.institutionLogo ? (
-                <img
-                  src={activePreviewProfile.institutionLogo}
-                  alt="Institution Logo"
-                  className="max-w-full max-h-full object-contain"
-                />
-              ) : (
-                <div className="w-16 h-16 sm:w-20 sm:h-20 border border-dashed border-line rounded-lg flex flex-col items-center justify-center text-[9px] sm:text-[10px] text-sub/50 p-1">
-                  <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6 mb-0.5 sm:mb-1 text-sub/40" />
-                  <span>شعار الكلية</span>
-                </div>
-              )}
-            </div>
-
-            {/* Center National & Academic Hierarchy */}
-            <div className="flex-1 text-center space-y-0.5 sm:space-y-1 px-1">
-              <div className="text-[10px] sm:text-xs font-bold text-sub uppercase tracking-wider">
-                {isAr ? 'المملكة العربية السعودية' : 'Kingdom of Saudi Arabia'}
-              </div>
-              <div className="text-xs sm:text-sm font-extrabold text-ink">
-                {activePreviewProfile.trainingUnit || (isAr ? 'الوحدة التدريبية / الكلية' : 'Academic Department / College')}
-              </div>
-              {activePreviewProfile.department && (
-                <div className="text-[11px] sm:text-xs font-semibold text-sub">
-                  {activePreviewProfile.department}
-                </div>
-              )}
-            </div>
-
-            {/* Company Logo (Left in RTL / Right in LTR) */}
-            <div className="w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center shrink-0">
-              {activePreviewProfile.companyLogo ? (
-                <img
-                  src={activePreviewProfile.companyLogo}
-                  alt="Company Logo"
-                  className="max-w-full max-h-full object-contain"
-                />
-              ) : (
-                <div className="w-16 h-16 sm:w-20 sm:h-20 border border-dashed border-line rounded-lg flex flex-col items-center justify-center text-[9px] sm:text-[10px] text-sub/50 p-1">
-                  <Building className="w-5 h-5 sm:w-6 sm:h-6 mb-0.5 sm:mb-1 text-sub/40" />
-                  <span>شعار المنشأة</span>
-                </div>
-              )}
-            </div>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-accent mt-4">
-            {isAr ? 'التقرير النهائي للتدريب التعاوني (Co-op Report)' : 'Cooperative Training Final Report (Co-op Report)'}
-          </h1>
-          <div className="text-base font-bold text-ink">
-            {isAr ? 'جهة التدريب:' : 'Host Organization:'} {activePreviewProfile.entityAddress || '—'}
-          </div>
-
-          <div className="mt-8 max-w-xl mx-auto bg-bg border border-line rounded-xl p-5 text-start grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs shadow-xs" dir={isAr ? 'rtl' : 'ltr'}>
-            <div>
-              <span className="font-bold text-sub">{isAr ? 'اسم المتدرب:' : 'Trainee Name:'}</span>{' '}
-              <span className="font-extrabold text-ink">{normalizeStudentName(activePreviewProfile.studentName) || '—'}</span>
-            </div>
-            <div>
-              <span className="font-bold text-sub">{isAr ? 'الرقم التدريبي:' : 'Training ID:'}</span>{' '}
-              <span className="font-mono font-bold text-ink">{activePreviewProfile.trainingNumber || '—'}</span>
-            </div>
-            <div>
-              <span className="font-bold text-sub">{isAr ? 'القسم / التخصص:' : 'Department / Major:'}</span>{' '}
-              <span className="font-bold text-ink">{activePreviewProfile.department || '—'}</span>
-            </div>
-            <div>
-              <span className="font-bold text-sub">{isAr ? 'المشرف الأكاديمي:' : 'Academic Supervisor:'}</span>{' '}
-              <span className="font-bold text-ink">{activePreviewProfile.supervisorName || '—'}</span>
-            </div>
-            <div>
-              <span className="font-bold text-sub">{isAr ? 'المشرف الميداني:' : 'Field Supervisor:'}</span>{' '}
-              <span className="font-bold text-ink">{activePreviewProfile.responsibleName || '—'}</span>
-            </div>
-            <div>
-              <span className="font-bold text-sub">{isAr ? 'ساعات المقرر في الخطة:' : 'Course Credit:'}</span>{' '}
-              <span className="font-extrabold text-ok">
-                {activePreviewProfile.courseHours
-                  ? `${activePreviewProfile.courseHours} ${isAr ? 'ساعة تدريبية فعلية' : 'Training Hours'}`
-                  : (isAr ? 'مقرر في الخطة الدراسية' : 'Academic Course')}
-              </span>
-            </div>
-            <div>
-              <span className="font-bold text-sub">{isAr ? 'المدة التدريبية المقررة:' : 'Training Duration:'}</span>{' '}
-              <span className="font-bold text-ink">
-                {activePreviewProfile.trainingWeeks || 14} {isAr ? 'أسبوعاً تدريبياً ميدانياً' : 'Weeks Field Training'}
-              </span>
-            </div>
-            <div>
-              <span className="font-bold text-sub">{isAr ? 'حالة التوثيق الميداني:' : 'Documentation Status:'}</span>{' '}
-              <span className="font-bold text-accent">
-                {activePreviewWeeks.length} {isAr ? 'أسبوعاً موثقاً بالكامل (100%)' : 'Weeks Documented (100%)'}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Academic Table of Contents (Page 2 in Print & Master Academic Dossier) */}
-        <div id="sec-toc" className="scroll-mt-24 py-6 page-break space-y-4" dir={isAr ? 'rtl' : 'ltr'}>
-          <h2 className="text-base font-black text-[#8B0000] text-center pb-3 mb-5 border-b-2 border-[#8B0000] flex items-center justify-center gap-2">
-            <Bookmark className="w-5 h-5" />
-            <span>{isAr ? 'فهرس المحتويات وموضوعات الأسابيع' : 'Table of Contents & Weekly Topics'}</span>
-          </h2>
-
-          <div className="space-y-2.5 max-w-2xl mx-auto text-xs font-bold">
-            <a href="#sec-cover" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
-              <span className="group-hover:translate-x-[-2px] transition-transform">
-                {isAr ? 'فهرس المحتويات وصفحة الغلاف' : 'Cover Page & Student Credentials'}
-              </span>
-              <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
-              <span className="text-[#8B0000] font-black">{isAr ? '١' : '1'}</span>
-            </a>
-
-            <a href="#sec-intro" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
-              <span className="group-hover:translate-x-[-2px] transition-transform">
-                {isAr
-                  ? '١. المقدمة وأهداف التدريب وبيانات الخطة التدريبية'
-                  : '1. Introduction, Objectives & Academic Training Plan'}
-              </span>
-              <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
-              <span className="text-[#8B0000] font-black">{isAr ? '٢' : '2'}</span>
-            </a>
-
-            <a href="#sec-entity" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
-              <span className="group-hover:translate-x-[-2px] transition-transform">
-                {isAr
-                  ? `٢. التعريف بجهة التدريب وطبيعة العمل ${activePreviewProfile.entityAddress ? `(${activePreviewProfile.entityAddress})` : ''}`
-                  : `2. Host Organization Overview ${activePreviewProfile.entityAddress ? `(${activePreviewProfile.entityAddress})` : ''}`}
-              </span>
-              <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
-              <span className="text-[#8B0000] font-black">{isAr ? '٣' : '3'}</span>
-            </a>
-
-            <a href="#sec-timeline" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
-              <span className="group-hover:translate-x-[-2px] transition-transform">
-                {isAr
-                  ? `٣. الباب التدريبي: سجل وتقارير الأسابيع الميدانية الـ (${displayWeeks.length} أسبوعاً)`
-                  : `3. Training Reports & Weekly Field Records (${displayWeeks.length} Weeks)`}
-              </span>
-              <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
-              <span className="text-[#8B0000] font-black">{isAr ? toArabicIndic(4) : '4'}</span>
-            </a>
-
-            {/* Child Weeks Narrative Topic Indexing - Guaranteed for all actual weeks */}
-            <div className="space-y-1.5 pr-2 sm:pr-4 py-1">
-              {displayWeeks.map((w, idx) => {
-                const isLast = idx === displayWeeks.length - 1;
-                const treeSymbol = isLast ? '└──' : '├──';
-                const pageNum = 5 + idx;
-
-                return (
-                  <a
-                    key={w.weekIndex}
-                    href={`#week-${w.weekIndex}`}
-                    className="flex items-baseline justify-between text-sub hover:text-accent pr-3 pl-2 py-1 rounded-lg hover:bg-bg/60 transition-colors group text-[11.5px]"
-                  >
-                    <div className="flex items-baseline gap-2 flex-1 min-w-0 pr-1">
-                      <span className="text-muted/60 font-mono text-[11px] select-none shrink-0">{treeSymbol}</span>
-                      <span className="font-bold text-ink group-hover:text-accent transition-colors shrink-0">
-                        {isAr ? `تقرير ${getArabicWeekName(w.weekIndex)}:` : `Week ${w.weekIndex} Report:`}
-                      </span>
-                      <span className="text-sub group-hover:text-ink transition-colors truncate">
-                        {getWeekTopic(w, isAr)}
-                      </span>
-                    </div>
-                    <span className="flex-grow mx-3 border-b border-dotted border-line relative top-[-4px]"></span>
-                    <span className="text-ok font-bold shrink-0">
-                      {isAr ? toArabicIndic(pageNum) : pageNum}
-                    </span>
-                  </a>
-                );
-              })}
-            </div>
-
-            <a href="#sec-skills" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
-              <span className="group-hover:translate-x-[-2px] transition-transform">
-                {isAr ? '٤. المعارف والمهارات والتجارب المكتسبة' : '4. Acquired Competencies & Technical Skills'}
-              </span>
-              <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
-              <span className="text-[#8B0000] font-black">{isAr ? toArabicIndic(5 + displayWeeks.length) : 5 + displayWeeks.length}</span>
-            </a>
-
-            <a href="#sec-conclusion" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
-              <span className="group-hover:translate-x-[-2px] transition-transform">
-                {isAr ? '٥. الخاتمة والتوصيات العامة' : '5. Conclusion & Recommendations'}
-              </span>
-              <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
-              <span className="text-[#8B0000] font-black">{isAr ? toArabicIndic(6 + displayWeeks.length) : 6 + displayWeeks.length}</span>
-            </a>
-
-            <a href="#sec-approval" className="flex items-baseline justify-between text-ink hover:text-accent transition-colors group">
-              <span className="group-hover:translate-x-[-2px] transition-transform">
-                {isAr ? '٦. استمارة تقييم واعتماد المشرفين والملاحق' : '6. Supervisory Approval Form & Appendices'}
-              </span>
-              <span className="flex-grow mx-3 border-b-2 border-dotted border-muted/50 relative top-[-4px]"></span>
-              <span className="text-[#8B0000] font-black">{isAr ? toArabicIndic(7 + displayWeeks.length) : 7 + displayWeeks.length}</span>
-            </a>
-          </div>
-        </div>
-
-        {/* Section 1: Intro */}
-        <div id="sec-intro" className="scroll-mt-24 space-y-3 pt-4 page-break">
-          <h2 className="text-lg font-extrabold text-ink border-b-2 border-accent pb-1.5 inline-block">
-            {isAr ? '1. المقدمة وأهداف التدريب' : '1. Introduction & Objectives'}
-          </h2>
-          <p className="text-sm text-ink leading-loose whitespace-pre-wrap">
-            {activePreviewProfile.introText || (isAr ? 'لم تُحدد المقدمة بعد.' : 'No introduction provided yet.')}
-          </p>
-        </div>
-
-        {/* Section 2: Entity */}
-        <div id="sec-entity" className="scroll-mt-24 space-y-3 pt-4">
-          <h2 className="text-lg font-extrabold text-ink border-b-2 border-accent pb-1.5 inline-block">
-            {isAr ? '2. التعريف بجهة التدريب وطبيعة العمل' : '2. Host Organization Overview'}
-          </h2>
-          <p className="text-sm text-ink leading-loose whitespace-pre-wrap">
-            {activePreviewProfile.entityIntroText || (isAr ? 'لم يُحدد التعريف بجهة التدريب بعد.' : 'No organization overview provided yet.')}
-          </p>
-          <div className="bg-bg border border-line rounded-lg p-3 text-xs text-sub flex flex-wrap gap-4 font-semibold">
-            <span>{isAr ? 'جهة التدريب:' : 'Organization:'} {activePreviewProfile.entityAddress || '—'}</span>
-            <span>{isAr ? 'عدد الموظفين تقريباً:' : 'Employees:'} {activePreviewProfile.employeesCount || '—'}</span>
-            <span>{isAr ? 'المسؤول الميداني:' : 'Supervisor:'} {activePreviewProfile.responsibleName || '—'}</span>
-          </div>
-        </div>
-
-        {/* Section 3: Detailed Weekly Technical Reports */}
-        <div id="sec-timeline" className="scroll-mt-24 space-y-6 pt-4 page-break">
-          <h2 className="text-lg font-extrabold text-ink border-b-2 border-accent pb-1.5 inline-block">
-            {isAr ? '3. تقارير وسجل الأسابيع التدريبية الميدانية (14 أسبوعاً)' : '3. Weekly Technical Training Reports (14 Weeks)'}
-          </h2>
-
-          {activePreviewWeeks.map((w) => {
-            const weekTitle = isAr ? getArabicWeekName(w.weekIndex) : `Week ${w.weekIndex}`;
-            const weekTopic = getWeekTopic(w, isAr);
-            const weekHours = w.totalHours || (w.entries || []).reduce((sum: number, e: EntryDTO) => sum + calculateHoursBetween(e.timeFrom, e.timeTo), 0);
-
-            return (
-              <div key={w.weekIndex} id={`week-${w.weekIndex}`} className="scroll-mt-24 border border-line rounded-xl overflow-hidden mb-8 page-break bg-card shadow-xs">
-                {/* Academic Header for the Week */}
-                <div className="bg-bg px-5 py-3 border-b border-line flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="space-y-0.5">
-                    <span className="text-[11px] font-bold text-accent">{isAr ? 'تقرير الأسبوع الميداني' : 'Field Training Report'}</span>
-                    <h3 className="text-sm font-extrabold text-ink">
-                      {weekTitle}: {weekTopic}
-                    </h3>
-                  </div>
-                  <div className="text-xs text-sub font-semibold">
-                    <span>{isAr ? 'الفترة التدريبية المنفذة: ' : 'Executed Training Period: '} <b className="text-ink">{formatWeekPeriod(w, isAr)}</b></span>
-                  </div>
-                </div>
-
-                {/* Narrative Tasks Content */}
-                <div className="p-5 space-y-4">
-                  {w.entries.length === 0 ? (
-                    <div className="p-5 text-center text-xs text-sub bg-surface/50 rounded-lg border border-dashed border-line flex items-center justify-center gap-2">
-                      <Clock className="w-4 h-4 text-warn" />
-                      <span>{isAr ? 'أسبوع تدريبي مؤجل أو متاح لاستكمال التوثيق والسرد الكتابي' : 'Pending week documentation'}</span>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {/* Executive Weekly Tasks Table Matrix */}
-                      <div className="overflow-x-auto border border-line rounded-xl my-2 bg-card print:border-line print:bg-white break-inside-avoid shadow-xs">
-                        <div className="bg-bg px-4 py-2.5 border-b border-line flex items-center justify-between text-xs font-black text-ink">
-                          <span>{isAr ? 'جدول حصر وتوثيق الأنشطة والمهام الأسبوعية' : 'Official Weekly Tasks Executive Matrix'}</span>
-                          <span className="text-[11px] font-bold text-accent">
-                            {w.totalDays || w.entries.length} {isAr ? 'أيام عمل' : 'days'} &middot; {weekHours} {isAr ? 'ساعة فعلية' : 'hours'}
-                          </span>
-                        </div>
-                        <table className="w-full text-start text-xs border-collapse">
-                          <thead>
-                            <tr className="bg-bg/60 border-b border-line text-ink font-extrabold text-[11px]">
-                              <th className="p-2.5 text-start w-28">{isAr ? 'اليوم والتاريخ' : 'Day & Date'}</th>
-                              <th className="p-2.5 text-center w-24">{isAr ? 'التوقيت' : 'Time'}</th>
-                              <th className="p-2.5 text-center w-16">{isAr ? 'الساعات' : 'Hours'}</th>
-                              <th className="p-2.5 text-start w-28">{isAr ? 'التصنيف الفني' : 'Domain'}</th>
-                              <th className="p-2.5 text-start">{isAr ? 'النشاط والمهمة التشغيلية الميدانية' : 'Operational Scope & Task'}</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-line/70">
-                            {w.entries.map((entry: EntryDTO, idx: number) => {
-                              const hours = calculateHoursBetween(entry.timeFrom || '08:00', entry.timeTo || '16:00');
-                              return (
-                                <tr key={entry.id || idx} className="hover:bg-bg/30 transition-colors">
-                                  <td className="p-2.5 font-extrabold text-ink whitespace-nowrap">
-                                    <span className="text-accent ml-1 font-black">{isAr ? `اليوم ${idx + 1}` : `D${idx + 1}`}</span>
-                                    <span className="text-sub font-semibold text-[10.5px]">
-                                      ({isAr ? formatDateArabic(entry.entryDate) : formatDateEnglish(entry.entryDate)})
-                                    </span>
-                                  </td>
-                                  <td className="p-2.5 text-center text-sub font-mono text-[11px] whitespace-nowrap" dir="ltr">
-                                    {entry.timeFrom || '08:00'} - {entry.timeTo || '16:00'}
-                                  </td>
-                                  <td className="p-2.5 text-center font-black text-ink whitespace-nowrap">
-                                    {hours} {isAr ? 'س' : 'h'}
-                                  </td>
-                                  <td className="p-2.5">
-                                    <span className="px-2 py-0.5 rounded-md text-[10.5px] font-extrabold bg-[#C0102A]/10 text-[#C0102A] whitespace-nowrap border border-[#C0102A]/20">
-                                      {translateCategory(entry.category, isAr)}
-                                    </span>
-                                  </td>
-                                  <td className="p-2.5 font-bold text-ink leading-snug">
-                                    {elevateTaskTitle(entry.title, entry.description, isAr)}
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-
-                      <div className="text-xs font-bold text-ink border-b border-line pb-1.5 flex items-center justify-between pt-2">
-                        <span>{isAr ? 'أولاً: البيان والسرد الإجرائي التفصيلي للمهام والأعمال الميدانية:' : 'Detailed Procedural Narrative & Accomplished Tasks:'}</span>
-                        <span className="text-[11px] text-muted font-normal">{w.entries.length} {isAr ? 'مهام موثقة' : 'tasks'}</span>
-                      </div>
-                      <div className="space-y-3">
-                        {w.entries.map((entry: EntryDTO, eIdx: number) => {
-                          const entryHours = calculateHoursBetween(entry.timeFrom, entry.timeTo);
-                          return (
-                            <div key={entry.id || eIdx} className="rounded-xl border border-line bg-card overflow-hidden text-xs shadow-2xs day-card-print break-inside-avoid">
-                              {/* Entry Header: Day Badge, Date, Time Span, Hours, Category */}
-                              <div className="bg-surface/80 px-4 py-2.5 border-b border-line flex flex-wrap items-center justify-between gap-2">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="px-2.5 py-0.5 rounded-md bg-accent text-white text-[11px] font-black">
-                                    {isAr ? `اليوم ${eIdx + 1}` : `Day ${eIdx + 1}`}
-                                  </span>
-                                  <span className="font-extrabold text-ink text-xs">
-                                    {isAr ? formatDateArabic(entry.entryDate) : formatDateEnglish(entry.entryDate)}
-                                  </span>
-                                  <span className="text-sub text-[11px] font-medium" dir="ltr">
-                                    ({entry.timeFrom || '08:00'} — {entry.timeTo || '16:00'})
-                                  </span>
-                                </div>
-
-                                <div className="flex items-center gap-2">
-                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-accent-dim text-accent border border-accent/20">
-                                    {translateCategory(entry.category, isAr)}
-                                  </span>
-                                  <span className="text-[11px] font-bold text-sub">
-                                    {entryHours} {isAr ? 'ساعات' : 'hrs'}
-                                  </span>
-                                </div>
-                              </div>
-
-                              {/* Entry Body: Formal Task Title & Procedural Narrative */}
-                              <div className="p-4 space-y-2.5 text-start">
-                                <div>
-                                  <div className="text-[10px] font-black text-accent uppercase tracking-wider mb-0.5">
-                                    {isAr ? 'النشاط الفني والمهمة التشغيلية الميدانية:' : 'Technical Activity & Operational Scope:'}
-                                  </div>
-                                  <h4 className="text-sm font-black text-ink leading-snug">
-                                    {elevateTaskTitle(entry.title, entry.description, isAr)}
-                                  </h4>
-                                </div>
-
-                                <div className="pt-2 border-t border-line/60">
-                                  <div className="text-[10px] font-black text-sub uppercase tracking-wider mb-1">
-                                    {isAr ? 'السرد الإجرائي ونتائج التنفيذ الهندسي:' : 'Procedural Narrative & Engineering Results:'}
-                                  </div>
-                                  <div className="procedural-narrative-box bg-bg/40 p-3 rounded-lg border border-line/50">
-                                    {renderProceduralNarrative(entry.description, isAr)}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Weekly Field Evidence Photos */}
-                  {w.evidence && w.evidence.length > 0 && (
-                    <div className="pt-2 space-y-2.5">
-                      <div className="text-xs font-bold text-accent border-b border-line pb-1.5">
-                        {isAr ? 'ثانياً: الأدلة والصور التوثيقية الميدانية للأسبوع:' : 'Field Evidence & Documentation Photos:'}
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                        {w.evidence.map((ev: any, evIdx: number) => (
-                          <div key={ev.id || evIdx} className="border border-line rounded-xl overflow-hidden bg-surface flex flex-col break-inside-avoid shadow-xs">
-                            <div className="w-full bg-slate-50 dark:bg-slate-900/40 p-2 flex items-center justify-center min-h-[180px] max-h-[480px] overflow-hidden">
-                              <img
-                                src={ev.imageData}
-                                alt={ev.caption || ''}
-                                className="max-h-[450px] w-auto max-w-full object-contain rounded-md shadow-xs transition-transform hover:scale-[1.01]"
-                                loading="lazy"
-                              />
-                            </div>
-                            <div className="p-2.5 text-xs font-bold text-ink leading-snug bg-card border-t border-line">
-                              <span className="text-accent font-extrabold ml-1">{isAr ? `شكل توثيقي (${evIdx + 1}):` : `Figure (${evIdx + 1}):`}</span>
-                              <span className="font-normal text-sub">{ev.caption}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Weekly Learning Synthesis & Acquired Competencies (Dynamic Expert Generation) */}
-                  {w.entries && w.entries.length > 0 && (() => {
-                    const synthesis = generateAcademicWeeklySynthesis(
-                      w.entries,
-                      w.weekIndex,
-                      weekHours,
-                      isAr
-                    );
-                    return (
-                      <div className="mt-5 p-5 bg-card border border-line rounded-2xl space-y-3.5 text-start break-inside-avoid shadow-xs print:border-none print:shadow-none print:p-0 print:bg-transparent synthesis-box-print">
-                        <div className="flex items-center justify-between border-b border-line pb-2.5 print:border-b-2 print:border-slate-800">
-                          <div className="text-xs font-black text-ink flex items-center gap-2">
-                            <CheckCircle2 className="w-4 h-4 text-accent print:hidden" />
-                            <span>{isAr ? 'الموجز التنفيذي والمخرجات والكفايات المكتسبة للأسبوع' : 'Weekly Executive Synthesis & Acquired Competencies'}</span>
-                          </div>
-                          <span className="text-[11px] font-bold text-sub">
-                            {isAr ? 'صياغة أكاديمية استشارية احترافية' : 'Academic Synthesis'}
-                          </span>
-                        </div>
-
-                        {/* Executive Narrative */}
-                        <p className="text-xs sm:text-sm text-ink leading-relaxed font-medium">
-                          {synthesis.executiveSummary}
-                        </p>
-
-                        {/* Core Operational Pillars */}
-                        {synthesis.technicalPillars.length > 0 && (
-                          <div className="pt-2 border-t border-line/60 space-y-1.5 print:border-t print:border-slate-200">
-                            <div className="text-[11px] font-black text-[#C0102A] uppercase tracking-wider">
-                              {isAr ? 'المحاور والأنشطة التشغيلية المنفذة:' : 'Core Operational Pillars:'}
-                            </div>
-                            <ul className="space-y-1 text-xs text-sub">
-                              {synthesis.technicalPillars.map((pillar, pIdx) => (
-                                <li key={pIdx} className="flex items-start gap-2">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-[#C0102A] mt-1.5 shrink-0"></span>
-                                  <span className="text-ink font-semibold">{pillar}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {/* Acquired Competencies */}
-                        {synthesis.acquiredCompetencies.length > 0 && (
-                          <div className="pt-2 border-t border-line/60 space-y-1.5 print:border-t print:border-slate-200">
-                            <div className="text-[11px] font-black text-ok uppercase tracking-wider flex items-center gap-1">
-                              <span>{isAr ? 'الكفايات والمعارف الهندسية المكتسبة:' : 'Acquired Engineering Competencies:'}</span>
-                            </div>
-                            <ul className="space-y-1 text-xs text-sub">
-                              {synthesis.acquiredCompetencies.map((comp, cIdx) => (
-                                <li key={cIdx} className="flex items-start gap-2">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-ok mt-1.5 shrink-0"></span>
-                                  <span>{comp}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {/* Tools & Tech Badges */}
-                        {synthesis.toolsAndTech.length > 0 && (
-                          <div className="pt-2 border-t border-line/60 flex flex-wrap items-center gap-1.5 print:border-t print:border-slate-200" dir={isAr ? 'rtl' : 'ltr'}>
-                            <span className="text-[11px] font-black text-sub ml-1">
-                              {isAr ? 'التقنيات والأدوات الموظفة:' : 'Utilized Tech:'}
-                            </span>
-                            {synthesis.toolsAndTech.map((tool, tIdx) => (
-                              <span
-                                key={tIdx}
-                                className="px-2.5 py-1 rounded-md text-[11px] font-mono font-extrabold bg-slate-100 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 print:bg-white print:border-slate-400 print:text-black shadow-xs tech-pill"
-                              >
-                                {tool}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Section 4: Skills */}
-        <div id="sec-skills" className="scroll-mt-24 space-y-4 pt-4 page-break">
-          <h2 className="text-lg font-extrabold text-ink border-b-2 border-accent pb-1.5 inline-block">
-            {isAr ? '4. المعارف والمهارات والتجارب المكتسبة' : '4. Acquired Competencies & Technical Skills'}
-          </h2>
-          {activePreviewProfile.skillsText ? (
-            <p className="text-sm text-ink leading-loose whitespace-pre-wrap">
-              {activePreviewProfile.skillsText}
-            </p>
-          ) : null}
-
-          {/* Synthesized Academic Competency Matrix */}
-          {(() => {
-            const allSyntheses = activePreviewWeeks.map((w, idx) =>
-              generateAcademicWeeklySynthesis(
-                w.entries || [],
-                w.weekIndex || (idx + 1),
-                (w.entries || []).reduce((acc: number, e: EntryDTO) => acc + calculateHoursBetween(e.timeFrom, e.timeTo), 0),
-                isAr
-              )
-            );
-            const compiledCompetencies = Array.from(new Set(allSyntheses.flatMap(s => s.acquiredCompetencies)));
-            const compiledPillars = Array.from(new Set(allSyntheses.flatMap(s => s.technicalPillars)));
-            const compiledTools = Array.from(new Set(allSyntheses.flatMap(s => s.toolsAndTech)));
-
-            return (
-              <div className="p-5 bg-card border border-line rounded-2xl space-y-4 text-start break-inside-avoid shadow-xs">
-                <div className="text-xs font-black text-ink border-b border-line pb-2 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-accent" />
-                  <span>{isAr ? 'مصفوفة الكفايات التخصصية والمهارات التطبيقية المتراكمة' : 'Cumulative Technical Competencies & Skills Matrix'}</span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                  <div className="space-y-2">
-                    <span className="font-extrabold text-[#C0102A] block">
-                      {isAr ? '• المجالات الهندسية والتشغيلية الممارسة:' : '• Practiced Operational Domains:'}
-                    </span>
-                    <ul className="space-y-1 text-sub">
-                      {compiledPillars.map((p, pIdx) => (
-                        <li key={pIdx} className="flex items-start gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#C0102A] mt-1.5 shrink-0"></span>
-                          <span className="text-ink font-semibold">{p}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="space-y-2">
-                    <span className="font-extrabold text-ok block">
-                      {isAr ? '• المعارف والكفايات المكتسبة الموثقة:' : '• Documented Acquired Competencies:'}
-                    </span>
-                    <ul className="space-y-1 text-sub">
-                      {compiledCompetencies.slice(0, 8).map((c, cIdx) => (
-                        <li key={cIdx} className="flex items-start gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-ok mt-1.5 shrink-0"></span>
-                          <span>{c}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-
-                {compiledTools.length > 0 && (
-                  <div className="pt-2 border-t border-line/60 flex flex-wrap items-center gap-1.5">
-                    <span className="text-[11px] font-black text-sub ml-1">
-                      {isAr ? 'الأنظمة والتقنيات والأدوات المستخدمة في الميدان:' : 'Field Verified Technologies & Systems:'}
-                    </span>
-                    {compiledTools.map((tool, tIdx) => (
-                      <span
-                        key={tIdx}
-                        className="px-2.5 py-0.5 rounded-md text-[10.5px] font-mono font-bold bg-accent-dim/60 text-accent border border-accent/20"
-                      >
-                        {tool}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })()}
-        </div>
-
-        {/* Section 5: Conclusion */}
-        <div id="sec-conclusion" className="scroll-mt-24 space-y-3 pt-4 page-break">
-          <h2 className="text-lg font-extrabold text-ink border-b-2 border-accent pb-1.5 inline-block">
-            {isAr ? '5. الخاتمة والتوصيات' : '5. Conclusions & Recommendations'}
-          </h2>
-          <p className="text-sm text-ink leading-loose whitespace-pre-wrap">
-            {activePreviewProfile.conclusionText || (isAr
-              ? `في ختام فترة التدريب التعاوني الميداني، حققت هذه التجربة أهدافها التعليمية والتطبيقية بربط المعرفة الأكاديمية بالممارسة التشغيلية المباشرة في ${activePreviewProfile.entityAddress || 'المنشأة المستضيفة'}.\n\nأبرز التوصيات المهنية:\n• تعزيز برامج التأهيل الميداني للطلبة في تقنيات الشبكات المتقدمة والأمن السيبراني.\n• توسيع الاعتماد على أتمتة الإجراءات والربط المباشر مع أنظمة المراقبة وإدارة التذاكر (ITIL).\n• استمرار التنسيق الأكاديمي والمهني المستمر بين الجامعات والمؤسسات الرائدة في سوق العمل.`
-              : `At the conclusion of the cooperative field training period, this experience achieved its primary educational and practical objectives by bridging academic knowledge with direct operational engineering practice at ${activePreviewProfile.entityAddress || 'the host organization'}.\n\nKey Professional Recommendations:\n• Strengthening practical field onboarding in advanced networking and cybersecurity technologies.\n• Expanding automated workflows and integration with enterprise ticketing and monitoring systems (ITIL).\n• Sustaining continuous academic-industry alignment between universities and leading market entities.`)}
-          </p>
-        </div>
-
-        {/* Section 6: Official Comprehensive Supervisory Endorsement & Institutional Sign-Off */}
-        <div id="sec-approval" className="scroll-mt-24 space-y-5 pt-4 page-break">
-          <h2 className="text-lg font-extrabold text-ink border-b-2 border-accent pb-1.5 inline-block">
-            {isAr ? '6. استمارة التقييم والاعتماد والمصادقة الرسمية الشاملة' : '6. Official Supervisory Endorsement & Final Sign-Off'}
-          </h2>
-
-          {/* Academic Dossier Summary Card */}
-          <div className="border border-line rounded-2xl overflow-hidden text-xs bg-card shadow-xs">
-            <div className="bg-bg px-4 py-3 font-bold text-ink border-b border-line flex flex-wrap items-center justify-between gap-2">
-              <span className="flex items-center gap-1.5">
-                <FileText className="w-4 h-4 text-accent" />
-                <span>{isAr ? 'ملخص مخرجات التدريب وبيانات الاعتماد النهائي' : 'Final COOP Verification & Academic Summary'}</span>
-              </span>
-              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-accent/10 text-accent border border-accent/20">
-                {activePreviewWeeks.length} {isAr ? 'أسابيع ميدانية موثقة' : 'Documented Weeks'}
-              </span>
-            </div>
-
-            <div className="p-4 sm:p-5 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-sub">
-                <div className="p-2.5 rounded-xl bg-bg/50 border border-line/60">
-                  <span className="block text-[11px] text-muted">{isAr ? 'اسم المتدرب:' : 'Trainee Name:'}</span>
-                  <span className="font-extrabold text-ink">{normalizeStudentName(activePreviewProfile.studentName) || '—'}</span>
-                </div>
-                <div className="p-2.5 rounded-xl bg-bg/50 border border-line/60">
-                  <span className="block text-[11px] text-muted">{isAr ? 'الرقم التدريبي / الأكاديمي:' : 'Training / Student ID:'}</span>
-                  <span className="font-extrabold text-ink">{activePreviewProfile.trainingNumber || '—'}</span>
-                </div>
-                <div className="p-2.5 rounded-xl bg-bg/50 border border-line/60">
-                  <span className="block text-[11px] text-muted">{isAr ? 'القسم / التخصص:' : 'Department / Specialty:'}</span>
-                  <span className="font-extrabold text-ink">{activePreviewProfile.department || '—'}</span>
-                </div>
-                <div className="p-2.5 rounded-xl bg-bg/50 border border-line/60">
-                  <span className="block text-[11px] text-muted">{isAr ? 'جهة التدريب الميداني:' : 'Host Organization:'}</span>
-                  <span className="font-extrabold text-ink">{activePreviewProfile.entityAddress || '—'}</span>
-                </div>
-                <div className="p-2.5 rounded-xl bg-bg/50 border border-line/60">
-                  <span className="block text-[11px] text-muted">{isAr ? 'المؤسسة التعليمية / الكلية:' : 'Academic Institution:'}</span>
-                  <span className="font-extrabold text-ink">{activePreviewProfile.trainingUnit || '—'}</span>
-                </div>
-                <div className="p-2.5 rounded-xl bg-bg/50 border border-line/60">
-                  <span className="block text-[11px] text-muted">{isAr ? 'إجمالي الساعات المنجزة:' : 'Total Hours Completed:'}</span>
-                  <span className="font-extrabold text-ok">
-                    {isSampleMode ? (activePreviewProfile.courseHours || 280) : (reportData?.totalHours || 0)} / {activePreviewProfile.courseHours || 280} {isAr ? 'ساعة فعلية' : 'Hours'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Trainee Declaration */}
-              <div className="p-3.5 rounded-xl bg-surface border border-line text-[11.5px] leading-relaxed text-sub space-y-2">
-                <div className="font-bold text-ink flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-accent" />
-                  <span>{isAr ? 'إقرار وتعهد المتدرب بصحة البيانات:' : 'Trainee Declaration:'}</span>
-                </div>
-                <p>
-                  {isAr
-                    ? 'أقر أنا المتدرب الموقع أدناه بأن كافة المهام والأنشطة والتقارير والأدلة التوثيقية الواردة في هذا التقرير تمثل عملي الميداني الفعلي المنجز تحت إشراف وتوجيه المختصين في جهة التدريب ووفق الخطة التدريبية المقررة.'
-                    : 'I, the undersigned trainee, declare that all tasks, field activities, and evidence documented in this report represent my genuine operational work completed under the direct supervision of the host organization.'}
-                </p>
-                <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-line text-xs">
-                  <div><b>{isAr ? 'اسم المتدرب:' : 'Trainee Name:'}</b> {normalizeStudentName(activePreviewProfile.studentName) || '....................'}</div>
-                  <div><b>{isAr ? 'التوقيع:' : 'Signature:'}</b> ....................................</div>
-                  <div><b>{isAr ? 'التاريخ:' : 'Date:'}</b> ..... / ..... / 202... م</div>
-                </div>
-              </div>
-
-              {/* Grid: Field Supervisor Endorsement vs Academic Supervisor Endorsement */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                {/* 1. Field Supervisor Approval (Host Entity) */}
-                <div className="border border-line rounded-xl p-4 bg-surface space-y-3 flex flex-col justify-between">
-                  <div className="space-y-2">
-                    <div className="font-extrabold text-xs text-ink pb-1.5 border-b border-line flex items-center justify-between">
-                      <span>{isAr ? 'مراجعة وتوقيع المشرف الميداني (جهة التدريب)' : 'Field Supervisor Sign-Off (Host)'}</span>
-                      <span className="text-[10px] text-accent font-bold">{activePreviewProfile.entityAddress || 'جهة التدريب'}</span>
-                    </div>
-                    <div className="space-y-1 text-[11.5px] text-sub">
-                      <div><b>{isAr ? 'اسم المشرف الميداني:' : 'Supervisor Name:'}</b> {activePreviewProfile.responsibleName || '................................'}</div>
-                      <div><b>{isAr ? 'المنصب / الصفة:' : 'Title / Role:'}</b> {isAr ? 'المشرف الميداني المسؤول' : 'Field Supervisor'}</div>
-                      <div className="pt-1">
-                        <b>{isAr ? 'التقييم العام للمتدرب:' : 'Overall Performance Rating:'}</b>
-                        <div className="flex items-center gap-3 pt-1 text-[11px] font-bold text-ink">
-                          <span>[  ] {isAr ? 'ممتاز' : 'Excellent'}</span>
-                          <span>[  ] {isAr ? 'جيد جداً' : 'Very Good'}</span>
-                          <span>[  ] {isAr ? 'جيد' : 'Good'}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-3 border-t border-line space-y-2 text-[11px]">
-                    <div className="flex justify-between items-center text-muted">
-                      <span>{isAr ? 'التوقيع:' : 'Signature:'} ........................</span>
-                      <span>{isAr ? 'التاريخ:' : 'Date:'} .... / .... / 202...</span>
-                    </div>
-                    <div className="h-16 border-2 border-dashed border-line/80 rounded-lg flex items-center justify-center text-muted text-[10px]">
-                      {isAr ? 'موضع الختم الرسمي لجهة التدريب' : 'Official Host Organization Stamp'}
-                    </div>
-                  </div>
-                </div>
-
-                {/* 2. Academic Supervisor Approval (College / University) */}
-                <div className="border border-line rounded-xl p-4 bg-surface space-y-3 flex flex-col justify-between">
-                  <div className="space-y-2">
-                    <div className="font-extrabold text-xs text-ink pb-1.5 border-b border-line flex items-center justify-between">
-                      <span>{isAr ? 'مراجعة وتوقيع المشرف الأكاديمي (الجامعة / الكلية)' : 'Academic Supervisor Sign-Off (Institution)'}</span>
-                      <span className="text-[10px] text-accent font-bold">{activePreviewProfile.trainingUnit || 'المؤسسة التعليمية'}</span>
-                    </div>
-                    <div className="space-y-1 text-[11.5px] text-sub">
-                      <div><b>{isAr ? 'اسم المشرف الأكاديمي:' : 'Supervisor Name:'}</b> {activePreviewProfile.supervisorName || '................................'}</div>
-                      <div><b>{isAr ? 'القسم العلمي:' : 'Academic Department:'}</b> {activePreviewProfile.department || '................................'}</div>
-                      <div className="pt-1">
-                        <b>{isAr ? 'حالة التقييم النهائي:' : 'Final Evaluation Status:'}</b>
-                        <div className="flex items-center gap-3 pt-1 text-[11px] font-bold text-ink">
-                          <span>[  ] {isAr ? 'مستوفٍ للشروط' : 'Approved'}</span>
-                          <span>[  ] {isAr ? 'تعديلات مطلوبة' : 'Revisions'}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-3 border-t border-line space-y-2 text-[11px]">
-                    <div className="flex justify-between items-center text-muted">
-                      <span>{isAr ? 'التوقيع:' : 'Signature:'} ........................</span>
-                      <span>{isAr ? 'التاريخ:' : 'Date:'} .... / .... / 202...</span>
-                    </div>
-                    <div className="h-16 border-2 border-dashed border-line/80 rounded-lg flex items-center justify-center text-muted text-[10px]">
-                      {isAr ? 'موضع ختم الكلية / إدارة التدريب التعاوني' : 'Official Academic Unit Stamp'}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      {assistantField && (
+        <AssistantPanel
+          open={!!assistantField}
+          onClose={() => setAssistantField(null)}
+          target={{ type: 'section', key: assistantField }}
+          title={fieldLabels[assistantField]}
+          text={String(profileData[assistantField] || '')}
+          lang={previewLang}
+          onOpenMemory={() => setMemoryOpen(true)}
+          onApplied={(finalText) => {
+            handleProfileChange(assistantField, finalText);
+            queryClient.invalidateQueries({ queryKey: ['finalReport'] });
+            setSaveToast('تم اعتماد النص، ويمكنك استرجاع السابق من سجل المساعد');
+            setTimeout(() => setSaveToast(''), 3500);
+          }}
+        />
+      )}
+      <AssistantMemory open={memoryOpen} onClose={() => setMemoryOpen(false)} />
+      {/* Printable report: cover, contents, chapters, endorsement */}
+      <div id="report-paper-view" dir={isAr ? 'rtl' : 'ltr'} className="rp-paper fd-paper">
+        <FinalReportDocument
+          isAr={isAr}
+          profile={activePreviewProfile}
+          weeks={activePreviewWeeks}
+          totalHours={activePreviewWeeks.reduce(
+            (sum: number, w: any) => sum + (w.entries || []).reduce((s: number, e: EntryDTO) => s + calculateHoursBetween(e.timeFrom || '08:00', e.timeTo || '16:00'), 0),
+            0
+          )}
+          getWeekTopic={getWeekTopic}
+          translateCategory={translateCategory}
+        />
       </div>
 
-      
       {/* Samples & Writing Guide Hub Modal (مركز إرشادات وقوالب التقرير التعاوني) */}
       {samplesModalOpen && (
         <div className="fixed inset-0 bg-ink/60 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4 animate-fade-in no-print">

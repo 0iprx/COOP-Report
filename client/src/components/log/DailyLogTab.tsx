@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { WritingHints } from '../ai/WritingHints';
 import { api } from '../../services/api';
 import { saveOfflineEntry, getPendingEntries, syncPendingEntries } from '../../services/offlineSync';
 import { useLanguage } from '../../context/LanguageContext';
@@ -56,6 +57,12 @@ const CATEGORY_TRANSLATIONS: Record<string, string> = {
 };
 
 export const DailyLogTab: React.FC = () => {
+  const { data: aiStatus } = useQuery<{ available: boolean }>({
+    queryKey: ['aiStatus'],
+    queryFn: async () => (await api.get('/ai/v2/status')).data,
+    staleTime: 5 * 60_000
+  });
+  const aiAvailable = !!aiStatus?.available;
   const queryClient = useQueryClient();
   const { lang, setLang, isAr, t } = useLanguage();
   const { theme, toggleTheme, isDark } = useTheme();
@@ -1016,6 +1023,14 @@ export const DailyLogTab: React.FC = () => {
                   className="w-full p-3 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent leading-relaxed text-ink"
                   required
                 />
+                <WritingHints
+                  text={qaActivities}
+                  kind="free"
+                  onApplyFixes={(fixed) => {
+                    setQaActivities(fixed);
+                    setDescription(buildDescriptionFromQA(qaLocation, qaPeriod, fixed, qaAchievements, qaChallenges, qaNewLearnings));
+                  }}
+                />
               </div>
 
               {/* Row 3: Achievements (الإنجاز) */}
@@ -1037,6 +1052,14 @@ export const DailyLogTab: React.FC = () => {
                     'e.g. Completed onboarding formalities, received laptop and accounts...\n(You can enter multiple lines or bullet points)'
                   )}
                   className="w-full p-3 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent text-ink leading-relaxed resize-y min-h-[56px]"
+                />
+                <WritingHints
+                  text={qaAchievements}
+                  kind="free"
+                  onApplyFixes={(fixed) => {
+                    setQaAchievements(fixed);
+                    setDescription(buildDescriptionFromQA(qaLocation, qaPeriod, qaActivities, fixed, qaChallenges, qaNewLearnings));
+                  }}
                 />
               </div>
 
@@ -1060,6 +1083,14 @@ export const DailyLogTab: React.FC = () => {
                   )}
                   className="w-full p-3 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent text-ink leading-relaxed resize-y min-h-[56px]"
                 />
+                <WritingHints
+                  text={qaChallenges}
+                  kind="free"
+                  onApplyFixes={(fixed) => {
+                    setQaChallenges(fixed);
+                    setDescription(buildDescriptionFromQA(qaLocation, qaPeriod, qaActivities, qaAchievements, fixed, qaNewLearnings));
+                  }}
+                />
               </div>
 
               {/* Row 5: What's New & Learned (الجديد) */}
@@ -1081,6 +1112,14 @@ export const DailyLogTab: React.FC = () => {
                     'e.g. Familiarization with work environment, onboarding workflows...\n(You can enter multiple skills & technical terms)'
                   )}
                   className="w-full p-3 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent text-ink leading-relaxed resize-y min-h-[56px]"
+                />
+                <WritingHints
+                  text={qaNewLearnings}
+                  kind="free"
+                  onApplyFixes={(fixed) => {
+                    setQaNewLearnings(fixed);
+                    setDescription(buildDescriptionFromQA(qaLocation, qaPeriod, qaActivities, qaAchievements, qaChallenges, fixed));
+                  }}
                 />
               </div>
             </div>
@@ -1123,10 +1162,12 @@ export const DailyLogTab: React.FC = () => {
                 className="w-full p-3 text-sm bg-bg border border-line rounded-xl focus:outline-none focus:border-accent leading-relaxed text-ink"
                 required
               />
+              <WritingHints text={description} kind="entry" onApplyFixes={setDescription} />
             </div>
           )}
 
-            {/* AI Enhancement Toolbar */}
+            {/* AI Enhancement Toolbar — shown only when a model is configured and reachable */}
+            {aiAvailable && (
             <div className="flex flex-wrap items-center gap-2 pt-1">
               <span className="text-xs font-bold text-sub flex items-center gap-1">
                 <Sparkles className="w-3.5 h-3.5 text-accent" />
@@ -1177,6 +1218,7 @@ export const DailyLogTab: React.FC = () => {
                 <span>{t('ترجمة للإنجليزية', 'Translate')}</span>
               </button>
             </div>
+            )}
           </div>
 
           <div className="pt-2 flex justify-end">

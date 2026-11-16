@@ -11,7 +11,7 @@
     "prisma:push": "prisma db push"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.26.0",
+    "@anthropic-ai/sdk": "^1.8.0",
     "@coop/shared": "*",
     "@prisma/client": "^5.19.1",
     "bcryptjs": "^2.4.3",

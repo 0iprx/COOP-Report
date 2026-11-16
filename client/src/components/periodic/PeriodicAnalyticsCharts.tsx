@@ -225,7 +225,7 @@ export const PeriodicAnalyticsCharts: React.FC<PeriodicAnalyticsChartsProps> = (
           </div>
           <div className="text-2xl sm:text-3xl font-black text-ink leading-tight">{totalTickets}</div>
           <div className="text-[10px] font-bold text-emerald-600 mt-1">
-            {isReportAr ? '✓ فحص وتوثيق مكتمل 100%' : '100% Closed & Verified'}
+            {isReportAr ? 'فحص وتوثيق مكتمل 100%' : '100% Closed & Verified'}
           </div>
         </div>
 
@@ -277,7 +277,7 @@ export const PeriodicAnalyticsCharts: React.FC<PeriodicAnalyticsChartsProps> = (
             </div>
             <span className="text-[10.5px] font-black text-accent bg-accent-dim/60 px-2 py-0.5 rounded-md border border-accent/20">
               {isReportAr
-                ? (isP2 ? `ذروة الإنجاز: ${peakTickets} تذكرة` : 'تصاعد مستمر: 19 ⬅ 57 تذكرة')
+                ? (isP2 ? `ذروة الإنجاز: ${peakTickets} تذكرة` : 'تصاعد مستمر: من 19 إلى 57 تذكرة')
                 : (isP2 ? `Peak Output: ${peakTickets} Tickets` : '19 → 57 Tickets')}
             </span>
           </div>

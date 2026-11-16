@@ -11,7 +11,9 @@ import {
   Clock,
   Edit3,
   Languages,
-  BarChart3
+  BarChart3,
+  ChevronDown,
+  Lightbulb
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { api } from '../../services/api';
@@ -20,7 +22,7 @@ import {
   FinalReportData,
   normalizeStudentName
 } from '@coop/shared';
-import { AcademicMarkdownView } from '../common/AcademicMarkdownView';
+import { AcademicMarkdownView, BidiText } from '../common/AcademicMarkdownView';
 import { PeriodicAnalyticsCharts } from './PeriodicAnalyticsCharts';
 import { getFTTHDailyEntries, getPeriod2DailyEntries } from '../../services/ftthDailyEntriesData';
 import {
@@ -1005,8 +1007,8 @@ export const PeriodicTab: React.FC = () => {
       if (createdCount > 0) {
         setSaveToast(
           isReportAr
-            ? `✅ تم إدراج ${createdCount} تقرير يومي بنجاح في قسم التقارير اليومية دون حذف أي تقرير سابق!`
-            : `✅ Successfully imported ${createdCount} daily reports into Daily Logs without deleting existing entries!`
+            ? `تم إدراج ${createdCount} تقرير يومي بنجاح في قسم التقارير اليومية دون حذف أي تقرير سابق!`
+            : `Successfully imported ${createdCount} daily reports into Daily Logs without deleting existing entries!`
         );
       } else {
         setSaveToast(
@@ -1028,8 +1030,8 @@ export const PeriodicTab: React.FC = () => {
   const handlePrintPDF = () => {
     setSaveToast(
       isReportAr
-        ? '💡 في نافذة الطباعة: اختر A4 وتأكد من إلغاء خيار (Headers and footers / الرؤوس والتذييلات) لطباعة نظيفة بدون روابط أو أرقام افتراضية'
-        : '💡 In print dialog: choose A4 and uncheck (Headers and footers) for clean output without URLs or browser page counts'
+        ? 'في نافذة الطباعة: اختر A4 وتأكد من إلغاء خيار (Headers and footers / الرؤوس والتذييلات) لطباعة نظيفة بدون روابط أو أرقام افتراضية'
+        : 'In print dialog: choose A4 and uncheck (Headers and footers) for clean output without URLs or browser page counts'
     );
     setTimeout(() => {
       window.print();
@@ -1187,7 +1189,7 @@ export const PeriodicTab: React.FC = () => {
               title={isReportAr ? 'الانتقال المباشر إلى لوحة الرسوم البيانية والإحصائيات' : 'Jump to Analytics Charts'}
             >
               <BarChart3 className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-              <span>{isReportAr ? '📊 لوحة الرسوم البيانية' : '📊 Analytics Charts'}</span>
+              <span>{isReportAr ? 'لوحة الرسوم البيانية' : 'Analytics Charts'}</span>
             </button>
 
             <button
@@ -1213,7 +1215,7 @@ export const PeriodicTab: React.FC = () => {
                   : 'Edit Report Texts & Metadata (Click to expand)'}
               </span>
             </span>
-            <span className="text-[11px] text-sub font-bold group-open:rotate-180 transition-transform">▼</span>
+            <ChevronDown className="w-4 h-4 text-sub group-open:rotate-180 transition-transform" aria-hidden="true" />
           </summary>
 
           <div className="mt-4 space-y-4 pt-3 border-t border-line/60 text-xs">
@@ -1299,7 +1301,7 @@ export const PeriodicTab: React.FC = () => {
         {/* ── Print Recommendation Banner (no-print) ──────────────── */}
         <div className="no-print max-w-[210mm] mx-auto mb-5 p-3.5 bg-accent/5 border border-accent/20 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs shadow-2xs">
           <div className="flex items-center gap-2.5 text-ink font-bold">
-            <span className="text-lg">💡</span>
+            <Lightbulb className="w-5 h-5 text-accent shrink-0" aria-hidden="true" />
             <span>
               {isReportAr
                 ? 'لطباعة مثالية بحجم A4 وبدون روابط: في نافذة الطباعة (Ctrl + P) اختر A4 وألغِ تحديد خيار (الرؤوس والتذييلات / Headers and footers) من مزيد من الإعدادات.'
@@ -1316,313 +1318,185 @@ export const PeriodicTab: React.FC = () => {
           </button>
         </div>
 
-        {/* ── Printable Paper View: #periodic-paper-view ───────────── */}
-        <div
-          id="periodic-paper-view"
-          className="w-full max-w-[210mm] mx-auto bg-white dark:bg-card border border-line rounded-2xl p-6 sm:p-10 shadow-lg print:shadow-none print:border-none print:p-0 print:m-0 print:max-w-none print:w-full space-y-6"
-        >
+        {/* ── Logo controls (screen only) ───────────────────────── */}
+        <div className="no-print max-w-[210mm] mx-auto mb-3 flex flex-wrap items-center justify-end gap-2">
+          <input
+            type="file"
+            ref={institutionLogoInputRef}
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => e.target.files?.[0] && handleUploadLogo('institution', e.target.files[0])}
+          />
+          <input
+            type="file"
+            ref={companyLogoInputRef}
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => e.target.files?.[0] && handleUploadLogo('company', e.target.files[0])}
+          />
+          <button type="button" className="btn-ghost btn-sm" onClick={() => institutionLogoInputRef.current?.click()}>
+            <GraduationCap className="w-4 h-4" aria-hidden="true" />
+            <span>{isReportAr ? 'شعار الجامعة' : 'University logo'}</span>
+          </button>
+          <button type="button" className="btn-ghost btn-sm" onClick={() => companyLogoInputRef.current?.click()}>
+            <Building className="w-4 h-4" aria-hidden="true" />
+            <span>{isReportAr ? 'شعار جهة التدريب' : 'Company logo'}</span>
+          </button>
+        </div>
 
-          {/* ══════════════════════════════════════════════════════════════
-              PAGE 1: Official Institutional Cover Page
-             ══════════════════════════════════════════════════════════════ */}
-          <section
-            id="periodic-cover-page"
-            className="bg-card border border-line rounded-2xl p-6 sm:p-8 print:p-0 print:border-none print:shadow-none print:rounded-none flex flex-col justify-between"
-          >
-            {/* Header: Kingdom Header & Dual Logos - Pinned to Top */}
-            <div className="shrink-0 flex items-center justify-between pb-4 border-b border-line gap-4">
-              {/* Right (in RTL) or Left (in LTR): Institution Info / Logo */}
-              <div className={`flex items-center gap-3 ${isReportAr ? 'text-right' : 'text-left'}`}>
+        {/* ── Printable paper: cover page + report body ─────────────── */}
+        <div id="periodic-paper-view" className="rp-paper" dir={isReportAr ? 'rtl' : 'ltr'}>
+          {/* ══ Cover page ══ */}
+          <section id="periodic-cover-page" className="rp-cover">
+            <div className="rp-cover-head">
+              <div className="rp-org">
                 {profile.institutionLogo ? (
-                  <img
-                    src={profile.institutionLogo}
-                    alt="Institution Logo"
-                    className="w-14 h-14 sm:w-16 sm:h-16 object-contain rounded-lg border border-line print:border-none shrink-0"
-                  />
+                  <img src={profile.institutionLogo} alt={isReportAr ? 'شعار الجامعة' : 'University logo'} className="rp-org-logo" />
                 ) : (
-                  <div className="w-12 h-12 rounded-xl bg-accent-dim text-accent flex items-center justify-center font-black text-xs shrink-0 print:border print:border-slate-300">
+                  <span className="rp-org-logo is-empty" aria-hidden="true">
                     <GraduationCap className="w-6 h-6" />
-                  </div>
+                  </span>
                 )}
-                <div>
-                  <div className="text-[11px] font-black text-ink">
-                    {isReportAr ? 'المملكة العربية السعودية' : 'Kingdom of Saudi Arabia'}
-                  </div>
-                  <div className="text-[10px] text-sub font-bold">
-                    {isReportAr ? 'وزارة التعليم' : 'Ministry of Education'}
-                  </div>
-                  {/* Institution Name preserved in Arabic as requested */}
-                  <div className="text-[10px] text-accent font-black">
-                    {profile.trainingUnit || (isReportAr ? 'الكلية / الجامعة' : 'الجامعة / الكلية')}
-                  </div>
+                <div className="rp-org-text">
+                  <span className="rp-org-name">{isReportAr ? 'المملكة العربية السعودية' : 'Kingdom of Saudi Arabia'}</span>
+                  <span className="rp-org-sub">{isReportAr ? 'وزارة التعليم' : 'Ministry of Education'}</span>
+                  <span className="rp-org-sub">{profile.trainingUnit || (isReportAr ? 'الكلية / الجامعة' : 'University / College')}</span>
                 </div>
               </div>
 
-              {/* Upload logo buttons (no-print) */}
-              <div className="no-print flex items-center gap-1.5">
-                <input
-                  type="file"
-                  ref={institutionLogoInputRef}
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => e.target.files?.[0] && handleUploadLogo('institution', e.target.files[0])}
-                />
-                <input
-                  type="file"
-                  ref={companyLogoInputRef}
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => e.target.files?.[0] && handleUploadLogo('company', e.target.files[0])}
-                />
-                <button
-                  type="button"
-                  onClick={() => institutionLogoInputRef.current?.click()}
-                  className="px-2 py-1 text-[10px] font-bold text-sub hover:text-ink bg-bg rounded-lg border border-line"
-                  title={isReportAr ? 'تغيير شعار الجامعة أو الكلية' : 'Upload University Logo'}
-                >
-                  {isReportAr ? 'شعار الجامعة' : 'Uni Logo'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => companyLogoInputRef.current?.click()}
-                  className="px-2 py-1 text-[10px] font-bold text-sub hover:text-ink bg-bg rounded-lg border border-line"
-                  title={isReportAr ? 'تغيير شعار جهة التدريب' : 'Upload Company Logo'}
-                >
-                  {isReportAr ? 'شعار الجهة' : 'Co Logo'}
-                </button>
-              </div>
-
-              {/* Left (in RTL) or Right (in LTR): Training Company Logo */}
-              <div className={`flex items-center gap-3 ${isReportAr ? 'text-left' : 'text-right'}`}>
-                <div className={`hidden sm:block ${isReportAr ? 'text-right' : 'text-right'}`}>
-                  <div className="text-[11px] font-black text-ink">{profile.entityAddress || entityName}</div>
-                  <div className="text-[10px] text-sub font-bold">
-                    {selectedPeriod === 'p2' ? 'FTTH & Transport Operations' : 'FTTH Operations'}
-                  </div>
+              <div className="rp-org is-end">
+                <div className="rp-org-text">
+                  <span className="rp-org-name"><BidiText text={profile.entityAddress || entityName} isAr={isReportAr} /></span>
+                  <span className="rp-org-sub">{selectedPeriod === 'p2' ? 'FTTH & Transport Operations' : 'FTTH Operations'}</span>
                 </div>
                 {profile.companyLogo ? (
-                  <img
-                    src={profile.companyLogo}
-                    alt="Company Logo"
-                    className="w-14 h-14 sm:w-16 sm:h-16 object-contain rounded-lg border border-line print:border-none shrink-0"
-                  />
+                  <img src={profile.companyLogo} alt={isReportAr ? 'شعار جهة التدريب' : 'Company logo'} className="rp-org-logo" />
                 ) : (
-                  <div className="w-12 h-12 rounded-xl bg-accent-dim text-accent flex items-center justify-center font-black text-xs shrink-0 print:border print:border-slate-300">
+                  <span className="rp-org-logo is-empty" aria-hidden="true">
                     <Building className="w-6 h-6" />
-                  </div>
+                  </span>
                 )}
               </div>
             </div>
 
-            {/* Centered Middle Section: Title, Trainee Information Matrix & Shift Intervals */}
-            <div className="flex-1 flex flex-col justify-center my-auto py-4 sm:py-6 space-y-4 sm:space-y-5">
-              {/* Main Report Title Banner */}
-              <div className="text-center py-2 space-y-1.5">
-                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-[11px] font-black bg-accent text-white shadow-2xs">
-                  <span>{currentReport.periodCoverage}</span>
-                </div>
-                <h1 className="text-lg sm:text-xl font-black text-ink tracking-tight pt-1">
-                  {currentReport.title}
-                </h1>
-                <p className="text-xs text-sub font-bold">
-                  {currentReport.department}
-                </p>
+            <div className="rp-cover-body">
+              <div className="rp-cover-titleblock">
+                <p className="rp-kicker">{isReportAr ? 'تقرير التدريب التعاوني' : 'Cooperative Training Report'}</p>
+                <h1 className="rp-cover-title"><BidiText text={currentReport.title} isAr={isReportAr} /></h1>
+                <p className="rp-cover-sub"><BidiText text={currentReport.department} isAr={isReportAr} /></p>
+                <p className="rp-period"><bdi>{currentReport.periodCoverage}</bdi></p>
               </div>
 
-              {/* Trainee & Period Information Matrix on Cover */}
-              <div className="bg-bg border border-line rounded-xl p-3 sm:p-4 text-start grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs trainee-matrix-print print:border print:border-slate-300 print:rounded-xl print:bg-slate-50/60 print:p-3 print:gap-x-4 print:gap-y-2">
-                {/* 1. Trainee Name: Preserved in Arabic as requested! */}
-                <div className="flex items-center justify-between border-b border-line/60 pb-1">
-                  <span className="font-bold text-sub">
-                    {isReportAr ? 'اسم المتدرب:' : 'Trainee Name:'}
-                  </span>
-                  <span className="font-black text-ink">
-                    {normalizeStudentName(profile.studentName) || '—'}
-                  </span>
+              <dl className="rp-meta">
+                <div className="rp-meta-item">
+                  <dt>{isReportAr ? 'اسم المتدرب' : 'Trainee'}</dt>
+                  <dd>{normalizeStudentName(profile.studentName) || '—'}</dd>
                 </div>
+                <div className="rp-meta-item">
+                  <dt>{isReportAr ? 'الرقم الأكاديمي' : 'Student ID'}</dt>
+                  <dd>
+                    <bdi>{profile.trainingNumber || '—'}</bdi>
+                  </dd>
+                </div>
+                <div className="rp-meta-item">
+                  <dt>{isReportAr ? 'مجال التدريب' : 'Training field'}</dt>
+                  <dd><BidiText text={currentReport.majorField} isAr={isReportAr} /></dd>
+                </div>
+                <div className="rp-meta-item">
+                  <dt>{isReportAr ? 'المشرف الميداني' : 'Field supervisor'}</dt>
+                  <dd>{profile.responsibleName || '—'}</dd>
+                </div>
+                <div className="rp-meta-item is-wide">
+                  <dt>{isReportAr ? 'الصفة ونطاق التكليف' : 'Role during the period'}</dt>
+                  <dd><BidiText text={currentReport.roleAssignment} isAr={isReportAr} /></dd>
+                </div>
+              </dl>
 
-                {/* 2. Student ID */}
-                <div className="flex items-center justify-between border-b border-line/60 pb-1">
-                  <span className="font-bold text-sub">
-                    {isReportAr ? 'الرقم الأكاديمي:' : 'Student ID:'}
-                  </span>
-                  <span className="font-black text-ink">{profile.trainingNumber || '—'}</span>
-                </div>
-
-                {/* 3. Field of Training */}
-                <div className="flex items-center justify-between border-b border-line/60 pb-1">
-                  <span className="font-bold text-sub">
-                    {isReportAr ? 'مجال التدريب:' : 'Training Field:'}
-                  </span>
-                  <span className="font-black text-ink">{currentReport.majorField}</span>
-                </div>
-
-                {/* 4. Nature of Work */}
-                <div className="flex items-center justify-between border-b border-line/60 pb-1">
-                  <span className="font-bold text-sub">
-                    {isReportAr ? 'طبيعة العمل:' : 'Nature of Work:'}
-                  </span>
-                  <span className="font-black text-ink">{currentReport.department}</span>
-                </div>
-
-                {/* 5. Field Supervisor: Preserved in Arabic as requested! */}
-                <div className="flex items-center justify-between border-b border-line/60 pb-1">
-                  <span className="font-bold text-sub">
-                    {isReportAr ? 'المشرف الميداني:' : 'Field Supervisor:'}
-                  </span>
-                  <span className="font-black text-ink">
-                    {profile.responsibleName || '—'}
+              <div className="rp-scope">
+                <div className="rp-scope-head">
+                  <h2>{isReportAr ? 'محاور الفترة' : 'Period milestones'}</h2>
+                  <span className="rp-scope-badge">
+                    {selectedPeriod === 'p2'
+                      ? isReportAr
+                        ? '482 تذكرة وبلاغ تشغيلي'
+                        : '482 handled tickets'
+                      : isReportAr
+                        ? '244 تذكرة فريدة معالجة'
+                        : '244 handled tickets'}
                   </span>
                 </div>
-
-                {/* 6. Period Coverage */}
-                <div className="flex items-center justify-between border-b border-line/60 pb-1">
-                  <span className="font-bold text-sub">
-                    {isReportAr ? 'الفترة المشمولة بالتقرير:' : 'Reporting Period:'}
-                  </span>
-                  <span className="font-black text-accent">{currentReport.periodCoverage}</span>
-                </div>
-                
-                {/* 7. Specific Role on Cover */}
-                <div className="sm:col-span-2 flex items-center justify-between bg-accent-dim/40 border border-accent/20 rounded-lg p-2 print:border-slate-300 print:bg-slate-100">
-                  <span className="font-black text-ink">
-                    {isReportAr ? 'الصفة ونطاق التكليف بالفترة:' : 'Role on Cover:'}
-                  </span>
-                  <span className="font-black text-accent text-[12px] print:text-slate-900">
-                    {currentReport.roleAssignment}
-                  </span>
-                </div>
-              </div>
-
-              {/* Technical Scope & Pillars Summary on Cover (No Shift Times / Hours) */}
-              <div className="mt-4 p-3 bg-bg border border-line rounded-xl space-y-2 text-start print:border print:border-slate-300 print:rounded-xl print:bg-slate-50/40 print:p-2.5 shadow-2xs">
-                <div className="flex items-center justify-between pb-1 border-b border-line/60">
-                  <div className="flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-accent" />
-                    <span className="text-xs font-black text-ink">
-                      {isReportAr ? 'المحاور الفنية ونطاق الإنجاز في الفترة:' : 'Periodic Technical Scope & Milestones:'}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                      {selectedPeriod === 'p2'
-                        ? (isReportAr ? '482 تذكرة وبلاغ تشغيلي' : '482 Handled Tickets')
-                        : (isReportAr ? '244 تذكرة فريدة معالجة' : '244 Handled Tickets')}
-                    </span>
-                    <span className="text-[10px] text-accent font-black">
-                      {currentReport.periodCoverage}
-                    </span>
-                  </div>
-                </div>
-
-                <div className={`grid grid-cols-1 ${currentReport.intervals.length === 4 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-2 text-xs`}>
+                <ol
+                  className="rp-scope-grid"
+                  style={{ gridTemplateColumns: `repeat(${currentReport.intervals.length % 2 === 0 ? 2 : Math.min(3, currentReport.intervals.length)}, minmax(0, 1fr))` }}
+                >
                   {currentReport.intervals.map((int, idx) => (
-                    <div key={int.id || idx} className="p-2 bg-card border border-line rounded-lg print:border-slate-300">
-                      <div className="font-black text-ink text-[11px] mb-1">{int.label}</div>
-                      <div className="text-[10px] text-sub font-bold flex items-center justify-between gap-2">
-                        <span>{int.startDate}</span>
-                        <span className="font-black text-accent">{int.endDate}</span>
-                      </div>
-                    </div>
+                    <li key={int.id || idx} className="rp-scope-card">
+                      <span className="rp-scope-label"><BidiText text={int.label} isAr={isReportAr} /></span>
+                      <span className="rp-scope-dates">
+                        <bdi>{int.startDate}</bdi>
+                        {int.endDate && int.endDate !== int.startDate && (
+                          <>
+                            <span className="rp-scope-sep" aria-hidden="true">·</span>
+                            <bdi>{int.endDate}</bdi>
+                          </>
+                        )}
+                      </span>
+                    </li>
                   ))}
-                </div>
+                </ol>
               </div>
             </div>
 
-            {/* Academic Page 1 Footer - Pinned to Bottom */}
-            <div className="shrink-0 mt-auto pt-3 border-t border-line flex items-center justify-between text-[10px] text-sub font-bold">
+            <div className="rp-cover-foot">
               <span>
                 {isReportAr
-                  ? (selectedPeriod === 'p2'
-                      ? 'المملكة العربية السعودية — تقرير التدريب التعاوني الفتري الثاني (عمليات FTTH وشبكات النقل التراسلي)'
-                      : 'المملكة العربية السعودية — تقرير التدريب التعاوني (خدمات الألياف الضوئية FTTH)')
-                  : (selectedPeriod === 'p2'
-                      ? 'KSA — Second Periodic Cooperative Training Report (FTTH Operations & Transport Networks)'
-                      : 'KSA — Cooperative Training Report (FTTH Operations)')}
+                  ? selectedPeriod === 'p2'
+                    ? 'التقرير الفتري الثاني — عمليات FTTH وشبكات النقل'
+                    : 'التقرير الفتري الأول — خدمات الألياف الضوئية FTTH'
+                  : selectedPeriod === 'p2'
+                    ? 'Second periodic report — FTTH operations and transport networks'
+                    : 'First periodic report — FTTH operations'}
               </span>
-              <span className="font-black text-accent">
-                {isReportAr ? 'الغلاف الرسمي المعتمد' : 'Official Cover Page'}
-              </span>
+              <span>{profile.trainingUnit || ''}</span>
             </div>
           </section>
 
-          {/* ══════════════════════════════════════════════════════════════
-              FULL REPORT NARRATIVE: Complete Sections & Tables rendered
-             ══════════════════════════════════════════════════════════════ */}
-          <section className="bg-card border border-line rounded-2xl p-6 sm:p-8 print:p-0 print:border-none print:shadow-none print:rounded-none shadow-sm">
-            <table className="w-full border-collapse border-none m-0 p-0 print-pages-table">
-              <thead className="hidden print:table-header-group">
-                <tr>
-                  <th style={{ height: '14mm', border: 'none', padding: 0 }} />
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="p-0 border-none print:px-[16mm] align-top space-y-6">
-                    <AcademicMarkdownView
-                      content={currentReport.customNarrative}
-                      isReportAr={isReportAr}
-                      period={selectedPeriod}
-                    />
+          {/* ══ Report body ══ */}
+          <section className="rp-body">
+            <AcademicMarkdownView content={currentReport.customNarrative} isReportAr={isReportAr} period={selectedPeriod} />
 
-                    {/* Executive Vector Analytics fallback if token not present in customized narrative */}
-                    {!currentReport.customNarrative?.includes('<!-- analytics-charts -->') &&
-                     !currentReport.customNarrative?.includes('<!-- analytics-charts-p1 -->') &&
-                     !currentReport.customNarrative?.includes('<!-- analytics-charts-p2 -->') && (
-                      <PeriodicAnalyticsCharts isReportAr={isReportAr} period={selectedPeriod} />
-                    )}
+            {!currentReport.customNarrative?.includes('<!-- analytics-charts -->') &&
+              !currentReport.customNarrative?.includes('<!-- analytics-charts-p1 -->') &&
+              !currentReport.customNarrative?.includes('<!-- analytics-charts-p2 -->') && (
+                <div className="rt-charts">
+                  <PeriodicAnalyticsCharts isReportAr={isReportAr} period={selectedPeriod} />
+                </div>
+              )}
 
-                    {/* Official Supervisory Endorsement Block at the end of report */}
-                    <div
-                      id="periodic-endorsement-block"
-                      className="mt-6 pt-4 border-t-2 border-line/80 p-4 bg-bg border border-line rounded-xl text-start print:border print:border-slate-300 print:rounded-xl print:bg-slate-50/50 print:p-4 shadow-2xs endorsement-box-print break-inside-avoid"
-                    >
-                      <div className="text-center font-black text-xs sm:text-sm text-ink mb-4 pb-1 border-b border-line/60">
-                        {isReportAr ? 'مصادقة واعتماد التقرير الميداني الرسمي' : 'Official Supervisory Endorsements'}
-                      </div>
-                      <div className="grid grid-cols-3 gap-4 text-center text-xs">
-                        {/* Trainee Signature */}
-                        <div className="space-y-1">
-                          <div className="font-bold text-sub text-[11px]">
-                            {isReportAr ? 'توقيع المتدرب' : 'Trainee Signature'}
-                          </div>
-                          {/* Student Name preserved in Arabic */}
-                          <div className="font-black text-ink">{normalizeStudentName(profile.studentName) || '—'}</div>
-                          <div className="h-10 border-b border-dashed border-line/80 print:h-8" />
-                        </div>
-
-                        {/* Field Supervisor */}
-                        <div className="space-y-1">
-                          <div className="font-bold text-sub text-[11px]">
-                            {isReportAr ? 'المشرف الميداني (جهة التدريب)' : 'Field Supervisor'}
-                          </div>
-                          {/* Field Supervisor Name preserved in Arabic */}
-                          <div className="font-black text-ink">{profile.responsibleName || '—'}</div>
-                          <div className="h-10 border-b border-dashed border-line/80 print:h-8" />
-                        </div>
-
-                        {/* Academic Supervisor */}
-                        <div className="space-y-1">
-                          <div className="font-bold text-sub text-[11px]">
-                            {isReportAr ? 'مشرف التدريب (الجامعة)' : 'Academic Supervisor'}
-                          </div>
-                          {/* Academic Supervisor Name preserved in Arabic */}
-                          <div className="font-black text-ink">{profile.supervisorName || '—'}</div>
-                          <div className="h-10 border-b border-dashed border-line/80 print:h-8" />
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-              <tfoot className="hidden print:table-footer-group">
-                <tr>
-                  <th style={{ height: '14mm', border: 'none', padding: 0 }} />
-                </tr>
-              </tfoot>
-            </table>
+            <section id="periodic-endorsement-block" className="rp-sign" aria-label={isReportAr ? 'الاعتماد' : 'Endorsement'}>
+              <h2 className="rp-sign-title">{isReportAr ? 'مصادقة واعتماد التقرير' : 'Endorsement'}</h2>
+              <div className="rp-sign-grid">
+                <div className="rp-sign-cell">
+                  <span className="rp-sign-role">{isReportAr ? 'المتدرب' : 'Trainee'}</span>
+                  <span className="rp-sign-name">{normalizeStudentName(profile.studentName) || '—'}</span>
+                  <span className="rp-sign-line" aria-hidden="true" />
+                  <span className="rp-sign-caption">{isReportAr ? 'التوقيع' : 'Signature'}</span>
+                </div>
+                <div className="rp-sign-cell">
+                  <span className="rp-sign-role">{isReportAr ? 'المشرف الميداني' : 'Field supervisor'}</span>
+                  <span className="rp-sign-name">{profile.responsibleName || '—'}</span>
+                  <span className="rp-sign-line" aria-hidden="true" />
+                  <span className="rp-sign-caption">{isReportAr ? 'التوقيع' : 'Signature'}</span>
+                </div>
+                <div className="rp-sign-cell">
+                  <span className="rp-sign-role">{isReportAr ? 'المشرف الأكاديمي' : 'Academic supervisor'}</span>
+                  <span className="rp-sign-name">{profile.supervisorName || '—'}</span>
+                  <span className="rp-sign-line" aria-hidden="true" />
+                  <span className="rp-sign-caption">{isReportAr ? 'التوقيع' : 'Signature'}</span>
+                </div>
+              </div>
+            </section>
           </section>
-
         </div>
       </div>
     </div>

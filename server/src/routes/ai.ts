@@ -1,7 +1,8 @@
 import { Router, Response } from 'express';
 import { authenticate, AuthenticatedRequest } from '../middleware/auth.js';
 import { aiProcessSchema, organizationLookupSchema, computeWordDiff } from '@coop/shared';
-import { processTextWithAI } from '../services/aiService.js';
+import { processTextWithAI, AiUnavailableError } from '../services/aiService.js';
+import { ProviderError } from '../ai/types.js';
 import { lookupAndSynthesizeOrganization } from '../services/organizationSearchService.js';
 import { aiQuotaLimiter } from '../middleware/rateLimiter.js';
 import { getCached, setCached } from '../services/cacheService.js';
@@ -129,7 +130,7 @@ router.post('/process', aiQuotaLimiter, async (req: AuthenticatedRequest, res: R
     await recordUsage({
       tenantId: req.user!.tenantId,
       userId: req.user!.userId,
-      provider: mode === 'llm' ? 'ExternalLLM' : 'AcademicEngine',
+      provider: 'unified',
       action,
       textLength: text.length,
       resultLength: result.length
@@ -143,6 +144,14 @@ router.post('/process', aiQuotaLimiter, async (req: AuthenticatedRequest, res: R
       diff
     });
   } catch (err) {
+    if (err instanceof AiUnavailableError) {
+      res.status(503).json({ error: err.message, code: 'AI_UNAVAILABLE' });
+      return;
+    }
+    if (err instanceof ProviderError) {
+      res.status(err.status && err.status >= 400 && err.status < 600 ? err.status : 502).json({ error: err.message });
+      return;
+    }
     logger.error({ err }, 'Error in AI processing');
     res.status(500).json({ error: 'حدث خطأ أثناء معالجة النص بالذكاء الاصطناعي' });
   }
@@ -199,13 +208,14 @@ router.post('/stream-process', aiQuotaLimiter, async (req: AuthenticatedRequest,
     await recordUsage({
       tenantId: req.user!.tenantId,
       userId: req.user!.userId,
-      provider: mode === 'llm' ? 'ExternalLLM' : 'AcademicEngine',
+      provider: 'unified',
       action,
       textLength: text.length,
       resultLength: result.length
     });
   } catch (err: any) {
-    res.write(`data: ${JSON.stringify({ type: 'error', error: 'حدث خطأ أثناء بث المعالجة الذكية' })}\n\n`);
+    const msg = err instanceof AiUnavailableError || err instanceof ProviderError ? err.message : 'حدث خطأ أثناء بث المعالجة الذكية';
+    res.write(`data: ${JSON.stringify({ type: 'error', error: msg })}\n\n`);
     res.end();
   }
 });

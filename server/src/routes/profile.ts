@@ -58,7 +58,8 @@ router.put('/', async (req: AuthenticatedRequest, res: Response): Promise<void> 
       where: { userId: req.user!.userId }
     });
 
-    const dataToSave = { ...parseResult.data };
+    // status / verificationHash / tenantId are set only by the server-side review flow.
+    const { status: _status, verificationHash: _hash, tenantId: _tenant, ...dataToSave } = parseResult.data;
 
     // Permanent logos safeguard:
     // If incoming request has empty string or undefined for logos, preserve existing database logos

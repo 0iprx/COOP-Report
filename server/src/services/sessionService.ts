@@ -4,7 +4,8 @@ import { Response } from 'express';
 import { prisma } from '../db.js';
 import { logger } from '../logger.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'coop-report-super-secure-jwt-key-8374928374';
+const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? '' : 'dev-only-insecure-key-do-not-deploy');
+if (!JWT_SECRET) throw new Error('FATAL: JWT_SECRET is not set in production environment.');
 export const ACCESS_TOKEN_EXPIRY = '15m';
 export const REFRESH_TOKEN_DAYS = 14;
 export const COOKIE_NAME = 'coop_refresh_token';

@@ -4,7 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { api } from './services/api';
-import { Navbar } from './components/common/Navbar';
+import { AppShell } from './components/shell/AppShell';
 import { AuthScreen } from './components/auth/AuthScreen';
 import { DailyLogTab } from './components/log/DailyLogTab';
 import { WeeklyTab } from './components/weekly/WeeklyTab';
@@ -30,13 +30,22 @@ const queryClient = new QueryClient({
 type TabType = 'log' | 'weekly' | 'periodic' | 'final' | 'supervisor' | 'testdev';
 
 const tabs: { id: TabType; labelAr: string; labelEn: string; icon: React.ReactNode }[] = [
-  { id: 'log', labelAr: 'التسجيل اليومي', labelEn: 'Daily Log', icon: <Calendar className="w-4 h-4" /> },
-  { id: 'weekly', labelAr: 'التقرير الأسبوعي', labelEn: 'Weekly Report', icon: <Clock className="w-4 h-4" /> },
-  { id: 'periodic', labelAr: 'التقرير الفتري', labelEn: 'Periodic Report', icon: <FileSpreadsheet className="w-4 h-4" /> },
-  { id: 'final', labelAr: 'التقرير النهائي', labelEn: 'Final Report', icon: <FileText className="w-4 h-4" /> },
-  { id: 'supervisor', labelAr: 'بوابة المشرف', labelEn: 'Supervisor Portal', icon: <ShieldCheck className="w-4 h-4" /> },
-  { id: 'testdev', labelAr: 'مختبر الفحص (/testdev)', labelEn: 'Test Lab (/testdev)', icon: <Layers className="w-4 h-4 text-accent" /> }
+  { id: 'log', labelAr: 'التسجيل اليومي', labelEn: 'Daily Log', icon: <Calendar className="w-[18px] h-[18px]" /> },
+  { id: 'weekly', labelAr: 'التقرير الأسبوعي', labelEn: 'Weekly Report', icon: <Clock className="w-[18px] h-[18px]" /> },
+  { id: 'periodic', labelAr: 'التقرير الفتري', labelEn: 'Periodic Report', icon: <FileSpreadsheet className="w-[18px] h-[18px]" /> },
+  { id: 'final', labelAr: 'التقرير النهائي', labelEn: 'Final Report', icon: <FileText className="w-[18px] h-[18px]" /> },
+  { id: 'supervisor', labelAr: 'بوابة المشرف', labelEn: 'Supervisor Portal', icon: <ShieldCheck className="w-[18px] h-[18px]" /> },
+  { id: 'testdev', labelAr: 'مختبر المحاكاة', labelEn: 'Simulation lab', icon: <Layers className="w-[18px] h-[18px]" /> }
 ];
+
+const SHORT_LABELS: Record<TabType, [string, string]> = {
+  log: ['يومي', 'Daily'],
+  weekly: ['أسبوعي', 'Weekly'],
+  periodic: ['فتري', 'Periodic'],
+  final: ['نهائي', 'Final'],
+  supervisor: ['المشرف', 'Review'],
+  testdev: ['محاكاة', 'Lab']
+};
 
 const MainDashboard: React.FC = () => {
   const { user, loading } = useAuth();
@@ -121,25 +130,17 @@ const MainDashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-bg">
-      <Navbar />
-
-      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6">
-        {/* ── Tab Navigation ──────────────────────────────── */}
-        <div className="tabs-container no-scrollbar no-print flex items-center overflow-x-auto border-b border-line mb-6 gap-1 px-1 sm:px-0">
-          {visibleTabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => handleTabClick(tab.id)}
-              className={`tab-item ${activeTab === tab.id ? 'active' : ''}`}
-            >
-              {tab.icon}
-              <span>{lang === 'ar' ? tab.labelAr : tab.labelEn}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* ── Tab Content ─────────────────────────────────── */}
+    <>
+      <AppShell
+        items={visibleTabs.map((tab) => ({
+          id: tab.id,
+          label: lang === 'ar' ? tab.labelAr : tab.labelEn,
+          shortLabel: SHORT_LABELS[tab.id][lang === 'ar' ? 0 : 1],
+          icon: tab.icon
+        }))}
+        active={activeTab}
+        onSelect={handleTabClick}
+      >
         <div className="animate-fade-in" key={activeTab}>
           {activeTab === 'log' && <DailyLogTab />}
           {activeTab === 'weekly' && <WeeklyTab />}
@@ -148,35 +149,15 @@ const MainDashboard: React.FC = () => {
           {activeTab === 'supervisor' && user.role === 'supervisor' && <SupervisorTab />}
           {activeTab === 'testdev' && <TestDevLab />}
         </div>
-      </main>
+      </AppShell>
 
-      {/* Onboarding Wizard Modal */}
       <OnboardingModal
         isOpen={onboardingOpen}
         onClose={() => setOnboardingOpen(false)}
         initialHours={reportData?.profile?.courseHours || 280}
         initialWeeks={reportData?.profile?.trainingWeeks || 14}
       />
-
-      {/* ── Footer ──────────────────────────────────────── */}
-      <footer className="no-print border-t border-line bg-card/50 py-5 text-center text-[11px] text-muted">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span className="font-bold text-sub">
-            {t('COOP Report — مساعد توثيق التدريب التعاوني وتدوين التقارير', 'COOP Report — Co-op Training Logging & Documentation Assistant')}
-          </span>
-          <div className="flex items-center gap-3">
-            <span>{t('تصدير مستندات Word و PDF وشرائح PowerPoint للمناقشة', 'Exports editable Word (.docx), PDF & PowerPoint (.pptx) slides')}</span>
-            <span>&middot;</span>
-            <button
-              onClick={() => handleTabClick('testdev')}
-              className="text-accent hover:underline font-bold flex items-center gap-1"
-            >
-              <span>{t('مختبر المحاكاة /testdev', 'Simulation Lab /testdev')}</span>
-            </button>
-          </div>
-        </div>
-      </footer>
-    </div>
+    </>
   );
 };
 

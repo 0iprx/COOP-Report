@@ -3,6 +3,11 @@ import { authenticate, AuthenticatedRequest, requireRole } from '../middleware/a
 import { prisma } from '../db.js';
 
 const router = Router();
+
+async function scopeIds(supervisorId: number): Promise<number[]> {
+  const trainees = await prisma.user.findMany({ where: { supervisorId }, select: { id: true } });
+  return [supervisorId, ...trainees.map((t) => t.id)];
+}
 router.use(authenticate);
 // Accessible by supervisor or admin
 router.use(requireRole('supervisor'));
@@ -19,9 +24,11 @@ router.post('/audit-logs', async (req: AuthenticatedRequest, res: Response): Pro
     const userIdFilter = req.body?.userId ? parseInt(req.body.userId) : undefined;
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const trainees = await prisma.user.findMany({ where: { supervisorId: req.user!.userId }, select: { id: true } });
+    const allowed = [req.user!.userId, ...trainees.map((t) => t.id)];
+    const where: any = { userId: { in: allowed } };
     if (actionFilter) where.action = { contains: actionFilter };
-    if (userIdFilter) where.userId = userIdFilter;
+    if (userIdFilter) where.userId = allowed.includes(userIdFilter) ? userIdFilter : -1;
 
     const [logs, total] = await Promise.all([
       prisma.auditLog.findMany({
@@ -73,6 +80,7 @@ router.get('/ai-usage', async (req: AuthenticatedRequest, res: Response): Promis
   try {
     const [recentLogs, providerStats] = await Promise.all([
       prisma.aiUsageLog.findMany({
+        where: { userId: { in: await scopeIds(req.user!.userId) } },
         orderBy: { createdAt: 'desc' },
         take: 50,
         include: {
@@ -81,6 +89,7 @@ router.get('/ai-usage', async (req: AuthenticatedRequest, res: Response): Promis
       }),
       prisma.aiUsageLog.groupBy({
         by: ['provider'],
+        where: { userId: { in: await scopeIds(req.user!.userId) } },
         _sum: {
           tokensIn: true,
           tokensOut: true,

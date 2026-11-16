@@ -341,7 +341,7 @@ router.get('/me', authenticate, async (req: AuthenticatedRequest, res: Response)
 router.put('/update-account', authenticate, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.userId;
-    const { username, password } = req.body;
+    const { username, password, currentPassword } = req.body;
 
     if (!username && !password) {
       res.status(400).json({ error: 'يرجى تقديم اسم المستخدم أو كلمة المرور الجديدة' });
@@ -365,8 +365,13 @@ router.put('/update-account', authenticate, async (req: AuthenticatedRequest, re
     }
 
     if (password && typeof password === 'string' && password.trim()) {
-      if (password.length < 6) {
-        res.status(400).json({ error: 'كلمة المرور يجب ألا تقل عن 6 أحرف' });
+      if (password.length < 8) {
+        res.status(400).json({ error: 'كلمة المرور يجب ألا تقل عن 8 أحرف' });
+        return;
+      }
+      const current = await prisma.user.findUnique({ where: { id: userId }, select: { passwordHash: true } });
+      if (!current || typeof currentPassword !== 'string' || !(await bcrypt.compare(currentPassword, current.passwordHash))) {
+        res.status(400).json({ error: 'كلمة المرور الحالية غير صحيحة' });
         return;
       }
       updateData.passwordHash = await bcrypt.hash(password, 12);

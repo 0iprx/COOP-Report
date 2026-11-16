@@ -33,8 +33,11 @@ import {
   Sun,
   Moon,
   Globe,
-  ListChecks
+  ListChecks,
+  Presentation,
+  FileDown
 } from 'lucide-react';
+import { ActionMenu } from '../ui/ActionMenu';
 import { DiffModal } from '../common/DiffModal';
 import { BatchRewriteModal } from '../common/BatchRewriteModal';
 import { ProceduralNarrativeView } from '../common/ProceduralNarrativeView';
@@ -691,142 +694,104 @@ export const WeeklyTab: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={handleDownloadDocx}
-              disabled={downloadingDocx}
-              className="px-3.5 py-1.5 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
-              title={t('تنزيل تقرير الأسبوع كمستند Word رسمي (.docx) متضمناً جدول المهام وخانات التوقيع', 'Download weekly Word report (.docx)')}
-            >
-              <FileText className={`w-3.5 h-3.5 text-accent ${downloadingDocx ? 'animate-bounce' : ''}`} />
-              <span>{downloadingDocx ? t('جارٍ تصدير Word...', 'Exporting Word...') : t('تقرير Word (.docx)', 'Word (.docx)')}</span>
-            </button>
+            <ActionMenu
+              label={t('مساعد الكتابة', 'Writing assistant')}
+              icon={<Sparkles className="w-4 h-4" aria-hidden="true" />}
+              busy={isTranslatingWeek}
+              badge={activeFreeformCount > 0 ? String(activeFreeformCount) : undefined}
+              groups={[
+                {
+                  items: [
+                    {
+                      id: 'rewrite',
+                      label: t('صياغة أكاديمية لمهام الأسبوع', 'Academic rewrite for this week'),
+                      hint: t('تُعرض عليك قبل الاعتماد', 'You review it before it is applied'),
+                      icon: <Sparkles className="w-4 h-4" />,
+                      onSelect: () => setBatchModalOpen(true)
+                    },
+                    {
+                      id: 'audit',
+                      label: t('توحيد نمط التدوين', 'Unify logging style'),
+                      hint:
+                        activeFreeformCount > 0
+                          ? t(`${activeFreeformCount} مهام مكتوبة بالنمط الحر`, `${activeFreeformCount} entries are free-form`)
+                          : t('كل المهام بالنمط المنظم', 'All entries are structured'),
+                      icon: <ListChecks className="w-4 h-4" />,
+                      badge: activeFreeformCount > 0 ? String(activeFreeformCount) : undefined,
+                      onSelect: () => setAuditModalOpen(true)
+                    },
+                    {
+                      id: 'translate',
+                      label: lang === 'ar' ? 'ترجمة مهام الأسبوع إلى الإنجليزية' : 'Translate this week to Arabic',
+                      hint: isTranslatingWeek
+                        ? t('جارٍ الترجمة...', 'Translating...')
+                        : t('تُحفظ نسخة من النص الأصلي', 'A copy of the original is kept'),
+                      icon: <Languages className="w-4 h-4" />,
+                      disabled: isTranslatingWeek || activeEntries.length === 0,
+                      onSelect: () => handleTranslateWeekEntries(lang === 'ar' ? 'en' : 'ar')
+                    }
+                  ]
+                }
+              ]}
+            />
 
-            <button
-              onClick={() => setBatchModalOpen(true)}
-              className="px-3.5 py-1.5 text-xs font-black text-white bg-accent hover:bg-accent/90 rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
-              title={t('إعادة صياغة وهيكلة مهام الأسبوع أكاديمياً بالذكاء الاصطناعي مع الأمانة العلمية الصارمة بدون اختلاق أو فقدان للمعلومات', 'Academic AI Restructure for Week')}
-            >
-              <Sparkles className="w-3.5 h-3.5 text-white" />
-              <span>{t('الصياغة الأكاديمية بالذكاء الاصطناعي', 'Academic AI Rewrite')}</span>
-            </button>
-
-            {/* Audit & Enforce Daily Q&A Format Button */}
-            <button
-              type="button"
-              onClick={() => setAuditModalOpen(true)}
-              className={`px-3.5 py-1.5 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 shadow-sm text-white ${
-                activeFreeformCount > 0
-                  ? 'bg-gradient-to-r from-teal-600 to-emerald-700 hover:from-teal-700 hover:to-emerald-800 ring-2 ring-amber-400/50'
-                  : 'bg-teal-700 hover:bg-teal-800'
-              }`}
-              title={t('فحص نمط تدوين مهام الأسبوع (نموذج الأسئلة vs النظام الحر) وتوحيدها بالتقرير لطباعتها', 'Audit daily logging style (Q&A vs Freeform) and format for print')}
-            >
-              <ListChecks className="w-3.5 h-3.5 text-white" />
-              <span>{t('فحص وتوحيد نمط التدوين', 'Audit & Apply Q&A Style')}</span>
-              {activeFreeformCount > 0 ? (
-                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-amber-300 text-slate-950">
-                  {activeFreeformCount} {isAr ? 'حر' : 'free'}
-                </span>
-              ) : (
-                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-white/20 text-white">
-                  ✓ {isAr ? 'منظم' : 'Q&A'}
-                </span>
-              )}
-            </button>
-
-            {/* AI Report Translation Button (AR ⇄ EN) */}
-            <button
-              type="button"
-              onClick={() => handleTranslateWeekEntries(lang === 'ar' ? 'en' : 'ar')}
-              disabled={isTranslatingWeek || activeEntries.length === 0}
-              className={`px-3.5 py-1.5 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 shadow-sm text-white ${
-                isTranslatingWeek
-                  ? 'bg-purple-600 animate-pulse'
-                  : 'bg-purple-600 hover:bg-purple-700'
-              } disabled:opacity-50`}
-              title={
-                lang === 'ar'
-                  ? 'ترجمة محتوى التقرير بالكامل (عناوين، تفاصيل أنشطة، تصنيفات) إلى الإنجليزية بالذكاء الاصطناعي مع حفظ نسخة احتياطية'
-                  : 'Translate entire report content (titles, activities, categories) to Arabic via AI with automatic revision backup'
-              }
-            >
-              <Languages className={`w-3.5 h-3.5 ${isTranslatingWeek ? 'animate-spin' : ''}`} />
-              <span>
-                {isTranslatingWeek
-                  ? (lang === 'ar' ? 'جارٍ ترجمة التقرير للإنجليزية...' : 'Translating report to Arabic...')
-                  : (lang === 'ar' ? 'ترجمة محتوى التقرير (English)' : 'ترجمة محتوى التقرير (عربي)')}
-              </span>
-            </button>
-
-            <button
-              onClick={handlePrintPDF}
-              className="px-3.5 py-1.5 text-xs font-bold text-white bg-ink hover:bg-ink/85 rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
-              title={t('طباعة تقرير الأسبوع مباشرة أو حفظه كـ PDF رسمي متناسق', 'Print weekly report or save as PDF')}
-            >
-              <Printer className="w-3.5 h-3.5" />
-              <span>{t('طباعة / حفظ PDF', 'Print / Save PDF')}</span>
-            </button>
-
-            <button
-              onClick={handleDownloadPresentation}
-              disabled={downloadingPptx}
-              className="px-3.5 py-1.5 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
-              title={t('تصدير شرائح عرض تقديمي للمناقشة (.pptx)', 'Export defense PowerPoint slides (.pptx)')}
-            >
-              <Download className={`w-3.5 h-3.5 text-accent ${downloadingPptx ? 'animate-bounce' : ''}`} />
-              <span>{downloadingPptx ? t('جارٍ التوليد...', 'Generating...') : t('عرض PowerPoint (.pptx)', 'PowerPoint (.pptx)')}</span>
-            </button>
-
-            <button
-              onClick={handleCopyText}
-              className="px-3 py-1.5 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-colors flex items-center gap-1.5"
-            >
-              {copied ? <Check className="w-3.5 h-3.5 text-ok" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copied ? t('تم النسخ!', 'Copied!') : t('نسخ النص', 'Copy Text')}</span>
-            </button>
-
-            <button
-              onClick={handleDownloadMarkdown}
-              className="px-3 py-1.5 text-xs font-bold text-ink bg-bg hover:bg-line rounded-xl border border-line transition-colors flex items-center gap-1.5"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Markdown</span>
-            </button>
-
-            {/* Direct Language Switcher in Weekly Tab */}
-            <div className="inline-flex p-0.5 bg-bg border border-line rounded-xl text-xs font-bold shadow-2xs shrink-0">
-              <button
-                type="button"
-                onClick={() => handleSwitchLangWithPrompt('ar')}
-                className={`px-2.5 py-1 rounded-lg transition-all ${
-                  lang === 'ar' ? 'bg-accent text-white shadow-xs font-black' : 'text-sub hover:text-ink'
-                }`}
-                title="تحويل كامل الواجهة والتقارير إلى العربية"
-              >
-                عربي
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSwitchLangWithPrompt('en')}
-                className={`px-2.5 py-1 rounded-lg transition-all ${
-                  lang === 'en' ? 'bg-accent text-white shadow-xs font-black' : 'text-sub hover:text-ink'
-                }`}
-                title="Switch entire interface and reports to English"
-              >
-                EN
-              </button>
-            </div>
-
-            {/* Theme Toggle Button */}
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="p-2 rounded-xl border border-line bg-bg text-sub hover:text-accent hover:border-accent/40 transition-colors shrink-0 shadow-2xs"
-              title={isDark ? t('التبديل إلى الوضع النهاري', 'Switch to Light Mode') : t('التبديل إلى الوضع الليلي', 'Switch to Dark Mode')}
-              aria-label="Toggle Theme"
-            >
-              {isDark ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-ink" />}
-            </button>
+            <ActionMenu
+              variant="primary"
+              label={t('تصدير الأسبوع', 'Export week')}
+              icon={<Download className="w-4 h-4" aria-hidden="true" />}
+              busy={downloadingDocx || downloadingPptx}
+              groups={[
+                {
+                  label: t('مستند', 'Document'),
+                  items: [
+                    {
+                      id: 'docx',
+                      label: 'Word (.docx)',
+                      hint: downloadingDocx
+                        ? t('جارٍ التصدير...', 'Exporting...')
+                        : t('قابل للتعديل، مع جدول المهام وخانات التوقيع', 'Editable, with task table and signatures'),
+                      icon: <FileText className="w-4 h-4" />,
+                      disabled: downloadingDocx,
+                      onSelect: handleDownloadDocx
+                    },
+                    {
+                      id: 'pdf',
+                      label: t('طباعة أو حفظ PDF', 'Print or save as PDF'),
+                      hint: t('يفتح نافذة الطباعة', 'Opens the print dialog'),
+                      icon: <Printer className="w-4 h-4" />,
+                      onSelect: handlePrintPDF
+                    },
+                    {
+                      id: 'pptx',
+                      label: 'PowerPoint (.pptx)',
+                      hint: downloadingPptx
+                        ? t('جارٍ التوليد...', 'Generating...')
+                        : t('شرائح عرض التقرير النهائي للمناقشة', 'Final report defense slides'),
+                      icon: <Presentation className="w-4 h-4" />,
+                      disabled: downloadingPptx,
+                      onSelect: handleDownloadPresentation
+                    }
+                  ]
+                },
+                {
+                  label: t('نص', 'Text'),
+                  items: [
+                    {
+                      id: 'copy',
+                      label: copied ? t('تم النسخ', 'Copied') : t('نسخ النص', 'Copy text'),
+                      icon: copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />,
+                      onSelect: handleCopyText
+                    },
+                    {
+                      id: 'md',
+                      label: 'Markdown',
+                      icon: <FileDown className="w-4 h-4" />,
+                      onSelect: handleDownloadMarkdown
+                    }
+                  ]
+                }
+              ]}
+            />
           </div>
         </div>
 

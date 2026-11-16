@@ -361,7 +361,18 @@ export async function importUserArchive(
   await prisma.$transaction(async (tx: PrismaTxClient) => {
     // 1. Restore/Update Profile
     if (payload.profile) {
-      const { userId: _unused, id: _uid, ...profileData } = payload.profile;
+      // Only trainee-editable content is restored. Approval, status, verification and
+      // supervisor fields are owned by the supervisor flow and are never taken from a file.
+      const IMPORTABLE = [
+        'studentName', 'trainingNumber', 'department', 'trainingUnit', 'supervisorName', 'responsibleName',
+        'entityAddress', 'employeesCount', 'trainingWeeks', 'courseHours', 'startDate', 'companyLogo',
+        'institutionLogo', 'reportTemplate', 'executiveSummary', 'challengesText', 'recommendationsText',
+        'introText', 'entityIntroText', 'skillsText', 'conclusionText'
+      ] as const;
+      const profileData: Record<string, unknown> = {};
+      for (const k of IMPORTABLE) {
+        if (payload.profile[k] !== undefined) profileData[k] = payload.profile[k];
+      }
       await tx.reportProfile.upsert({
         where: { userId },
         create: {

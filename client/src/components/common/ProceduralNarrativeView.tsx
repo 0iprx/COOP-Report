@@ -1,6 +1,7 @@
 import React from 'react';
 import { parseStructuredDailyNarrative, convertBulletsToCohesiveParagraphs, convertFreeformNarrativeToQA } from '@coop/shared';
 import { MapPin, Clock, FileText, CheckCircle2, AlertCircle, Sparkles } from 'lucide-react';
+import { BidiText } from './AcademicMarkdownView';
 
 interface ProceduralNarrativeViewProps {
   rawText: string;
@@ -8,7 +9,70 @@ interface ProceduralNarrativeViewProps {
   forceDailyQA?: boolean;
   defaultLocation?: string;
   defaultPeriod?: string;
+  /** 'document' renders plain typeset paragraphs for printable reports */
+  variant?: 'card' | 'document';
 }
+
+const DocumentNarrative: React.FC<{ rawText: string; isAr: boolean }> = ({ rawText, isAr }) => {
+  const parsed = parseStructuredDailyNarrative(rawText);
+  if (parsed && parsed.hasStructuredSections) {
+    const meta = [
+      parsed.location ? `${isAr ? 'الموقع' : 'Location'}: ${parsed.location}` : '',
+      parsed.period ? `${isAr ? 'الفترة' : 'Period'}: ${parsed.period}` : ''
+    ].filter(Boolean);
+    const fields: [string, string | undefined][] = [
+      [isAr ? 'المهام والأنشطة المنفذة' : 'Tasks performed', parsed.activities],
+      [isAr ? 'الإنجازات والمخرجات' : 'Achievements', parsed.achievements],
+      [isAr ? 'التحديات وطريقة معالجتها' : 'Challenges and resolution', parsed.challenges],
+      [isAr ? 'ما تم تعلمه' : 'What was learned', parsed.newLearnings]
+    ];
+    return (
+      <div className="fd-narrative">
+        {meta.length > 0 && (
+          <p className="fd-meta">
+            <BidiText text={meta.join('  ·  ')} isAr={isAr} />
+          </p>
+        )}
+        {fields
+          .filter(([, v]) => v && v.trim())
+          .map(([label, v]) => (
+            <div key={label} className="fd-field">
+              <span className="fd-label">{label}</span>
+              {v!
+                .split(/\n{2,}/)
+                .map((para, k) => (
+                  <p key={k} className="rt-p">
+                    <BidiText text={para.trim()} isAr={isAr} />
+                  </p>
+                ))}
+            </div>
+          ))}
+      </div>
+    );
+  }
+
+  const lines = convertBulletsToCohesiveParagraphs(rawText.replace(/\n{3,}/g, '\n\n')).split('\n');
+  const out: React.ReactNode[] = [];
+  for (const line of lines) {
+    const t = line.trim();
+    if (!t) continue;
+    const headerMatch = /^(?:\*\*)?([^:：*]{2,60})(?:\*\*)?\s*[:：]\s*(?:\*\*)?$/.exec(t);
+    if (headerMatch) {
+      out.push(
+        <span key={out.length} className="fd-label">
+          {translateSectionHeader(headerMatch[1].trim(), isAr)}
+        </span>
+      );
+      continue;
+    }
+    out.push(
+      <p key={out.length} className="rt-p">
+        <BidiText text={t.replace(/^[•\-*]\s*/, '').replace(/\*\*/g, '')} isAr={isAr} />
+      </p>
+    );
+  }
+  return <div className="fd-narrative">{out}</div>;
+};
 
 export const translateSectionHeader = (header: string, isAr: boolean) => {
   const clean = header.replace(/[:：]$/, '').trim();
@@ -85,9 +149,11 @@ export const ProceduralNarrativeView: React.FC<ProceduralNarrativeViewProps> = (
   isAr = true,
   forceDailyQA = false,
   defaultLocation,
-  defaultPeriod
+  defaultPeriod,
+  variant = 'card'
 }) => {
   if (!rawText || !rawText.trim()) return null;
+  if (variant === 'document') return <DocumentNarrative rawText={rawText} isAr={isAr} />;
 
   let textToParse = rawText;
   let parsed = parseStructuredDailyNarrative(textToParse);

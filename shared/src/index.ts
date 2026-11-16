@@ -1166,3 +1166,6 @@ export interface SavedPeriodicReport {
   createdAt: string;
   updatedAt: string;
 }
+
+// Writing checker (deterministic, no model)
+export * from './writing/analyze.js';

@@ -1,5 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { logger } from '../logger.js';
+import { hasAnyProvider, generateWithChain } from '../ai/registry.js';
+import { buildPrompt, TaskId } from '../ai/tasks.js';
 import { elevateTaskTitle, inferProfessionalCategory, convertBulletsToCohesiveParagraphs } from '@coop/shared';
 
 const anthropicKey = process.env.ANTHROPIC_API_KEY?.trim().replace(/^["']|["']$/g, '');
@@ -41,44 +43,48 @@ export interface ProcessRequest {
   style?: RewriteStyle;
 }
 
+export class AiUnavailableError extends Error {
+  constructor() {
+    super('لم تُهيأ أي خدمة ذكاء اصطناعي على الخادم بعد');
+  }
+}
+
+const LEGACY_TASK: Record<AIAction, TaskId> = {
+  polish: 'academic_rewrite',
+  spellcheck: 'fix_grammar',
+  summarize: 'summarize',
+  translate: 'translate',
+  audit_all: 'review',
+  academic_rewrite: 'academic_rewrite',
+  executive_summary: 'summarize',
+  challenges_solutions: 'review',
+  skills_synthesis: 'review',
+  recommendations: 'review'
+};
+
+/**
+ * Legacy entry point kept for existing screens. It now goes through the same
+ * provider chain as /api/ai/v2 and never returns rule-based "AI" output:
+ * with no provider configured it throws AiUnavailableError.
+ */
 export async function processTextWithAI({
   text,
   action,
   targetLang = 'ar',
-  context = '',
-  apiKey,
-  model,
-  style = 'procedural'
-}: ProcessRequest): Promise<{ result: string; mode: 'llm' | 'fallback' }> {
+  context = ''
+}: ProcessRequest): Promise<{ result: string; mode: 'llm' }> {
   const trimmed = text.trim();
-  if (!trimmed) {
-    return { result: '', mode: 'fallback' };
-  }
-
-  // 1. Try LLM Providers (Gemini -> Claude -> Groq -> OpenAI)
-  try {
-    const llmResult = await callAvailableLLM(trimmed, action, targetLang, context, apiKey, model, style);
-    if (llmResult) {
-      // Safety guard: sanitize LLM output (strip bullets, emojis, forbidden words)
-      let sanitized = llmResult
-        .replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
-        .replace(/\b(معتمد[ةه]?|المعتمد[ةه]?)\b/g, (m) => {
-          if (m.includes('ة')) return 'المستخدمة';
-          return 'المطبقة';
-        });
-      // If bullets leaked through despite prompt rules, convert to paragraphs
-      if (/^[•\-\*]\s/m.test(sanitized)) {
-        sanitized = convertBulletsToCohesiveParagraphs(sanitized);
-      }
-      return { result: sanitized.trim(), mode: 'llm' };
-    }
-  } catch (err: any) {
-    logger.warn({ err: err?.message }, 'External LLM call failed or unavailable. Using smart academic engine.');
-  }
-
-  // 2. Intelligent Built-in Academic Linguistic Engine & Translation API
-  const result = await executeBuiltInEngine(trimmed, action, targetLang, style);
-  return { result, mode: 'fallback' };
+  if (!trimmed) return { result: '', mode: 'llm' };
+  if (!hasAnyProvider()) throw new AiUnavailableError();
+  const task = LEGACY_TASK[action] || 'academic_rewrite';
+  const lang: 'ar' | 'en' = task === 'translate' ? (targetLang === 'en' ? 'ar' : 'en') : targetLang;
+  const { system, user } = buildPrompt(task, trimmed, { kind: 'section', lang, targetLang: task === 'translate' ? targetLang : undefined }, null);
+  const r = await generateWithChain({
+    system,
+    user: context ? `<context_note>\n${context}\n</context_note>\n\n${user}` : user,
+    maxOutputTokens: 8000
+  });
+  return { result: r.draft.text, mode: 'llm' };
 }
 
 /**
@@ -304,9 +310,8 @@ async function callAvailableLLM(
     try {
       const res = await anthropicClient.messages.create(
         {
-          model: 'claude-3-5-sonnet-20241022',
+          model: process.env.ANTHROPIC_MODEL?.trim() || 'claude-opus-5-5',
           max_tokens: 1800,
-          temperature: 0.2,
           system: systemPrompt,
           messages: [{ role: 'user', content: userPrompt }]
         },
