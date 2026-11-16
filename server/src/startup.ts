@@ -58,7 +58,14 @@ export async function syncDatabaseSchema(): Promise<void> {
       // so `migrate deploy` only runs the newer, additive migrations.
       const [hist] = await prisma.$queryRaw<{ n: bigint }[]>`SELECT COUNT(*) AS n FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = '_prisma_migrations'`;
       const [users] = await prisma.$queryRaw<{ n: bigint }[]>`SELECT COUNT(*) AS n FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'users'`;
-      if (Number(hist?.n ?? 0) === 0 && Number(users?.n ?? 0) > 0) {
+      // Check for the baseline row itself, not just the table: an interrupted earlier
+      // attempt can leave an empty history table behind.
+      let baselineRecorded = false;
+      if (Number(hist?.n ?? 0) > 0) {
+        const [row] = await prisma.$queryRaw<{ n: bigint }[]>`SELECT COUNT(*) AS n FROM _prisma_migrations WHERE migration_name = '0_init' AND finished_at IS NOT NULL`;
+        baselineRecorded = Number(row?.n ?? 0) > 0;
+      }
+      if (!baselineRecorded && Number(users?.n ?? 0) > 0) {
         logger.info('Existing database without migration history: marking baseline 0_init as applied.');
         execSync(`npx prisma migrate resolve --applied 0_init --schema="${targetSchema}"`, { stdio: 'inherit', timeout: 60000, env: prismaEnv });
       }

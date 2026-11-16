@@ -11,3 +11,4 @@ Thumbs.db
 models/
 backups/
 .claude/
+!server/prisma/migrations/**/migration.sql
