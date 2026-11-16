@@ -53,6 +53,7 @@ import {
 import { DiffModal } from '../common/DiffModal';
 import { ProceduralNarrativeView } from '../common/ProceduralNarrativeView';
 import { FinalReportDocument } from './FinalReportDocument';
+import { periodicWeeksFor } from './periodicWeeks';
 import { ActionMenu } from '../ui/ActionMenu';
 import { AssistantPanel } from '../ai/AssistantPanel';
 import { AssistantMemory } from '../ai/AssistantMemory';
@@ -397,8 +398,10 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
   // Always guaranteed 14 weeks for the Table of Contents & Timeline
   const weeksCount = profileData.trainingWeeks || 14;
   const rawWeeks = reportData?.weeks || [];
+  // A week counts as documented when it has entries or a week from the periodic reports.
+  const periodicWeeks = periodicWeeksFor(rawWeeks.flatMap((w) => (w.entries || []).map((e) => e.title)));
   const weeksWithEntries = rawWeeks.filter(
-    (w) => (w.entries && w.entries.length > 0) || w.totalHours > 0
+    (w) => (w.entries && w.entries.length > 0) || w.totalHours > 0 || periodicWeeks.has(w.weekStart)
   );
   const actualWeeksCount = weeksWithEntries.length;
 

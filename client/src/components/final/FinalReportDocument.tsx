@@ -13,6 +13,7 @@ import {
 } from '@coop/shared';
 import { BidiText } from '../common/AcademicMarkdownView';
 import { ProceduralNarrativeView } from '../common/ProceduralNarrativeView';
+import { periodicWeeksFor, PERIOD_LABELS, type PeriodicWeek } from './periodicWeeks';
 
 /* Week names and category labels used by the printable final report */
 const AR_WEEK_NAMES = [
@@ -90,6 +91,70 @@ const Paragraphs: React.FC<{ text?: string | null; isAr: boolean; empty: string 
 const entryHours = (e: EntryDTO) => calculateHoursBetween(e.timeFrom || '08:00', e.timeTo || '16:00');
 const fmtHours = (h: number) => (Number.isInteger(h) ? String(h) : h.toFixed(1));
 
+/** One week of the periodic reports: what happened, how it was done, and the documented figures. */
+const PeriodicWeekBlock: React.FC<{ pw: PeriodicWeek; isAr: boolean; fmtDate: (d: string) => string }> = ({ pw, isAr, fmtDate }) => {
+  const total = pw.tickets.reduce((s, t) => s + t.count, 0);
+  return (
+    <div className="fd-pweek">
+      <p className="rt-p"><BidiText text={pw.overview} isAr={isAr} /></p>
+
+      <h4 className="fd-sub">ما أنجزته في هذا الأسبوع</h4>
+      <ul className="rt-list rt-ul">
+        {pw.activities.map((a, i) => (
+          <li key={i}><BidiText text={a} isAr={isAr} /></li>
+        ))}
+      </ul>
+
+      {pw.procedures.map((p, i) => (
+        <div key={i} className="fd-proc">
+          <h4 className="fd-sub">{p.title}</h4>
+          <ol className="rt-list rt-ol">
+            {p.steps.map((st, k) => (
+              <li key={k}><BidiText text={st} isAr={isAr} /></li>
+            ))}
+          </ol>
+        </div>
+      ))}
+
+      {pw.tickets.length > 0 && (
+        <>
+          <h4 className="fd-sub">التذاكر والمهام الموثقة</h4>
+          <div className="rt-table-wrap">
+            <table className="rt-table fd-days">
+              <thead>
+                <tr>
+                  <th className="al-start">اليوم</th>
+                  <th className="al-end">العدد</th>
+                  <th className="al-start">التوزيع أو الملاحظة</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pw.tickets.map((t) => (
+                  <tr key={t.date}>
+                    <td className="al-start fd-nowrap">{fmtDate(t.date)}</td>
+                    <td className="al-end">{t.count}</td>
+                    <td className="al-start"><BidiText text={t.note} isAr={isAr} /></td>
+                  </tr>
+                ))}
+                <tr className="is-total">
+                  <td className="al-start">مجموع الأسبوع</td>
+                  <td className="al-end">{total}</td>
+                  <td />
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      <p className="rt-p fd-challenge">
+        <span className="fd-label is-inline">التحدي وطريقة التعامل معه:</span>{' '}
+        <BidiText text={pw.challenge} isAr={isAr} />
+      </p>
+    </div>
+  );
+};
+
 export const FinalReportDocument: React.FC<FinalReportDocumentProps> = ({
   isAr,
   profile,
@@ -99,7 +164,11 @@ export const FinalReportDocument: React.FC<FinalReportDocumentProps> = ({
   translateCategory
 }) => {
   const fmtDate = (d: string) => (isAr ? formatDateArabic(d) : formatDateEnglish(d));
-  const documentedWeeks = weeks.filter((w) => (w.entries || []).length > 0);
+  // Periodic reports 1 and 2, split into the week each event belongs to (Arabic report only).
+  const periodic = isAr ? periodicWeeksFor(weeks.flatMap((w) => (w.entries || []).map((e) => e.title))) : new Map<string, PeriodicWeek>();
+  const pwOf = (w: WeekGroup) => periodic.get(w.weekStart);
+  const topicOf = (w: WeekGroup) => pwOf(w)?.topic || getWeekTopic(w, isAr);
+  const documentedWeeks = weeks.filter((w) => (w.entries || []).length > 0 || !!pwOf(w));
   const plannedWeeks = profile.trainingWeeks || weeks.length;
   const plannedHours = profile.courseHours || 0;
   const studentName = normalizeStudentName(profile.studentName) || '—';
@@ -248,7 +317,7 @@ export const FinalReportDocument: React.FC<FinalReportDocumentProps> = ({
                             {weekName(w.weekIndex, isAr)}
                             <span className="fd-toc-topic">
                               {' — '}
-                              <BidiText text={getWeekTopic(w, isAr)} isAr={isAr} />
+                              <BidiText text={topicOf(w)} isAr={isAr} />
                             </span>
                           </span>
                         </a>
@@ -303,30 +372,54 @@ export const FinalReportDocument: React.FC<FinalReportDocumentProps> = ({
             )}
           </p>
 
-          {weeks.map((w) => {
+          {weeks.map((w, wi) => {
             const entries = w.entries || [];
             const hours = w.totalHours || entries.reduce((s, e) => s + entryHours(e), 0);
-            const synthesis = entries.length > 0 ? generateAcademicWeeklySynthesis(entries, w.weekIndex, hours, isAr) : null;
+            const pw = pwOf(w);
+            const synthesis = entries.length > 0 && !pw ? generateAcademicWeeklySynthesis(entries, w.weekIndex, hours, isAr) : null;
+            const periodStarts = !!pw && (wi === 0 || pwOf(weeks[wi - 1])?.period !== pw.period);
             return (
-              <article key={w.weekIndex} id={`week-${w.weekIndex}`} className="fd-week">
+              <React.Fragment key={w.weekIndex}>
+              {periodStarts && pw && (
+                <div className="fd-period">
+                  <span className="fd-period-tag">{PERIOD_LABELS[pw.period].title}</span>
+                  <span className="fd-period-range"><bdi>{PERIOD_LABELS[pw.period].range}</bdi></span>
+                  <p className="fd-period-text"><BidiText text={PERIOD_LABELS[pw.period].summary} isAr={isAr} /></p>
+                </div>
+              )}
+              <article id={`week-${w.weekIndex}`} className="fd-week">
                 <header className="fd-week-head">
                   <span className="fd-week-n">3.{w.weekIndex}</span>
                   <h3 className="fd-week-title">
-                    {weekName(w.weekIndex, isAr)}: <BidiText text={getWeekTopic(w, isAr)} isAr={isAr} />
+                    {weekName(w.weekIndex, isAr)}: <BidiText text={topicOf(w)} isAr={isAr} />
                   </h3>
                   <p className="fd-week-meta">
-                    <BidiText text={formatWeekPeriod(w, isAr)} isAr={isAr} />
-                    <span aria-hidden="true">  ·  </span>
-                    {entries.length} {T('أيام', 'days')}
-                    <span aria-hidden="true">  ·  </span>
-                    {fmtHours(hours)} {T('ساعة', 'hours')}
+                    {/* A periodic-report week is documented even without daily entries: drop the "pending" status note. */}
+                    <BidiText text={pw ? formatWeekPeriod(w, isAr).replace(/\s*\([^)]*\)\s*$/, '') : formatWeekPeriod(w, isAr)} isAr={isAr} />
+                    {pw && (
+                      <>
+                        <span aria-hidden="true">  ·  </span>
+                        <BidiText text={pw.unit} isAr={isAr} />
+                      </>
+                    )}
+                    {entries.length > 0 && (
+                      <>
+                        <span aria-hidden="true">  ·  </span>
+                        {entries.length} {T('أيام', 'days')}
+                        <span aria-hidden="true">  ·  </span>
+                        {fmtHours(hours)} {T('ساعة', 'hours')}
+                      </>
+                    )}
                   </p>
                 </header>
 
+                {pw && <PeriodicWeekBlock pw={pw} isAr={isAr} fmtDate={fmtDate} />}
+
                 {entries.length === 0 ? (
-                  <p className="rt-p fd-empty">{T('لا توجد إدخالات موثقة لهذا الأسبوع.', 'No entries were logged for this week.')}</p>
+                  pw ? null : <p className="rt-p fd-empty">{T('لا توجد إدخالات موثقة لهذا الأسبوع.', 'No entries were logged for this week.')}</p>
                 ) : (
                   <>
+                    {pw && <h4 className="fd-sub">{T('السجل اليومي', 'Daily log')}</h4>}
                     <div className="rt-table-wrap">
                       <table className="rt-table fd-days">
                         <thead>
@@ -409,6 +502,7 @@ export const FinalReportDocument: React.FC<FinalReportDocumentProps> = ({
                   </div>
                 )}
               </article>
+              </React.Fragment>
             );
           })}
         </section>

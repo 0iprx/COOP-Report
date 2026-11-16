@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { BrandMark, BRAND } from '../ui/BrandMark';
 import {
-  BookOpenText,
   LogOut,
   Sun,
   Moon,
@@ -149,11 +149,9 @@ export function AppShell<T extends string>({ items, active, onSelect, children }
       {/* ── Sidebar (desktop) ───────────────────────────── */}
       <aside className="shell-sidebar no-print" aria-label={t('التنقل الرئيسي', 'Main navigation')}>
         <div className="shell-brand">
-          <span className="shell-brand-mark" aria-hidden="true">
-            <BookOpenText className="w-5 h-5" />
-          </span>
+          <BrandMark size={36} className="shrink-0" />
           <span className="min-w-0">
-            <span className="block text-[15px] font-bold text-ink leading-tight">COOP Report</span>
+            <span className="brand-word block text-[17px] text-ink leading-tight">{t(BRAND.ar, BRAND.en)}</span>
             <span className="block text-xs text-sub leading-tight mt-0.5">{t('سجل التدريب التعاوني', 'Co-op training log')}</span>
           </span>
         </div>
@@ -191,9 +189,7 @@ export function AppShell<T extends string>({ items, active, onSelect, children }
       <div className="shell-main">
         <header className="shell-topbar no-print">
           <div className="flex items-center gap-3 min-w-0">
-            <span className="shell-brand-mark lg:hidden" aria-hidden="true">
-              <BookOpenText className="w-5 h-5" />
-            </span>
+            <BrandMark size={36} className="shrink-0 lg:hidden" />
             <h1 className="shell-title truncate">{activeItem?.label}</h1>
           </div>
 

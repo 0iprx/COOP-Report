@@ -101,7 +101,7 @@ const MainDashboard: React.FC = () => {
             </div>
           </div>
           <div className="text-xs font-bold text-sub">
-            {t('جارٍ تحميل COOP Report...', 'Loading COOP Report...')}
+            {t('جارٍ التحميل…', 'Loading…')}
           </div>
         </div>
       </div>

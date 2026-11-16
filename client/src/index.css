@@ -3,12 +3,13 @@
 @tailwind utilities;
 
 /* ============================================================
-   COOP Report — Design System
+   Midwan (مِدْوان) — Design System
    Editorial / academic. One accent. RTL-first. Icons only.
    ============================================================ */
 
 :root {
   /* Surfaces: paper → sheet */
+  --font-display: 'Noto Kufi Arabic', 'IBM Plex Sans Arabic', system-ui, sans-serif;
   --bg:           #F6F4EF;
   --surface:      #FBFAF7;
   --card:         #FFFFFF;
@@ -970,7 +971,8 @@ html.dark .btn-primary:hover { background: #BF3349; }
   backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--line);
 }
-.shell-title { font-size: 1.125rem; font-weight: 700; color: var(--ink); letter-spacing: 0; }
+.shell-title { font-family: var(--font-display); font-size: 1.125rem; font-weight: 600; color: var(--ink); letter-spacing: 0; }
+.brand-word { font-family: var(--font-display); font-weight: 700; letter-spacing: 0; }
 .shell-account {
   display: flex; align-items: center; gap: 0.5rem;
   min-height: 2.5rem; padding: 0 0.375rem; margin-inline-start: 0.25rem;
@@ -1340,6 +1342,18 @@ html.dark .btn-primary:hover { background: #BF3349; }
 .fd-figure img { display: block; width: 100%; max-height: 80mm; object-fit: contain; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); }
 .fd-figure figcaption { margin-top: 2mm; font-size: 0.8125rem; line-height: 1.6; color: var(--sub); }
 .fd-fig-n { font-weight: 600; color: var(--ink); }
+
+/* Periodic reports split by week */
+.fd-period { margin: 10mm 0 2mm; padding: 4mm 0 3mm; border-top: 2px solid var(--accent); break-after: avoid; page-break-after: avoid; }
+.fd-period-tag { font-size: 1rem; font-weight: 700; color: var(--accent); }
+.fd-period-range { margin-inline-start: 3mm; font-size: 0.8125rem; color: var(--sub); }
+.fd-period-text { margin: 1.5mm 0 0; font-size: 0.875rem; line-height: 1.8; color: var(--ink); }
+.fd-period + .fd-week { border-top: 0; }
+.fd-pweek { margin-bottom: 4mm; }
+.fd-sub { margin: 5mm 0 1.5mm; font-size: 0.9375rem; font-weight: 700; color: var(--ink); break-after: avoid; page-break-after: avoid; }
+.fd-proc { break-inside: avoid; page-break-inside: avoid; }
+.fd-proc .rt-ol li, .fd-pweek .rt-ul li { margin-bottom: 1mm; }
+.fd-challenge { margin-top: 4mm; padding: 3mm 4mm; background: var(--surface); border-inline-start: 3px solid var(--accent); border-radius: var(--radius-sm, 4px); break-inside: avoid; page-break-inside: avoid; }
 
 .fd-summary { margin-top: 7mm; padding: 5mm 6mm; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); break-inside: avoid; page-break-inside: avoid; }
 .fd-summary-title { margin: 0 0 2mm; font-size: 0.9375rem; font-weight: 700; color: var(--ink); }

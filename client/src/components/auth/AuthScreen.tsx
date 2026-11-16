@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { BrandMark, BRAND } from '../ui/BrandMark';
 import { useAuth } from '../../context/AuthContext';
 import {
   ShieldCheck, UserCheck, AlertCircle,
@@ -149,11 +150,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login', o
 
         {/* ── Brand Header ─────────────────────────────────── */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-accent text-white shadow-md mb-3">
-            <BookOpen className="w-6 h-6" />
-          </div>
-          <h1 className="text-2xl font-black text-ink tracking-tight">COOP Report</h1>
-          <p className="text-xs text-sub mt-1 font-medium">سجل التدريب التعاوني الأكاديمي والتوثيق اليومي</p>
+          <BrandMark size={56} className="mx-auto mb-3" title={BRAND.ar} />
+          <h1 className="brand-word text-3xl text-ink">{BRAND.ar}</h1>
+          <p className="text-sm text-sub mt-1.5">سجل التدريب التعاوني، يوماً بيوم وأسبوعاً بأسبوع</p>
         </div>
 
         {/* ── Main Form Card ──────────────────────────────── */}
