@@ -170,7 +170,10 @@ export const FinalReportDocument: React.FC<FinalReportDocumentProps> = ({
   const topicOf = (w: WeekGroup) => pwOf(w)?.topic || getWeekTopic(w, isAr);
   const documentedWeeks = weeks.filter((w) => (w.entries || []).length > 0 || !!pwOf(w));
   const plannedWeeks = profile.trainingWeeks || weeks.length;
-  const plannedHours = profile.courseHours || 0;
+  // The report states only the training period (start to end), not attendance or hours.
+  const periodStart = profile.startDate || weeks[0]?.weekStart || '';
+  const periodEnd = weeks[weeks.length - 1]?.weekEnd || '';
+  const weekRange = (w: WeekGroup) => `${T('من', 'From')} ${fmtDate(w.weekStart)} ${T('إلى', 'to')} ${fmtDate(w.weekEnd)}`;
   const studentName = normalizeStudentName(profile.studentName) || '—';
   const T = (ar: string, en: string) => (isAr ? ar : en);
 
@@ -186,7 +189,8 @@ export const FinalReportDocument: React.FC<FinalReportDocumentProps> = ({
     cur.days += 1; cur.hours += entryHours(e);
     byCategory.set(k, cur);
   }
-  const categoryRows = [...byCategory.entries()].sort((x, y) => y[1].hours - x[1].hours);
+  const categoryRows = [...byCategory.entries()].sort((x, y) => y[1].days - x[1].days);
+  const entryCount = Math.max(1, categoryRows.reduce((n, [, v]) => n + v.days, 0));
   const allCompetencies = Array.from(new Set(syntheses.flatMap((s) => s.acquiredCompetencies))).slice(0, 8);
   const allTools = Array.from(new Set(syntheses.flatMap((s) => s.toolsAndTech)));
 
@@ -241,9 +245,9 @@ export const FinalReportDocument: React.FC<FinalReportDocumentProps> = ({
                 <BidiText text={profile.entityAddress} isAr={isAr} />
               </p>
             )}
-            {weeks.length > 0 && (
+            {periodStart && periodEnd && (
               <p className="rp-period">
-                {T('من', 'From')} <bdi>{fmtDate(weeks[0].weekStart)}</bdi> {T('إلى', 'to')} <bdi>{fmtDate(weeks[weeks.length - 1].weekEnd)}</bdi>
+                {T('من', 'From')} <bdi>{fmtDate(periodStart)}</bdi> {T('إلى', 'to')} <bdi>{fmtDate(periodEnd)}</bdi>
               </p>
             )}
           </div>
@@ -274,10 +278,11 @@ export const FinalReportDocument: React.FC<FinalReportDocumentProps> = ({
               <dd>{profile.responsibleName || '—'}</dd>
             </div>
             <div className="rp-meta-item">
-              <dt>{T('الساعات المسجلة', 'Hours logged')}</dt>
+              <dt>{T('فترة التدريب', 'Training period')}</dt>
               <dd>
-                <bdi>{fmtHours(totalHours)}</bdi>
-                {plannedHours > 0 && <span className="fd-of"> {T('من', 'of')} <bdi>{plannedHours}</bdi></span>}
+                <bdi>{periodStart ? fmtDate(periodStart) : '—'}</bdi>
+                <span className="fd-of"> {T('إلى', 'to')} </span>
+                <bdi>{periodEnd ? fmtDate(periodEnd) : '—'}</bdi>
               </dd>
             </div>
             <div className="rp-meta-item">
@@ -367,8 +372,8 @@ export const FinalReportDocument: React.FC<FinalReportDocumentProps> = ({
           <h2 className="rt-h1">3. {sections[2].title}</h2>
           <p className="rt-p fd-lead">
             {T(
-              `يعرض هذا الباب ${documentedWeeks.length} أسبوعاً موثقاً من أصل ${plannedWeeks}، بإجمالي ${fmtHours(totalHours)} ساعة مسجلة.`,
-              `This chapter covers ${documentedWeeks.length} documented weeks out of ${plannedWeeks}, with ${fmtHours(totalHours)} hours logged.`
+              `يعرض هذا الباب ما تم في ${documentedWeeks.length} أسبوعاً من أصل ${plannedWeeks}، أسبوعاً بأسبوع.`,
+              `This chapter covers ${documentedWeeks.length} documented weeks out of ${plannedWeeks}, week by week.`
             )}
           </p>
 
@@ -376,7 +381,8 @@ export const FinalReportDocument: React.FC<FinalReportDocumentProps> = ({
             const entries = w.entries || [];
             const hours = w.totalHours || entries.reduce((s, e) => s + entryHours(e), 0);
             const pw = pwOf(w);
-            const synthesis = entries.length > 0 && !pw ? generateAcademicWeeklySynthesis(entries, w.weekIndex, hours, isAr) : null;
+            // Hours are left out of the report: pass 0 so the summary omits them.
+            const synthesis = entries.length > 0 && !pw ? generateAcademicWeeklySynthesis(entries, w.weekIndex, 0, isAr) : null;
             const periodStarts = !!pw && (wi === 0 || pwOf(weeks[wi - 1])?.period !== pw.period);
             return (
               <React.Fragment key={w.weekIndex}>
@@ -395,21 +401,14 @@ export const FinalReportDocument: React.FC<FinalReportDocumentProps> = ({
                   </h3>
                   <p className="fd-week-meta">
                     {/* A periodic-report week is documented even without daily entries: drop the "pending" status note. */}
-                    <BidiText text={pw ? formatWeekPeriod(w, isAr).replace(/\s*\([^)]*\)\s*$/, '') : formatWeekPeriod(w, isAr)} isAr={isAr} />
+                    <BidiText text={weekRange(w)} isAr={isAr} />
                     {pw && (
                       <>
                         <span aria-hidden="true">  ·  </span>
                         <BidiText text={pw.unit} isAr={isAr} />
                       </>
                     )}
-                    {entries.length > 0 && (
-                      <>
-                        <span aria-hidden="true">  ·  </span>
-                        {entries.length} {T('أيام', 'days')}
-                        <span aria-hidden="true">  ·  </span>
-                        {fmtHours(hours)} {T('ساعة', 'hours')}
-                      </>
-                    )}
+
                   </p>
                 </header>
 
@@ -419,34 +418,7 @@ export const FinalReportDocument: React.FC<FinalReportDocumentProps> = ({
                   pw ? null : <p className="rt-p fd-empty">{T('لا توجد إدخالات موثقة لهذا الأسبوع.', 'No entries were logged for this week.')}</p>
                 ) : (
                   <>
-                    {pw && <h4 className="fd-sub">{T('السجل اليومي', 'Daily log')}</h4>}
-                    <div className="rt-table-wrap">
-                      <table className="rt-table fd-days">
-                        <thead>
-                          <tr>
-                            <th className="al-start">{T('اليوم', 'Day')}</th>
-                            <th className="al-start">{T('الوقت', 'Time')}</th>
-                            <th className="al-end">{T('الساعات', 'Hours')}</th>
-                            <th className="al-start">{T('النشاط', 'Activity')}</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {entries.map((e, i) => (
-                            <tr key={e.id || i}>
-                              <td className="al-start fd-nowrap">{fmtDate(e.entryDate)}</td>
-                              <td className="al-start fd-nowrap"><bdi dir="ltr">{e.timeFrom || '08:00'}–{e.timeTo || '16:00'}</bdi></td>
-                              <td className="al-end">{fmtHours(entryHours(e))}</td>
-                              <td className="al-start"><BidiText text={elevateTaskTitle(e.title, e.description, isAr)} isAr={isAr} /></td>
-                            </tr>
-                          ))}
-                          <tr className="is-total">
-                            <td className="al-start" colSpan={2}>{T('المجموع', 'Total')}</td>
-                            <td className="al-end">{fmtHours(hours)}</td>
-                            <td />
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
+                    {pw && <h4 className="fd-sub">{T('تفاصيل الأيام', 'Day by day')}</h4>}
 
                     {entries.map((e, i) => (
                       <div key={e.id || i} className="fd-day">
@@ -456,8 +428,6 @@ export const FinalReportDocument: React.FC<FinalReportDocumentProps> = ({
                         </h4>
                         <p className="fd-day-meta">
                           <BidiText text={translateCategory(e.category, isAr)} isAr={isAr} />
-                          <span aria-hidden="true">  ·  </span>
-                          <bdi dir="ltr">{e.timeFrom || '08:00'}–{e.timeTo || '16:00'}</bdi>
                         </p>
                         <ProceduralNarrativeView rawText={e.description} isAr={isAr} variant="document" />
                       </div>
@@ -521,8 +491,6 @@ export const FinalReportDocument: React.FC<FinalReportDocumentProps> = ({
                   <thead>
                     <tr>
                       <th className="al-start">{T('المجال', 'Area')}</th>
-                      <th className="al-end">{T('الأيام', 'Days')}</th>
-                      <th className="al-end">{T('الساعات', 'Hours')}</th>
                       <th className="al-end">{T('النسبة', 'Share')}</th>
                     </tr>
                   </thead>
@@ -530,15 +498,11 @@ export const FinalReportDocument: React.FC<FinalReportDocumentProps> = ({
                     {categoryRows.map(([cat, v]) => (
                       <tr key={cat}>
                         <td className="al-start"><BidiText text={translateCategory(cat, isAr)} isAr={isAr} /></td>
-                        <td className="al-end">{v.days}</td>
-                        <td className="al-end">{fmtHours(v.hours)}</td>
-                        <td className="al-end">{totalHours > 0 ? `${Math.round((v.hours / totalHours) * 100)}%` : '—'}</td>
+                        <td className="al-end">{`${Math.round((v.days / entryCount) * 100)}%`}</td>
                       </tr>
                     ))}
                     <tr className="is-total">
                       <td className="al-start">{T('المجموع', 'Total')}</td>
-                      <td className="al-end">{categoryRows.reduce((n, [, v]) => n + v.days, 0)}</td>
-                      <td className="al-end">{fmtHours(totalHours)}</td>
                       <td className="al-end">100%</td>
                     </tr>
                   </tbody>

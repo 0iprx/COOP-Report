@@ -1196,10 +1196,6 @@ export const FinalReportTab: React.FC<FinalReportTabProps> = ({ currentLang }) =
             <p className="fr-bar-stats">
               <span>{reportData?.wordCount || 0} كلمة</span>
               <span aria-hidden="true">·</span>
-              <span>
-                {loggedHours} ساعة مسجلة{plannedHours > 0 ? ` من ${plannedHours}` : ''}
-              </span>
-              <span aria-hidden="true">·</span>
               <span>{actualWeeksCount} من {weeksCount} أسبوعاً موثقاً</span>
             </p>
           </div>
