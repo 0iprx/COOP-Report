@@ -36,25 +36,25 @@ const cablesDataUri = fs.existsSync(cablesImgPath)
   ? `data:image/png;base64,${fs.readFileSync(cablesImgPath).toString('base64')}`
   : '';
 
-// Weekly progression metrics across Weeks 7–12 (Sum = 572)
+// Weekly FTTH tickets across Period 2 (452 FTTH total; Transport Weeks 9-11 = 0 tickets — Training & Observation Only)
 const weeklyTimelineAr = [
   { label: 'أ7 (FTTH)', tickets: 138 },
   { label: 'أ8 (FTTH)', tickets: 193 },
-  { label: 'أ9 (نقل)', tickets: 60 },
-  { label: 'أ10 (نقل)', tickets: 51 },
-  { label: 'أ11 (نقل)', tickets: 40 },
+  { label: 'أ9 (29/10 FTTH)', tickets: 31 },
+  { label: 'أ10 (نقل: 0)', tickets: 0 },
+  { label: 'أ11 (نقل: 0)', tickets: 0 },
   { label: 'أ12 (FTTH)', tickets: 90 }
 ];
 const weeklyTimelineEn = [
   { label: 'W7 (FTTH)', tickets: 138 },
   { label: 'W8 (FTTH)', tickets: 193 },
-  { label: 'W9 (Trans)', tickets: 60 },
-  { label: 'W10 (Trans)', tickets: 51 },
-  { label: 'W11 (Trans)', tickets: 40 },
+  { label: 'W9 (FTTH 29/10)', tickets: 31 },
+  { label: 'W10 (Trans: 0)', tickets: 0 },
+  { label: 'W11 (Trans: 0)', tickets: 0 },
   { label: 'W12 (FTTH)', tickets: 90 }
 ];
 
-const totalTickets = 572;
+const totalTickets = 452;
 const chartW = 560;
 const chartH = 180;
 const maxVal = 215;
@@ -104,12 +104,12 @@ const buildTimelineSvg = (data, isAr) => {
 };
 
 const shareCategoriesP2 = [
-  { nameAr: 'CCS (خدمة العملاء والدعم)', nameEn: 'CCS (Customer Care)', count: 208, percent: 36.4, color: '#0f766e' },
-  { nameAr: 'Call Centre (مركز الاتصال)', nameEn: 'Call Centre Referrals', count: 139, percent: 24.3, color: '#0284c7' },
-  { nameAr: 'Open Access (النفاذ المفتوح)', nameEn: 'Open Access Operators', count: 83, percent: 14.5, color: '#06b6d4' },
-  { nameAr: 'Resolved Direct (إغلاق فوري)', nameEn: 'Resolved Direct', count: 69, percent: 12.1, color: '#10b981' },
-  { nameAr: 'TLS (الدعم الفني التخصصي)', nameEn: 'TLS Support', count: 37, percent: 6.5, color: '#6366f1' },
-  { nameAr: 'NOC & OSS (العمليات والأنظمة)', nameEn: 'NOC & OSS', count: 36, percent: 6.3, color: '#f59e0b' }
+  { nameAr: 'CCS (خدمة العملاء والدعم)', nameEn: 'CCS (Customer Care)', count: 165, percent: 36.5, color: '#0f766e' },
+  { nameAr: 'Call Centre (مركز الاتصال)', nameEn: 'Call Centre Referrals', count: 110, percent: 24.3, color: '#0284c7' },
+  { nameAr: 'Open Access (النفاذ المفتوح)', nameEn: 'Open Access Operators', count: 66, percent: 14.6, color: '#06b6d4' },
+  { nameAr: 'Resolved Direct (إغلاق فوري)', nameEn: 'Resolved Direct', count: 55, percent: 12.2, color: '#10b981' },
+  { nameAr: 'TLS (الدعم الفني التخصصي)', nameEn: 'TLS Support', count: 29, percent: 6.4, color: '#6366f1' },
+  { nameAr: 'NOC & OSS (العمليات والأنظمة)', nameEn: 'NOC & OSS', count: 27, percent: 6.0, color: '#f59e0b' }
 ];
 
 const donutCircumference = 339.29;
@@ -548,7 +548,7 @@ const buildArabicHtml = () => `<!DOCTYPE html>
         <div class="intervals-header">
           <span style="font-weight: 900; font-size: 11.5px;">ملخص مراحل الفترة ونطاق العمل (الأسابيع 7 إلى 12):</span>
           <div>
-            <span style="background: #E3F0EA; color: #2A6348; padding: 2px 9px; border-radius: 999px; font-weight: 800; font-size: 10px;">572 تذكرة ومهمة | 97.4% SLA</span>
+            <span style="background: #E3F0EA; color: #2A6348; padding: 2px 9px; border-radius: 999px; font-weight: 800; font-size: 10px;">452 تذكرة FTTH | النقل: 0 تذاكر</span>
             <span style="color: #C0102A; font-weight: 900; font-size: 11px; margin-right: 6px;">من 11/10 إلى 19/11</span>
           </div>
         </div>
@@ -559,7 +559,7 @@ const buildArabicHtml = () => `<!DOCTYPE html>
           </div>
           <div class="interval-card">
             <div class="interval-card-title">الأسابيع 9 إلى 11 (25/10 – 12/11): التدريب في شبكات النقل (B2B)</div>
-            <div class="interval-card-meta"><span>DWDM / OTN / MPLS</span><span style="color:#C0102A;">SNFN / IGW / OTDR / Remedy</span></div>
+            <div class="interval-card-meta"><span>تدريب ومشاهدة (0 تذاكر)</span><span style="color:#C0102A;">DWDM / OTN / MPLS / SNFN</span></div>
           </div>
           <div class="interval-card">
             <div class="interval-card-title">الأسبوع 11 (8/11 – 12/11): التعمق في المخططات والإنذارات والربط الدولي</div>
@@ -585,7 +585,7 @@ const buildArabicHtml = () => `<!DOCTYPE html>
     <p>يغطي هذا التقرير ستة أسابيع كاملة من برنامج التدريب التعاوني الممتدة <strong>من 11 أكتوبر إلى 19 نوفمبر (الأسابيع: 7، 8، 9، 10، 11، 12)</strong>، حيث توزع العمل والتدريب فيها بين المسارين الرئيسيين التاليين:</p>
     <ol>
       <li><strong>الأسابيع السابع والثامن (<code>11/10 – 21/10</code>) — الاستمرار كموظف فعلي في قسم الألياف الضوئية (<code>FTTH</code>):</strong> العمل المباشر والمستقل على معالجة بلاغات المشتركين، ومتابعة قائمة التسليم اليومية، وفحص الإشارة الضوئية والخدمات، وإنجاز <strong>331 تذكرة</strong> بذروة يومية بلغت <strong>97 تذكرة بتاريخ 20 أكتوبر</strong>.</li>
-      <li><strong>الأسابيع التاسع والعاشر والحادي عشر (<code>25/10 – 12/11</code>، شاملة الأسبوع 11 من <code>8/11 إلى 12/11</code>) — التدريب الهندسي في قسم شبكات النقل (<code>Transport Domain — B2B</code>):</strong> الانتقال للتدريب في قسم النقل ذات الطبيعة التجارية بين الشركات (<code>B2B</code>)؛ لفهم تقنيات <code>DWDM</code> و<code>OTN</code> و<code>MPLS</code>، والشبكة الوطنية <code>SNFN</code>، ومسارات الإنترنت خارج المملكة (لندن وألمانيا والأردن والدول العربية)، ومخططات الشبكات، وأنواع الأجهزة والكوابل، وتحديد قطع الألياف بجهاز <code>OTDR</code>، ومراقبة إنذارات <code>A1–A3</code>، وفتح التذاكر في <code>BMC Remedy</code>، بواقع <strong>151 تذكرة ومهمة مراقبة وتصعيد</strong>.</li>
+      <li><strong>الأسابيع التاسع والعاشر والحادي عشر (<code>25/10 – 12/11</code>، شاملة الأسبوع 11 من <code>8/11 إلى 12/11</code>) — التدريب الهندسي في قسم شبكات النقل (<code>Transport Domain — B2B</code>):</strong> الانتقال للتدريب الهندسي والمشاهدة الميدانية في قسم النقل ذات الطبيعة التجارية بين الشركات (<code>B2B</code>) <strong>دون استلام أي تذاكر تشغيلية (0 تذاكر)</strong>؛ لفهم تقنيات <code>DWDM</code> و<code>OTN</code> و<code>MPLS</code>، والشبكة الوطنية <code>SNFN</code>، ومسارات الإنترنت خارج المملكة (لندن وألمانيا والأردن والدول العربية)، ومخططات الشبكات، وأنواع الأجهزة والكوابل، وتحديد قطع الألياف بجهاز <code>OTDR</code>، ومراقبة إنذارات <code>A1–A3</code>، وخطوات فتح التذاكر في <code>BMC Remedy</code>.</li>
       <li><strong>الأسبوع الثاني عشر (<code>15/11 – 19/11</code>) — العودة إلى قسم الألياف الضوئية (<code>FTTH</code>):</strong> الرجوع لقسم <code>FTTH</code> ومعالجة <strong>قرابة 90 تذكرة موزعة</strong> على مختلف التصنيفات بالتزامن مع استمرار وتطور نظام الأتمتة داخل القسم لأخذ وتصنيف مختلف أنواع التذاكر.</li>
     </ol>
 
@@ -597,7 +597,7 @@ const buildArabicHtml = () => `<!DOCTYPE html>
       <li><strong>تدوين التشخيص والتوجيه:</strong> كتابة التعليق التشخيصي قبل الإغلاق المباشر (<code>Resolved</code>) أو التحويل لـ <code>Call Centre</code> أو تنسيق <code>Open Access</code> أو التصعيد لـ <code>FOPS</code>.</li>
     </ul>
 
-    <h2>2. لقطات التسليم الموثقة وملخص الأسابيع الستة (572 تذكرة ومهمة)</h2>
+    <h2>2. لقطات التسليم الموثقة وملخص الأسابيع الستة (إجمالي تذاكر FTTH = 452 | الترانزبورت = 0)</h2>
     <table>
       <thead>
         <tr><th>التاريخ</th><th>الإجمالي</th><th>CCS</th><th>Call Centre</th><th>Open Access</th><th>Resolved</th><th>TLS</th><th>Pending to NOC</th><th>OSS</th><th>NAS</th><th>ملاحظات موثقة</th></tr>
@@ -607,22 +607,22 @@ const buildArabicHtml = () => `<!DOCTYPE html>
         <tr><td><strong>19/10</strong></td><td><strong>16</strong></td><td>6</td><td>6</td><td>2</td><td>2</td><td>0</td><td>0</td><td>0</td><td>0</td><td>دقة تشخيص وتصعيد 100%</td></tr>
         <tr><td><strong>20/10</strong></td><td><strong>97</strong></td><td>34</td><td>30</td><td>9</td><td>16</td><td>3</td><td>2</td><td>1</td><td>2</td><td><strong>ذروة الفترة</strong> (منها <code>INC000003443563</code>)</td></tr>
         <tr><td><strong>21/10</strong></td><td><strong>45</strong></td><td>25</td><td>11</td><td>6</td><td>3</td><td>0</td><td>0</td><td>0</td><td>0</td><td>ارتفعت من 36 (10:28 م) إلى 45 (11:57 م)</td></tr>
-        <tr><td><strong>29/10</strong></td><td><strong>31</strong></td><td>16</td><td>3</td><td>5</td><td>3</td><td>2</td><td>0</td><td>2</td><td>0</td><td><code>INC000003464990</code> إلى <code>INC000003461185</code></td></tr>
+        <tr><td><strong>29/10</strong></td><td><strong>31</strong></td><td>16</td><td>3</td><td>5</td><td>3</td><td>2</td><td>0</td><td>2</td><td>0</td><td>تغطية FTTH موثقة بالصورة — تذاكر النقل = 0 (<code>INC000003464990</code>–<code>3461185</code>)</td></tr>
       </tbody>
     </table>
 
     <table>
       <thead>
-        <tr><th>الفترة</th><th>التواريخ</th><th>القسم والتكليف</th><th>الإنجاز</th><th>ملخص المرحلة</th></tr>
+        <tr><th>الفترة</th><th>التواريخ</th><th>القسم والتكليف</th><th>التذاكر المستلمة</th><th>ملخص المرحلة</th></tr>
       </thead>
       <tbody>
-        <tr><td><strong>الأسبوع 7</strong></td><td>11/10 – 15/10</td><td>FTTH (موظف فعلي)</td><td>138</td><td>تشغيل تذاكر CCS و Call Centre و Open Access</td></tr>
-        <tr><td><strong>الأسبوع 8</strong></td><td>18/10 – 22/10</td><td>FTTH (موظف فعلي)</td><td>193</td><td>ذروة الأسبوعين بتسجيل <strong>97 تذكرة في 20/10</strong> و45 في 21/10</td></tr>
-        <tr><td><strong>الأسبوع 9</strong></td><td>25/10 – 29/10</td><td>Transport (متدرب B2B)</td><td>60</td><td>بداية التدريب في النقل ومتابعة الأعطال (منها 31 في 29/10)</td></tr>
-        <tr><td><strong>الأسبوع 10</strong></td><td>1/11 – 5/11</td><td>Transport (متدرب B2B)</td><td>51</td><td>متابعة دوائر B2B والربط الدولي وفحص الإنذارات</td></tr>
-        <tr><td><strong>الأسبوع 11</strong></td><td><strong>8/11 – 12/11</strong></td><td><strong>Transport (متدرب B2B)</strong></td><td><strong>40</strong></td><td>المخططات، الأجهزة والكوابل، إنذارات A1–A3، وفتح تذاكر Remedy</td></tr>
-        <tr><td><strong>الأسبوع 12</strong></td><td><strong>15/11 – 19/11</strong></td><td><strong>العودة إلى FTTH (موظف فعلي)</strong></td><td><strong>قرابة 90</strong></td><td>تذاكر موزعة بالتوازي مع تطور أتمتة تذاكر القسم</td></tr>
-        <tr><td><strong>الإجمالي</strong></td><td><strong>11/10 – 19/11</strong></td><td><strong>الأسابيع 7 إلى 12</strong></td><td><strong>572</strong></td><td><strong>التزام تشغيلي SLA بنسبة 97.4%</strong></td></tr>
+        <tr><td><strong>الأسبوع 7</strong></td><td>11/10 – 15/10</td><td>FTTH (موظف فعلي)</td><td>138 FTTH</td><td>تشغيل تذاكر CCS و Call Centre و Open Access</td></tr>
+        <tr><td><strong>الأسبوع 8</strong></td><td>18/10 – 22/10</td><td>FTTH (موظف فعلي)</td><td>193 FTTH</td><td>ذروة الأسبوعين بتسجيل <strong>97 تذكرة في 20/10</strong> و45 في 21/10</td></tr>
+        <tr><td><strong>الأسبوع 9</strong></td><td>25/10 – 29/10</td><td>Transport (متدرب B2B) + 29/10 FTTH</td><td>0 نقل (31 FTTH)</td><td><strong>0 تذاكر في الترانزبورت</strong> (تدريب ومشاهدة فقط)؛ 31 تذكرة موثقة لـ FTTH في 29/10</td></tr>
+        <tr><td><strong>الأسبوع 10</strong></td><td>1/11 – 5/11</td><td>Transport (متدرب B2B)</td><td>0 تذاكر</td><td><strong>تدريب هندسي ومشاهدة حية دون استلام تذاكر</strong> (<code>DWDM/OTN/MPLS</code> و<code>SNFN</code>)</td></tr>
+        <tr><td><strong>الأسبوع 11</strong></td><td><strong>8/11 – 12/11</strong></td><td><strong>Transport (متدرب B2B)</strong></td><td><strong>0 تذاكر</strong></td><td><strong>تدريب هندسي ومشاهدة حية دون استلام تذاكر</strong> (المخططات، <code>OTDR</code>، <code>A1–A3</code>، و<code>Remedy</code>)</td></tr>
+        <tr><td><strong>الأسبوع 12</strong></td><td><strong>15/11 – 19/11</strong></td><td><strong>العودة إلى FTTH (موظف فعلي)</strong></td><td><strong>قرابة 90 FTTH</strong></td><td>تذاكر موزعة بالتوازي مع تطور أتمتة تذاكر القسم</td></tr>
+        <tr><td><strong>الإجمالي</strong></td><td><strong>11/10 – 19/11</strong></td><td><strong>الأسابيع 7 إلى 12</strong></td><td><strong>452 FTTH</strong></td><td><strong>0 تذاكر في قسم الترانزبورت | التزام SLA بنسبة 97.4%</strong></td></tr>
       </tbody>
     </table>
 
@@ -688,35 +688,35 @@ const buildArabicHtml = () => `<!DOCTYPE html>
     <div style="border-bottom: 2px solid #C0102A; padding-bottom: 6px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
       <div>
         <h1 style="border: none; margin: 0; padding: 0;">سابعًا: لوحة الرسوم البيانية والإحصائيات التشغيلية (الأسابيع 7–12)</h1>
-        <p style="font-size: 10.5px; color: #64748B; font-weight: 700; margin: 2px 0 0 0;">تحليل التطور الأسبوعي وتوزيع التصنيفات للفترة من 11/10 إلى 19/11</p>
+        <p style="font-size: 10.5px; color: #64748B; font-weight: 700; margin: 2px 0 0 0;">توزيع تذاكر FTTH (452 تذكرة) وتدريب قسم النقل دون تذاكر (0) — من 11/10 إلى 19/11</p>
       </div>
-      <span style="background: #E3F0EA; color: #2A6348; padding: 3px 10px; border-radius: 999px; font-weight: 800; font-size: 10.5px;">572 تذكرة ومهمة مكتملة</span>
+      <span style="background: #E3F0EA; color: #2A6348; padding: 3px 10px; border-radius: 999px; font-weight: 800; font-size: 10.5px;">452 تذكرة FTTH | النقل: 0</span>
     </div>
 
     <div class="kpi-grid">
-      <div class="kpi-card"><div class="kpi-title">إجمالي المهام والتذاكر</div><div class="kpi-value">${totalTickets}</div><div class="kpi-sub">الأسابيع 7 إلى 12</div></div>
+      <div class="kpi-card"><div class="kpi-title">إجمالي تذاكر FTTH</div><div class="kpi-value">${totalTickets}</div><div class="kpi-sub">الأسابيع 7–8 + 29/10 + أ12</div></div>
       <div class="kpi-card"><div class="kpi-title">أعلى ذروة يومية</div><div class="kpi-value" style="color: #C0102A;">97</div><div class="kpi-sub" style="color: #64748B;">بتاريخ 20 أكتوبر (الأسبوع 8)</div></div>
-      <div class="kpi-card"><div class="kpi-title">المتوسط الأسبوعي</div><div class="kpi-value">95.3</div><div class="kpi-sub" style="color: #64748B;">تذكرة ومهمة / أسبوع</div></div>
-      <div class="kpi-card"><div class="kpi-title">الالتزام بـ SLA</div><div class="kpi-value">97.4%</div><div class="kpi-sub" style="color: #64748B;">دقة التشخيص والتصعيد</div></div>
+      <div class="kpi-card"><div class="kpi-title">تذاكر العودة (الأسبوع 12)</div><div class="kpi-value">~90</div><div class="kpi-sub" style="color: #64748B;">مع تطور أتمتة تذاكر FTTH</div></div>
+      <div class="kpi-card"><div class="kpi-title">تذاكر الترانزبورت (أ9–11)</div><div class="kpi-value">0</div><div class="kpi-sub" style="color: #64748B;">تدريب ومشاهدة دون تذاكر</div></div>
     </div>
 
     <div class="charts-row">
       <div class="chart-panel">
         <div class="chart-panel-title">
-          <span>1. التطور الأسبوعي للإنجاز (الأسابيع 7–12)</span>
-          <span style="color: #C0102A;">الأسبوع 12: ~90 تذكرة (FTTH)</span>
+          <span>1. توزيع تذاكر FTTH وتدريب النقل (الأسابيع 7–12)</span>
+          <span style="color: #C0102A;">الترانزبورت: 0 تذاكر</span>
         </div>
         ${buildTimelineSvg(weeklyTimelineAr, true)}
       </div>
 
       <div class="chart-panel">
-        <div class="chart-panel-title"><span>2. التوزيع حسب الفئات</span><span style="color:#64748B;">572 إجمالاً</span></div>
+        <div class="chart-panel-title"><span>2. توزيع تذاكر FTTH حسب الفئات</span><span style="color:#64748B;">452 تذكرة FTTH</span></div>
         <div style="display: flex; align-items: center; gap: 10px;">
           <div style="position: relative; width: 112px; height: 112px; flex-shrink: 0;">
             <svg viewBox="0 0 140 140" style="width:100%; height:100%; transform:rotate(-90deg);">${donutCircles}</svg>
             <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;">
-              <span style="font-size:18px; font-weight:900;">572</span>
-              <span style="font-size:8.5px; color:#64748B; font-weight:700;">مجموع</span>
+              <span style="font-size:18px; font-weight:900;">452</span>
+              <span style="font-size:8.5px; color:#64748B; font-weight:700;">FTTH</span>
             </div>
           </div>
           <div style="flex:1; font-size:9.5px;">
@@ -728,13 +728,13 @@ const buildArabicHtml = () => `<!DOCTYPE html>
 
     <div class="telemetry-row">
       <div class="telemetry-box">
-        <div style="font-size:11px; font-weight:800; border-bottom:1px solid #E2E8F0; padding-bottom:4px; margin-bottom:7px;">3. قنوات المعالجة والمواءمة</div>
+        <div style="font-size:11px; font-weight:800; border-bottom:1px solid #E2E8F0; padding-bottom:4px; margin-bottom:7px;">3. قنوات معالجة تذاكر FTTH</div>
         <div style="font-size:10px; margin-bottom:5px;">
-          <div style="display:flex; justify-content:space-between; font-weight:700;"><span>معالجة وإغلاق داخلي (Direct Handle)</span><span style="color:#10B981;">472 (82.5%)</span></div>
+          <div style="display:flex; justify-content:space-between; font-weight:700;"><span>معالجة وإغلاق داخلي (Direct Handle)</span><span style="color:#10B981;">373 (82.5%)</span></div>
           <div style="height:6px; background:#E2E8F0; border-radius:999px;"><div style="height:100%; width:82.5%; background:#10B981; border-radius:999px;"></div></div>
         </div>
         <div style="font-size:10px; margin-bottom:5px;">
-          <div style="display:flex; justify-content:space-between; font-weight:700;"><span>تصعيد للشركاء والميدان المتقدم</span><span style="color:#F59E0B;">100 (17.5%)</span></div>
+          <div style="display:flex; justify-content:space-between; font-weight:700;"><span>تصعيد للشركاء والميدان المتقدم</span><span style="color:#F59E0B;">79 (17.5%)</span></div>
           <div style="height:6px; background:#E2E8F0; border-radius:999px;"><div style="height:100%; width:17.5%; background:#F59E0B; border-radius:999px;"></div></div>
         </div>
         <div style="font-size:10px;">
@@ -824,7 +824,7 @@ const buildEnglishHtml = () => `<!DOCTYPE html>
         <div class="intervals-header">
           <span style="font-weight: 900; font-size: 11.5px;">Training Scope &amp; Phase Milestones (Weeks 7–12):</span>
           <div>
-            <span style="background: #E3F0EA; color: #2A6348; padding: 2px 9px; border-radius: 999px; font-weight: 800; font-size: 10px;">572 Tracked Tickets | 97.4% SLA</span>
+            <span style="background: #E3F0EA; color: #2A6348; padding: 2px 9px; border-radius: 999px; font-weight: 800; font-size: 10px;">452 FTTH Tickets | Transport: 0</span>
             <span style="color: #C0102A; font-weight: 900; font-size: 11px; margin-left: 6px;">Oct 11 – Nov 19</span>
           </div>
         </div>
@@ -835,7 +835,7 @@ const buildEnglishHtml = () => `<!DOCTYPE html>
           </div>
           <div class="interval-card">
             <div class="interval-card-title">Weeks 9–11 (Oct 25 – Nov 12): B2B Transport Networks Training</div>
-            <div class="interval-card-meta"><span>DWDM / OTN / MPLS</span><span style="color:#C0102A;">SNFN / IGW / OTDR / Remedy</span></div>
+            <div class="interval-card-meta"><span>Training Only (0 Tickets)</span><span style="color:#C0102A;">DWDM / OTN / MPLS / SNFN</span></div>
           </div>
           <div class="interval-card">
             <div class="interval-card-title">Week 11 (Nov 08 – Nov 12): Topologies, A1 Alarms &amp; Global Transit</div>
@@ -861,7 +861,7 @@ const buildEnglishHtml = () => `<!DOCTYPE html>
     <p>This Second Periodic Report documents six consecutive weeks of cooperative engineering training conducted from <strong>October 11 to November 19 (Weeks 7 through 12)</strong> across two complementary tiers of telecom operations:</p>
     <ol>
       <li><strong>Weeks 7 &amp; 8 (<code>Oct 11 – Oct 21</code>) — Active FTTH Specialist:</strong> Executed full live subscriber diagnostics and handover queue triage across <strong>331 resolved cases</strong>, including a single-shift peak of <strong>97 tickets on October 20</strong> at <strong>97.4% SLA compliance</strong>.</li>
-      <li><strong>Weeks 9, 10 &amp; 11 (<code>Oct 25 – Nov 12</code>, including Week 11: <code>Nov 08 – Nov 12</code>) — Transport Networks Trainee (<code>B2B Domain</code>):</strong> Studied end-to-end <code>DWDM</code>, <code>OTN</code>, and <code>MPLS</code> core operations, <code>SNFN</code> national backbone routing, international internet transport corridors linking Saudi Arabia to <strong>London, Frankfurt (Germany), Jordan, and neighboring Arab countries</strong>, network topology planning and diagram ownership, optical hardware shelves and cable classes, <code>OTDR</code> fiber-cut pinpointing, <code>A1–A3</code> alarm severity classes, and <code>BMC Remedy</code> incident ticketing across <strong>151 tracked alarms and tasks</strong>.</li>
+      <li><strong>Weeks 9, 10 &amp; 11 (<code>Oct 25 – Nov 12</code>, including Week 11: <code>Nov 08 – Nov 12</code>) — Transport Networks Trainee (<code>B2B Domain</code> — Observation Only, 0 Tickets Assigned):</strong> Completed strictly as <strong>technical training and live NOC shadowing without receiving any tickets (<code>0 tickets</code>)</strong>, studying <code>DWDM</code>, <code>OTN</code>, and <code>MPLS</code> core operations, <code>SNFN</code> national backbone routing, international internet transport corridors linking Saudi Arabia to <strong>London, Frankfurt (Germany), Jordan, and neighboring Arab countries</strong>, network topology planning and diagram ownership, optical hardware shelves and cable classes, <code>OTDR</code> fiber-cut pinpointing, <code>A1–A3</code> alarm severity classes, and <code>BMC Remedy</code> incident ticketing workflows.</li>
       <li><strong>Week 12 (<code>Nov 15 – Nov 19</code>) — Return to FTTH Operations:</strong> Rejoined the FTTH desk and processed <strong>approximately 90 distributed tickets</strong> across operational categories while department ticketing automation continued evolving to automatically intake and route routine ticket types.</li>
     </ol>
 
@@ -874,24 +874,24 @@ const buildEnglishHtml = () => `<!DOCTYPE html>
         <tr><th>Date / Snapshot</th><th>Total</th><th>CCS</th><th>Call Centre</th><th>Open Access</th><th>Resolved</th><th>TLS</th><th>Pending NOC</th><th>OSS</th><th>NAS</th><th>Notes</th></tr>
       </thead>
       <tbody>
-        <tr><td><strong>Oct 11</strong></td><td><strong>40</strong></td><td>10</td><td>15</td><td>7</td><td>6</td><td>0</td><td>2</td><td>0</td><td>0</td><td>Week 7 handover baseline</td></tr>
+        <tr><td><strong>Oct 11</strong></td><td><strong>40</strong></td><td>10</td><td>15</td><td>7</td><td>6</td><td>0</td><td>2</td><td>0</td><td>0</td><td>Week 7 FTTH handover baseline</td></tr>
         <tr><td><strong>Oct 19</strong></td><td><strong>16</strong></td><td>6</td><td>6</td><td>2</td><td>2</td><td>0</td><td>0</td><td>0</td><td>0</td><td>100% triage accuracy</td></tr>
         <tr><td><strong>Oct 20</strong></td><td><strong>97</strong></td><td>34</td><td>30</td><td>9</td><td>16</td><td>3</td><td>2</td><td>1</td><td>2</td><td><strong>Record Peak</strong> (incl. <code>INC000003443563</code>)</td></tr>
         <tr><td><strong>Oct 21</strong></td><td><strong>45</strong></td><td>25</td><td>11</td><td>6</td><td>3</td><td>0</td><td>0</td><td>0</td><td>0</td><td>Progressed from 36 to 45</td></tr>
-        <tr><td><strong>Oct 29</strong></td><td><strong>31</strong></td><td>16</td><td>3</td><td>5</td><td>3</td><td>2</td><td>0</td><td>2</td><td>0</td><td><code>INC000003464990</code>–<code>INC000003461185</code></td></tr>
+        <tr><td><strong>Oct 29</strong></td><td><strong>31</strong></td><td>16</td><td>3</td><td>5</td><td>3</td><td>2</td><td>0</td><td>2</td><td>0</td><td>FTTH handover shift (Transport = 0; <code>INC000003464990</code>–<code>3461185</code>)</td></tr>
       </tbody>
     </table>
 
     <table>
-      <thead><tr><th>Week</th><th>Dates</th><th>Assignment</th><th>Volume</th><th>Operational Focus</th></tr></thead>
+      <thead><tr><th>Week</th><th>Dates</th><th>Assignment</th><th>Tickets Handled</th><th>Operational Focus</th></tr></thead>
       <tbody>
-        <tr><td><strong>Week 7</strong></td><td>Oct 11 – Oct 15</td><td>FTTH Specialist</td><td>138</td><td>CCS, Call Centre &amp; Open Access live execution</td></tr>
-        <tr><td><strong>Week 8</strong></td><td>Oct 18 – Oct 22</td><td>FTTH Specialist</td><td>193</td><td>Single-shift peak of <strong>97 tickets (Oct 20)</strong> and 45 on Oct 21</td></tr>
-        <tr><td><strong>Week 9</strong></td><td>Oct 25 – Oct 29</td><td>Transport Trainee</td><td>60</td><td>Transport NOC induction &amp; B2B circuit monitoring</td></tr>
-        <tr><td><strong>Week 10</strong></td><td>Nov 01 – Nov 05</td><td>Transport Trainee</td><td>51</td><td>International gateway links, B2B circuits &amp; alarms</td></tr>
-        <tr><td><strong>Week 11</strong></td><td><strong>Nov 08 – Nov 12</strong></td><td><strong>Transport Trainee</strong></td><td><strong>40</strong></td><td>Topologies, hardware, A1–A3 alarms, OTDR &amp; Remedy ticketing</td></tr>
-        <tr><td><strong>Week 12</strong></td><td><strong>Nov 15 – Nov 19</strong></td><td><strong>Returned to FTTH</strong></td><td><strong>~90</strong></td><td>~90 distributed tickets alongside evolved FTTH ticketing automation</td></tr>
-        <tr><td><strong>Total</strong></td><td><strong>Oct 11 – Nov 19</strong></td><td><strong>Weeks 7–12</strong></td><td><strong>572</strong></td><td><strong>97.4% SLA Target Compliance</strong></td></tr>
+        <tr><td><strong>Week 7</strong></td><td>Oct 11 – Oct 15</td><td>FTTH Specialist</td><td>138 FTTH</td><td>CCS, Call Centre &amp; Open Access live execution</td></tr>
+        <tr><td><strong>Week 8</strong></td><td>Oct 18 – Oct 22</td><td>FTTH Specialist</td><td>193 FTTH</td><td>Single-shift peak of <strong>97 tickets (Oct 20)</strong> and 45 on Oct 21</td></tr>
+        <tr><td><strong>Week 9</strong></td><td>Oct 25 – Oct 29</td><td>Transport Trainee + Oct 29 FTTH</td><td>0 Trans (31 FTTH)</td><td><strong>0 Transport tickets</strong> (training only); 31 FTTH tickets captured Oct 29</td></tr>
+        <tr><td><strong>Week 10</strong></td><td>Nov 01 – Nov 05</td><td>Transport Trainee</td><td>0 Tickets</td><td><strong>Technical Training &amp; Observation Only — No Tickets Assigned</strong></td></tr>
+        <tr><td><strong>Week 11</strong></td><td><strong>Nov 08 – Nov 12</strong></td><td><strong>Transport Trainee</strong></td><td><strong>0 Tickets</strong></td><td><strong>Technical Training &amp; Observation Only — No Tickets Assigned</strong></td></tr>
+        <tr><td><strong>Week 12</strong></td><td><strong>Nov 15 – Nov 19</strong></td><td><strong>Returned to FTTH</strong></td><td><strong>~90 FTTH</strong></td><td>~90 distributed tickets alongside evolved FTTH ticketing automation</td></tr>
+        <tr><td><strong>Total</strong></td><td><strong>Oct 11 – Nov 19</strong></td><td><strong>Weeks 7–12</strong></td><td><strong>452 FTTH</strong></td><td><strong>0 Transport Tickets | 97.4% SLA Target Compliance</strong></td></tr>
       </tbody>
     </table>
 
@@ -934,31 +934,31 @@ const buildEnglishHtml = () => `<!DOCTYPE html>
     <div style="border-bottom: 2px solid #C0102A; padding-bottom: 6px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
       <div>
         <h1 style="border: none; margin: 0; padding: 0;">7. Operational Analytics &amp; Performance Dashboard (Weeks 7–12)</h1>
-        <p style="font-size: 10.5px; color: #64748B; font-weight: 700; margin: 2px 0 0 0;">Weekly Volume Progression &amp; Category Breakdown (Oct 11 – Nov 19)</p>
+        <p style="font-size: 10.5px; color: #64748B; font-weight: 700; margin: 2px 0 0 0;">FTTH Ticket Metrics (452 Tickets) &amp; Zero-Ticket Transport Training (Oct 11 – Nov 19)</p>
       </div>
-      <span style="background: #E3F0EA; color: #2A6348; padding: 3px 10px; border-radius: 999px; font-weight: 800; font-size: 10.5px;">572 Verified Tasks</span>
+      <span style="background: #E3F0EA; color: #2A6348; padding: 3px 10px; border-radius: 999px; font-weight: 800; font-size: 10.5px;">452 FTTH | Transport: 0</span>
     </div>
 
     <div class="kpi-grid">
-      <div class="kpi-card"><div class="kpi-title">Total Volume</div><div class="kpi-value">${totalTickets}</div><div class="kpi-sub">Weeks 7–12 Verified</div></div>
+      <div class="kpi-card"><div class="kpi-title">Total FTTH Tickets</div><div class="kpi-value">${totalTickets}</div><div class="kpi-sub">W7–8 + Oct 29 + W12</div></div>
       <div class="kpi-card"><div class="kpi-title">Single-Shift Peak</div><div class="kpi-value" style="color: #C0102A;">97</div><div class="kpi-sub" style="color: #64748B;">Oct 20 (Week 8)</div></div>
-      <div class="kpi-card"><div class="kpi-title">Weekly Average</div><div class="kpi-value">95.3</div><div class="kpi-sub" style="color: #64748B;">Tickets / Week (6 Wks)</div></div>
-      <div class="kpi-card"><div class="kpi-title">SLA Compliance</div><div class="kpi-value">97.4%</div><div class="kpi-sub" style="color: #64748B;">Diagnostic Accuracy</div></div>
+      <div class="kpi-card"><div class="kpi-title">Week 12 FTTH Return</div><div class="kpi-value">~90</div><div class="kpi-sub" style="color: #64748B;">With Evolved Automation</div></div>
+      <div class="kpi-card"><div class="kpi-title">Transport Tickets (W9–11)</div><div class="kpi-value">0</div><div class="kpi-sub" style="color: #64748B;">Training Only — No Tickets</div></div>
     </div>
 
     <div class="charts-row">
       <div class="chart-panel">
-        <div class="chart-panel-title"><span>1. Weekly Throughput (Weeks 7–12)</span><span style="color: #C0102A;">Week 12: ~90 FTTH Tickets</span></div>
+        <div class="chart-panel-title"><span>1. FTTH Tickets &amp; Transport Weeks (W7–12)</span><span style="color: #C0102A;">Transport: 0 Tickets</span></div>
         ${buildTimelineSvg(weeklyTimelineEn, false)}
       </div>
       <div class="chart-panel">
-        <div class="chart-panel-title"><span>2. Category Breakdown</span><span style="color:#64748B;">572 Total</span></div>
+        <div class="chart-panel-title"><span>2. FTTH Category Breakdown</span><span style="color:#64748B;">452 FTTH</span></div>
         <div style="display: flex; align-items: center; gap: 10px;">
           <div style="position: relative; width: 112px; height: 112px; flex-shrink: 0;">
             <svg viewBox="0 0 140 140" style="width:100%; height:100%; transform:rotate(-90deg);">${donutCircles}</svg>
             <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;">
-              <span style="font-size:18px; font-weight:900;">572</span>
-              <span style="font-size:8.5px; color:#64748B; font-weight:700;">Cases</span>
+              <span style="font-size:18px; font-weight:900;">452</span>
+              <span style="font-size:8.5px; color:#64748B; font-weight:700;">FTTH</span>
             </div>
           </div>
           <div style="flex:1; font-size:9.5px;">
@@ -970,13 +970,13 @@ const buildEnglishHtml = () => `<!DOCTYPE html>
 
     <div class="telemetry-row">
       <div class="telemetry-box">
-        <div style="font-size:11px; font-weight:800; border-bottom:1px solid #E2E8F0; padding-bottom:4px; margin-bottom:7px;">3. Handling Channels &amp; SLA</div>
+        <div style="font-size:11px; font-weight:800; border-bottom:1px solid #E2E8F0; padding-bottom:4px; margin-bottom:7px;">3. FTTH Handling Channels &amp; SLA</div>
         <div style="font-size:10px; margin-bottom:5px;">
-          <div style="display:flex; justify-content:space-between; font-weight:700;"><span>Direct Internal Handle</span><span style="color:#10B981;">472 (82.5%)</span></div>
+          <div style="display:flex; justify-content:space-between; font-weight:700;"><span>Direct Internal Handle</span><span style="color:#10B981;">373 (82.5%)</span></div>
           <div style="height:6px; background:#E2E8F0; border-radius:999px;"><div style="height:100%; width:82.5%; background:#10B981; border-radius:999px;"></div></div>
         </div>
         <div style="font-size:10px; margin-bottom:5px;">
-          <div style="display:flex; justify-content:space-between; font-weight:700;"><span>Carrier &amp; Advanced Escalations</span><span style="color:#F59E0B;">100 (17.5%)</span></div>
+          <div style="display:flex; justify-content:space-between; font-weight:700;"><span>Carrier &amp; Advanced Escalations</span><span style="color:#F59E0B;">79 (17.5%)</span></div>
           <div style="height:6px; background:#E2E8F0; border-radius:999px;"><div style="height:100%; width:17.5%; background:#F59E0B; border-radius:999px;"></div></div>
         </div>
         <div style="font-size:10px;">

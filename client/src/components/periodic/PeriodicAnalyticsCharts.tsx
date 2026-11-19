@@ -37,9 +37,9 @@ export const PeriodicAnalyticsCharts: React.FC<PeriodicAnalyticsChartsProps> = (
   const timelineDataP2 = [
     { date: isReportAr ? 'أ7 (FTTH)' : 'W7 (FTTH)', tickets: 138 },
     { date: isReportAr ? 'أ8 (FTTH)' : 'W8 (FTTH)', tickets: 193 },
-    { date: isReportAr ? 'أ9 (نقل)' : 'W9 (Trans)', tickets: 60 },
-    { date: isReportAr ? 'أ10 (نقل)' : 'W10 (Trans)', tickets: 51 },
-    { date: isReportAr ? 'أ11 (نقل)' : 'W11 (Trans)', tickets: 40 },
+    { date: isReportAr ? 'أ9 (29/10 FTTH)' : 'W9 (FTTH 29/10)', tickets: 31 },
+    { date: isReportAr ? 'أ10 (نقل: 0)' : 'W10 (Trans: 0)', tickets: 0 },
+    { date: isReportAr ? 'أ11 (نقل: 0)' : 'W11 (Trans: 0)', tickets: 0 },
     { date: isReportAr ? 'أ12 (FTTH)' : 'W12 (FTTH)', tickets: 90 }
   ];
 
@@ -84,59 +84,59 @@ export const PeriodicAnalyticsCharts: React.FC<PeriodicAnalyticsChartsProps> = (
     }
   ];
 
-  // Period 2 Categories across Weeks 7-12 (572 total: 331 W7-8 FTTH + 151 W9-11 Transport + 90 W12 FTTH)
+  // Period 2 Categories across FTTH shifts (452 total: 331 W7-8 + 31 Oct 29 + 90 W12; Transport W9-11 = 0 tickets)
   const shareCategoriesP2 = [
     {
       nameAr: 'CCS (نظام خدمة العملاء والدعم)',
       nameEn: 'CCS (Customer Care Support)',
-      count: 208,
-      percent: 36.4,
+      count: 165,
+      percent: 36.5,
       color: '#0f766e' // Deep Teal
     },
     {
       nameAr: 'Call Centre (إحالات الكول سنتر)',
       nameEn: 'Call Centre Referrals',
-      count: 139,
+      count: 110,
       percent: 24.3,
       color: '#0284c7' // Sky Blue
     },
     {
       nameAr: 'Open Access (النفاذ المفتوح والمشغلين)',
       nameEn: 'Open Access Operators',
-      count: 83,
-      percent: 14.5,
+      count: 66,
+      percent: 14.6,
       color: '#06b6d4' // Cyan
     },
     {
       nameAr: 'Resolved Direct (معالجة وإغلاق فوري)',
       nameEn: 'Resolved Direct Handling',
-      count: 69,
-      percent: 12.1,
+      count: 55,
+      percent: 12.2,
       color: '#10b981' // Emerald
     },
     {
       nameAr: 'TLS (الدعم الفني التخصصي)',
       nameEn: 'TLS (Technical Level Support)',
-      count: 37,
-      percent: 6.5,
+      count: 29,
+      percent: 6.4,
       color: '#6366f1' // Indigo
     },
     {
       nameAr: 'NOC & OSS (مركز العمليات والأنظمة)',
       nameEn: 'NOC & OSS Escalations',
-      count: 36,
-      percent: 6.3,
+      count: 27,
+      percent: 6.0,
       color: '#f59e0b' // Amber
     }
   ];
 
   const shareCategories = isP2 ? shareCategoriesP2 : shareCategoriesP1;
-  const totalTickets = isP2 ? 572 : 244;
+  const totalTickets = isP2 ? 452 : 244;
   const peakTickets = isP2 ? 97 : 57;
   const peakLabel = isP2
-    ? (isReportAr ? 'أعلى يوم عمل (20 أكتوبر)' : 'Single-Shift Peak (Oct 20)')
+    ? (isReportAr ? 'أعلى يوم عمل (20 أكتوبر — أ8)' : 'Single-Shift Peak (Oct 20 — W8)')
     : (isReportAr ? 'ذروة الأداء المسجلة (7 أكتوبر)' : 'Oct 7 Peak Velocity');
-  const avgVelocity = isP2 ? '95.3' : '34.9';
+  const avgVelocity = isP2 ? '~90' : '34.9';
   const slaRate = isP2 ? '97.4%' : '96.8%';
 
   // Donut circumference math (r = 54) -> 2 * PI * 54 = 339.29
@@ -212,18 +212,24 @@ export const PeriodicAnalyticsCharts: React.FC<PeriodicAnalyticsChartsProps> = (
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-start">
         <div className="p-3.5 bg-bg/70 dark:bg-slate-800/40 border border-line rounded-xl print:border-slate-300 print:bg-slate-50/70 shadow-2xs">
           <div className="flex items-center justify-between text-sub mb-1.5">
-            <span className="text-[11px] font-bold">{isReportAr ? 'إجمالي التذاكر' : 'Total Tickets'}</span>
+            <span className="text-[11px] font-bold">
+              {isP2
+                ? (isReportAr ? 'إجمالي تذاكر FTTH' : 'Total FTTH Tickets')
+                : (isReportAr ? 'إجمالي التذاكر' : 'Total Tickets')}
+            </span>
             <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
           </div>
           <div className="text-2xl sm:text-3xl font-black text-ink leading-tight">{totalTickets}</div>
           <div className="text-[10px] font-bold text-emerald-600 mt-1">
-            {isReportAr ? 'فحص وتوثيق مكتمل 100%' : '100% Closed & Verified'}
+            {isP2
+              ? (isReportAr ? 'الأسابيع 7–8 + 29/10 + أسبوع 12' : 'W7–8 + Oct 29 + W12')
+              : (isReportAr ? 'فحص وتوثيق مكتمل 100%' : '100% Closed & Verified')}
           </div>
         </div>
 
         <div className="p-3.5 bg-bg/70 dark:bg-slate-800/40 border border-line rounded-xl print:border-slate-300 print:bg-slate-50/70 shadow-2xs">
           <div className="flex items-center justify-between text-sub mb-1.5">
-            <span className="text-[11px] font-bold">{isReportAr ? 'ذروة الإنتاجية (Peak)' : 'Peak Output'}</span>
+            <span className="text-[11px] font-bold">{isReportAr ? 'ذروة الإنتاجية (Peak)' : 'Single-Shift Peak'}</span>
             <Zap className="w-4 h-4 text-amber-500 shrink-0" />
           </div>
           <div className="text-2xl sm:text-3xl font-black text-accent leading-tight">{peakTickets}</div>
@@ -232,25 +238,37 @@ export const PeriodicAnalyticsCharts: React.FC<PeriodicAnalyticsChartsProps> = (
 
         <div className="p-3.5 bg-bg/70 dark:bg-slate-800/40 border border-line rounded-xl print:border-slate-300 print:bg-slate-50/70 shadow-2xs">
           <div className="flex items-center justify-between text-sub mb-1.5">
-            <span className="text-[11px] font-bold">{isReportAr ? 'متوسط الإنجاز' : 'Avg Velocity'}</span>
+            <span className="text-[11px] font-bold">
+              {isP2
+                ? (isReportAr ? 'تذاكر العودة (الأسبوع 12)' : 'Week 12 FTTH Return')
+                : (isReportAr ? 'متوسط الإنجاز' : 'Avg Velocity')}
+            </span>
             <Activity className="w-4 h-4 text-sky-500 shrink-0" />
           </div>
           <div className="text-2xl sm:text-3xl font-black text-ink leading-tight">{avgVelocity}</div>
           <div className="text-[10px] font-bold text-sub mt-1">
             {isP2
-              ? (isReportAr ? 'تذكرة / أسبوع (6 أسابيع)' : 'Tasks / Week (6 Weeks)')
+              ? (isReportAr ? 'مع تطور أتمتة التذاكر' : 'With Evolved Automation')
               : (isReportAr ? 'تذكرة / مرحلة تشغيلية' : 'Tickets / Active Cycle')}
           </div>
         </div>
 
         <div className="p-3.5 bg-bg/70 dark:bg-slate-800/40 border border-line rounded-xl print:border-slate-300 print:bg-slate-50/70 shadow-2xs">
           <div className="flex items-center justify-between text-sub mb-1.5">
-            <span className="text-[11px] font-bold">{isReportAr ? 'جودة الالتزام (SLA)' : 'SLA Compliance'}</span>
+            <span className="text-[11px] font-bold">
+              {isP2
+                ? (isReportAr ? 'تذاكر الترانزبورت (أ9–11)' : 'Transport Tickets (W9–11)')
+                : (isReportAr ? 'جودة الالتزام (SLA)' : 'SLA Compliance')}
+            </span>
             <CheckCheck className="w-4 h-4 text-purple-500 shrink-0" />
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-ink leading-tight">{slaRate}</div>
+          <div className="text-2xl sm:text-3xl font-black text-ink leading-tight">
+            {isP2 ? '0' : slaRate}
+          </div>
           <div className="text-[10px] font-bold text-sub mt-1">
-            {isReportAr ? 'دقة التشخيص والتصعيد' : 'Diagnostic Accuracy'}
+            {isP2
+              ? (isReportAr ? 'تدريب ومشاهدة دون تذاكر' : 'Training Only — No Tickets')
+              : (isReportAr ? 'دقة التشخيص والتصعيد' : 'Diagnostic Accuracy')}
           </div>
         </div>
       </div>
@@ -382,10 +400,10 @@ export const PeriodicAnalyticsCharts: React.FC<PeriodicAnalyticsChartsProps> = (
           <div className="text-[10px] text-sub font-bold border-t border-line/50 pt-1.5 mt-1">
             {isReportAr
               ? (isP2
-                  ? '* التوزيع الأسبوعي للأسابيع 7–12 (11/10 إلى 19/11): ذروة يومية 97 تذكرة (20/10)، وعودة إلى FTTH في الأسبوع 12 (~90 تذكرة) مع تطور أتمتة تذاكر القسم.'
+                  ? '* التذاكر تخص قسم FTTH فقط (452 تذكرة، ذروة 97 في 20/10، وعودة ~90 في أ12)؛ أما قسم الترانزبورت (أ9–11) فكان تدريباً ومشاهدة دون استلام تذاكر (0).'
                   : '* يعكس المنحنى تطور الإنتاجية التصاعدي عبر مراحل التقييم المعتمدة في قسم FTTH.')
               : (isP2
-                  ? '* Weekly throughput across Weeks 7–12 (Oct 11 – Nov 19): Oct 20 single-shift peak (97 tickets) and Week 12 FTTH return (~90 tickets) alongside evolved ticketing automation.'
+                  ? '* All tickets belong to FTTH Operations only (452 total, Oct 20 peak 97, W12 return ~90); Transport Weeks 9–11 were training & observation only (0 tickets).'
                   : '* Curve reflects operational throughput progression across verified FTTH stages.')}
           </div>
         </div>
@@ -485,7 +503,7 @@ export const PeriodicAnalyticsCharts: React.FC<PeriodicAnalyticsChartsProps> = (
                 </span>
                 <span className="font-black text-emerald-600">
                   {isP2
-                    ? (isReportAr ? '472 تذكرة (82.5%)' : '472 Tickets (82.5%)')
+                    ? (isReportAr ? '373 تذكرة (82.5%)' : '373 Tickets (82.5%)')
                     : (isReportAr ? '213 تذكرة (87.3%)' : '213 Tickets (87.3%)')}
                 </span>
               </div>
@@ -506,7 +524,7 @@ export const PeriodicAnalyticsCharts: React.FC<PeriodicAnalyticsChartsProps> = (
                 </span>
                 <span className="font-black text-amber-600">
                   {isP2
-                    ? (isReportAr ? '100 تذكرة (17.5%)' : '100 Tickets (17.5%)')
+                    ? (isReportAr ? '79 تذكرة (17.5%)' : '79 Tickets (17.5%)')
                     : (isReportAr ? '31 تذكرة (12.7%)' : '31 Tickets (12.7%)')}
                 </span>
               </div>
