@@ -82,13 +82,13 @@ export const DEFAULT_REPORT_P2_AR: FreshPeriodicReport = {
 توثق الجداول التالية الأرقام الفعلية لتذاكر **قسم FTTH فقط** من لقطات التسليم الميدانية (\`Handover Snapshots\`) بمجموع **452 تذكرة FTTH** موزعة عبر مراحل العمل في القسم، بينما كانت أسابيع التدريب في **قسم الترانزبورت (0 تذاكر)** مخصصة للتدريب النظري والمشاهدة الحية فقط:
 
 ### لقطات أداة التسليم الموثقة بالصور (Snapshots — قسم FTTH)
-| التاريخ | إجمالي اليوم | \`CCS\` | \`Call Centre\` | \`Open Access\` | \`Resolved\` | \`TLS\` | \`Pending to NOC\` | \`OSS\` | \`NAS\` | أمثلة وملاحظات موثقة |
+| التاريخ | الإجمالي | CCS | Call Centre | Open Access | Resolved | TLS | NOC | OSS | NAS | ملاحظات موثقة |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
 | **11/10** | **40** | 10 | 15 | 7 | 6 | 0 | 2 | 0 | 0 | بداية الأسبوع 7 (لقطة مسائية موثقة) |
 | **19/10** | **16** | 6 | 6 | 2 | 2 | 0 | 0 | 0 | 0 | لقطة موثقة — توازن تشغيلي ودقة 100% |
-| **20/10** | **97** | 34 | 30 | 9 | 16 | 3 | 2 | 1 | 2 | **أعلى ذروة يومية** (مثل التذكرة \`INC000003443563\`) |
-| **21/10** | **45** | 25 | 11 | 6 | 3 | 0 | 0 | 0 | 0 | ارتفعت من \`36\` (10:28 م) إلى \`45\` (11:57 م) |
-| **29/10** | **31** | 16 | 3 | 5 | 3 | 2 | 0 | 2 | 0 | تغطية FTTH موثقة بالصورة — تذاكر النقل = 0 (\`INC000003464990\`–\`INC000003461185\`) |
+| **20/10** | **97** | 34 | 30 | 9 | 16 | 3 | 2 | 1 | 2 | **أعلى ذروة يومية** (مثل INC000003443563) |
+| **21/10** | **45** | 25 | 11 | 6 | 3 | 0 | 0 | 0 | 0 | ارتفعت من 36 (10:28 م) إلى 45 (11:57 م) |
+| **29/10** | **31** | 16 | 3 | 5 | 3 | 2 | 0 | 2 | 0 | تغطية FTTH موثقة — تذاكر النقل = 0 (INC000003464990–61185) |
 
 ### ملخص الأسابيع الستة الكامل (إجمالي تذاكر FTTH = 452 | تذاكر الترانزبورت = 0)
 | الفترة الأسبوعية | التواريخ | القسم والتكليف | عدد التذاكر المستلمة | تفاصيل المرحلة |
@@ -99,7 +99,7 @@ export const DEFAULT_REPORT_P2_AR: FreshPeriodicReport = {
 | **الأسبوع 10** | 1/11 – 5/11 | \`Transport\` (متدرب B2B) | 0 تذاكر | **تدريب هندسي ومشاهدة حية دون استلام تذاكر** — دراسة \`DWDM/OTN/MPLS\` و\`SNFN\` |
 | **الأسبوع 11** | **8/11 – 12/11** | **\`Transport\` (متدرب B2B)** | **0 تذاكر** | **تدريب هندسي ومشاهدة حية دون استلام تذاكر** — المخططات، الأجهزة، \`OTDR\`، \`A1–A3\`، و\`Remedy\` |
 | **الأسبوع 12** | **15/11 – 19/11** | **العودة إلى \`FTTH\` (موظف فعلي)** | **قرابة 90 تذكرة** | العودة لقسم \`FTTH\` ومعالجة قرابة 90 تذكرة موزعة بالتوازي مع تطور أتمتة تذاكر القسم |
-| **الإجمالي** | **11/10 – 19/11** | **الأسابيع 7 إلى 12** | **452 تذكرة FTTH** | **0 تذاكر في قسم الترانزبورت | التزام تشغيلي (\`SLA\`) = 97.4%** |
+| **الإجمالي** | **11/10 – 19/11** | **الأسابيع 7 إلى 12** | **452 تذكرة FTTH** | **0 تذاكر في قسم الترانزبورت — التزام تشغيلي (\`SLA\`) = 97.4%** |
 
 ### التوزيع الإجمالي لتذاكر قسم FTTH حسب التصنيف (452 تذكرة)
 | م | التصنيف (\`Category\`) | الإجمالي | النسبة |
@@ -340,24 +340,24 @@ Live ticket execution centered on empirical verification across \`Remedy\`, \`MO
 ## 1.2 FTTH Handover Snapshot Breakdown & Six-Week Summary (452 FTTH Tickets | 0 Transport Tickets)
 
 ### Photographed Shift Handover Snapshots (FTTH Only)
-| Date | Total | \`CCS\` | \`Call Centre\` | \`Open Access\` | \`Resolved\` | \`TLS\` | \`Pending to NOC\` | \`OSS\` | \`NAS\` | Observed Record Highlights |
+| Date | Total | CCS | Call Centre | Open Access | Resolved | TLS | NOC | OSS | NAS | Notes |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
 | **Oct 11** | **40** | 10 | 15 | 7 | 6 | 0 | 2 | 0 | 0 | Verified Week 7 FTTH handover baseline |
-| **Oct 19** | **16** | 6 | 6 | 2 | 2 | 0 | 0 | 0 | 0 | Balanced mid-shift queue with 100% accuracy |
-| **Oct 20** | **97** | 34 | 30 | 9 | 16 | 3 | 2 | 1 | 2 | **All-time peak** (sample ID: \`INC000003443563\`) |
-| **Oct 21** | **45** | 25 | 11 | 6 | 3 | 0 | 0 | 0 | 0 | Progressed from \`36\` (10:28 PM) to \`45\` (11:57 PM) |
-| **Oct 29** | **31** | 16 | 3 | 5 | 3 | 2 | 0 | 2 | 0 | Documented FTTH handover shift — Transport tickets = 0 (\`INC000003464990\`–\`INC000003461185\`) |
+| **Oct 19** | **16** | 6 | 6 | 2 | 2 | 0 | 0 | 0 | 0 | Balanced mid-shift queue (100% accuracy) |
+| **Oct 20** | **97** | 34 | 30 | 9 | 16 | 3 | 2 | 1 | 2 | **All-time peak** — sample INC000003443563 |
+| **Oct 21** | **45** | 25 | 11 | 6 | 3 | 0 | 0 | 0 | 0 | Progressed from 36 (10:28 PM) to 45 (11:57 PM) |
+| **Oct 29** | **31** | 16 | 3 | 5 | 3 | 2 | 0 | 2 | 0 | FTTH shift (Transport = 0); INC000003464990–61185 |
 
 ### Six-Week Consolidated Activity Summary (452 FTTH Tickets | 0 Transport Tickets)
-| Week | Dates | Assignment | Tickets Handled | Operational Summary |
+| Week | Dates | Assignment | Tickets | Operational Summary |
 | --- | --- | --- | ---: | --- |
-| **Week 7** | Oct 11 – Oct 15 | \`FTTH\` Specialist | 138 FTTH | Full live ticket execution across \`CCS\`, \`Call Centre\`, and \`Open Access\` |
-| **Week 8** | Oct 18 – Oct 22 | \`FTTH\` Specialist | 193 FTTH | Peak throughput including **97 tickets on Oct 20** and 45 on Oct 21 |
-| **Week 9** | Oct 25 – Oct 29 | \`Transport\` Trainee + Oct 29 FTTH | 0 Trans (31 FTTH) | **0 Transport tickets** (training & observation only); 31 FTTH tickets captured Oct 29 |
-| **Week 10** | Nov 01 – Nov 05 | \`Transport\` Trainee | 0 Tickets | **Technical Training & Observation Only — No Tickets Assigned** (\`DWDM/OTN/MPLS\`, \`SNFN\`) |
-| **Week 11** | **Nov 08 – Nov 12** | **\`Transport\` Trainee** | **0 Tickets** | **Technical Training & Observation Only — No Tickets Assigned** (Topologies, \`OTDR\`, \`A1–A3\`, \`Remedy\`) |
-| **Week 12** | **Nov 15 – Nov 19** | **Returned to \`FTTH\`** | **~90 FTTH** | Handled ~90 distributed tickets alongside evolved FTTH ticketing automation |
-| **Total** | **Oct 11 – Nov 19** | **Weeks 7–12** | **452 FTTH** | **0 Transport Tickets Assigned | 97.4% SLA Target Compliance** |
+| **Week 7** | Oct 11–15 | \`FTTH\` Specialist | 138 FTTH | Full live ticket execution across \`CCS\`, \`Call Centre\`, and \`Open Access\` |
+| **Week 8** | Oct 18–22 | \`FTTH\` Specialist | 193 FTTH | Peak throughput including **97 tickets on Oct 20** and 45 on Oct 21 |
+| **Week 9** | Oct 25–29 | \`Transport\` Trainee + Oct 29 FTTH | 0 Trans (31 FTTH) | **0 Transport tickets** (training & observation only); 31 FTTH tickets captured Oct 29 |
+| **Week 10** | Nov 01–05 | \`Transport\` Trainee | 0 Tickets | **Technical Training & Observation Only — No Tickets Assigned** (\`DWDM/OTN/MPLS\`, \`SNFN\`) |
+| **Week 11** | **Nov 08–12** | **\`Transport\` Trainee** | **0 Tickets** | **Technical Training & Observation Only — No Tickets Assigned** (Topologies, \`OTDR\`, \`A1–A3\`, \`Remedy\`) |
+| **Week 12** | **Nov 15–19** | **Returned to \`FTTH\`** | **~90 FTTH** | Handled ~90 distributed tickets alongside evolved FTTH ticketing automation |
+| **Total** | **Oct 11–Nov 19** | **Weeks 7–12** | **452 FTTH** | **0 Transport Tickets Assigned — 97.4% SLA Target Compliance** |
 
 ### FTTH Category Distribution (452 Verified Cases)
 | # | Category | Total | Share |

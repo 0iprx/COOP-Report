@@ -1122,8 +1122,10 @@ html.dark .btn-primary:hover { background: #BF3349; }
 
 /* ── Report text ─────────────────────────────────────────── */
 .rt-doc { font-size: 0.9375rem; line-height: 1.85; color: color-mix(in srgb, var(--ink) 92%, transparent); text-align: start; }
+.rt-doc.is-en { font-family: 'Segoe UI', 'Inter', 'IBM Plex Sans Arabic', system-ui, -apple-system, sans-serif; line-height: 1.7; }
 .rt-doc > :first-child, .rt-doc > .rt-keep:first-child > :first-child { margin-top: 0; }
 .rt-p { margin: 0 0 0.85em; text-align: justify; text-justify: inter-word; }
+.rt-doc.is-en .rt-p { text-align: left; text-justify: auto; }
 .rt-strong { font-weight: 600; color: var(--ink); }
 .rt-term { font-weight: 600; color: var(--ink); unicode-bidi: isolate; }
 .rt-latin { unicode-bidi: isolate; }
@@ -1162,9 +1164,18 @@ html.dark .btn-primary:hover { background: #BF3349; }
 .rt-table .al-start { text-align: start; }
 .rt-table .al-end { text-align: end; }
 .rt-table .al-center { text-align: center; }
+.rt-table .rt-term.is-short, .rt-table .rt-latin.is-short { white-space: normal; }
+.rt-table.is-wide { font-size: 0.75rem; line-height: 1.45; }
+.rt-table.is-wide th, .rt-table.is-wide td { padding: 0.4em 0.45em; }
+.rt-table.is-wide th:nth-child(1),
+.rt-table.is-wide td:nth-child(1),
+.rt-table.is-wide th:nth-child(2),
+.rt-table.is-wide td:nth-child(2),
+.rt-table.is-wide td.al-end { white-space: nowrap; }
 
 .rt-hr { margin: 1.8em 0; border: 0; border-top: 1px solid var(--line); }
 .rt-charts { margin: 1.5em 0; }
+.rt-visuals { margin: 1.25em 0; }
 
 /* ── Endorsement ─────────────────────────────────────────── */
 .rp-sign { margin-top: 12mm; padding-top: 6mm; border-top: 1px solid var(--line); break-inside: avoid; page-break-inside: avoid; }
@@ -1248,14 +1259,78 @@ html.dark .btn-primary:hover { background: #BF3349; }
 }
 
 @media print {
+  /* Override aggressive global word-break so tables and paragraphs never split letter-by-letter */
+  #periodic-paper-view,
+  #periodic-paper-view *,
+  #report-paper-view,
+  #report-paper-view * {
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+  }
+
+  /* Clean English LTR print typography */
+  #periodic-paper-view[dir="ltr"],
+  #periodic-paper-view .rt-doc.is-en {
+    font-family: 'Segoe UI', 'Inter', 'IBM Plex Sans Arabic', system-ui, -apple-system, sans-serif !important;
+  }
+  #periodic-paper-view .rt-doc.is-en {
+    font-size: 9.75pt !important;
+    line-height: 1.62 !important;
+  }
+  #periodic-paper-view .rt-doc.is-en .rt-p { text-align: left !important; text-justify: auto !important; }
+  #periodic-paper-view .rt-doc.is-en .rt-h1 { font-size: 13pt !important; }
+  #periodic-paper-view .rt-doc.is-en .rt-h2 { font-size: 11pt !important; }
+  #periodic-paper-view .rt-doc.is-en .rt-h3 { font-size: 9.8pt !important; }
+
   /* Report tables: undo the generic print table rules for the periodic report */
   #periodic-paper-view .rt-table th,
   #periodic-paper-view .rt-table td {
     border: 0 !important;
     border-bottom: 1px solid #DDD8CD !important;
-    padding: 1.6mm 2.6mm !important;
-    font-size: 9pt !important;
-    line-height: 1.55 !important;
+    padding: 1.5mm 2.2mm !important;
+    font-size: 8.6pt !important;
+    line-height: 1.48 !important;
+    word-break: normal !important;
+  }
+  #periodic-paper-view .rt-table .rt-term.is-short,
+  #periodic-paper-view .rt-table .rt-latin.is-short,
+  #report-paper-view .rt-table .rt-term.is-short,
+  #report-paper-view .rt-table .rt-latin.is-short {
+    white-space: normal !important;
+  }
+  #periodic-paper-view .rt-table.is-medium th,
+  #periodic-paper-view .rt-table.is-medium td {
+    padding: 1.4mm 1.8mm !important;
+    font-size: 8.2pt !important;
+    line-height: 1.42 !important;
+  }
+  #periodic-paper-view .rt-table.is-medium th:nth-child(1),
+  #periodic-paper-view .rt-table.is-medium td:nth-child(1),
+  #periodic-paper-view .rt-table.is-medium td:nth-child(2) {
+    white-space: nowrap !important;
+  }
+  #periodic-paper-view .rt-table.is-wide th,
+  #periodic-paper-view .rt-table.is-wide td {
+    padding: 1.2mm 1.2mm !important;
+    font-size: 7.4pt !important;
+    line-height: 1.35 !important;
+    word-break: normal !important;
+  }
+  #periodic-paper-view .rt-table.is-wide th {
+    white-space: normal !important;
+    vertical-align: bottom !important;
+  }
+  #periodic-paper-view .rt-table.is-wide th:nth-child(1),
+  #periodic-paper-view .rt-table.is-wide td:nth-child(1),
+  #periodic-paper-view .rt-table.is-wide th:nth-child(2),
+  #periodic-paper-view .rt-table.is-wide td:nth-child(2),
+  #periodic-paper-view .rt-table.is-wide td.al-end {
+    white-space: nowrap !important;
+  }
+  #periodic-paper-view .rt-table.is-wide th:last-child,
+  #periodic-paper-view .rt-table.is-wide td:last-child {
+    min-width: 36mm !important;
+    white-space: normal !important;
   }
   #periodic-paper-view .rt-table th {
     background: #F4F1EA !important;
@@ -1274,8 +1349,54 @@ html.dark .btn-primary:hover { background: #BF3349; }
   #periodic-paper-view .rt-table .al-center { text-align: center !important; }
   #periodic-paper-view .rt-table .al-start { text-align: start !important; }
 
-  /* Analytics dashboard must fit on its own page */
+  /* Transport diagrams and hardware plates flow naturally without .rt-charts zoom shrinkage */
+  #periodic-paper-view .rt-visuals { margin: 3mm 0 !important; }
+  #periodic-paper-view .rt-visuals .rt-plates-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 3mm !important;
+  }
+  #periodic-paper-view .rt-visuals figure {
+    border: 1px solid #CBD5E1 !important;
+    border-radius: 8px !important;
+    background: #FFFFFF !important;
+    padding: 3mm !important;
+    margin-bottom: 3mm !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+  #periodic-paper-view .rt-visuals .rt-plate-frame {
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 6px !important;
+  }
+  #periodic-paper-view .rt-visuals .rt-plate-chip {
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 4px !important;
+    background: #F8FAFC !important;
+  }
+
+  /* Analytics dashboard must fit on its own page with intact 4-col KPI grid & framed cards */
   #periodic-paper-view .rt-charts { zoom: 0.86; break-inside: avoid; margin: 0 !important; }
+  #periodic-paper-view #report-analytics-charts-section .rt-kpi-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 2.5mm !important;
+  }
+  #periodic-paper-view #report-analytics-charts-section .rt-charts-main-grid {
+    display: grid !important;
+    grid-template-columns: 1.25fr 1fr !important;
+    gap: 3mm !important;
+  }
+  #periodic-paper-view #report-analytics-charts-section .rt-chart-card {
+    border: 1px solid #CBD5E1 !important;
+    border-radius: 8px !important;
+    background: #F8FAFC !important;
+  }
+  #periodic-paper-view #report-analytics-charts-section .rt-mini-card {
+    border: 1px solid #CBD5E1 !important;
+    border-radius: 6px !important;
+    background: #FFFFFF !important;
+  }
 }
 
 /* Short English terms never split across lines inside Arabic text */
@@ -1416,6 +1537,7 @@ html.dark .btn-primary:hover { background: #BF3349; }
   #report-paper-view .rt-table td {
     border: 0 !important; border-bottom: 1px solid #DDD8CD !important;
     padding: 1.6mm 2.4mm !important; font-size: 9pt !important; line-height: 1.55 !important;
+    word-break: normal !important;
   }
   #report-paper-view .rt-table th { background: #F4F1EA !important; color: #55535C !important; font-weight: 600 !important; text-transform: none !important; border-bottom: 1.2px solid #8F8C95 !important; }
   #report-paper-view .rt-table tr.is-total td { font-weight: 700 !important; background: #F4F1EA !important; border-top: 1.2px solid #8F8C95 !important; border-bottom: 0 !important; }

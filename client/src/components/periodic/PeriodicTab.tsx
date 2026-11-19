@@ -33,8 +33,8 @@ import {
 
 const STORAGE_KEY_FTTH_AR = 'coop_ftth_periodic_report_v10_ar';
 const STORAGE_KEY_FTTH_EN = 'coop_ftth_periodic_report_v10_en';
-const STORAGE_KEY_P2_AR = 'coop_periodic_report_p2_v6_ar';
-const STORAGE_KEY_P2_EN = 'coop_periodic_report_p2_v6_en';
+const STORAGE_KEY_P2_AR = 'coop_periodic_report_p2_v7_ar';
+const STORAGE_KEY_P2_EN = 'coop_periodic_report_p2_v7_en';
 const STORAGE_KEY_REPORT_LANG = 'coop_ftth_report_lang_preference_v1';
 const STORAGE_KEY_SELECTED_PERIOD = 'coop_selected_periodic_report_v1';
 
@@ -1345,7 +1345,7 @@ export const PeriodicTab: React.FC = () => {
         </div>
 
         {/* ── Printable paper: cover page + report body ─────────────── */}
-        <div id="periodic-paper-view" className="rp-paper" dir={isReportAr ? 'rtl' : 'ltr'}>
+        <div id="periodic-paper-view" className="rp-paper" dir={isReportAr ? 'rtl' : 'ltr'} lang={isReportAr ? 'ar' : 'en'}>
           {/* ══ Cover page ══ */}
           <section id="periodic-cover-page" className="rp-cover">
             <div className="rp-cover-head">
@@ -1360,7 +1360,7 @@ export const PeriodicTab: React.FC = () => {
                 <div className="rp-org-text">
                   <span className="rp-org-name">{isReportAr ? 'المملكة العربية السعودية' : 'Kingdom of Saudi Arabia'}</span>
                   <span className="rp-org-sub">{isReportAr ? 'وزارة التعليم' : 'Ministry of Education'}</span>
-                  <span className="rp-org-sub">{profile.trainingUnit || (isReportAr ? 'الكلية / الجامعة' : 'University / College')}</span>
+                  <span className="rp-org-sub"><bdi>{profile.trainingUnit || (isReportAr ? 'الكلية / الجامعة' : 'University / College')}</bdi></span>
                 </div>
               </div>
 
@@ -1390,7 +1390,7 @@ export const PeriodicTab: React.FC = () => {
               <dl className="rp-meta">
                 <div className="rp-meta-item">
                   <dt>{isReportAr ? 'اسم المتدرب' : 'Trainee'}</dt>
-                  <dd>{normalizeStudentName(profile.studentName) || '—'}</dd>
+                  <dd><bdi>{normalizeStudentName(profile.studentName) || '—'}</bdi></dd>
                 </div>
                 <div className="rp-meta-item">
                   <dt>{isReportAr ? 'الرقم الأكاديمي' : 'Student ID'}</dt>
@@ -1404,7 +1404,7 @@ export const PeriodicTab: React.FC = () => {
                 </div>
                 <div className="rp-meta-item">
                   <dt>{isReportAr ? 'المشرف الميداني' : 'Field supervisor'}</dt>
-                  <dd>{profile.responsibleName || '—'}</dd>
+                  <dd><bdi>{profile.responsibleName || '—'}</bdi></dd>
                 </div>
                 <div className="rp-meta-item is-wide">
                   <dt>{isReportAr ? 'الصفة ونطاق التكليف' : 'Role during the period'}</dt>
@@ -1457,7 +1457,7 @@ export const PeriodicTab: React.FC = () => {
                     ? 'Second periodic report — FTTH operations and transport networks'
                     : 'First periodic report — FTTH operations'}
               </span>
-              <span>{profile.trainingUnit || ''}</span>
+              <span><bdi>{profile.trainingUnit || ''}</bdi></span>
             </div>
           </section>
 
@@ -1478,19 +1478,19 @@ export const PeriodicTab: React.FC = () => {
               <div className="rp-sign-grid">
                 <div className="rp-sign-cell">
                   <span className="rp-sign-role">{isReportAr ? 'المتدرب' : 'Trainee'}</span>
-                  <span className="rp-sign-name">{normalizeStudentName(profile.studentName) || '—'}</span>
+                  <span className="rp-sign-name"><bdi>{normalizeStudentName(profile.studentName) || '—'}</bdi></span>
                   <span className="rp-sign-line" aria-hidden="true" />
                   <span className="rp-sign-caption">{isReportAr ? 'التوقيع' : 'Signature'}</span>
                 </div>
                 <div className="rp-sign-cell">
                   <span className="rp-sign-role">{isReportAr ? 'المشرف الميداني' : 'Field supervisor'}</span>
-                  <span className="rp-sign-name">{profile.responsibleName || '—'}</span>
+                  <span className="rp-sign-name"><bdi>{profile.responsibleName || '—'}</bdi></span>
                   <span className="rp-sign-line" aria-hidden="true" />
                   <span className="rp-sign-caption">{isReportAr ? 'التوقيع' : 'Signature'}</span>
                 </div>
                 <div className="rp-sign-cell">
                   <span className="rp-sign-role">{isReportAr ? 'المشرف الأكاديمي' : 'Academic supervisor'}</span>
-                  <span className="rp-sign-name">{profile.supervisorName || '—'}</span>
+                  <span className="rp-sign-name"><bdi>{profile.supervisorName || '—'}</bdi></span>
                   <span className="rp-sign-line" aria-hidden="true" />
                   <span className="rp-sign-caption">{isReportAr ? 'التوقيع' : 'Signature'}</span>
                 </div>

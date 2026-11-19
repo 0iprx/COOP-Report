@@ -71,8 +71,9 @@ const isolateLatin = (text: string, keyBase: string): React.ReactNode[] => {
     if (!/[A-Za-z]/.test(core)) continue;
     const start = m.index + a;
     if (start > last) out.push(text.slice(last, start));
+    const keepTogether = core.length <= 20 && !/\s/.test(core);
     out.push(
-      <bdi key={`${keyBase}-l${start}`} dir="ltr" className={core.length <= 28 ? 'rt-latin is-short' : 'rt-latin'}>
+      <bdi key={`${keyBase}-l${start}`} dir="ltr" className={keepTogether ? 'rt-latin is-short' : 'rt-latin'}>
         {core}
       </bdi>
     );
@@ -102,8 +103,9 @@ const formatInline = (raw: string, isAr: boolean, keyBase = 'i'): React.ReactNod
     if (part.startsWith('`') && part.endsWith('`') && part.length > 2) {
       const inner = part.slice(1, -1).trim();
       const hasArabic = /[؀-ۿ]/.test(inner);
+      const keepTogether = isAr && !hasArabic && inner.length <= 20 && !/\s/.test(inner);
       return (
-        <bdi key={key} dir={hasArabic ? 'auto' : 'ltr'} className={inner.length <= 28 ? 'rt-term is-short' : 'rt-term'}>
+        <bdi key={key} dir={hasArabic ? 'auto' : 'ltr'} className={keepTogether ? 'rt-term is-short' : 'rt-term'}>
           {inner}
         </bdi>
       );
@@ -282,10 +284,12 @@ export const AcademicMarkdownView: React.FC<AcademicMarkdownViewProps> = ({
       return b.rows.length > 0 && nums >= Math.ceil(b.rows.length * 0.6) ? 'end' : 'start';
     });
     const compact = header.length <= 2;
+    const medium = header.length >= 4 && header.length <= 6;
+    const wide = header.length >= 7;
     const small = b.rows.length <= 14;
     return (
-      <div className={`rt-table-wrap ${compact ? 'is-compact' : ''} ${small ? 'is-keep' : ''}`}>
-        <table className="rt-table">
+      <div className={`rt-table-wrap ${compact ? 'is-compact' : ''} ${medium ? 'is-medium' : ''} ${wide ? 'is-wide' : ''} ${small ? 'is-keep' : ''}`}>
+        <table className={`rt-table ${wide ? 'is-wide' : medium ? 'is-medium' : ''}`}>
           <thead>
             <tr>
               {header.map((h, c) => (
@@ -325,13 +329,13 @@ export const AcademicMarkdownView: React.FC<AcademicMarkdownViewProps> = ({
         );
       case 'transport-diagrams':
         return (
-          <div key={`t-arch-${b.line}`} className="rt-charts">
+          <div key={`t-arch-${b.line}`} className="rt-visuals">
             <TransportArchitectureDiagrams isReportAr={isAr} />
           </div>
         );
       case 'transport-hardware':
         return (
-          <div key={`t-hw-${b.line}`} className="rt-charts">
+          <div key={`t-hw-${b.line}`} className="rt-visuals">
             <TransportHardwareVisuals isReportAr={isAr} />
           </div>
         );

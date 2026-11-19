@@ -147,7 +147,7 @@ export const PeriodicAnalyticsCharts: React.FC<PeriodicAnalyticsChartsProps> = (
   const chartW = 560;
   const chartH = 180;
   const maxVal = isP2 ? 215 : 65;
-  const padX = 35;
+  const padX = 38;
   const usableW = chartW - padX * 2;
   const usableH = 120;
 
@@ -209,8 +209,8 @@ export const PeriodicAnalyticsCharts: React.FC<PeriodicAnalyticsChartsProps> = (
       </div>
 
       {/* ── 1. Top Executive Metric Cards (KPI Grid) ────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-start">
-        <div className="p-3.5 bg-bg/70 dark:bg-slate-800/40 border border-line rounded-xl print:border-slate-300 print:bg-slate-50/70 shadow-2xs">
+      <div className="rt-kpi-grid grid grid-cols-2 sm:grid-cols-4 gap-3 text-start">
+        <div className="rt-chart-card p-3.5 bg-bg/70 dark:bg-slate-800/40 border border-line rounded-xl print:border-slate-300 print:bg-slate-50/70 shadow-2xs">
           <div className="flex items-center justify-between text-sub mb-1.5">
             <span className="text-[11px] font-bold">
               {isP2
@@ -227,7 +227,7 @@ export const PeriodicAnalyticsCharts: React.FC<PeriodicAnalyticsChartsProps> = (
           </div>
         </div>
 
-        <div className="p-3.5 bg-bg/70 dark:bg-slate-800/40 border border-line rounded-xl print:border-slate-300 print:bg-slate-50/70 shadow-2xs">
+        <div className="rt-chart-card p-3.5 bg-bg/70 dark:bg-slate-800/40 border border-line rounded-xl print:border-slate-300 print:bg-slate-50/70 shadow-2xs">
           <div className="flex items-center justify-between text-sub mb-1.5">
             <span className="text-[11px] font-bold">{isReportAr ? 'ذروة الإنتاجية (Peak)' : 'Single-Shift Peak'}</span>
             <Zap className="w-4 h-4 text-amber-500 shrink-0" />
@@ -236,7 +236,7 @@ export const PeriodicAnalyticsCharts: React.FC<PeriodicAnalyticsChartsProps> = (
           <div className="text-[10px] font-bold text-sub mt-1">{peakLabel}</div>
         </div>
 
-        <div className="p-3.5 bg-bg/70 dark:bg-slate-800/40 border border-line rounded-xl print:border-slate-300 print:bg-slate-50/70 shadow-2xs">
+        <div className="rt-chart-card p-3.5 bg-bg/70 dark:bg-slate-800/40 border border-line rounded-xl print:border-slate-300 print:bg-slate-50/70 shadow-2xs">
           <div className="flex items-center justify-between text-sub mb-1.5">
             <span className="text-[11px] font-bold">
               {isP2
@@ -253,7 +253,7 @@ export const PeriodicAnalyticsCharts: React.FC<PeriodicAnalyticsChartsProps> = (
           </div>
         </div>
 
-        <div className="p-3.5 bg-bg/70 dark:bg-slate-800/40 border border-line rounded-xl print:border-slate-300 print:bg-slate-50/70 shadow-2xs">
+        <div className="rt-chart-card p-3.5 bg-bg/70 dark:bg-slate-800/40 border border-line rounded-xl print:border-slate-300 print:bg-slate-50/70 shadow-2xs">
           <div className="flex items-center justify-between text-sub mb-1.5">
             <span className="text-[11px] font-bold">
               {isP2
@@ -274,10 +274,10 @@ export const PeriodicAnalyticsCharts: React.FC<PeriodicAnalyticsChartsProps> = (
       </div>
 
       {/* ── 2. Middle Row: Progression Over Time + Donut Shares ───── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 text-start items-stretch">
+      <div className="rt-charts-main-grid grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 text-start items-stretch">
         
         {/* Left/Right: Timeline Area & Line Chart */}
-        <div className="lg:col-span-7 p-4 sm:p-5 bg-bg/70 dark:bg-slate-800/40 border border-line rounded-xl print:border-slate-300 print:bg-slate-50/70 flex flex-col justify-between shadow-2xs">
+        <div className="rt-chart-card lg:col-span-7 p-4 sm:p-5 bg-bg/70 dark:bg-slate-800/40 border border-line rounded-xl print:border-slate-300 print:bg-slate-50/70 flex flex-col justify-between shadow-2xs">
           <div className="flex items-center justify-between pb-2 mb-2 border-b border-line/60">
             <div className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-accent" />
@@ -323,7 +323,7 @@ export const PeriodicAnalyticsCharts: React.FC<PeriodicAnalyticsChartsProps> = (
                       strokeWidth="0.8"
                     />
                     <text
-                      x={isReportAr ? chartW - 22 : 14}
+                      x={isReportAr ? chartW - 28 : 28}
                       y={y + 3.5}
                       textAnchor={isReportAr ? 'start' : 'end'}
                       fontSize="9"
@@ -409,7 +409,7 @@ export const PeriodicAnalyticsCharts: React.FC<PeriodicAnalyticsChartsProps> = (
         </div>
 
         {/* Right/Left: Shares Donut Chart & Full Legend */}
-        <div className="lg:col-span-5 p-4 sm:p-5 bg-bg/70 dark:bg-slate-800/40 border border-line rounded-xl print:border-slate-300 print:bg-slate-50/70 flex flex-col justify-between shadow-2xs">
+        <div className="rt-chart-card lg:col-span-5 p-4 sm:p-5 bg-bg/70 dark:bg-slate-800/40 border border-line rounded-xl print:border-slate-300 print:bg-slate-50/70 flex flex-col justify-between shadow-2xs">
           <div className="flex items-center justify-between pb-2 mb-2 border-b border-line/60">
             <div className="flex items-center gap-2">
               <PieChart className="w-4 h-4 text-accent" />
@@ -422,7 +422,7 @@ export const PeriodicAnalyticsCharts: React.FC<PeriodicAnalyticsChartsProps> = (
             </span>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center gap-4 my-auto">
+          <div className="flex flex-col sm:flex-row print:flex-row items-center gap-4 my-auto">
             {/* SVG Donut Chart */}
             <div className="relative w-36 h-36 sm:w-40 sm:h-40 shrink-0 flex items-center justify-center">
               <svg viewBox="0 0 140 140" className="w-full h-full transform -rotate-90">
@@ -465,7 +465,7 @@ export const PeriodicAnalyticsCharts: React.FC<PeriodicAnalyticsChartsProps> = (
                       className="w-2.5 h-2.5 rounded-full shrink-0"
                       style={{ backgroundColor: cat.color }}
                     />
-                    <span className="font-bold text-ink leading-tight truncate">
+                    <span className="font-bold text-ink leading-tight">
                       {isReportAr ? cat.nameAr.split('(')[0].trim() : cat.nameEn}
                     </span>
                   </div>
@@ -485,7 +485,7 @@ export const PeriodicAnalyticsCharts: React.FC<PeriodicAnalyticsChartsProps> = (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-start">
         
         {/* Absolute Values: Comparative Resolution Channels */}
-        <div className="p-4 bg-bg/70 dark:bg-slate-800/40 border border-line rounded-xl print:border-slate-300 print:bg-slate-50/70 space-y-3 shadow-2xs">
+        <div className="rt-chart-card p-4 bg-bg/70 dark:bg-slate-800/40 border border-line rounded-xl print:border-slate-300 print:bg-slate-50/70 space-y-3 shadow-2xs">
           <div className="flex items-center gap-2 pb-1.5 border-b border-line/60">
             <Sliders className="w-4 h-4 text-accent" />
             <span className="text-xs sm:text-sm font-black text-ink">
@@ -558,7 +558,7 @@ export const PeriodicAnalyticsCharts: React.FC<PeriodicAnalyticsChartsProps> = (
         </div>
 
         {/* Correlations: Systems Telemetry Audit */}
-        <div className="p-4 bg-bg/70 dark:bg-slate-800/40 border border-line rounded-xl print:border-slate-300 print:bg-slate-50/70 space-y-3 shadow-2xs">
+        <div className="rt-chart-card p-4 bg-bg/70 dark:bg-slate-800/40 border border-line rounded-xl print:border-slate-300 print:bg-slate-50/70 space-y-3 shadow-2xs">
           <div className="flex items-center gap-2 pb-1.5 border-b border-line/60">
             <Radio className="w-4 h-4 text-accent" />
             <span className="text-xs sm:text-sm font-black text-ink">
@@ -570,20 +570,20 @@ export const PeriodicAnalyticsCharts: React.FC<PeriodicAnalyticsChartsProps> = (
 
           <div className="grid grid-cols-3 gap-2.5 text-center text-xs">
             {/* Box 1: Huawei NCE */}
-            <div className="p-2.5 bg-card border border-line rounded-lg print:border-slate-300">
+            <div className="rt-mini-card p-2.5 bg-card border border-line rounded-lg print:border-slate-300">
               <div className="text-[10px] font-bold text-sub">Huawei NCE</div>
-              <div className="text-sm font-black text-accent mt-0.5" dir="ltr">-10 ~ -26 dBm</div>
+              <div className="text-sm print:text-[10px] font-black text-accent mt-0.5" dir="ltr">-10 ~ -26 dBm</div>
               <div className="text-[9.5px] font-bold text-emerald-600 mt-0.5">
                 {isReportAr ? 'نطاق الإشارة المعتمد' : 'Standard RX Range'}
               </div>
             </div>
 
             {/* Box 2: Transport / MOSS */}
-            <div className="p-2.5 bg-card border border-line rounded-lg print:border-slate-300">
+            <div className="rt-mini-card p-2.5 bg-card border border-line rounded-lg print:border-slate-300">
               <div className="text-[10px] font-bold text-sub">
                 {isP2 ? 'Transport Stack' : 'MOSS Suite'}
               </div>
-              <div className="text-sm font-black text-ink mt-0.5">
+              <div className="text-sm print:text-[10px] font-black text-ink mt-0.5">
                 {isP2 ? 'DWDM / OTN / MPLS' : '24/7 Monitor'}
               </div>
               <div className="text-[9.5px] font-bold text-sky-600 mt-0.5">
@@ -594,11 +594,11 @@ export const PeriodicAnalyticsCharts: React.FC<PeriodicAnalyticsChartsProps> = (
             </div>
 
             {/* Box 3: ACS / Remedy & OTDR */}
-            <div className="p-2.5 bg-card border border-line rounded-lg print:border-slate-300">
+            <div className="rt-mini-card p-2.5 bg-card border border-line rounded-lg print:border-slate-300">
               <div className="text-[10px] font-bold text-sub">
                 {isP2 ? 'Fault & Ticketing' : 'ACS & Operations'}
               </div>
-              <div className="text-sm font-black text-ink mt-0.5">
+              <div className="text-sm print:text-[10px] font-black text-ink mt-0.5">
                 {isP2 ? 'OTDR + Remedy' : 'TR-069 Sync'}
               </div>
               <div className="text-[9.5px] font-bold text-indigo-600 mt-0.5">

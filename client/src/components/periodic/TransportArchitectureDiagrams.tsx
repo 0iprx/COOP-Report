@@ -244,8 +244,8 @@ export const TransportArchitectureDiagrams: React.FC<DiagramProps> = ({ isReport
             <text x="595" y="64" textAnchor="middle" fontSize="8" fontWeight="800" fill="#0369a1">Forward Pulse →</text>
             <text x="595" y="96" textAnchor="middle" fontSize="8" fontWeight="800" fill="#dc2626">← Reflected Spike (Break)</text>
 
-            <polygon points="670,56 680,76 670,96 686,76" fill="#dc2626" />
-            <text x="688" y="66" fontSize="8.8" fontWeight="900" fill="#b91c1c">CUT @ 24.38 km</text>
+            <polygon points="670,60 679,76 670,92 685,76" fill="#dc2626" />
+            <text x="678" y="53" textAnchor="middle" fontSize="8.2" fontWeight="900" fill="#b91c1c">CUT @ 24.38 km</text>
             <line x1="690" y1="76" x2="730" y2="76" stroke="#cbd5e1" strokeWidth="2.5" strokeDasharray="3 3" />
             <rect x="730" y="56" width="58" height="40" rx="6" fill="#f1f5f9" stroke="#94a3b8" />
             <text x="759" y="74" textAnchor="middle" fontSize="8.5" fontWeight="900" fill="#475569">POP B</text>
@@ -284,7 +284,7 @@ export const TransportArchitectureDiagrams: React.FC<DiagramProps> = ({ isReport
  */
 export const TransportHardwareVisuals: React.FC<DiagramProps> = ({ isReportAr }) => {
   return (
-    <div className="my-5 grid grid-cols-1 md:grid-cols-2 gap-4 print:grid-cols-2 print:gap-3 print:my-3 break-inside-avoid">
+    <div className="rt-plates-grid my-5 grid grid-cols-1 md:grid-cols-2 gap-4 print:grid-cols-2 print:gap-3 print:my-3 break-inside-avoid">
       {/* Plate 1: Core Transport & Field Test Equipment */}
       <figure className="p-3.5 bg-card border border-line rounded-2xl print:border-slate-300 print:rounded-xl print:p-3 flex flex-col justify-between shadow-2xs break-inside-avoid">
         <div>
@@ -293,7 +293,7 @@ export const TransportHardwareVisuals: React.FC<DiagramProps> = ({ isReportAr })
               ? 'لوحة (1): أهم أجهزة شبكات النقل والاختبار الميداني للألياف'
               : 'Plate 1: Core Optical/IP Transport Hardware & Field Test Instruments'}
           </figcaption>
-          <div className="bg-white rounded-xl border border-slate-200 p-2 overflow-hidden flex items-center justify-center">
+          <div className="rt-plate-frame bg-white rounded-xl border border-slate-200 p-2 overflow-hidden flex items-center justify-center">
             <img
               src="/images/transport/transport-devices-overview.png"
               alt={isReportAr ? 'أجهزة النقل والقياس الميداني' : 'Transport Network and Field Test Hardware'}
@@ -302,19 +302,19 @@ export const TransportHardwareVisuals: React.FC<DiagramProps> = ({ isReportAr })
           </div>
         </div>
         <div className="mt-2.5 grid grid-cols-2 gap-1.5 text-[10px] font-bold text-sub">
-          <div className="p-1.5 rounded bg-bg border border-line/60 print:border-slate-200">
+          <div className="rt-plate-chip p-1.5 rounded bg-bg border border-line/60 print:border-slate-200">
             <span className="font-black text-ink">1. DWDM / OTN:</span>{' '}
             {isReportAr ? 'OptiX OSN / NCS 2000' : 'Optical Shelf'}
           </div>
-          <div className="p-1.5 rounded bg-bg border border-line/60 print:border-slate-200">
+          <div className="rt-plate-chip p-1.5 rounded bg-bg border border-line/60 print:border-slate-200">
             <span className="font-black text-ink">2. MPLS Router:</span>{' '}
             {isReportAr ? 'NE40E / ASR 9000' : 'PE / P Core'}
           </div>
-          <div className="p-1.5 rounded bg-bg border border-line/60 print:border-slate-200">
+          <div className="rt-plate-chip p-1.5 rounded bg-bg border border-line/60 print:border-slate-200">
             <span className="font-black text-ink">3. OTDR Tester:</span>{' '}
             {isReportAr ? 'تحديد مسافة القطع' : 'Break Distance'}
           </div>
-          <div className="p-1.5 rounded bg-bg border border-line/60 print:border-slate-200">
+          <div className="rt-plate-chip p-1.5 rounded bg-bg border border-line/60 print:border-slate-200">
             <span className="font-black text-ink">4. Fusion Splicer:</span>{' '}
             {isReportAr ? 'لحام الألياف الضوئية' : 'Fiber Splicing'}
           </div>
@@ -329,7 +329,7 @@ export const TransportHardwareVisuals: React.FC<DiagramProps> = ({ isReportAr })
               ? 'لوحة (2): المقاطع الهندسية لأنواع كابلات الألياف الضوئية في الشبكة'
               : 'Plate 2: Engineering Cross-Sections of Transport Optical Fiber Cables'}
           </figcaption>
-          <div className="bg-white rounded-xl border border-slate-200 p-2 overflow-hidden flex items-center justify-center">
+          <div className="rt-plate-frame bg-white rounded-xl border border-slate-200 p-2 overflow-hidden flex items-center justify-center">
             <img
               src="/images/transport/fiber-cables-types.png"
               alt={isReportAr ? 'أنواع كابلات الألياف الضوئية' : 'Optical Fiber Cable Cross-Sections'}
@@ -338,15 +338,15 @@ export const TransportHardwareVisuals: React.FC<DiagramProps> = ({ isReportAr })
           </div>
         </div>
         <div className="mt-2.5 space-y-1 text-[10px] font-bold text-sub">
-          <div className="p-1.5 rounded bg-bg border border-line/60 print:border-slate-200">
+          <div className="rt-plate-chip p-1.5 rounded bg-bg border border-line/60 print:border-slate-200">
             <span className="font-black text-amber-600">▲ Single-Mode Patchcord (OS2):</span>{' '}
             {isReportAr ? 'كابل أصفر داخل المقاسم (ODF ↔ الأجهزة)' : 'Yellow indoor single-mode jumper (LC/SC)'}
           </div>
-          <div className="p-1.5 rounded bg-bg border border-line/60 print:border-slate-200">
+          <div className="rt-plate-chip p-1.5 rounded bg-bg border border-line/60 print:border-slate-200">
             <span className="font-black text-ink">■ Armored Underground Trunk:</span>{' '}
             {isReportAr ? 'كابل أرضي مسلّح للشبكة الوطنية SNFN بين المدن' : 'Corrugated steel armored trunk for SNFN'}
           </div>
-          <div className="p-1.5 rounded bg-bg border border-line/60 print:border-slate-200">
+          <div className="rt-plate-chip p-1.5 rounded bg-bg border border-line/60 print:border-slate-200">
             <span className="font-black text-sky-600">▼ Submarine Cable:</span>{' '}
             {isReportAr ? 'كابل بحري متعدد التسليح للربط الدولي مع أوروبا' : 'Multi-armored subsea cable for Europe transit'}
           </div>

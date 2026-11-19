@@ -58,7 +58,7 @@ const totalTickets = 452;
 const chartW = 560;
 const chartH = 180;
 const maxVal = 215;
-const padX = 35;
+const padX = 38;
 const usableW = chartW - padX * 2;
 const usableH = 120;
 
@@ -74,7 +74,7 @@ const buildTimelineSvg = (data, isAr) => {
     .map((val) => {
       const y = chartH - 30 - (val / maxVal) * usableH;
       return `<line x1="${padX}" y1="${y}" x2="${chartW - padX}" y2="${y}" stroke="#CBD5E1" stroke-dasharray="3 3" stroke-width="0.8" />
-        <text x="${isAr ? chartW - 22 : 14}" y="${y + 3.5}" text-anchor="${isAr ? 'start' : 'end'}" font-size="9" fill="#94A3B8" font-weight="bold">${val}</text>`;
+        <text x="${isAr ? chartW - 28 : 28}" y="${y + 3.5}" text-anchor="${isAr ? 'start' : 'end'}" font-size="9" fill="#94A3B8" font-weight="bold">${val}</text>`;
     })
     .join('\n');
   const markers = pts
@@ -296,8 +296,8 @@ const architectureSvgHtml = (isAr) => `
     <line x1="524" y1="81" x2="664" y2="81" stroke="#dc2626" stroke-width="1.8" stroke-dasharray="4 2" />
     <text x="595" y="64" text-anchor="middle" font-size="8" font-weight="800" fill="#0369a1">Forward Pulse →</text>
     <text x="595" y="96" text-anchor="middle" font-size="8" font-weight="800" fill="#dc2626">← Reflected Spike (Break)</text>
-    <polygon points="670,56 680,76 670,96 686,76" fill="#dc2626" />
-    <text x="688" y="66" font-size="8.8" font-weight="900" fill="#b91c1c">CUT @ 24.38 km</text>
+    <polygon points="670,60 679,76 670,92 685,76" fill="#dc2626" />
+    <text x="678" y="53" text-anchor="middle" font-size="8.2" font-weight="900" fill="#b91c1c">CUT @ 24.38 km</text>
     <line x1="690" y1="76" x2="730" y2="76" stroke="#cbd5e1" stroke-width="2.5" stroke-dasharray="3 3" />
     <rect x="730" y="56" width="58" height="40" rx="6" fill="#f1f5f9" stroke="#94a3b8" />
     <text x="759" y="74" text-anchor="middle" font-size="8.5" font-weight="900" fill="#475569">POP B</text>
@@ -431,6 +431,11 @@ const sharedStyles = (isAr) => `
   th, td { border: 1px solid #CBD5E1; padding: 4.5px 7px; text-align: ${isAr ? 'right' : 'left'}; }
   th { background: #F1F5F9; font-weight: 800; color: #0F172A; }
   tr:nth-child(even) td { background: #F8FAFC; }
+  .wide-table th, .wide-table td { font-size: 9px; padding: 3.5px 4.5px; }
+  .wide-table th:nth-child(1),
+  .wide-table td:nth-child(1),
+  .wide-table th:nth-child(2),
+  .wide-table td:nth-child(2) { white-space: nowrap; }
   .diag-card {
     background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 10px;
     padding: 9px 11px; margin: 10px 0; page-break-inside: avoid; break-inside: avoid;
@@ -598,9 +603,9 @@ const buildArabicHtml = () => `<!DOCTYPE html>
     </ul>
 
     <h2>2. لقطات التسليم الموثقة وملخص الأسابيع الستة (إجمالي تذاكر FTTH = 452 | الترانزبورت = 0)</h2>
-    <table>
+    <table class="wide-table">
       <thead>
-        <tr><th>التاريخ</th><th>الإجمالي</th><th>CCS</th><th>Call Centre</th><th>Open Access</th><th>Resolved</th><th>TLS</th><th>Pending to NOC</th><th>OSS</th><th>NAS</th><th>ملاحظات موثقة</th></tr>
+        <tr><th>التاريخ</th><th>الإجمالي</th><th>CCS</th><th>Call Centre</th><th>Open Access</th><th>Resolved</th><th>TLS</th><th>NOC</th><th>OSS</th><th>NAS</th><th>ملاحظات موثقة</th></tr>
       </thead>
       <tbody>
         <tr><td><strong>11/10</strong></td><td><strong>40</strong></td><td>10</td><td>15</td><td>7</td><td>6</td><td>0</td><td>2</td><td>0</td><td>0</td><td>بداية الأسبوع 7 (لقطة مسائية)</td></tr>
@@ -869,9 +874,9 @@ const buildEnglishHtml = () => `<!DOCTYPE html>
     <ul>
       <li><strong>Diagnostic &amp; Provisioning Standards:</strong> Verified active billing profiles in <code>MOSS</code>, regional access domain (<code>Huawei NCE</code> vs. <code>Nokia AMS</code>), received optical power within <code>-10 dBm to -26 dBm</code>, and subscriber <code>CVLAN</code> mappings (<code>1501 HSI</code>, <code>3980 ACS</code>, <code>1810 VoIP</code>) prior to direct closure or field/operator escalation.</li>
     </ul>
-    <table>
+    <table class="wide-table">
       <thead>
-        <tr><th>Date / Snapshot</th><th>Total</th><th>CCS</th><th>Call Centre</th><th>Open Access</th><th>Resolved</th><th>TLS</th><th>Pending NOC</th><th>OSS</th><th>NAS</th><th>Notes</th></tr>
+        <tr><th>Date</th><th>Total</th><th>CCS</th><th>Call Centre</th><th>Open Access</th><th>Resolved</th><th>TLS</th><th>NOC</th><th>OSS</th><th>NAS</th><th>Notes</th></tr>
       </thead>
       <tbody>
         <tr><td><strong>Oct 11</strong></td><td><strong>40</strong></td><td>10</td><td>15</td><td>7</td><td>6</td><td>0</td><td>2</td><td>0</td><td>0</td><td>Week 7 FTTH handover baseline</td></tr>
