@@ -33,8 +33,8 @@ import {
 
 const STORAGE_KEY_FTTH_AR = 'coop_ftth_periodic_report_v10_ar';
 const STORAGE_KEY_FTTH_EN = 'coop_ftth_periodic_report_v10_en';
-const STORAGE_KEY_P2_AR = 'coop_periodic_report_p2_v4_ar';
-const STORAGE_KEY_P2_EN = 'coop_periodic_report_p2_v4_en';
+const STORAGE_KEY_P2_AR = 'coop_periodic_report_p2_v5_ar';
+const STORAGE_KEY_P2_EN = 'coop_periodic_report_p2_v5_en';
 const STORAGE_KEY_REPORT_LANG = 'coop_ftth_report_lang_preference_v1';
 const STORAGE_KEY_SELECTED_PERIOD = 'coop_selected_periodic_report_v1';
 
@@ -1090,9 +1090,9 @@ export const PeriodicTab: React.FC = () => {
               }`}
               title={isReportAr ? 'عرض وطباعة التقرير الفتري الثاني المحدث' : 'View Period 2 Report'}
             >
-              <span>{isReportAr ? 'التقرير الفتري الثاني (11/10 – 5/11)' : 'Periodic Report 2 (Oct 11 – Nov 05)'}</span>
+              <span>{isReportAr ? 'التقرير الفتري الثاني (11/10 – 19/11)' : 'Periodic Report 2 (Oct 11 – Nov 19)'}</span>
               <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 font-black">
-                {isReportAr ? '482 تذكرة ومهمة' : '482'}
+                {isReportAr ? '572 تذكرة ومهمة' : '572'}
               </span>
             </button>
           </div>
@@ -1109,7 +1109,7 @@ export const PeriodicTab: React.FC = () => {
                 {currentReport.title}
               </h2>
               <p className="text-[11px] text-sub font-bold">
-                {currentReport.periodCoverage} • {currentReport.roleAssignment} • {selectedPeriod === 'p2' ? (isReportAr ? 'إجمالي 482 تذكرة ومهمة' : '482 Total Tasks') : (isReportAr ? 'إجمالي 244 تذكرة' : '244 Total Tickets')}
+                {currentReport.periodCoverage} • {currentReport.roleAssignment} • {selectedPeriod === 'p2' ? (isReportAr ? 'إجمالي 572 تذكرة ومهمة' : '572 Total Tasks') : (isReportAr ? 'إجمالي 244 تذكرة' : '244 Total Tickets')}
               </p>
             </div>
           </div>
@@ -1418,8 +1418,8 @@ export const PeriodicTab: React.FC = () => {
                   <span className="rp-scope-badge">
                     {selectedPeriod === 'p2'
                       ? isReportAr
-                        ? '482 تذكرة وبلاغ تشغيلي'
-                        : '482 handled tickets'
+                        ? '572 تذكرة وبلاغ تشغيلي'
+                        : '572 handled tickets'
                       : isReportAr
                         ? '244 تذكرة فريدة معالجة'
                         : '244 handled tickets'}

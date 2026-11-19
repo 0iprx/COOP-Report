@@ -1,5 +1,9 @@
 import React from 'react';
 import { PeriodicAnalyticsCharts } from '../periodic/PeriodicAnalyticsCharts';
+import {
+  TransportArchitectureDiagrams,
+  TransportHardwareVisuals
+} from '../periodic/TransportArchitectureDiagrams';
 
 interface AcademicMarkdownViewProps {
   content: string;
@@ -151,7 +155,9 @@ type Block =
   | { kind: 'ul' | 'ol'; items: string[]; line: number }
   | { kind: 'table'; header: string[]; align: Align[]; rows: string[][]; line: number }
   | { kind: 'hr' | 'pagebreak'; line: number }
-  | { kind: 'charts'; period: 'p1' | 'p2'; line: number };
+  | { kind: 'charts'; period: 'p1' | 'p2'; line: number }
+  | { kind: 'transport-diagrams'; line: number }
+  | { kind: 'transport-hardware'; line: number };
 
 const CHART_TOKENS = new Set([
   '<!-- analytics-charts -->',
@@ -179,6 +185,16 @@ const parseBlocks = (content: string, period: 'p1' | 'p2'): Block[] => {
     }
     if (CHART_TOKENS.has(line)) {
       blocks.push({ kind: 'charts', period: line.includes('p2') ? 'p2' : line.includes('p1') ? 'p1' : period, line: i });
+      i++;
+      continue;
+    }
+    if (line === '<!-- transport-architecture-diagrams -->') {
+      blocks.push({ kind: 'transport-diagrams', line: i });
+      i++;
+      continue;
+    }
+    if (line === '<!-- transport-hardware-visuals -->') {
+      blocks.push({ kind: 'transport-hardware', line: i });
       i++;
       continue;
     }
@@ -305,6 +321,18 @@ export const AcademicMarkdownView: React.FC<AcademicMarkdownViewProps> = ({
         return (
           <div key={`charts-${b.line}`} className="rt-charts">
             <PeriodicAnalyticsCharts isReportAr={isAr} period={b.period} />
+          </div>
+        );
+      case 'transport-diagrams':
+        return (
+          <div key={`t-arch-${b.line}`} className="rt-charts">
+            <TransportArchitectureDiagrams isReportAr={isAr} />
+          </div>
+        );
+      case 'transport-hardware':
+        return (
+          <div key={`t-hw-${b.line}`} className="rt-charts">
+            <TransportHardwareVisuals isReportAr={isAr} />
           </div>
         );
       case 'h1':
